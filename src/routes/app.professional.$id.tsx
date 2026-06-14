@@ -1,10 +1,15 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { AVAILABILITY_LABEL, getProfessional, TRUST_STYLES } from "@/lib/ello-data";
+import {
+  AVAILABILITY_LABEL,
+  getProfessional,
+  TRUST_STYLES,
+  type Professional,
+} from "@/lib/ello-data";
 import { ProAvatar } from "@/components/ello/avatar";
 
 export const Route = createFileRoute("/app/professional/$id")({
   component: ProfessionalDetail,
-  loader: ({ params }) => {
+  loader: ({ params }): { pro: Professional } => {
     const pro = getProfessional(params.id);
     if (!pro) throw notFound();
     return { pro };
