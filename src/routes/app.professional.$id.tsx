@@ -22,7 +22,7 @@ export const Route = createFileRoute("/app/professional/$id")({
 });
 
 function ProfessionalDetail() {
-  const { pro } = Route.useLoaderData();
+  const { pro } = Route.useLoaderData() as { pro: Professional };
   const trust = TRUST_STYLES[pro.trustLevel];
 
   return (
