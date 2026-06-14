@@ -16,6 +16,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSearchRouteImport } from './routes/app.search'
+import { Route as AppProfileRouteImport } from './routes/app.profile'
 import { Route as AppMessagesRouteImport } from './routes/app.messages'
 import { Route as AppBusinessRouteImport } from './routes/app.business'
 import { Route as AppAgendaRouteImport } from './routes/app.agenda'
@@ -56,6 +57,11 @@ const AppSearchRoute = AppSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMessagesRoute = AppMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRoute
   '/app/messages': typeof AppMessagesRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/search': typeof AppSearchRoute
   '/app/': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRoute
   '/app/messages': typeof AppMessagesRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/search': typeof AppSearchRoute
   '/app': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRoute
   '/app/messages': typeof AppMessagesRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/search': typeof AppSearchRoute
   '/app/': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/app/agenda'
     | '/app/business'
     | '/app/messages'
+    | '/app/profile'
     | '/app/search'
     | '/app/'
     | '/app/professional/$id'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/app/agenda'
     | '/app/business'
     | '/app/messages'
+    | '/app/profile'
     | '/app/search'
     | '/app'
     | '/app/professional/$id'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/app/agenda'
     | '/app/business'
     | '/app/messages'
+    | '/app/profile'
     | '/app/search'
     | '/app/'
     | '/app/professional/$id'
@@ -216,6 +228,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSearchRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/messages': {
       id: '/app/messages'
       path: '/messages'
@@ -251,6 +270,7 @@ interface AppRouteChildren {
   AppAgendaRoute: typeof AppAgendaRoute
   AppBusinessRoute: typeof AppBusinessRoute
   AppMessagesRoute: typeof AppMessagesRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppSearchRoute: typeof AppSearchRoute
   AppIndexRoute: typeof AppIndexRoute
   AppProfessionalIdRoute: typeof AppProfessionalIdRoute
@@ -260,6 +280,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAgendaRoute: AppAgendaRoute,
   AppBusinessRoute: AppBusinessRoute,
   AppMessagesRoute: AppMessagesRoute,
+  AppProfileRoute: AppProfileRoute,
   AppSearchRoute: AppSearchRoute,
   AppIndexRoute: AppIndexRoute,
   AppProfessionalIdRoute: AppProfessionalIdRoute,
