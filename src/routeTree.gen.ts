@@ -15,6 +15,8 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppSearchRouteImport } from './routes/app.search'
+import { Route as AppProfessionalIdRouteImport } from './routes/app.professional.$id'
 
 const RoleRoute = RoleRouteImport.update({
   id: '/role',
@@ -46,6 +48,16 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSearchRoute = AppSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfessionalIdRoute = AppProfessionalIdRouteImport.update({
+  id: '/professional/$id',
+  path: '/professional/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,14 +65,18 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
+  '/app/search': typeof AppSearchRoute
   '/app/': typeof AppIndexRoute
+  '/app/professional/$id': typeof AppProfessionalIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
+  '/app/search': typeof AppSearchRoute
   '/app': typeof AppIndexRoute
+  '/app/professional/$id': typeof AppProfessionalIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -69,14 +85,40 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
+  '/app/search': typeof AppSearchRoute
   '/app/': typeof AppIndexRoute
+  '/app/professional/$id': typeof AppProfessionalIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/auth' | '/onboarding' | '/role' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/onboarding'
+    | '/role'
+    | '/app/search'
+    | '/app/'
+    | '/app/professional/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/onboarding' | '/role' | '/app'
-  id: '__root__' | '/' | '/app' | '/auth' | '/onboarding' | '/role' | '/app/'
+  to:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/role'
+    | '/app/search'
+    | '/app'
+    | '/app/professional/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/onboarding'
+    | '/role'
+    | '/app/search'
+    | '/app/'
+    | '/app/professional/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -131,15 +173,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/search': {
+      id: '/app/search'
+      path: '/search'
+      fullPath: '/app/search'
+      preLoaderRoute: typeof AppSearchRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/professional/$id': {
+      id: '/app/professional/$id'
+      path: '/professional/$id'
+      fullPath: '/app/professional/$id'
+      preLoaderRoute: typeof AppProfessionalIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppSearchRoute: typeof AppSearchRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppProfessionalIdRoute: typeof AppProfessionalIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppSearchRoute: AppSearchRoute,
   AppIndexRoute: AppIndexRoute,
+  AppProfessionalIdRoute: AppProfessionalIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -154,3 +214,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
