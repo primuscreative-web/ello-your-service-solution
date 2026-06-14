@@ -16,6 +16,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSearchRouteImport } from './routes/app.search'
+import { Route as AppAgendaRouteImport } from './routes/app.agenda'
 import { Route as AppProfessionalIdRouteImport } from './routes/app.professional.$id'
 
 const RoleRoute = RoleRouteImport.update({
@@ -53,6 +54,11 @@ const AppSearchRoute = AppSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAgendaRoute = AppAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProfessionalIdRoute = AppProfessionalIdRouteImport.update({
   id: '/professional/$id',
   path: '/professional/$id',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
+  '/app/agenda': typeof AppAgendaRoute
   '/app/search': typeof AppSearchRoute
   '/app/': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
+  '/app/agenda': typeof AppAgendaRoute
   '/app/search': typeof AppSearchRoute
   '/app': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
+  '/app/agenda': typeof AppAgendaRoute
   '/app/search': typeof AppSearchRoute
   '/app/': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/role'
+    | '/app/agenda'
     | '/app/search'
     | '/app/'
     | '/app/professional/$id'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/role'
+    | '/app/agenda'
     | '/app/search'
     | '/app'
     | '/app/professional/$id'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/role'
+    | '/app/agenda'
     | '/app/search'
     | '/app/'
     | '/app/professional/$id'
@@ -180,6 +192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSearchRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/agenda': {
+      id: '/app/agenda'
+      path: '/agenda'
+      fullPath: '/app/agenda'
+      preLoaderRoute: typeof AppAgendaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/professional/$id': {
       id: '/app/professional/$id'
       path: '/professional/$id'
@@ -191,12 +210,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAgendaRoute: typeof AppAgendaRoute
   AppSearchRoute: typeof AppSearchRoute
   AppIndexRoute: typeof AppIndexRoute
   AppProfessionalIdRoute: typeof AppProfessionalIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAgendaRoute: AppAgendaRoute,
   AppSearchRoute: AppSearchRoute,
   AppIndexRoute: AppIndexRoute,
   AppProfessionalIdRoute: AppProfessionalIdRoute,
