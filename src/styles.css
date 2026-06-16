@@ -65,27 +65,27 @@
 }
 
 :root {
-  --radius: 1rem;
-  /* ELLO Precision Human palette */
-  --background: oklch(0.97 0.012 80);
-  --foreground: oklch(0.22 0.012 60);
+  --radius: 0.75rem;
+  /* ELLO native marketplace palette */
+  --background: oklch(0.94 0.035 221);
+  --foreground: oklch(0.18 0.035 245);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.012 60);
+  --card-foreground: oklch(0.18 0.035 245);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.012 60);
-  --primary: oklch(0.64 0.17 38);
-  --primary-foreground: oklch(0.97 0.012 80);
-  --secondary: oklch(0.95 0.012 80);
-  --secondary-foreground: oklch(0.22 0.012 60);
-  --muted: oklch(0.93 0.012 80);
-  --muted-foreground: oklch(0.5 0.012 60);
-  --accent: oklch(0.95 0.012 80);
-  --accent-foreground: oklch(0.22 0.012 60);
+  --popover-foreground: oklch(0.18 0.035 245);
+  --primary: oklch(0.69 0.13 195);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.02 210);
+  --secondary-foreground: oklch(0.18 0.035 245);
+  --muted: oklch(0.93 0.018 220);
+  --muted-foreground: oklch(0.48 0.025 245);
+  --accent: oklch(0.27 0.08 245);
+  --accent-foreground: oklch(0.99 0 0);
   --destructive: oklch(0.55 0.22 28);
   --destructive-foreground: oklch(0.97 0.012 80);
-  --border: oklch(0.22 0.012 60 / 0.1);
-  --input: oklch(0.22 0.012 60 / 0.1);
-  --ring: oklch(0.64 0.17 38);
+  --border: oklch(0.2 0.03 245 / 0.12);
+  --input: oklch(0.2 0.03 245 / 0.12);
+  --ring: oklch(0.69 0.13 195);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -148,6 +148,18 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 12% 18%, oklch(0.78 0.05 205 / 0.22) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 86% 14%, oklch(0.78 0.05 205 / 0.18) 0 1px, transparent 1.5px);
+    background-size: 78px 78px;
+    opacity: 0.7;
+  }
+
   .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
@@ -157,12 +169,51 @@
     font-family: var(--font-mono);
   }
 
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .ello-shell {
+    position: relative;
+    width: min(100%, 390px);
+    min-height: 100vh;
+    margin-inline: auto;
+    overflow: hidden;
+    background: oklch(0.985 0.006 220);
+    box-shadow: 0 28px 80px oklch(0.18 0.04 245 / 0.16);
+  }
+
+  .ello-card {
+    border: 1px solid oklch(0.2 0.03 245 / 0.1);
+    background: white;
+    box-shadow: 0 3px 12px oklch(0.18 0.04 245 / 0.08);
+  }
+
+  .ello-header {
+    color: white;
+    background:
+      radial-gradient(circle at 82% 18%, oklch(0.58 0.11 200 / 0.35), transparent 30%),
+      linear-gradient(135deg, oklch(0.25 0.08 246), oklch(0.18 0.07 247));
+  }
+
+  .ello-action {
+    background: oklch(0.69 0.13 195);
+    color: white;
+    box-shadow: 0 6px 14px oklch(0.62 0.12 195 / 0.28);
+  }
 
   @keyframes ello-slide-up {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   .animate-reveal {
     animation: ello-slide-up 0.6s cubic-bezier(0.32, 0.72, 0, 1) both;

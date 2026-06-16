@@ -15,9 +15,12 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as AppSearchRouteImport } from './routes/app.search'
+import { Route as AppRequestsRouteImport } from './routes/app.requests'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
 import { Route as AppMessagesRouteImport } from './routes/app.messages'
+import { Route as AppFavoritesRouteImport } from './routes/app.favorites'
 import { Route as AppExpressRouteImport } from './routes/app.express'
 import { Route as AppBusinessRouteImport } from './routes/app.business'
 import { Route as AppAgendaRouteImport } from './routes/app.agenda'
@@ -53,9 +56,19 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppSearchRoute = AppSearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRequestsRoute = AppRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
@@ -66,6 +79,11 @@ const AppProfileRoute = AppProfileRouteImport.update({
 const AppMessagesRoute = AppMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFavoritesRoute = AppFavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
   getParentRoute: () => AppRoute,
 } as any)
 const AppExpressRoute = AppExpressRouteImport.update({
@@ -98,9 +116,12 @@ export interface FileRoutesByFullPath {
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRoute
   '/app/express': typeof AppExpressRoute
+  '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
   '/app/profile': typeof AppProfileRoute
+  '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
+  '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
 }
@@ -112,9 +133,12 @@ export interface FileRoutesByTo {
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRoute
   '/app/express': typeof AppExpressRoute
+  '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
   '/app/profile': typeof AppProfileRoute
+  '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
+  '/p/$slug': typeof PSlugRoute
   '/app': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
 }
@@ -128,9 +152,12 @@ export interface FileRoutesById {
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRoute
   '/app/express': typeof AppExpressRoute
+  '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
   '/app/profile': typeof AppProfileRoute
+  '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
+  '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
 }
@@ -145,9 +172,12 @@ export interface FileRouteTypes {
     | '/app/agenda'
     | '/app/business'
     | '/app/express'
+    | '/app/favorites'
     | '/app/messages'
     | '/app/profile'
+    | '/app/requests'
     | '/app/search'
+    | '/p/$slug'
     | '/app/'
     | '/app/professional/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -159,9 +189,12 @@ export interface FileRouteTypes {
     | '/app/agenda'
     | '/app/business'
     | '/app/express'
+    | '/app/favorites'
     | '/app/messages'
     | '/app/profile'
+    | '/app/requests'
     | '/app/search'
+    | '/p/$slug'
     | '/app'
     | '/app/professional/$id'
   id:
@@ -174,9 +207,12 @@ export interface FileRouteTypes {
     | '/app/agenda'
     | '/app/business'
     | '/app/express'
+    | '/app/favorites'
     | '/app/messages'
     | '/app/profile'
+    | '/app/requests'
     | '/app/search'
+    | '/p/$slug'
     | '/app/'
     | '/app/professional/$id'
   fileRoutesById: FileRoutesById
@@ -187,6 +223,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
   RoleRoute: typeof RoleRoute
+  PSlugRoute: typeof PSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -233,11 +270,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/search': {
       id: '/app/search'
       path: '/search'
       fullPath: '/app/search'
       preLoaderRoute: typeof AppSearchRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/requests': {
+      id: '/app/requests'
+      path: '/requests'
+      fullPath: '/app/requests'
+      preLoaderRoute: typeof AppRequestsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/profile': {
@@ -252,6 +303,13 @@ declare module '@tanstack/react-router' {
       path: '/messages'
       fullPath: '/app/messages'
       preLoaderRoute: typeof AppMessagesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/favorites': {
+      id: '/app/favorites'
+      path: '/favorites'
+      fullPath: '/app/favorites'
+      preLoaderRoute: typeof AppFavoritesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/express': {
@@ -289,8 +347,10 @@ interface AppRouteChildren {
   AppAgendaRoute: typeof AppAgendaRoute
   AppBusinessRoute: typeof AppBusinessRoute
   AppExpressRoute: typeof AppExpressRoute
+  AppFavoritesRoute: typeof AppFavoritesRoute
   AppMessagesRoute: typeof AppMessagesRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppRequestsRoute: typeof AppRequestsRoute
   AppSearchRoute: typeof AppSearchRoute
   AppIndexRoute: typeof AppIndexRoute
   AppProfessionalIdRoute: typeof AppProfessionalIdRoute
@@ -300,8 +360,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppAgendaRoute: AppAgendaRoute,
   AppBusinessRoute: AppBusinessRoute,
   AppExpressRoute: AppExpressRoute,
+  AppFavoritesRoute: AppFavoritesRoute,
   AppMessagesRoute: AppMessagesRoute,
   AppProfileRoute: AppProfileRoute,
+  AppRequestsRoute: AppRequestsRoute,
   AppSearchRoute: AppSearchRoute,
   AppIndexRoute: AppIndexRoute,
   AppProfessionalIdRoute: AppProfessionalIdRoute,
@@ -315,7 +377,18 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
   RoleRoute: RoleRoute,
+  PSlugRoute: PSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

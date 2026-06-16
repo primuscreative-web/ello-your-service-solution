@@ -1,8 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
-import { CATEGORIES, PROFESSIONALS, TRUST_STYLES } from "@/lib/ello-data";
-import { ProAvatar } from "@/components/ello/avatar";
+import { Check, Heart, Search as SearchIcon, SlidersHorizontal } from "lucide-react";
+import { AppTopBar, CyanButton, ProPhoto, RatingLine, TrustBadge } from "@/components/ello/mobile-ui";
+import { useAuth } from "@/lib/auth/auth-context";
+import { CATEGORIES, PROFESSIONALS } from "@/lib/ello-data";
+import {
+  listCategories,
+  listMyFavoriteProfessionalIds,
+  listProfessionals,
+  setProfessionalFavorite,
+} from "@/lib/ello-repository";
 
 const searchSchema = z.object({
   category: z.string().optional(),
@@ -16,143 +25,194 @@ export const Route = createFileRoute("/app/search")({
 
 function Search() {
   const { category, q } = Route.useSearch();
+  const queryClient = useQueryClient();
+  const { configured, user } = useAuth();
   const [query, setQuery] = useState(q ?? "");
   const [activeCat, setActiveCat] = useState<string | undefined>(category);
 
-  const filtered = PROFESSIONALS.filter((p) => {
-    if (activeCat && p.category !== activeCat) return false;
-    if (query) {
-      const s = query.toLowerCase();
-      return (
-        p.name.toLowerCase().includes(s) ||
-        p.profession.toLowerCase().includes(s) ||
-        p.specialties.some((sp) => sp.toLowerCase().includes(s))
-      );
-    }
-    return true;
+  const categoriesQuery = useQuery({
+    queryKey: ["ello", "categories"],
+    queryFn: listCategories,
+  });
+  const professionalsQuery = useQuery({
+    queryKey: ["ello", "professionals", { activeCat, query }],
+    queryFn: () => listProfessionals({ category: activeCat, query }),
+  });
+  const favoritesQuery = useQuery({
+    queryKey: ["ello", "me", "favorite-professional-ids", user?.id],
+    queryFn: () => listMyFavoriteProfessionalIds(user!.id),
+    enabled: Boolean(configured && user),
+  });
+  const favoriteMutation = useMutation({
+    mutationFn: (input: { professionalId: string; favorite: boolean }) => {
+      if (!user) throw new Error("Entre na sua conta para favoritar profissionais.");
+      return setProfessionalFavorite({
+        userId: user.id,
+        professionalId: input.professionalId,
+        favorite: input.favorite,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["ello", "me", "favorite-professional-ids", user?.id],
+      });
+    },
   });
 
+  const categories = categoriesQuery.data ?? CATEGORIES;
+  const filtered = professionalsQuery.data ?? PROFESSIONALS;
+  const favoriteIds = new Set(favoritesQuery.data ?? []);
+
   return (
-    <div className="px-5 pb-8 pt-6">
-      <div className="flex items-center gap-3">
-        <Link
-          to="/app"
-          className="flex size-10 items-center justify-center rounded-full border border-border bg-white"
-        >
-          <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </Link>
-        <h1 className="font-display text-xl font-bold">Buscar</h1>
-      </div>
+    <div>
+      <AppTopBar
+        title={activeCat ? `${labelFor(activeCat, categories)} - Sao Paulo` : "Buscar Servicos"}
+        backTo="/app"
+      />
 
-      <div className="relative mt-5">
-        <svg
-          className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input
-          autoFocus
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Ex: Preciso instalar um chuveiro"
-          className="h-14 w-full rounded-2xl border border-border bg-white pl-12 pr-4 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-        />
-      </div>
-
-      <div className="-mx-5 mt-5">
-        <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 pb-2">
-          <Chip active={!activeCat} onClick={() => setActiveCat(undefined)}>
-            Tudo
-          </Chip>
-          {CATEGORIES.map((c) => (
-            <Chip
-              key={c.slug}
-              active={activeCat === c.slug}
-              onClick={() => setActiveCat(c.slug)}
-            >
-              {c.icon} {c.name}
-            </Chip>
-          ))}
+      <main className="space-y-4 px-4 pb-6 pt-4">
+        <div className="relative">
+          <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar servicos ou profissionais..."
+            className="h-11 w-full rounded-lg border border-border bg-white pl-9 pr-3 text-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
         </div>
-      </div>
 
-      <div className="mt-6 flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">
-          {filtered.length} profissionais encontrados
-        </p>
-        <button className="font-mono text-xs uppercase tracking-wider text-primary">Mapa</button>
-      </div>
-
-      <div className="mt-4 space-y-3">
-        {filtered.map((p) => {
-          const trust = TRUST_STYLES[p.trustLevel];
-          return (
-            <Link
-              key={p.id}
-              to="/app/professional/$id"
-              params={{ id: p.id }}
-              className="flex gap-4 rounded-3xl border border-border bg-white p-4"
-            >
-              <div className="relative">
-                <ProAvatar initials={p.initials} tone={p.avatarTone} size={72} />
-                <div
-                  className={`absolute -bottom-1 -right-1 rounded-full px-2 py-0.5 text-[9px] font-bold ring-2 ring-white ${trust.bg} ${trust.text}`}
-                >
-                  {p.trustLevel.toUpperCase()}
-                </div>
-              </div>
-              <div className="flex-1">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="font-display font-bold">{p.name}</h4>
-                    <p className="text-xs text-muted-foreground">{p.profession}</p>
-                  </div>
-                  <span className="font-mono text-xs font-bold">★ {p.rating}</span>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  📍 {p.city} • {p.completedJobs} serviços
-                </p>
-              </div>
-            </Link>
-          );
-        })}
-
-        {filtered.length === 0 && (
-          <div className="rounded-3xl border border-dashed border-border bg-white p-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Nenhum profissional encontrado. Tente outra categoria.
-            </p>
+        <section className="ello-card rounded-xl p-3">
+          <div className="mb-2 flex items-center gap-2 text-xs font-black">
+            <SlidersHorizontal className="size-4 text-[#083d63]" />
+            Filtros para:
           </div>
-        )}
-      </div>
+          <div className="grid grid-cols-2 gap-2">
+            <FilterChip title="Avaliacao Media" value="4.5+" />
+            <FilterChip title="Preco" value="-" plus />
+            <FilterChip title="Urgencia (Express)" />
+            <FilterChip title="Verificados" checked />
+          </div>
+          <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setActiveCat(undefined)}
+              className={`shrink-0 rounded-lg px-3 py-2 text-[10px] font-bold ${
+                !activeCat ? "bg-[#083d63] text-white" : "bg-muted"
+              }`}
+            >
+              Tudo
+            </button>
+            {categories.slice(0, 8).map((item) => (
+              <button
+                key={item.slug}
+                onClick={() => setActiveCat(item.slug)}
+                className={`shrink-0 rounded-lg px-3 py-2 text-[10px] font-bold ${
+                  activeCat === item.slug ? "bg-[#083d63] text-white" : "bg-muted"
+                }`}
+              >
+                {item.name}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          {filtered.map((pro) => {
+            const isFavorite = favoriteIds.has(pro.id);
+            return (
+              <div key={pro.id} className="ello-card rounded-xl p-3">
+                <div className="flex gap-3">
+                  <ProPhoto initials={pro.initials} imageUrl={pro.avatarUrl} size={58} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex justify-between gap-2">
+                      <Link to="/app/professional/$id" params={{ id: pro.id }} className="min-w-0">
+                        <h3 className="truncate text-sm font-black">{pro.name}</h3>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          {pro.profession}
+                        </p>
+                      </Link>
+                      <button
+                        className="grid size-8 shrink-0 place-items-center rounded-full bg-muted disabled:opacity-45"
+                        disabled={
+                          !configured || !user || !isUuid(pro.id) || favoriteMutation.isPending
+                        }
+                        onClick={() =>
+                          favoriteMutation.mutate({
+                            professionalId: pro.id,
+                            favorite: !isFavorite,
+                          })
+                        }
+                        aria-label={
+                          isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"
+                        }
+                      >
+                        <Heart
+                          className={`size-4 ${
+                            isFavorite ? "fill-primary text-primary" : "text-muted-foreground"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <RatingLine
+                        rating={String(pro.rating)}
+                        reviews={`${pro.completedJobs} servicos`}
+                      />
+                      <TrustBadge
+                        label={pro.trustLevel === "Ouro" ? "Diamante/Elite" : pro.trustLevel}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <Link to="/app/professional/$id" params={{ id: pro.id }}>
+                  <CyanButton className="mt-3 w-full">Solicitar Orcamento</CyanButton>
+                </Link>
+              </div>
+            );
+          })}
+
+          {filtered.length === 0 ? (
+            <div className="ello-card rounded-xl p-6 text-center text-sm text-muted-foreground">
+              Nenhum profissional encontrado para esta busca.
+            </div>
+          ) : null}
+        </section>
+      </main>
     </div>
   );
 }
 
-function Chip({
-  active,
-  onClick,
-  children,
+function FilterChip({
+  title,
+  value,
+  plus = false,
+  checked = false,
 }: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
+  title: string;
+  value?: string;
+  plus?: boolean;
+  checked?: boolean;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-        active
-          ? "bg-foreground text-background"
-          : "border border-border bg-white text-foreground"
-      }`}
-    >
-      {children}
+    <button className="flex min-h-12 items-center justify-between rounded-lg border border-border bg-muted px-3 py-2 text-left">
+      <span>
+        <span className="block text-[10px] font-semibold text-muted-foreground">{title}</span>
+        {value ? <strong className="text-xs">{value}</strong> : null}
+      </span>
+      {checked ? (
+        <Check className="size-4 rounded bg-primary p-0.5 text-white" />
+      ) : plus ? (
+        <span className="text-primary">+</span>
+      ) : null}
     </button>
+  );
+}
+
+function labelFor(slug: string, categories: typeof CATEGORIES) {
+  return categories.find((item) => item.slug === slug)?.name ?? "Servicos";
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
   );
 }

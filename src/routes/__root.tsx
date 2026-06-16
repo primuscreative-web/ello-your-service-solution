@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { AuthProvider } from "@/lib/auth/auth-context";
 
 function NotFoundComponent() {
   return (
@@ -78,10 +79,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "ELLO — Encontre ou ofereça serviços com facilidade" },
-      { name: "description", content: "ELLO conecta clientes e profissionais autônomos. Contrate, organize e cresça em um só lugar." },
+      {
+        name: "description",
+        content:
+          "ELLO conecta clientes e profissionais autônomos. Contrate, organize e cresça em um só lugar.",
+      },
       { name: "author", content: "ELLO" },
       { property: "og:title", content: "ELLO" },
-      { property: "og:description", content: "A plataforma inteligente para contratar, organizar e crescer." },
+      {
+        property: "og:description",
+        content: "A plataforma inteligente para contratar, organizar e crescer.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
@@ -124,8 +132,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <AuthProvider>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

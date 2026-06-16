@@ -38,6 +38,7 @@ export type Professional = {
   available: "agora" | "hoje" | "semana" | "indisponivel";
   initials: string;
   avatarTone: string;
+  avatarUrl?: string | null;
 };
 
 export const PROFESSIONALS: Professional[] = [

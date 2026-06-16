@@ -1,76 +1,129 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { BriefcaseBusiness, Lightbulb, UserRound } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth/auth-context";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/role")({
   component: Role,
 });
 
 function Role() {
+  const navigate = useNavigate();
+  const { configured, user, refreshProfile } = useAuth();
+  const [saving, setSaving] = useState<"client" | "professional" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function chooseMode(mode: "client" | "professional") {
+    setError(null);
+    setSaving(mode);
+
+    const supabase = getSupabaseBrowserClient();
+    if (configured && supabase && user) {
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ role: mode })
+        .eq("id", user.id);
+      if (updateError) {
+        setSaving(null);
+        setError(updateError.message);
+        return;
+      }
+      await refreshProfile();
+    }
+
+    setSaving(null);
+    await navigate({ to: mode === "professional" ? "/app/business" : "/app" });
+  }
+
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background px-6 pb-10 pt-12">
-      <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+    <div className="ello-shell flex min-h-screen flex-col px-6 pb-10 pt-12">
+      <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
         Bem-vindo à ELLO
       </span>
-      <h1 className="font-display mt-2 text-3xl font-extrabold leading-tight tracking-tight">
+      <h1 className="mt-2 text-3xl font-extrabold leading-tight tracking-tight">
         Como você deseja <span className="text-primary">começar</span>?
       </h1>
       <p className="mt-3 text-sm text-muted-foreground">
         Você poderá alternar entre os modos a qualquer momento.
       </p>
 
-      <div className="mt-10 space-y-4">
+      {!user ? (
+        <div className="mt-5 rounded-xl border border-sky-200 bg-sky-50 p-4 text-xs font-semibold text-sky-900">
+          Você está no modo protótipo. Ao entrar com Supabase, esta escolha será salva no banco.
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="mt-5 rounded-xl bg-red-50 p-4 text-xs font-semibold text-red-700">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="mt-8 space-y-4">
         <RoleCard
-          to="/app"
+          disabled={saving !== null}
           eyebrow="Cliente"
-          icon="👤"
-          title="Quero contratar serviços"
+          icon={<UserRound className="size-7" />}
+          title={saving === "client" ? "Salvando..." : "Quero contratar serviços"}
           body="Encontre profissionais, peça orçamentos, agende e avalie."
+          onClick={() => void chooseMode("client")}
         />
         <RoleCard
-          to="/app/business"
+          disabled={saving !== null}
           eyebrow="Profissional"
-          icon="👨‍🔧"
-          title="Quero divulgar meus serviços"
+          icon={<BriefcaseBusiness className="size-7" />}
+          title={saving === "professional" ? "Salvando..." : "Quero divulgar meus serviços"}
           body="Crie seu perfil com IA, organize agenda e encontre clientes."
+          onClick={() => void chooseMode("professional")}
         />
       </div>
 
-      <div className="mt-auto rounded-2xl border border-border bg-white p-4 text-sm text-muted-foreground">
-        💡 <span className="font-medium text-foreground">Dica:</span> Toda conta ELLO pode contratar e oferecer serviços.
+      <div className="mt-auto flex gap-3 rounded-xl border border-border bg-white p-4 text-sm text-muted-foreground">
+        <Lightbulb className="size-5 shrink-0 text-primary" />
+        <p>
+          <span className="font-bold text-foreground">Dica:</span> Toda conta ELLO pode contratar e
+          oferecer serviços.
+        </p>
       </div>
     </div>
   );
 }
 
 function RoleCard({
-  to,
   eyebrow,
   icon,
   title,
   body,
+  disabled,
+  onClick,
 }: {
-  to: string;
   eyebrow: string;
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   body: string;
+  disabled: boolean;
+  onClick: () => void;
 }) {
   return (
-    <Link
-      to={to}
-      className="block rounded-3xl border border-border bg-white p-6 transition-all active:scale-[0.99] hover:border-primary/40 hover:shadow-md"
+    <button
+      disabled={disabled}
+      onClick={onClick}
+      className="ello-card block w-full rounded-xl p-5 text-left transition-all active:scale-[0.99] disabled:opacity-60"
     >
       <div className="flex items-start gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-3xl">
+        <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
           {icon}
         </div>
         <div className="flex-1">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-primary">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
             {eyebrow}
           </span>
-          <h3 className="font-display mt-1 text-lg font-bold leading-tight">{title}</h3>
+          <h3 className="mt-1 text-lg font-black leading-tight">{title}</h3>
           <p className="mt-1 text-sm text-muted-foreground">{body}</p>
         </div>
       </div>
-    </Link>
+    </button>
   );
 }

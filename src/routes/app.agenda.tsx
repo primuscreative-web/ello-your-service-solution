@@ -1,69 +1,117 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { APPOINTMENTS, getProfessional } from "@/lib/ello-data";
-import { ProAvatar } from "@/components/ello/avatar";
+import { AppTopBar, CyanButton, ProPhoto } from "@/components/ello/mobile-ui";
+import { useAuth } from "@/lib/auth/auth-context";
+import { listMyAgendaItems } from "@/lib/ello-repository";
 
 export const Route = createFileRoute("/app/agenda")({
   component: Agenda,
 });
 
-const STATUS_STYLES = {
-  confirmado: "bg-emerald-100 text-emerald-800",
-  pendente: "bg-amber-100 text-amber-800",
-  concluido: "bg-zinc-200 text-zinc-700",
-};
+const DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
 
 function Agenda() {
+  const { configured, user } = useAuth();
+  const agendaQuery = useQuery({
+    queryKey: ["ello", "me", "agenda", user?.id],
+    queryFn: listMyAgendaItems,
+    enabled: Boolean(configured && user),
+  });
+  const realAgendaItems = agendaQuery.data ?? [];
+
   return (
-    <div className="px-5 pb-8 pt-8">
-      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-        Agenda
-      </span>
-      <h1 className="font-display mt-1 text-3xl font-extrabold tracking-tight">
-        Seus compromissos
-      </h1>
+    <div>
+      <AppTopBar title="Agenda" subtitle="Serviços confirmados" />
 
-      <div className="mt-6 space-y-3">
-        {APPOINTMENTS.map((a) => {
-          const pro = getProfessional(a.professionalId);
-          if (!pro) return null;
-          return (
-            <Link
-              key={a.id}
-              to="/app/professional/$id"
-              params={{ id: pro.id }}
-              className="block rounded-3xl border border-border bg-white p-4"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-primary">
-                    {a.date} • {a.time}
-                  </span>
-                  <h3 className="font-display mt-1 text-base font-bold">{a.service}</h3>
-                </div>
-                <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${STATUS_STYLES[a.status]}`}>
-                  {a.status}
-                </span>
-              </div>
-              <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
-                <ProAvatar initials={pro.initials} tone={pro.avatarTone} size={40} />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">{pro.name}</p>
-                  <p className="text-xs text-muted-foreground">{pro.profession}</p>
-                </div>
-                <button className="rounded-xl border border-border px-3 py-2 text-xs font-bold">
-                  Chat
-                </button>
-              </div>
+      <main className="space-y-4 px-4 pb-6 pt-4">
+        <section className="ello-card rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-black">Agendar Serviço</h2>
+            <div className="flex gap-1">
+              <ChevronLeft className="size-4" />
+              <ChevronRight className="size-4" />
+            </div>
+          </div>
+          <p className="mt-2 text-center text-xs font-bold">Data ibro 2023</p>
+          <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-muted-foreground">
+            {["Du", "Dia", "Ma", "Qm", "Jn", "Sa", "D"].map((day) => (
+              <span key={day}>{day}</span>
+            ))}
+          </div>
+          <div className="mt-2 grid grid-cols-7 gap-1">
+            {DAYS.map((day) => (
+              <button
+                key={day}
+                className={`grid aspect-square place-items-center rounded-full text-xs font-bold ${
+                  day === 13 ? "bg-[#083d63] text-white" : "text-foreground"
+                }`}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+          <CyanButton className="mt-4 w-full">Confirm serviço</CyanButton>
+        </section>
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black">Hoje</h2>
+            <Link to="/app/messages" className="text-[10px] font-bold text-primary">
+              Ver mais
             </Link>
-          );
-        })}
-      </div>
-
-      <div className="mt-8 rounded-3xl border border-dashed border-border bg-white p-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          Quer reagendar ou cancelar?<br />Entre em contato direto pelo chat.
-        </p>
-      </div>
+          </div>
+          {configured && user && realAgendaItems.length ? (
+            realAgendaItems.map((appointment) => (
+              <Link
+                key={appointment.id}
+                to="/app/professional/$id"
+                params={{ id: appointment.professionalId }}
+                className="ello-card flex items-center gap-3 rounded-xl p-3"
+              >
+                <ProPhoto initials={appointment.professionalInitials} size={42} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-black">{appointment.professionalName}</p>
+                  <p className="truncate text-[10px] text-muted-foreground">
+                    {appointment.date} · {appointment.service}
+                  </p>
+                </div>
+                <span className="text-xs font-black">{appointment.time}</span>
+              </Link>
+            ))
+          ) : configured && user && agendaQuery.isPending ? (
+            <div className="ello-card rounded-xl p-4 text-xs font-semibold text-muted-foreground">
+              Carregando agenda real...
+            </div>
+          ) : configured && user ? (
+            <div className="ello-card rounded-xl p-4 text-xs font-semibold text-muted-foreground">
+              Nenhum agendamento real ainda. Os exemplos abaixo continuam como demonstracao.
+            </div>
+          ) : null}
+          {APPOINTMENTS.map((appointment) => {
+            const pro = getProfessional(appointment.professionalId);
+            if (!pro) return null;
+            return (
+              <Link
+                key={appointment.id}
+                to="/app/professional/$id"
+                params={{ id: pro.id }}
+                className="ello-card flex items-center gap-3 rounded-xl p-3"
+              >
+                <ProPhoto initials={pro.initials} size={42} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-black">{pro.name}</p>
+                  <p className="truncate text-[10px] text-muted-foreground">
+                    {appointment.service}
+                  </p>
+                </div>
+                <span className="text-xs font-black">{appointment.time}</span>
+              </Link>
+            );
+          })}
+        </section>
+      </main>
     </div>
   );
 }

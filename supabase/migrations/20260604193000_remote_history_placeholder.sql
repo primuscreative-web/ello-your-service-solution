@@ -1,0 +1,3 @@
+-- This migration version already exists in the linked Supabase project.
+-- It was created before this repository became the official ELLO source.
+-- Kept locally to align Supabase migration history without replaying changes.
