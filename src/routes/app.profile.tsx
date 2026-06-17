@@ -11,6 +11,7 @@ import {
   Lock,
   Save,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 import { AppTopBar, Metric, ProPhoto } from "@/components/ello/mobile-ui";
 import { updateMyUserProfile } from "@/lib/ello-repository";
@@ -158,6 +159,23 @@ function Profile() {
           <h2 className="mt-1 text-base font-black">Ative seu perfil profissional</h2>
           <p className="mt-1 text-xs text-white/75">Comece a oferecer servicos hoje</p>
         </Link>
+
+        {profile?.role === "admin" ? (
+          <Link
+            to="/app/admin"
+            className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/10 p-4 text-[#083d63]"
+          >
+            <span className="grid size-10 place-items-center rounded-lg bg-white text-primary">
+              <ShieldCheck className="size-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-black">Painel Administrativo</span>
+              <span className="text-xs font-semibold text-muted-foreground">
+                Aprovar monetizacao e parceiros locais
+              </span>
+            </span>
+          </Link>
+        ) : null}
 
         <section className="ello-card rounded-xl border border-sky-100 bg-sky-50 p-4">
           <p className="text-[10px] font-black uppercase tracking-wide text-[#083d63]">

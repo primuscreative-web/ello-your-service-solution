@@ -24,6 +24,7 @@ import { Route as AppFavoritesRouteImport } from './routes/app.favorites'
 import { Route as AppExpressRouteImport } from './routes/app.express'
 import { Route as AppBusinessRouteImport } from './routes/app.business'
 import { Route as AppAgendaRouteImport } from './routes/app.agenda'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppProfessionalIdRouteImport } from './routes/app.professional.$id'
 
 const RoleRoute = RoleRouteImport.update({
@@ -101,6 +102,11 @@ const AppAgendaRoute = AppAgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProfessionalIdRoute = AppProfessionalIdRouteImport.update({
   id: '/professional/$id',
   path: '/professional/$id',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRoute
   '/app/express': typeof AppExpressRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRoute
   '/app/express': typeof AppExpressRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRoute
   '/app/express': typeof AppExpressRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/role'
+    | '/app/admin'
     | '/app/agenda'
     | '/app/business'
     | '/app/express'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/role'
+    | '/app/admin'
     | '/app/agenda'
     | '/app/business'
     | '/app/express'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/role'
+    | '/app/admin'
     | '/app/agenda'
     | '/app/business'
     | '/app/express'
@@ -333,6 +345,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAgendaRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/professional/$id': {
       id: '/app/professional/$id'
       path: '/professional/$id'
@@ -344,6 +363,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppAgendaRoute: typeof AppAgendaRoute
   AppBusinessRoute: typeof AppBusinessRoute
   AppExpressRoute: typeof AppExpressRoute
@@ -357,6 +377,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppAgendaRoute: AppAgendaRoute,
   AppBusinessRoute: AppBusinessRoute,
   AppExpressRoute: AppExpressRoute,

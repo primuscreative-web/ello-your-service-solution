@@ -42,6 +42,25 @@ type PortfolioRow = Database["public"]["Tables"]["portfolio_items"]["Row"];
 type MonetizationRequestRow = Database["public"]["Tables"]["monetization_requests"]["Row"];
 type LocalPartnerSpaceRow = Database["public"]["Tables"]["local_partner_spaces"]["Row"];
 
+type AdminMonetizationRequestRow = MonetizationRequestRow & {
+  professional_profiles:
+    | {
+        id: string;
+        public_name: string | null;
+        specialty: string;
+        city: string;
+        ello_link_slug: string | null;
+      }
+    | Array<{
+        id: string;
+        public_name: string | null;
+        specialty: string;
+        city: string;
+        ello_link_slug: string | null;
+      }>
+    | null;
+};
+
 type FavoriteProfessionalRow = {
   professional_id: string;
   professional_profiles: ProfessionalRow | ProfessionalRow[] | null;
@@ -252,6 +271,18 @@ export type LocalPartnerSpace = {
   ctaLabel: string;
   ctaUrl: string | null;
   imageUrl: string | null;
+};
+
+export type AdminLocalPartnerSpace = LocalPartnerSpaceRow;
+
+export type AdminMonetizationRequest = MonetizationRequestItem & {
+  professional: {
+    id: string;
+    name: string;
+    specialty: string;
+    city: string;
+    slug: string | null;
+  } | null;
 };
 
 export type UserProfileUpdate = {
@@ -482,6 +513,24 @@ export async function updateMyUserProfile(input: UserProfileUpdate): Promise<Pro
         updated_at: new Date().toISOString(),
       })
       .eq("id", existingProfessional.id);
+  }
+
+  return data;
+}
+
+async function getUserProfile(userId: string): Promise<ProfileRow | null> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to load user profile", error);
+    return null;
   }
 
   return data;
@@ -984,6 +1033,194 @@ export async function listLocalPartnerSpaces(city?: string | null): Promise<Loca
   }
 
   return (data ?? []).map(mapLocalPartnerSpace);
+}
+
+export async function listAdminMonetizationRequests(
+  userId: string,
+): Promise<AdminMonetizationRequest[]> {
+  const profile = await getUserProfile(userId);
+  if (profile?.role !== "admin") return [];
+
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("monetization_requests")
+    .select(
+      `
+      *,
+      professional_profiles(id, public_name, specialty, city, ello_link_slug)
+    `,
+    )
+    .order("created_at", { ascending: false })
+    .returns<AdminMonetizationRequestRow[]>();
+
+  if (error) {
+    console.error("Failed to load admin monetization requests", error);
+    return [];
+  }
+
+  return (data ?? []).map(mapAdminMonetizationRequest);
+}
+
+export async function reviewMonetizationRequest(input: {
+  userId: string;
+  requestId: string;
+  status: "approved" | "rejected" | "cancelled";
+  days?: number;
+}): Promise<void> {
+  const profile = await getUserProfile(input.userId);
+  if (profile?.role !== "admin") {
+    throw new Error("Apenas administradores podem revisar monetizacao.");
+  }
+
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    throw new Error("Supabase nao esta configurado neste ambiente.");
+  }
+
+  const { data: requestData, error: requestError } = await supabase
+    .from("monetization_requests")
+    .select("*")
+    .eq("id", input.requestId)
+    .single();
+
+  if (requestError) throw requestError;
+  const request = requestData as MonetizationRequestRow | null;
+  if (!request) throw new Error("Solicitacao de monetizacao nao encontrada.");
+
+  if (input.status === "approved") {
+    const days = Math.max(
+      1,
+      Math.min(365, Math.round(input.days ?? defaultDaysFor(request.request_type))),
+    );
+    const expiresAt = addDaysIso(days);
+    const profilePatch =
+      request.request_type === "profile_boost"
+        ? {
+            boosted_until: expiresAt,
+          }
+        : request.request_type === "ello_link_pro"
+          ? {
+              ello_link_pro_enabled: true,
+              ello_link_pro_until: expiresAt,
+              max_portfolio_items: 18,
+              qr_code_enabled: true,
+            }
+          : null;
+
+    if (profilePatch) {
+      const { error: profileError } = await supabase
+        .from("professional_profiles")
+        .update({
+          ...profilePatch,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", request.professional_id);
+
+      if (profileError) throw profileError;
+    }
+  }
+
+  const { error } = await supabase
+    .from("monetization_requests")
+    .update({
+      status: input.status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.requestId);
+
+  if (error) throw error;
+}
+
+export async function listAdminLocalPartnerSpaces(userId: string): Promise<LocalPartnerSpaceRow[]> {
+  const profile = await getUserProfile(userId);
+  if (profile?.role !== "admin") return [];
+
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("local_partner_spaces")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to load admin local partners", error);
+    return [];
+  }
+
+  return data ?? [];
+}
+
+export async function upsertAdminLocalPartnerSpace(input: {
+  userId: string;
+  id?: string | null;
+  name: string;
+  category: string;
+  city: string;
+  description: string;
+  ctaLabel?: string | null;
+  ctaUrl?: string | null;
+  imageUrl?: string | null;
+  active: boolean;
+  startsAt?: string | null;
+  endsAt?: string | null;
+}): Promise<LocalPartnerSpaceRow> {
+  const profile = await getUserProfile(input.userId);
+  if (profile?.role !== "admin") {
+    throw new Error("Apenas administradores podem gerenciar parceiros.");
+  }
+
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    throw new Error("Supabase nao esta configurado neste ambiente.");
+  }
+
+  const payload = {
+    name: input.name.trim(),
+    category: input.category.trim(),
+    city: input.city.trim(),
+    description: input.description.trim(),
+    cta_label: input.ctaLabel?.trim() || "Conhecer parceiro",
+    cta_url: input.ctaUrl?.trim() || null,
+    image_url: input.imageUrl?.trim() || null,
+    active: input.active,
+    starts_at: input.startsAt || null,
+    ends_at: input.endsAt || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (!payload.name) throw new Error("Informe o nome do parceiro.");
+  if (!payload.category) throw new Error("Informe a categoria do parceiro.");
+  if (!payload.city) throw new Error("Informe a cidade do parceiro.");
+  if (!payload.description) throw new Error("Informe a descricao do parceiro.");
+
+  const query = input.id
+    ? supabase.from("local_partner_spaces").update(payload).eq("id", input.id)
+    : supabase.from("local_partner_spaces").insert(payload);
+
+  const { data, error } = await query.select("*").single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteAdminLocalPartnerSpace(input: {
+  userId: string;
+  id: string;
+}): Promise<void> {
+  const profile = await getUserProfile(input.userId);
+  if (profile?.role !== "admin") {
+    throw new Error("Apenas administradores podem remover parceiros.");
+  }
+
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    throw new Error("Supabase nao esta configurado neste ambiente.");
+  }
+
+  const { error } = await supabase.from("local_partner_spaces").delete().eq("id", input.id);
+  if (error) throw error;
 }
 
 export async function getMyClientProfile(userId: string): Promise<ClientProfile | null> {
@@ -1762,6 +1999,23 @@ function mapMonetizationRequest(row: MonetizationRequestRow): MonetizationReques
   };
 }
 
+function mapAdminMonetizationRequest(row: AdminMonetizationRequestRow): AdminMonetizationRequest {
+  const professional = asRelatedObject(row.professional_profiles);
+
+  return {
+    ...mapMonetizationRequest(row),
+    professional: professional
+      ? {
+          id: professional.id,
+          name: professional.public_name ?? professional.specialty,
+          specialty: professional.specialty,
+          city: professional.city,
+          slug: professional.ello_link_slug,
+        }
+      : null,
+  };
+}
+
 function mapLocalPartnerSpace(row: LocalPartnerSpaceRow): LocalPartnerSpace {
   return {
     id: row.id,
@@ -1807,6 +2061,18 @@ function sortBoostedProfessionalRows(rows: ProfessionalRow[]): ProfessionalRow[]
 
 function isActiveUntil(value: string | null | undefined): boolean {
   return Boolean(value && new Date(value).getTime() > Date.now());
+}
+
+function defaultDaysFor(requestType: MonetizationRequestRow["request_type"]): number {
+  if (requestType === "profile_boost") return 7;
+  if (requestType === "ello_link_pro") return 30;
+  return 30;
+}
+
+function addDaysIso(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString();
 }
 
 function filterProfessionals(
