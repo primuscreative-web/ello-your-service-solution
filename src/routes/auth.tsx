@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Mail, ShieldCheck, Smartphone } from "lucide-react";
 import { ElloLogo } from "@/components/ello/logo";
 import { useAuth } from "@/lib/auth/auth-context";
+import { createConfirmedPasswordAccount } from "@/lib/auth/auth.functions";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/auth")({
@@ -39,28 +40,31 @@ function Auth() {
 
     setSubmitting(true);
 
-    const result =
-      mode === "sign-up"
-        ? await supabase.auth.signUp({
+    let result: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
+    try {
+      if (mode === "sign-up") {
+        await createConfirmedPasswordAccount({
+          data: {
             email,
             password,
-            options: {
-              data: {
-                full_name: fullName || email.split("@")[0],
-              },
-            },
-          })
-        : await supabase.auth.signInWithPassword({ email, password });
+            fullName: fullName.trim() || email.split("@")[0],
+          },
+        });
+      }
+
+      result = await supabase.auth.signInWithPassword({ email, password });
+    } catch (caughtError) {
+      setSubmitting(false);
+      setError(
+        caughtError instanceof Error ? caughtError.message : "Nao foi possivel criar a conta.",
+      );
+      return;
+    }
 
     setSubmitting(false);
 
     if (result.error) {
       setError(result.error.message);
-      return;
-    }
-
-    if (mode === "sign-up" && !result.data.session) {
-      setMessage("Conta criada. Confirme seu email para entrar na ELLO.");
       return;
     }
 
