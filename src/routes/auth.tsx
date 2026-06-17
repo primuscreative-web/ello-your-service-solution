@@ -79,14 +79,22 @@ function Auth() {
           {mode === "sign-in" ? "Entre na sua conta" : "Crie sua conta"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Toda conta ELLO pode contratar e oferecer serviços.
+          {mode === "sign-in"
+            ? "Acesse sua conta ELLO."
+            : "Crie sua conta e entre direto, sem verificacao de e-mail nesta fase."}
         </p>
       </div>
 
       {!configured ? (
         <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900">
-          Backend ainda não configurado neste ambiente. Preencha o `.env` com as chaves públicas do
+          Backend ainda nao configurado neste ambiente. Preencha o `.env` com as chaves publicas do
           Supabase.
+        </div>
+      ) : null}
+
+      {mode === "sign-up" && configured ? (
+        <div className="mt-6 rounded-xl border border-sky-200 bg-sky-50 p-4 text-xs font-semibold text-sky-900">
+          A verificacao de e-mail esta desativada temporariamente. Ela sera implementada depois.
         </div>
       ) : null}
 
@@ -141,7 +149,7 @@ function Auth() {
         }}
         className="mt-4 text-sm font-bold text-[#083d63]"
       >
-        {mode === "sign-in" ? "Ainda não tenho conta" : "Já tenho conta"}
+        {mode === "sign-in" ? "Ainda nao tenho conta" : "Ja tenho conta"}
       </button>
 
       <div className="my-8 flex items-center gap-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -157,11 +165,11 @@ function Auth() {
       </div>
 
       <p className="mt-auto pt-8 text-center text-xs text-muted-foreground">
-        Ao continuar, você concorda com os Termos e Política de Privacidade da ELLO.
+        Ao continuar, voce concorda com os Termos e Politica de Privacidade da ELLO.
       </p>
 
       <Link to="/app" className="mt-4 text-center text-xs font-semibold text-muted-foreground">
-        Ver protótipo sem entrar
+        Ver prototipo sem entrar
       </Link>
     </div>
   );
