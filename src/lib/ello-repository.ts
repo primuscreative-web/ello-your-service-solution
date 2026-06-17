@@ -987,6 +987,9 @@ export async function createQuoteRequest(input: {
       description: input.description,
       location: input.location ?? clientProfile.city,
       status: "new",
+      payment_mode: "external",
+      payment_status: "not_applicable",
+      platform_fee_percent: null,
     })
     .select("*")
     .single();
@@ -1110,7 +1113,7 @@ export async function respondToProfessionalQuote(input: {
   const responsePrice = input.responsePrice.trim();
   const responseEta = input.responseEta.trim();
   const responseMessage = input.responseMessage.trim();
-  if (!responsePrice) throw new Error("Informe o valor ou condicao do orcamento.");
+  if (!responsePrice) throw new Error("Informe o valor combinado ou condicao do orcamento.");
   if (!responseEta) throw new Error("Informe o prazo ou disponibilidade.");
   if (!responseMessage) throw new Error("Escreva uma mensagem para o cliente.");
 

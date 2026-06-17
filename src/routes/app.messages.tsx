@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, FileText, Image as ImageIcon, MoreVertical } from "lucide-react";
 import { ChatComposer, ProPhoto, ServicePhoto } from "@/components/ello/mobile-ui";
 import { useAuth } from "@/lib/auth/auth-context";
+import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 import {
   createAppointmentFromQuote,
   listMyQuoteThreads,
@@ -162,6 +163,9 @@ function Messages() {
               </p>
             ) : null}
             <section className="ello-card rounded-xl p-3">
+              <p className="mb-3 rounded-lg border border-sky-100 bg-sky-50 p-2 text-[10px] font-semibold leading-relaxed text-sky-900">
+                {PAYMENT_POLICY.quotePaymentNotice}
+              </p>
               <div className="flex items-center gap-2 text-sm font-black">
                 <CalendarDays className="size-4 text-[#083d63]" />
                 Agendar servico
@@ -265,7 +269,7 @@ function DemoConversation() {
       <div className="ml-auto max-w-[78%] rounded-lg bg-primary px-3 py-2 text-center text-xs font-black text-white">
         <span className="inline-flex items-center gap-1">
           <FileText className="size-3.5" />
-          Enviar Orcamento
+          Enviar Proposta
         </span>
       </div>
 

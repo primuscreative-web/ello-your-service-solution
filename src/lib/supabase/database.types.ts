@@ -11,6 +11,15 @@ type QuoteStatus =
   | "cancelled"
   | "declined";
 type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled";
+type PaymentMode = "external" | "platform";
+type PaymentStatus =
+  | "not_applicable"
+  | "pending"
+  | "authorized"
+  | "paid"
+  | "refunded"
+  | "failed"
+  | "disputed";
 
 export type Database = {
   public: {
@@ -200,6 +209,9 @@ export type Database = {
           responded_at: string | null;
           accepted_at: string | null;
           cancelled_at: string | null;
+          payment_mode: PaymentMode;
+          payment_status: PaymentStatus;
+          platform_fee_percent: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -218,6 +230,9 @@ export type Database = {
           responded_at?: string | null;
           accepted_at?: string | null;
           cancelled_at?: string | null;
+          payment_mode?: PaymentMode;
+          payment_status?: PaymentStatus;
+          platform_fee_percent?: number | null;
           created_at?: string;
           updated_at?: string;
         };

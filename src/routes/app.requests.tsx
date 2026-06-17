@@ -4,6 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, MessageCircle, Star } from "lucide-react";
 import { AppTopBar, CyanButton, ProPhoto } from "@/components/ello/mobile-ui";
 import { useAuth } from "@/lib/auth/auth-context";
+import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 import {
   createOrUpdateReview,
   listMyRequestHistory,
@@ -146,10 +147,14 @@ function RequestCard({
 
       {(request.responsePrice || request.responseEta) && (
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <MiniInfo label="Valor" value={request.responsePrice ?? "A combinar"} />
+          <MiniInfo label="Combinado" value={request.responsePrice ?? "A combinar"} />
           <MiniInfo label="Prazo" value={request.responseEta ?? "A combinar"} />
         </div>
       )}
+
+      <p className="mt-3 rounded-lg border border-sky-100 bg-sky-50 p-2 text-[10px] font-semibold leading-relaxed text-sky-900">
+        {PAYMENT_POLICY.quotePaymentNotice}
+      </p>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Link

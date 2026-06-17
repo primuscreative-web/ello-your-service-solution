@@ -4,6 +4,7 @@ import { BriefcaseBusiness, CalendarDays, MapPin, MessageCircle, Star } from "lu
 import { CyanButton, ProPhoto, ServicePhoto, TrustBadge } from "@/components/ello/mobile-ui";
 import { useAuth } from "@/lib/auth/auth-context";
 import { createQuoteRequest, getPublicProfessionalLink } from "@/lib/ello-repository";
+import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
 export const Route = createFileRoute("/p/$slug")({
   component: PublicProfessionalPage,
@@ -107,6 +108,15 @@ function PublicProfessionalPage() {
               {profile.chargeType}
             </p>
           </div>
+        </section>
+
+        <section className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+          <p className="text-[10px] font-black uppercase tracking-wide text-[#083d63]">
+            Pagamento externo
+          </p>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-sky-900">
+            {PAYMENT_POLICY.quotePaymentNotice}
+          </p>
         </section>
 
         <section className="ello-card rounded-xl p-4">

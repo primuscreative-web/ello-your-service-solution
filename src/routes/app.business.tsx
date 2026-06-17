@@ -31,6 +31,7 @@ import {
   updateProfessionalQuoteStatus,
   type ProfessionalQuoteItem,
 } from "@/lib/ello-repository";
+import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
 export const Route = createFileRoute("/app/business")({
   component: Business,
@@ -652,6 +653,16 @@ function Business() {
           ) : null}
         </section>
 
+        <section className="rounded-xl border border-sky-200 bg-sky-50 p-3">
+          <p className="text-[10px] font-black uppercase tracking-wide text-[#083d63]">
+            Recebimento externo
+          </p>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-sky-900">
+            {PAYMENT_POLICY.professionalPaymentNotice} A taxa planejada da ELLO e de{" "}
+            {PAYMENT_POLICY.platformFeePercent}% apenas quando o gateway for ativado.
+          </p>
+        </section>
+
         <section className="ello-card rounded-xl p-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-black">Orcamentos recebidos</h2>
@@ -884,7 +895,7 @@ function ProfessionalQuoteCard({
           value={responsePrice}
           onChange={(event) => setResponsePrice(event.target.value)}
           disabled={!canRespond || responding}
-          placeholder="Valor"
+          placeholder="Valor combinado"
           className="h-10 min-w-0 rounded-lg border border-border bg-white px-3 text-xs font-semibold outline-none focus:border-primary disabled:opacity-60"
         />
         <input

@@ -4,7 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Bell,
   Camera,
-  CreditCard,
+  FileText,
   Heart,
   HelpCircle,
   History,
@@ -15,6 +15,7 @@ import {
 import { AppTopBar, Metric, ProPhoto } from "@/components/ello/mobile-ui";
 import { updateMyUserProfile } from "@/lib/ello-repository";
 import { useAuth } from "@/lib/auth/auth-context";
+import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
 export const Route = createFileRoute("/app/profile")({
   component: Profile,
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/app/profile")({
 const MENU = [
   { icon: Heart, label: "Favoritos", to: "/app/favorites" },
   { icon: History, label: "Historico de solicitacoes", to: "/app/requests" },
-  { icon: CreditCard, label: "Pagamentos", to: null },
+  { icon: FileText, label: "Combinados de servico", to: "/app/messages" },
   { icon: Bell, label: "Notificacoes" },
   { icon: Lock, label: "Privacidade" },
   { icon: Settings, label: "Configuracoes" },
@@ -157,6 +158,16 @@ function Profile() {
           <h2 className="mt-1 text-base font-black">Ative seu perfil profissional</h2>
           <p className="mt-1 text-xs text-white/75">Comece a oferecer servicos hoje</p>
         </Link>
+
+        <section className="ello-card rounded-xl border border-sky-100 bg-sky-50 p-4">
+          <p className="text-[10px] font-black uppercase tracking-wide text-[#083d63]">
+            Pagamento fora da plataforma
+          </p>
+          <h2 className="mt-1 text-sm font-black text-[#083d63]">Sem carteira ELLO nesta fase</h2>
+          <p className="mt-1 text-xs leading-relaxed text-sky-900">
+            {PAYMENT_POLICY.quotePaymentNotice}
+          </p>
+        </section>
 
         <section className="ello-card rounded-xl p-2">
           {MENU.map((item) => {
