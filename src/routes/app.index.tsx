@@ -7,6 +7,7 @@ import {
   Heart,
   Search,
   Sparkles,
+  Store,
   UserRound,
   Wrench,
 } from "lucide-react";
@@ -19,7 +20,7 @@ import {
   TrustBadge,
 } from "@/components/ello/mobile-ui";
 import { CATEGORIES, PROFESSIONALS } from "@/lib/ello-data";
-import { listCategories, listProfessionals } from "@/lib/ello-repository";
+import { listCategories, listLocalPartnerSpaces, listProfessionals } from "@/lib/ello-repository";
 
 export const Route = createFileRoute("/app/")({
   component: Home,
@@ -36,9 +37,14 @@ function Home() {
     queryKey: ["ello", "professionals", "featured"],
     queryFn: () => listProfessionals({ limit: 3 }),
   });
+  const localPartnersQuery = useQuery({
+    queryKey: ["ello", "local-partners", "home"],
+    queryFn: () => listLocalPartnerSpaces("Sao Paulo, SP"),
+  });
 
   const categories = categoriesQuery.data ?? CATEGORIES;
   const professionals = professionalsQuery.data ?? PROFESSIONALS.slice(0, 3);
+  const localPartners = localPartnersQuery.data ?? [];
 
   return (
     <div>
@@ -133,6 +139,11 @@ function Home() {
                   <Heart className="size-4 text-muted-foreground" />
                 </div>
                 <div className="mt-2 flex items-center gap-2">
+                  {pro.boosted ? (
+                    <span className="rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-800">
+                      Destaque
+                    </span>
+                  ) : null}
                   <TrustBadge label={index === 0 ? "Diamante" : pro.trustLevel} />
                   <span className="text-[11px] font-bold text-muted-foreground">{pro.rating}</span>
                 </div>
@@ -140,6 +151,41 @@ function Home() {
             </Link>
           ))}
         </section>
+
+        {localPartners.length ? (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-black">Parceiros locais</h2>
+              <Store className="size-4 text-primary" />
+            </div>
+            {localPartners.slice(0, 2).map((partner) => (
+              <a
+                key={partner.id}
+                href={partner.ctaUrl ?? "#"}
+                target={partner.ctaUrl ? "_blank" : undefined}
+                rel="noreferrer"
+                className="ello-card flex gap-3 rounded-xl p-3"
+              >
+                <div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-primary/15 text-primary">
+                  {partner.imageUrl ? (
+                    <img src={partner.imageUrl} alt="" className="size-full object-cover" />
+                  ) : (
+                    <Store className="size-5" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-black">{partner.name}</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground">
+                    {partner.category} - {partner.city}
+                  </p>
+                  <p className="mt-1 line-clamp-2 text-[10px] text-muted-foreground">
+                    {partner.description}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </section>
+        ) : null}
 
         <section className="space-y-2">
           <h2 className="text-sm font-black">Servicos</h2>

@@ -4,13 +4,20 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import {
   Bot,
+  BarChart3,
   ChevronRight,
   ClipboardList,
+  Image as ImageIcon,
   Link as LinkIcon,
   MessageCircle,
   Pencil,
   PlayCircle,
+  QrCode,
+  Rocket,
   Send,
+  Star,
+  Store,
+  Video,
   XCircle,
   UserRound,
 } from "lucide-react";
@@ -19,9 +26,13 @@ import { useAuth } from "@/lib/auth/auth-context";
 import {
   createMyPortfolioItem,
   createMyService,
+  createMonetizationRequest,
   ensureMyProfessionalProfile,
+  getMyElloLinkStats,
   getMyBusinessDashboard,
   getMyProfessionalProfile,
+  listLocalPartnerSpaces,
+  listMyMonetizationRequests,
   listMyProfessionalQuotes,
   listMyPortfolioItems,
   listMyServices,
@@ -30,6 +41,7 @@ import {
   updateMyProfessionalProfile,
   updateProfessionalQuoteStatus,
   type ProfessionalQuoteItem,
+  type MonetizationRequestItem,
 } from "@/lib/ello-repository";
 import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
@@ -58,6 +70,8 @@ function Business() {
   const [profileChargeType, setProfileChargeType] = useState("");
   const [profileExperienceYears, setProfileExperienceYears] = useState("0");
   const [profileSlug, setProfileSlug] = useState("");
+  const [profileCoverUrl, setProfileCoverUrl] = useState("");
+  const [profileIntroVideoUrl, setProfileIntroVideoUrl] = useState("");
   const professionalQuery = useQuery({
     queryKey: ["ello", "me", "professional-profile", user?.id],
     queryFn: () => getMyProfessionalProfile(user!.id),
@@ -82,6 +96,21 @@ function Business() {
     queryKey: ["ello", "me", "professional-quotes", user?.id],
     queryFn: () => listMyProfessionalQuotes(user!.id),
     enabled: Boolean(configured && user),
+  });
+  const monetizationRequestsQuery = useQuery({
+    queryKey: ["ello", "me", "monetization-requests", user?.id],
+    queryFn: () => listMyMonetizationRequests(user!.id),
+    enabled: Boolean(configured && user),
+  });
+  const elloLinkStatsQuery = useQuery({
+    queryKey: ["ello", "me", "ello-link-stats", user?.id],
+    queryFn: () => getMyElloLinkStats(user!.id),
+    enabled: Boolean(configured && user),
+  });
+  const localPartnersQuery = useQuery({
+    queryKey: ["ello", "local-partners", profileCity],
+    queryFn: () => listLocalPartnerSpaces(profileCity),
+    enabled: Boolean(configured),
   });
   const activateMutation = useMutation({
     mutationFn: () =>
@@ -189,6 +218,8 @@ function Business() {
         chargeType: profileChargeType,
         experienceYears: Number(profileExperienceYears) || 0,
         elloLinkSlug: profileSlug,
+        coverUrl: profileCoverUrl,
+        introVideoUrl: profileIntroVideoUrl,
       }),
     onSuccess: async () => {
       await Promise.all([
@@ -202,6 +233,22 @@ function Business() {
           queryKey: ["ello", "professionals"],
         }),
       ]);
+    },
+  });
+  const monetizationRequestMutation = useMutation({
+    mutationFn: (input: {
+      requestType: MonetizationRequestItem["requestType"];
+      requestedDetails: Record<string, string | number | boolean | null>;
+    }) =>
+      createMonetizationRequest({
+        userId: user!.id,
+        requestType: input.requestType,
+        requestedDetails: input.requestedDetails,
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["ello", "me", "monetization-requests", user?.id],
+      });
     },
   });
   const quoteResponseMutation = useMutation({
@@ -258,6 +305,14 @@ function Business() {
   const services = servicesQuery.data ?? [];
   const portfolioItems = portfolioQuery.data ?? [];
   const professionalQuotes = professionalQuotesQuery.data ?? [];
+  const monetizationRequests = monetizationRequestsQuery.data ?? [];
+  const elloLinkStats = elloLinkStatsQuery.data ?? {
+    views: dashboard?.elloLinkViewCount ?? 0,
+    quoteClicks: dashboard?.elloLinkLeadCount ?? 0,
+    shareClicks: 0,
+    qrViews: 0,
+  };
+  const localPartners = localPartnersQuery.data ?? [];
 
   useEffect(() => {
     if (!realProfessionalProfile) return;
@@ -272,7 +327,9 @@ function Business() {
     setProfileChargeType(realProfessionalProfile.charge_type ?? "");
     setProfileExperienceYears(String(realProfessionalProfile.experience_years ?? 0));
     setProfileSlug(realProfessionalProfile.ello_link_slug ?? "");
-  }, [realProfessionalProfile?.id]);
+    setProfileCoverUrl(realProfessionalProfile.cover_url ?? "");
+    setProfileIntroVideoUrl(realProfessionalProfile.intro_video_url ?? "");
+  }, [realProfessionalProfile]);
 
   return (
     <div>
@@ -356,14 +413,24 @@ function Business() {
               <input
                 value={profilePublicName}
                 onChange={(event) => setProfilePublicName(event.target.value)}
-                disabled={!configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending}
+                disabled={
+                  !configured ||
+                  !user ||
+                  !realProfessionalProfile ||
+                  profileUpdateMutation.isPending
+                }
                 placeholder="Nome publico"
                 className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
               />
               <input
                 value={profileSpecialty}
                 onChange={(event) => setProfileSpecialty(event.target.value)}
-                disabled={!configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending}
+                disabled={
+                  !configured ||
+                  !user ||
+                  !realProfessionalProfile ||
+                  profileUpdateMutation.isPending
+                }
                 placeholder="Especialidade"
                 className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
               />
@@ -371,14 +438,18 @@ function Business() {
             <input
               value={profileHeadline}
               onChange={(event) => setProfileHeadline(event.target.value)}
-              disabled={!configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending}
+              disabled={
+                !configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending
+              }
               placeholder="Titulo profissional"
               className="h-10 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
             />
             <textarea
               value={profileBio}
               onChange={(event) => setProfileBio(event.target.value)}
-              disabled={!configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending}
+              disabled={
+                !configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending
+              }
               placeholder="Bio profissional"
               className="min-h-24 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold outline-none focus:border-primary"
             />
@@ -386,14 +457,24 @@ function Business() {
               <input
                 value={profileCity}
                 onChange={(event) => setProfileCity(event.target.value)}
-                disabled={!configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending}
+                disabled={
+                  !configured ||
+                  !user ||
+                  !realProfessionalProfile ||
+                  profileUpdateMutation.isPending
+                }
                 placeholder="Cidade"
                 className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
               />
               <input
                 value={profileCoverage}
                 onChange={(event) => setProfileCoverage(event.target.value)}
-                disabled={!configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending}
+                disabled={
+                  !configured ||
+                  !user ||
+                  !realProfessionalProfile ||
+                  profileUpdateMutation.isPending
+                }
                 placeholder="Area de atendimento"
                 className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
               />
@@ -402,21 +483,36 @@ function Business() {
               <input
                 value={profileBasePrice}
                 onChange={(event) => setProfileBasePrice(event.target.value)}
-                disabled={!configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending}
+                disabled={
+                  !configured ||
+                  !user ||
+                  !realProfessionalProfile ||
+                  profileUpdateMutation.isPending
+                }
                 placeholder="Preco"
                 className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
               />
               <input
                 value={profileChargeType}
                 onChange={(event) => setProfileChargeType(event.target.value)}
-                disabled={!configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending}
+                disabled={
+                  !configured ||
+                  !user ||
+                  !realProfessionalProfile ||
+                  profileUpdateMutation.isPending
+                }
                 placeholder="Cobranca"
                 className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
               />
               <input
                 value={profileExperienceYears}
                 onChange={(event) => setProfileExperienceYears(event.target.value)}
-                disabled={!configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending}
+                disabled={
+                  !configured ||
+                  !user ||
+                  !realProfessionalProfile ||
+                  profileUpdateMutation.isPending
+                }
                 placeholder="Anos"
                 inputMode="numeric"
                 className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
@@ -425,7 +521,9 @@ function Business() {
             <input
               value={profileAvailability}
               onChange={(event) => setProfileAvailability(event.target.value)}
-              disabled={!configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending}
+              disabled={
+                !configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending
+              }
               placeholder="Disponibilidade"
               className="h-10 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
             />
@@ -434,10 +532,47 @@ function Business() {
               <input
                 value={profileSlug}
                 onChange={(event) => setProfileSlug(event.target.value)}
-                disabled={!configured || !user || !realProfessionalProfile || profileUpdateMutation.isPending}
+                disabled={
+                  !configured ||
+                  !user ||
+                  !realProfessionalProfile ||
+                  profileUpdateMutation.isPending
+                }
                 placeholder="seu-nome"
                 className="h-10 min-w-0 flex-1 bg-transparent text-xs font-semibold outline-none"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="relative">
+                <ImageIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={profileCoverUrl}
+                  onChange={(event) => setProfileCoverUrl(event.target.value)}
+                  disabled={
+                    !configured ||
+                    !user ||
+                    !realProfessionalProfile ||
+                    profileUpdateMutation.isPending
+                  }
+                  placeholder="URL da capa PRO"
+                  className="h-10 min-w-0 rounded-lg border border-border bg-background pl-9 pr-3 text-xs font-semibold outline-none focus:border-primary"
+                />
+              </div>
+              <div className="relative">
+                <Video className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={profileIntroVideoUrl}
+                  onChange={(event) => setProfileIntroVideoUrl(event.target.value)}
+                  disabled={
+                    !configured ||
+                    !user ||
+                    !realProfessionalProfile ||
+                    profileUpdateMutation.isPending
+                  }
+                  placeholder="URL do video PRO"
+                  className="h-10 min-w-0 rounded-lg border border-border bg-background pl-9 pr-3 text-xs font-semibold outline-none focus:border-primary"
+                />
+              </div>
             </div>
             {profileUpdateMutation.error ? (
               <p className="rounded-lg bg-red-50 p-2 text-[10px] font-semibold text-red-700">
@@ -502,7 +637,9 @@ function Business() {
             <input
               value={serviceTitle}
               onChange={(event) => setServiceTitle(event.target.value)}
-              disabled={!configured || !user || !realProfessionalProfile || serviceMutation.isPending}
+              disabled={
+                !configured || !user || !realProfessionalProfile || serviceMutation.isPending
+              }
               placeholder="Nome do servico"
               className="h-10 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
             />
@@ -557,15 +694,17 @@ function Business() {
 
           <div className="mt-3 grid grid-cols-3 gap-2">
             {portfolioItems.length
-              ? portfolioItems.slice(0, 6).map((item, index) => (
-                  <ServicePhoto
-                    key={item.id}
-                    index={index}
-                    label={item.title}
-                    imageUrl={item.mediaUrl}
-                    className="aspect-square"
-                  />
-                ))
+              ? portfolioItems
+                  .slice(0, 6)
+                  .map((item, index) => (
+                    <ServicePhoto
+                      key={item.id}
+                      index={index}
+                      label={item.title}
+                      imageUrl={item.mediaUrl}
+                      className="aspect-square"
+                    />
+                  ))
               : ["Antes", "Durante", "Depois"].map((item, index) => (
                   <ServicePhoto key={item} index={index} label={item} className="aspect-square" />
                 ))}
@@ -664,6 +803,144 @@ function Business() {
         </section>
 
         <section className="ello-card rounded-xl p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-black">Monetizacao inicial</h2>
+              <p className="mt-1 text-[10px] font-semibold text-muted-foreground">
+                Sem gateway por enquanto. A equipe ELLO analisa e ativa manualmente.
+              </p>
+            </div>
+            <Rocket className="size-5 text-primary" />
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Metric label="Views Link" value={String(elloLinkStats.views)} accent />
+            <Metric label="Cliques" value={String(elloLinkStats.quoteClicks)} accent />
+          </div>
+
+          <div className="mt-3 space-y-2">
+            <MonetizationCard
+              icon={<Star className="size-5" />}
+              title="Impulsionamento"
+              desc="Perfil priorizado na busca local enquanto o destaque estiver ativo."
+              status={requestStatusFor(monetizationRequests, "profile_boost")}
+              disabled={
+                !configured ||
+                !user ||
+                !realProfessionalProfile ||
+                monetizationRequestMutation.isPending
+              }
+              onRequest={() =>
+                monetizationRequestMutation.mutate({
+                  requestType: "profile_boost",
+                  requestedDetails: {
+                    city: profileCity || realProfessionalProfile?.city || null,
+                    specialty: profileSpecialty || realProfessionalProfile?.specialty || null,
+                  },
+                })
+              }
+            />
+            <MonetizationCard
+              icon={<Rocket className="size-5" />}
+              title="ELLO LINK PRO"
+              desc="Video, capa personalizada, QR Code, estatisticas e mais fotos."
+              status={requestStatusFor(monetizationRequests, "ello_link_pro")}
+              disabled={
+                !configured ||
+                !user ||
+                !realProfessionalProfile ||
+                monetizationRequestMutation.isPending
+              }
+              onRequest={() =>
+                monetizationRequestMutation.mutate({
+                  requestType: "ello_link_pro",
+                  requestedDetails: {
+                    coverUrl: profileCoverUrl || null,
+                    introVideoUrl: profileIntroVideoUrl || null,
+                    portfolioItems: portfolioItems.length,
+                  },
+                })
+              }
+            />
+            <MonetizationCard
+              icon={<Store className="size-5" />}
+              title="Parceiros locais"
+              desc="Espaco comercial para marcas e negocios relevantes da cidade."
+              status={requestStatusFor(monetizationRequests, "local_partner_space")}
+              disabled={
+                !configured ||
+                !user ||
+                !realProfessionalProfile ||
+                monetizationRequestMutation.isPending
+              }
+              onRequest={() =>
+                monetizationRequestMutation.mutate({
+                  requestType: "local_partner_space",
+                  requestedDetails: {
+                    city: profileCity || realProfessionalProfile?.city || null,
+                    origin: "professional_dashboard",
+                  },
+                })
+              }
+            />
+          </div>
+
+          {monetizationRequestMutation.error ? (
+            <p className="mt-3 rounded-lg bg-red-50 p-2 text-[10px] font-semibold text-red-700">
+              {monetizationRequestMutation.error.message}
+            </p>
+          ) : monetizationRequestMutation.isSuccess ? (
+            <p className="mt-3 rounded-lg bg-emerald-50 p-2 text-[10px] font-semibold text-emerald-800">
+              Solicitacao enviada para analise comercial.
+            </p>
+          ) : null}
+
+          <div className="mt-3 grid grid-cols-4 gap-2 rounded-lg bg-background p-2">
+            <ProFeature icon={<Video className="size-4" />} label="Video" />
+            <ProFeature icon={<ImageIcon className="size-4" />} label="Capa" />
+            <ProFeature icon={<QrCode className="size-4" />} label="QR Code" />
+            <ProFeature icon={<BarChart3 className="size-4" />} label="Stats" />
+          </div>
+        </section>
+
+        {localPartners.length ? (
+          <section className="ello-card rounded-xl p-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-black">Parceiros locais</h2>
+              <Store className="size-4 text-primary" />
+            </div>
+            <div className="mt-3 space-y-2">
+              {localPartners.slice(0, 2).map((partner) => (
+                <a
+                  key={partner.id}
+                  href={partner.ctaUrl ?? "#"}
+                  target={partner.ctaUrl ? "_blank" : undefined}
+                  rel="noreferrer"
+                  className="flex gap-3 rounded-lg bg-background p-3"
+                >
+                  <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-primary/15 text-primary">
+                    {partner.imageUrl ? (
+                      <img src={partner.imageUrl} alt="" className="size-full object-cover" />
+                    ) : (
+                      <Store className="size-5" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-black">{partner.name}</p>
+                    <p className="text-[10px] font-semibold text-muted-foreground">
+                      {partner.category} - {partner.city}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-[10px] text-muted-foreground">
+                      {partner.description}
+                    </p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <section className="ello-card rounded-xl p-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-black">Orcamentos recebidos</h2>
             <span className="text-[10px] font-bold text-muted-foreground">
@@ -725,7 +1002,10 @@ function Business() {
           {dashboard?.recentQuotes.length ? (
             <div className="mt-3 space-y-2">
               {dashboard.recentQuotes.map((quote) => (
-                <div key={quote.id} className="flex items-center gap-3 rounded-lg bg-background p-3">
+                <div
+                  key={quote.id}
+                  className="flex items-center gap-3 rounded-lg bg-background p-3"
+                >
                   <ProPhoto initials="EL" size={42} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-black">{quote.title}</p>
@@ -834,6 +1114,73 @@ function Business() {
       </main>
     </div>
   );
+}
+
+function MonetizationCard({
+  desc,
+  disabled,
+  icon,
+  onRequest,
+  status,
+  title,
+}: {
+  desc: string;
+  disabled: boolean;
+  icon: React.ReactNode;
+  onRequest: () => void;
+  status?: MonetizationRequestItem["status"];
+  title: string;
+}) {
+  return (
+    <article className="rounded-xl border border-border bg-background p-3">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-xs font-black">{title}</h3>
+            {status ? (
+              <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[9px] font-black text-[#083d63]">
+                {statusLabel(status)}
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">{desc}</p>
+          <button
+            disabled={disabled || status === "pending"}
+            onClick={onRequest}
+            className="mt-3 h-8 rounded-lg bg-[#083d63] px-3 text-[10px] font-black text-white disabled:bg-muted disabled:text-muted-foreground"
+          >
+            {status === "pending" ? "Em analise" : "Solicitar"}
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ProFeature({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="grid min-h-14 place-items-center rounded-lg bg-white p-2 text-center">
+      <span className="text-primary">{icon}</span>
+      <span className="mt-1 text-[9px] font-black text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+function requestStatusFor(
+  requests: MonetizationRequestItem[],
+  type: MonetizationRequestItem["requestType"],
+) {
+  return requests.find((request) => request.requestType === type)?.status;
+}
+
+function statusLabel(status: MonetizationRequestItem["status"]) {
+  if (status === "approved") return "Ativo";
+  if (status === "rejected") return "Recusado";
+  if (status === "cancelled") return "Cancelado";
+  return "Pendente";
 }
 
 function Tool({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {

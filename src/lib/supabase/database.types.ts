@@ -20,6 +20,9 @@ type PaymentStatus =
   | "refunded"
   | "failed"
   | "disputed";
+type MonetizationRequestType = "profile_boost" | "ello_link_pro" | "local_partner_space";
+type MonetizationRequestStatus = "pending" | "approved" | "rejected" | "cancelled";
+type ElloLinkEventType = "view" | "quote_click" | "share_click" | "qr_view";
 
 export type Database = {
   public: {
@@ -105,6 +108,13 @@ export type Database = {
           response_time_minutes: number | null;
           is_published: boolean;
           ello_link_slug: string | null;
+          boosted_until: string | null;
+          ello_link_pro_enabled: boolean;
+          ello_link_pro_until: string | null;
+          intro_video_url: string | null;
+          cover_url: string | null;
+          qr_code_enabled: boolean;
+          max_portfolio_items: number;
         };
         Insert: {
           id?: string;
@@ -136,6 +146,13 @@ export type Database = {
           response_time_minutes?: number | null;
           is_published?: boolean;
           ello_link_slug?: string | null;
+          boosted_until?: string | null;
+          ello_link_pro_enabled?: boolean;
+          ello_link_pro_until?: string | null;
+          intro_video_url?: string | null;
+          cover_url?: string | null;
+          qr_code_enabled?: boolean;
+          max_portfolio_items?: number;
         };
         Update: Partial<Database["public"]["Tables"]["professional_profiles"]["Insert"]>;
       };
@@ -256,6 +273,79 @@ export type Database = {
           read_at?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["quote_messages"]["Insert"]>;
+      };
+      ello_link_events: {
+        Row: {
+          id: string;
+          professional_id: string;
+          event_type: ElloLinkEventType;
+          source: string | null;
+          visitor_hash: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          professional_id: string;
+          event_type: ElloLinkEventType;
+          source?: string | null;
+          visitor_hash?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["ello_link_events"]["Insert"]>;
+      };
+      monetization_requests: {
+        Row: {
+          id: string;
+          professional_id: string;
+          request_type: MonetizationRequestType;
+          status: MonetizationRequestStatus;
+          requested_details: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          professional_id: string;
+          request_type: MonetizationRequestType;
+          status?: MonetizationRequestStatus;
+          requested_details?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["monetization_requests"]["Insert"]>;
+      };
+      local_partner_spaces: {
+        Row: {
+          id: string;
+          name: string;
+          category: string;
+          city: string;
+          description: string;
+          cta_label: string;
+          cta_url: string | null;
+          image_url: string | null;
+          active: boolean;
+          starts_at: string | null;
+          ends_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          category: string;
+          city: string;
+          description: string;
+          cta_label?: string;
+          cta_url?: string | null;
+          image_url?: string | null;
+          active?: boolean;
+          starts_at?: string | null;
+          ends_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["local_partner_spaces"]["Insert"]>;
       };
       appointments: {
         Row: {

@@ -1,9 +1,24 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BriefcaseBusiness, CalendarDays, MapPin, MessageCircle, Star } from "lucide-react";
+import { useEffect } from "react";
+import {
+  BriefcaseBusiness,
+  CalendarDays,
+  MapPin,
+  MessageCircle,
+  QrCode,
+  Share2,
+  Sparkles,
+  Star,
+  Video,
+} from "lucide-react";
 import { CyanButton, ProPhoto, ServicePhoto, TrustBadge } from "@/components/ello/mobile-ui";
 import { useAuth } from "@/lib/auth/auth-context";
-import { createQuoteRequest, getPublicProfessionalLink } from "@/lib/ello-repository";
+import {
+  createQuoteRequest,
+  getPublicProfessionalLink,
+  recordElloLinkEvent,
+} from "@/lib/ello-repository";
 import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
 export const Route = createFileRoute("/p/$slug")({
@@ -18,10 +33,18 @@ function PublicProfessionalPage() {
     queryFn: () => getPublicProfessionalLink(slug),
   });
   const profile = profileQuery.data;
+  const publicUrl = typeof window === "undefined" ? "" : window.location.href;
+  const qrCodeUrl =
+    profile?.qrCodeEnabled && publicUrl
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(
+          publicUrl,
+        )}`
+      : null;
   const quoteMutation = useMutation({
     mutationFn: () => {
       if (!profile) throw new Error("Perfil ainda nao carregado.");
       if (!user) throw new Error("Entre na ELLO para solicitar orcamento.");
+      void recordElloLinkEvent({ professionalId: profile.id, eventType: "quote_click" });
       return createQuoteRequest({
         userId: user.id,
         professionalId: profile.id,
@@ -30,6 +53,25 @@ function PublicProfessionalPage() {
       });
     },
   });
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    void recordElloLinkEvent({ professionalId: profile.id, eventType: "view" });
+  }, [profile]);
+
+  function handleShare() {
+    if (!profile) return;
+    void recordElloLinkEvent({ professionalId: profile.id, eventType: "share_click" });
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      void navigator.share({
+        title: `${profile.name} na ELLO`,
+        text: profile.headline,
+        url: publicUrl,
+      });
+      return;
+    }
+    void globalThis.navigator?.clipboard?.writeText(publicUrl);
+  }
 
   if (profileQuery.isPending) {
     return (
@@ -60,12 +102,30 @@ function PublicProfessionalPage() {
 
   return (
     <div className="min-h-screen bg-[#eef8fb] pb-8">
-      <header className="ello-header px-5 pb-16 pt-6 text-white">
+      <header
+        className="ello-header relative overflow-hidden px-5 pb-16 pt-6 text-white"
+        style={
+          profile.coverUrl
+            ? {
+                backgroundImage: `linear-gradient(180deg, rgba(8, 61, 99, 0.86), rgba(8, 61, 99, 0.58)), url(${profile.coverUrl})`,
+                backgroundPosition: "center",
+                backgroundSize: "cover",
+              }
+            : undefined
+        }
+      >
         <div className="mx-auto flex max-w-md items-center justify-between">
           <Link to="/app" className="text-xl font-black tracking-tight">
             ELLO
           </Link>
-          <TrustBadge label={profile.trustLevel} />
+          <div className="flex items-center gap-2">
+            {profile.boosted ? (
+              <span className="rounded-full bg-white/20 px-2 py-1 text-[10px] font-black">
+                Destaque
+              </span>
+            ) : null}
+            <TrustBadge label={profile.trustLevel} />
+          </div>
         </div>
       </header>
 
@@ -76,6 +136,12 @@ function PublicProfessionalPage() {
             <div className="min-w-0 flex-1">
               <h1 className="text-xl font-black leading-tight">{profile.name}</h1>
               <p className="text-sm font-bold text-[#083d63]">{profile.headline}</p>
+              {profile.elloLinkProEnabled ? (
+                <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-1 text-[9px] font-black text-[#0c6670]">
+                  <Sparkles className="size-3" />
+                  ELLO LINK PRO
+                </p>
+              ) : null}
               <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="size-3.5" />
                 {profile.city}
@@ -91,6 +157,22 @@ function PublicProfessionalPage() {
             <MiniMetric label="Preco" value={profile.basePrice} />
           </div>
         </section>
+
+        {profile.introVideoUrl ? (
+          <section className="ello-card rounded-xl p-4">
+            <h2 className="flex items-center gap-2 text-sm font-black">
+              <Video className="size-4 text-primary" />
+              Video de apresentacao
+            </h2>
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              src={profile.introVideoUrl}
+              className="mt-3 aspect-video w-full rounded-lg bg-black object-cover"
+            />
+          </section>
+        ) : null}
 
         <section className="ello-card rounded-xl p-4">
           <h2 className="text-sm font-black">Atendimento</h2>
@@ -146,7 +228,7 @@ function PublicProfessionalPage() {
           <h2 className="text-sm font-black">Portfolio</h2>
           <div className="mt-3 grid grid-cols-3 gap-2">
             {(profile.portfolio.length
-              ? profile.portfolio.slice(0, 6)
+              ? profile.portfolio.slice(0, profile.maxPortfolioItems)
               : [
                   { id: "placeholder-1", title: "Trabalho", mediaUrl: null },
                   { id: "placeholder-2", title: "Servico", mediaUrl: null },
@@ -163,6 +245,39 @@ function PublicProfessionalPage() {
             ))}
           </div>
         </section>
+
+        {qrCodeUrl ? (
+          <section className="ello-card rounded-xl p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-black">
+                  <QrCode className="size-4 text-primary" />
+                  QR Code ELLO
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Compartilhe este link em cartoes, vitrines e redes sociais.
+                </p>
+              </div>
+              <button
+                onClick={handleShare}
+                className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary"
+                aria-label="Compartilhar ELLO Link"
+              >
+                <Share2 className="size-4" />
+              </button>
+            </div>
+            <button
+              onClick={() =>
+                profile
+                  ? void recordElloLinkEvent({ professionalId: profile.id, eventType: "qr_view" })
+                  : undefined
+              }
+              className="mt-3 grid w-full place-items-center rounded-xl bg-white p-4"
+            >
+              <img src={qrCodeUrl} alt={`QR Code de ${profile.name}`} className="size-40" />
+            </button>
+          </section>
+        ) : null}
 
         {quoteMutation.error ? (
           <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">

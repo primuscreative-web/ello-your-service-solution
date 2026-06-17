@@ -3,7 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { Check, Heart, Search as SearchIcon, SlidersHorizontal } from "lucide-react";
-import { AppTopBar, CyanButton, ProPhoto, RatingLine, TrustBadge } from "@/components/ello/mobile-ui";
+import {
+  AppTopBar,
+  CyanButton,
+  ProPhoto,
+  RatingLine,
+  TrustBadge,
+} from "@/components/ello/mobile-ui";
 import { useAuth } from "@/lib/auth/auth-context";
 import { CATEGORIES, PROFESSIONALS } from "@/lib/ello-data";
 import {
@@ -153,6 +159,11 @@ function Search() {
                       </button>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
+                      {pro.boosted ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-800">
+                          Destaque
+                        </span>
+                      ) : null}
                       <RatingLine
                         rating={String(pro.rating)}
                         reviews={`${pro.completedJobs} servicos`}
@@ -212,7 +223,5 @@ function labelFor(slug: string, categories: typeof CATEGORIES) {
 }
 
 function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
-  );
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }

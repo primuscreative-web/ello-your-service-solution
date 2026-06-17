@@ -39,6 +39,7 @@ export type Professional = {
   initials: string;
   avatarTone: string;
   avatarUrl?: string | null;
+  boosted?: boolean;
 };
 
 export const PROFESSIONALS: Professional[] = [
@@ -85,8 +86,7 @@ export const PROFESSIONALS: Professional[] = [
     name: "Carlos Lima",
     profession: "Encanador Hidráulico",
     category: "encanador",
-    description:
-      "Vazamentos, desentupimentos e reformas hidráulicas com garantia de 90 dias.",
+    description: "Vazamentos, desentupimentos e reformas hidráulicas com garantia de 90 dias.",
     specialties: ["Vazamentos", "Caixa d'água", "Desentupimento"],
     city: "Butantã, SP",
     experienceYears: 18,
@@ -183,9 +183,27 @@ export type Conversation = {
 };
 
 export const CONVERSATIONS: Conversation[] = [
-  { id: "c1", professionalId: "ricardo-menezes", lastMessage: "Posso passar amanhã às 10h.", timestamp: "12:42", unread: 2 },
-  { id: "c2", professionalId: "ana-beatriz", lastMessage: "Tudo combinado! 😊", timestamp: "Ontem", unread: 0 },
-  { id: "c3", professionalId: "carlos-lima", lastMessage: "Orçamento enviado.", timestamp: "Seg", unread: 0 },
+  {
+    id: "c1",
+    professionalId: "ricardo-menezes",
+    lastMessage: "Posso passar amanhã às 10h.",
+    timestamp: "12:42",
+    unread: 2,
+  },
+  {
+    id: "c2",
+    professionalId: "ana-beatriz",
+    lastMessage: "Tudo combinado! 😊",
+    timestamp: "Ontem",
+    unread: 0,
+  },
+  {
+    id: "c3",
+    professionalId: "carlos-lima",
+    lastMessage: "Orçamento enviado.",
+    timestamp: "Seg",
+    unread: 0,
+  },
 ];
 
 export type Appointment = {
@@ -198,7 +216,28 @@ export type Appointment = {
 };
 
 export const APPOINTMENTS: Appointment[] = [
-  { id: "a1", professionalId: "ana-beatriz", service: "Manicure + Pedicure", date: "Hoje", time: "16:00", status: "confirmado" },
-  { id: "a2", professionalId: "ricardo-menezes", service: "Instalação de chuveiro", date: "Amanhã", time: "10:00", status: "pendente" },
-  { id: "a3", professionalId: "marta-souza", service: "Diária completa", date: "Sex, 20 jun", time: "08:00", status: "confirmado" },
+  {
+    id: "a1",
+    professionalId: "ana-beatriz",
+    service: "Manicure + Pedicure",
+    date: "Hoje",
+    time: "16:00",
+    status: "confirmado",
+  },
+  {
+    id: "a2",
+    professionalId: "ricardo-menezes",
+    service: "Instalação de chuveiro",
+    date: "Amanhã",
+    time: "10:00",
+    status: "pendente",
+  },
+  {
+    id: "a3",
+    professionalId: "marta-souza",
+    service: "Diária completa",
+    date: "Sex, 20 jun",
+    time: "08:00",
+    status: "confirmado",
+  },
 ];

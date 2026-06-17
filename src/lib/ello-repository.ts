@@ -6,7 +6,7 @@ import {
   type TrustLevel,
 } from "./ello-data";
 import { getSupabaseBrowserClient } from "./supabase/client";
-import type { Database } from "./supabase/database.types";
+import type { Database, Json } from "./supabase/database.types";
 
 type ProfessionalRow = {
   id: string;
@@ -24,6 +24,7 @@ type ProfessionalRow = {
   rating: number;
   completed_jobs: number;
   response_time_minutes: number | null;
+  boosted_until: string | null;
   services: Array<{
     category: string;
     title: string;
@@ -38,6 +39,8 @@ type QuoteMessageRow = Database["public"]["Tables"]["quote_messages"]["Row"];
 type AppointmentRow = Database["public"]["Tables"]["appointments"]["Row"];
 type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
 type PortfolioRow = Database["public"]["Tables"]["portfolio_items"]["Row"];
+type MonetizationRequestRow = Database["public"]["Tables"]["monetization_requests"]["Row"];
+type LocalPartnerSpaceRow = Database["public"]["Tables"]["local_partner_spaces"]["Row"];
 
 type FavoriteProfessionalRow = {
   professional_id: string;
@@ -65,12 +68,10 @@ type RequestHistoryRow = QuoteRequest & {
         title: string;
       }>
     | null;
-  reviews:
-    | Array<{
-        rating: number;
-        comment: string | null;
-      }>
-    | null;
+  reviews: Array<{
+    rating: number;
+    comment: string | null;
+  }> | null;
 };
 
 type ProfessionalQuoteRow = QuoteRequest & {
@@ -126,6 +127,8 @@ export type BusinessDashboard = {
   quoteCount: number;
   appointmentCount: number;
   serviceCount: number;
+  elloLinkViewCount: number;
+  elloLinkLeadCount: number;
   rating: number;
   completedJobs: number;
   recentQuotes: Array<{
@@ -159,6 +162,8 @@ export type ProfessionalProfileUpdate = {
   chargeType: string;
   experienceYears?: number;
   elloLinkSlug?: string | null;
+  introVideoUrl?: string | null;
+  coverUrl?: string | null;
 };
 
 export type PortfolioItem = {
@@ -220,8 +225,33 @@ export type PublicProfessionalLink = {
   rating: number;
   completedJobs: number;
   trustLevel: TrustLevel;
+  boosted: boolean;
+  elloLinkProEnabled: boolean;
+  introVideoUrl: string | null;
+  coverUrl: string | null;
+  qrCodeEnabled: boolean;
+  maxPortfolioItems: number;
   services: ProfessionalService[];
   portfolio: PortfolioItem[];
+};
+
+export type MonetizationRequestItem = {
+  id: string;
+  requestType: MonetizationRequestRow["request_type"];
+  status: MonetizationRequestRow["status"];
+  requestedDetails: MonetizationRequestRow["requested_details"];
+  createdAt: string;
+};
+
+export type LocalPartnerSpace = {
+  id: string;
+  name: string;
+  category: string;
+  city: string;
+  description: string;
+  ctaLabel: string;
+  ctaUrl: string | null;
+  imageUrl: string | null;
 };
 
 export type UserProfileUpdate = {
@@ -280,6 +310,7 @@ export async function listProfessionals(filters?: {
       rating,
       completed_jobs,
       response_time_minutes,
+      boosted_until,
       services(category, title)
     `,
     )
@@ -302,7 +333,7 @@ export async function listProfessionals(filters?: {
     return filterMockProfessionals(filters);
   }
 
-  const mapped = (data ?? []).map(mapProfessionalRow);
+  const mapped = sortBoostedProfessionalRows(data ?? []).map(mapProfessionalRow);
   return filterProfessionals(mapped.length ? mapped : PROFESSIONALS, filters);
 }
 
@@ -332,6 +363,7 @@ export async function getProfessionalById(id: string): Promise<Professional | nu
       rating,
       completed_jobs,
       response_time_minutes,
+      boosted_until,
       services(category, title)
     `,
     )
@@ -499,6 +531,8 @@ export async function updateMyProfessionalProfile(
       charge_type: chargeType,
       experience_years: Math.max(0, Math.round(input.experienceYears ?? 0)),
       ello_link_slug: slug,
+      intro_video_url: input.introVideoUrl?.trim() || null,
+      cover_url: input.coverUrl?.trim() || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", profile.id)
@@ -763,6 +797,10 @@ export async function getPublicProfessionalLink(
 
   if (!profile) return null;
 
+  const isProActive =
+    Boolean(profile.ello_link_pro_enabled) &&
+    (!profile.ello_link_pro_until || new Date(profile.ello_link_pro_until).getTime() > Date.now());
+  const maxPortfolioItems = isProActive ? profile.max_portfolio_items : 6;
   const [services, portfolio] = await Promise.all([
     listPublicProfessionalServices(profile.id),
     listProfessionalPortfolio(profile.id),
@@ -786,8 +824,14 @@ export async function getPublicProfessionalLink(
     rating: Number(profile.rating),
     completedJobs: profile.completed_jobs,
     trustLevel: normalizeTrustLevel(profile.trust_level),
+    boosted: isActiveUntil(profile.boosted_until),
+    elloLinkProEnabled: isProActive,
+    introVideoUrl: isProActive ? profile.intro_video_url : null,
+    coverUrl: isProActive ? profile.cover_url : null,
+    qrCodeEnabled: isProActive && profile.qr_code_enabled,
+    maxPortfolioItems,
     services,
-    portfolio,
+    portfolio: portfolio.slice(0, maxPortfolioItems),
   };
 }
 
@@ -810,6 +854,136 @@ async function listPublicProfessionalServices(
   }
 
   return (data ?? []).map(mapService);
+}
+
+export async function recordElloLinkEvent(input: {
+  professionalId: string;
+  eventType: Database["public"]["Tables"]["ello_link_events"]["Insert"]["event_type"];
+  source?: string | null;
+}): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return;
+
+  const { error } = await supabase.from("ello_link_events").insert({
+    professional_id: input.professionalId,
+    event_type: input.eventType,
+    source: input.source?.trim() || null,
+  });
+
+  if (error) {
+    console.error("Failed to record ELLO Link event", error);
+  }
+}
+
+export async function listMyMonetizationRequests(
+  userId: string,
+): Promise<MonetizationRequestItem[]> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return [];
+
+  const profile = await getMyProfessionalProfile(userId);
+  if (!profile) return [];
+
+  const { data, error } = await supabase
+    .from("monetization_requests")
+    .select("*")
+    .eq("professional_id", profile.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to load monetization requests", error);
+    return [];
+  }
+
+  return (data ?? []).map(mapMonetizationRequest);
+}
+
+export async function createMonetizationRequest(input: {
+  userId: string;
+  requestType: MonetizationRequestRow["request_type"];
+  requestedDetails?: Record<string, Json>;
+}): Promise<MonetizationRequestItem> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    throw new Error("Supabase nao esta configurado neste ambiente.");
+  }
+
+  const profile = await getMyProfessionalProfile(input.userId);
+  if (!profile) {
+    throw new Error("Crie seu perfil profissional antes de solicitar monetizacao.");
+  }
+
+  const pending = await listMyMonetizationRequests(input.userId);
+  const alreadyPending = pending.some(
+    (request) => request.requestType === input.requestType && request.status === "pending",
+  );
+  if (alreadyPending) {
+    throw new Error("Ja existe uma solicitacao pendente para esta opcao.");
+  }
+
+  const { data, error } = await supabase
+    .from("monetization_requests")
+    .insert({
+      professional_id: profile.id,
+      request_type: input.requestType,
+      requested_details: input.requestedDetails ?? {},
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return mapMonetizationRequest(data);
+}
+
+export async function getMyElloLinkStats(userId: string): Promise<{
+  views: number;
+  quoteClicks: number;
+  shareClicks: number;
+  qrViews: number;
+}> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    return { views: 0, quoteClicks: 0, shareClicks: 0, qrViews: 0 };
+  }
+
+  const profile = await getMyProfessionalProfile(userId);
+  if (!profile) {
+    return { views: 0, quoteClicks: 0, shareClicks: 0, qrViews: 0 };
+  }
+
+  const [views, quoteClicks, shareClicks, qrViews] = await Promise.all([
+    countElloLinkEvents(profile.id, "view"),
+    countElloLinkEvents(profile.id, "quote_click"),
+    countElloLinkEvents(profile.id, "share_click"),
+    countElloLinkEvents(profile.id, "qr_view"),
+  ]);
+
+  return { views, quoteClicks, shareClicks, qrViews };
+}
+
+export async function listLocalPartnerSpaces(city?: string | null): Promise<LocalPartnerSpace[]> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return [];
+
+  let query = supabase
+    .from("local_partner_spaces")
+    .select("*")
+    .eq("active", true)
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  if (city?.trim()) {
+    query = query.ilike("city", `%${city.trim().split(",")[0]}%`);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Failed to load local partners", error);
+    return [];
+  }
+
+  return (data ?? []).map(mapLocalPartnerSpace);
 }
 
 export async function getMyClientProfile(userId: string): Promise<ClientProfile | null> {
@@ -1399,7 +1573,14 @@ export async function getMyBusinessDashboard(userId: string): Promise<BusinessDa
   const profile = await getMyProfessionalProfile(userId);
   if (!profile) return emptyBusinessDashboard(null);
 
-  const [quotesResult, appointmentsResult, servicesResult, recentQuotesResult] = await Promise.all([
+  const [
+    quotesResult,
+    appointmentsResult,
+    servicesResult,
+    elloLinkViewsResult,
+    elloLinkLeadsResult,
+    recentQuotesResult,
+  ] = await Promise.all([
     supabase
       .from("quote_requests")
       .select("id", { count: "exact", head: true })
@@ -1412,6 +1593,16 @@ export async function getMyBusinessDashboard(userId: string): Promise<BusinessDa
       .from("services")
       .select("id", { count: "exact", head: true })
       .eq("professional_id", profile.id),
+    supabase
+      .from("ello_link_events")
+      .select("id", { count: "exact", head: true })
+      .eq("professional_id", profile.id)
+      .eq("event_type", "view"),
+    supabase
+      .from("ello_link_events")
+      .select("id", { count: "exact", head: true })
+      .eq("professional_id", profile.id)
+      .eq("event_type", "quote_click"),
     supabase
       .from("quote_requests")
       .select(
@@ -1433,6 +1624,12 @@ export async function getMyBusinessDashboard(userId: string): Promise<BusinessDa
     console.error("Failed to count appointments", appointmentsResult.error);
   }
   if (servicesResult.error) console.error("Failed to count services", servicesResult.error);
+  if (elloLinkViewsResult.error) {
+    console.error("Failed to count ELLO Link views", elloLinkViewsResult.error);
+  }
+  if (elloLinkLeadsResult.error) {
+    console.error("Failed to count ELLO Link leads", elloLinkLeadsResult.error);
+  }
   if (recentQuotesResult.error) {
     console.error("Failed to load recent quotes", recentQuotesResult.error);
   }
@@ -1442,6 +1639,8 @@ export async function getMyBusinessDashboard(userId: string): Promise<BusinessDa
     quoteCount: quotesResult.count ?? 0,
     appointmentCount: appointmentsResult.count ?? 0,
     serviceCount: servicesResult.count ?? 0,
+    elloLinkViewCount: elloLinkViewsResult.count ?? 0,
+    elloLinkLeadCount: elloLinkLeadsResult.count ?? 0,
     rating: Number(profile.rating),
     completedJobs: profile.completed_jobs,
     recentQuotes: (recentQuotesResult.data ?? []).map((quote) => {
@@ -1466,6 +1665,8 @@ function emptyBusinessDashboard(profile: ProfessionalProfile | null): BusinessDa
     quoteCount: 0,
     appointmentCount: 0,
     serviceCount: 0,
+    elloLinkViewCount: 0,
+    elloLinkLeadCount: 0,
     rating: profile ? Number(profile.rating) : 0,
     completedJobs: profile?.completed_jobs ?? 0,
     recentQuotes: [],
@@ -1551,6 +1752,63 @@ function mapPortfolioItem(item: PortfolioRow): PortfolioItem {
   };
 }
 
+function mapMonetizationRequest(row: MonetizationRequestRow): MonetizationRequestItem {
+  return {
+    id: row.id,
+    requestType: row.request_type,
+    status: row.status,
+    requestedDetails: row.requested_details,
+    createdAt: formatShortDate(row.created_at),
+  };
+}
+
+function mapLocalPartnerSpace(row: LocalPartnerSpaceRow): LocalPartnerSpace {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    city: row.city,
+    description: row.description,
+    ctaLabel: row.cta_label,
+    ctaUrl: row.cta_url,
+    imageUrl: row.image_url,
+  };
+}
+
+async function countElloLinkEvents(
+  professionalId: string,
+  eventType: Database["public"]["Tables"]["ello_link_events"]["Insert"]["event_type"],
+): Promise<number> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return 0;
+
+  const { count, error } = await supabase
+    .from("ello_link_events")
+    .select("id", { count: "exact", head: true })
+    .eq("professional_id", professionalId)
+    .eq("event_type", eventType);
+
+  if (error) {
+    console.error("Failed to count ELLO Link events", error);
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
+function sortBoostedProfessionalRows(rows: ProfessionalRow[]): ProfessionalRow[] {
+  return [...rows].sort((a, b) => {
+    const aBoosted = isActiveUntil(a.boosted_until);
+    const bBoosted = isActiveUntil(b.boosted_until);
+    if (aBoosted !== bBoosted) return aBoosted ? -1 : 1;
+    return Number(b.rating) - Number(a.rating) || b.completed_jobs - a.completed_jobs;
+  });
+}
+
+function isActiveUntil(value: string | null | undefined): boolean {
+  return Boolean(value && new Date(value).getTime() > Date.now());
+}
+
 function filterProfessionals(
   professionals: Professional[],
   filters?: {
@@ -1602,6 +1860,7 @@ function mapProfessionalRow(row: ProfessionalRow): Professional {
     initials: initialsFor(displayName),
     avatarTone: "oklch(0.82 0.07 205)",
     avatarUrl: row.avatar_url,
+    boosted: isActiveUntil(row.boosted_until),
   };
 }
 
