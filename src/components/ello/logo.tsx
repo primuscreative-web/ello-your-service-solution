@@ -1,4 +1,12 @@
-export function ElloLogo({ className = "" }: { className?: string }) {
+export function ElloLogo({
+  className = "",
+  markClassName = "text-primary",
+  dotClassName = "text-primary",
+}: {
+  className?: string;
+  markClassName?: string;
+  dotClassName?: string;
+}) {
   return (
     <span
       aria-label="ELLO"
@@ -6,7 +14,7 @@ export function ElloLogo({ className = "" }: { className?: string }) {
     >
       <svg
         aria-hidden="true"
-        className="h-[0.78em] w-[0.78em] shrink-0 text-primary"
+        className={`h-[0.78em] w-[0.78em] shrink-0 ${markClassName}`}
         viewBox="0 0 32 32"
         fill="none"
       >
@@ -19,7 +27,7 @@ export function ElloLogo({ className = "" }: { className?: string }) {
         />
         <path d="M8 16h10" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
       </svg>
-      ELLO<span className="text-primary">.</span>
+      ELLO<span className={dotClassName}>.</span>
     </span>
   );
 }
