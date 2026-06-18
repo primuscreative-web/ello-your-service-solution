@@ -37,3 +37,4 @@ ello-frontend/
 *.njsproj
 *.sln
 *.sw?
+.vercel
