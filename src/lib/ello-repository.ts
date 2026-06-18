@@ -1485,6 +1485,58 @@ export async function createQuoteRequest(input: {
   return data;
 }
 
+export async function createDetailedQuoteRequest(input: {
+  userId: string;
+  professionalId: string;
+  description: string;
+  location: string;
+  serviceId?: string | null;
+  desiredDate?: string | null;
+}): Promise<QuoteRequest> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    throw new Error("Supabase nao esta configurado neste ambiente.");
+  }
+
+  const description = input.description.trim();
+  const location = input.location.trim();
+  if (!description) throw new Error("Descreva o servico que voce precisa.");
+  if (!location) throw new Error("Informe a cidade ou bairro do atendimento.");
+
+  const clientProfile = await ensureMyClientProfile({
+    userId: input.userId,
+    city: location,
+  });
+
+  const { data, error } = await supabase
+    .from("quote_requests")
+    .insert({
+      client_id: clientProfile.id,
+      professional_id: input.professionalId,
+      service_id: input.serviceId ?? null,
+      description,
+      desired_date: input.desiredDate || null,
+      location,
+      status: "new",
+      payment_mode: "external",
+      payment_status: "not_applicable",
+      platform_fee_percent: null,
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  const { error: messageError } = await supabase.from("quote_messages").insert({
+    quote_request_id: data.id,
+    sender_user_id: input.userId,
+    body: description,
+  });
+
+  if (messageError) throw messageError;
+  return data;
+}
+
 export async function listMyQuoteThreads(): Promise<QuoteThread[]> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return [];

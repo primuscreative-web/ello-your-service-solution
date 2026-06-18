@@ -12,7 +12,7 @@ import {
 } from "@/components/ello/mobile-ui";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
-  createQuoteRequest,
+  createDetailedQuoteRequest,
   getProfessionalById,
   listMyFavoriteProfessionalIds,
   listProfessionalPortfolio,
@@ -41,6 +41,9 @@ function ProfessionalDetail() {
     initialPro: Professional | null;
   };
   const { configured, user } = useAuth();
+  const [quoteDescription, setQuoteDescription] = React.useState("");
+  const [quoteLocation, setQuoteLocation] = React.useState("");
+  const [quoteDesiredDate, setQuoteDesiredDate] = React.useState("");
   const professionalQuery = useQuery({
     queryKey: ["ello", "professional", id],
     queryFn: () => getProfessionalById(id),
@@ -62,16 +65,27 @@ function ProfessionalDetail() {
   const isFavorite = pro ? favoriteIds.has(pro.id) : false;
   const canPersistQuote = Boolean(configured && user && pro && isUuid(pro.id));
   const quoteMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: (input: { description: string; location: string; desiredDate?: string | null }) => {
       if (!pro) throw new Error("Profissional ainda nao foi carregado.");
-      return createQuoteRequest({
+      return createDetailedQuoteRequest({
         userId: user!.id,
         professionalId: pro.id,
-        description: `Solicitacao iniciada pela pagina de ${pro.name}. Servico desejado: ${
-          pro.specialties[0] ?? pro.profession
-        }.`,
-        location: pro.city,
+        description: input.description,
+        location: input.location,
+        desiredDate: input.desiredDate,
       });
+    },
+    onSuccess: async () => {
+      setQuoteDescription("");
+      setQuoteDesiredDate("");
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["ello", "me", "quote-threads", user?.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["ello", "me", "request-history", user?.id],
+        }),
+      ]);
     },
   });
   const favoriteMutation = useMutation({
@@ -106,6 +120,13 @@ function ProfessionalDetail() {
       </div>
     );
   }
+
+  const canSendQuote =
+    canPersistQuote &&
+    quoteDescription.trim().length >= 10 &&
+    quoteLocation.trim().length >= 3 &&
+    !quoteMutation.isPending &&
+    !quoteMutation.isSuccess;
 
   return (
     <div className="pb-5">
@@ -226,6 +247,36 @@ function ProfessionalDetail() {
         </section>
 
         <section className="mt-4 ello-card rounded-xl p-4">
+          <h2 className="text-sm font-black">Solicitar orcamento</h2>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            Explique o problema, informe onde sera o atendimento e, se quiser, sugira uma data.
+          </p>
+          <textarea
+            value={quoteDescription}
+            onChange={(event) => setQuoteDescription(event.target.value)}
+            placeholder={`Ex: preciso de ${pro.specialties[0] ?? pro.profession.toLowerCase()} esta semana...`}
+            disabled={!canPersistQuote || quoteMutation.isPending || quoteMutation.isSuccess}
+            className="mt-3 min-h-24 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold outline-none focus:border-primary disabled:opacity-60"
+          />
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <input
+              value={quoteLocation}
+              onChange={(event) => setQuoteLocation(event.target.value)}
+              placeholder={pro.city || "Cidade ou bairro"}
+              disabled={!canPersistQuote || quoteMutation.isPending || quoteMutation.isSuccess}
+              className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary disabled:opacity-60"
+            />
+            <input
+              type="datetime-local"
+              value={quoteDesiredDate}
+              onChange={(event) => setQuoteDesiredDate(event.target.value)}
+              disabled={!canPersistQuote || quoteMutation.isPending || quoteMutation.isSuccess}
+              className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary disabled:opacity-60"
+            />
+          </div>
+        </section>
+
+        <section className="mt-4 ello-card rounded-xl p-4">
           <div className="flex items-center gap-2">
             <Award className="size-4 text-primary" />
             <h2 className="text-sm font-black">Niveis de Confianca</h2>
@@ -249,8 +300,16 @@ function ProfessionalDetail() {
           </Link>
           <CyanButton
             className="w-full disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
-            disabled={!canPersistQuote || quoteMutation.isPending || quoteMutation.isSuccess}
-            onClick={() => quoteMutation.mutate()}
+            disabled={!canSendQuote}
+            onClick={() =>
+              quoteMutation.mutate({
+                description: quoteDescription,
+                location: quoteLocation || pro.city,
+                desiredDate: quoteDesiredDate
+                  ? new Date(quoteDesiredDate).toISOString()
+                  : null,
+              })
+            }
           >
             <span className="inline-flex items-center gap-1">
               <ClipboardCheck className="size-4" />
@@ -281,7 +340,7 @@ function ProfessionalDetail() {
           <QuoteNotice tone="error">{quoteMutation.error.message}</QuoteNotice>
         ) : quoteMutation.isSuccess ? (
           <QuoteNotice tone="success">
-            Solicitacao criada no Supabase. O proximo passo e listar essa conversa em Mensagens.
+            Solicitacao criada no Supabase e conversa iniciada em Mensagens.
           </QuoteNotice>
         ) : null}
       </main>
