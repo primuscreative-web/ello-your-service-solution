@@ -3,7 +3,7 @@ import { BriefcaseBusiness, Lightbulb, UserRound } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { chooseMyAccountMode } from "@/lib/ello-repository";
 
 export const Route = createFileRoute("/role")({
   component: Role,
@@ -19,15 +19,17 @@ function Role() {
     setError(null);
     setSaving(mode);
 
-    const supabase = getSupabaseBrowserClient();
-    if (configured && supabase && user) {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ role: mode })
-        .eq("id", user.id);
-      if (updateError) {
+    if (configured && user) {
+      try {
+        await chooseMyAccountMode({
+          userId: user.id,
+          mode,
+          displayName: user.user_metadata.full_name ?? user.email?.split("@")[0] ?? "Usuario ELLO",
+          city: "Sao Paulo, SP",
+        });
+      } catch (caughtError) {
         setSaving(null);
-        setError(updateError.message);
+        setError(caughtError instanceof Error ? caughtError.message : "Nao foi possivel salvar.");
         return;
       }
       await refreshProfile();

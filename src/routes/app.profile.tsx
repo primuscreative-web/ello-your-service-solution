@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Bell,
@@ -14,7 +14,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { AppTopBar, Metric, ProPhoto } from "@/components/ello/mobile-ui";
-import { updateMyUserProfile } from "@/lib/ello-repository";
+import {
+  getMyClientProfile,
+  updateMyClientProfile,
+  updateMyUserProfile,
+} from "@/lib/ello-repository";
 import { useAuth } from "@/lib/auth/auth-context";
 import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
@@ -33,9 +37,19 @@ const MENU = [
 ];
 
 function Profile() {
+  const queryClient = useQueryClient();
   const { configured, loading, profile, refreshProfile, user } = useAuth();
   const [fullName, setFullName] = useState(profile?.full_name ?? user?.email ?? "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [clientCity, setClientCity] = useState("Sao Paulo, SP");
+  const [clientRegion, setClientRegion] = useState("");
+  const [clientInterests, setClientInterests] = useState("");
+
+  const clientProfileQuery = useQuery({
+    queryKey: ["ello", "me", "client-profile", user?.id],
+    queryFn: () => getMyClientProfile(user!.id),
+    enabled: Boolean(configured && user),
+  });
 
   const previewUrl = useMemo(() => {
     if (!avatarFile) return profile?.avatar_url ?? null;
@@ -47,6 +61,14 @@ function Profile() {
       setFullName(profile.full_name);
     }
   }, [fullName, profile?.full_name]);
+
+  useEffect(() => {
+    const clientProfile = clientProfileQuery.data;
+    if (!clientProfile) return;
+    setClientCity(clientProfile.city ?? "Sao Paulo, SP");
+    setClientRegion(clientProfile.region ?? "");
+    setClientInterests(clientProfile.interests ?? "");
+  }, [clientProfileQuery.data]);
 
   useEffect(() => {
     if (!avatarFile || !previewUrl) return;
@@ -66,16 +88,30 @@ function Profile() {
   const mutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Entre na sua conta para atualizar o perfil.");
-      return updateMyUserProfile({
+      const updatedProfile = await updateMyUserProfile({
         userId: user.id,
         fullName,
         avatarFile,
         avatarUrl: profile?.avatar_url ?? null,
       });
+
+      await updateMyClientProfile({
+        userId: user.id,
+        city: clientCity,
+        region: clientRegion,
+        interests: clientInterests,
+      });
+
+      return updatedProfile;
     },
     onSuccess: async () => {
       setAvatarFile(null);
-      await refreshProfile();
+      await Promise.all([
+        refreshProfile(),
+        queryClient.invalidateQueries({
+          queryKey: ["ello", "me", "client-profile", user?.id],
+        }),
+      ]);
     },
   });
 
@@ -127,6 +163,46 @@ function Profile() {
             />
           </div>
 
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase text-muted-foreground">
+                Cidade
+              </label>
+              <input
+                value={clientCity}
+                onChange={(event) => setClientCity(event.target.value)}
+                placeholder="Sao Paulo, SP"
+                disabled={!configured || !user || mutation.isPending}
+                className="h-11 min-w-0 w-full rounded-lg border border-border bg-white px-3 text-sm font-bold outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase text-muted-foreground">
+                Regiao
+              </label>
+              <input
+                value={clientRegion}
+                onChange={(event) => setClientRegion(event.target.value)}
+                placeholder="Zona Sul"
+                disabled={!configured || !user || mutation.isPending}
+                className="h-11 min-w-0 w-full rounded-lg border border-border bg-white px-3 text-sm font-bold outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            <label className="text-[11px] font-black uppercase text-muted-foreground">
+              Interesses
+            </label>
+            <textarea
+              value={clientInterests}
+              onChange={(event) => setClientInterests(event.target.value)}
+              placeholder="Ex: eletricista, diarista, manutencao residencial"
+              disabled={!configured || !user || mutation.isPending}
+              className="min-h-20 w-full resize-none rounded-lg border border-border bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+
           {mutation.error ? (
             <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
               {mutation.error.message}
@@ -140,7 +216,14 @@ function Profile() {
 
           <button
             className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-xs font-black text-white disabled:opacity-50"
-            disabled={!configured || !user || loading || mutation.isPending || !fullName.trim()}
+            disabled={
+              !configured ||
+              !user ||
+              loading ||
+              mutation.isPending ||
+              !fullName.trim() ||
+              !clientCity.trim()
+            }
             onClick={() => mutation.mutate()}
           >
             <Save className="size-4" />

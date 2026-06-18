@@ -292,6 +292,13 @@ export type UserProfileUpdate = {
   avatarUrl?: string | null;
 };
 
+export type ClientProfileUpdate = {
+  userId: string;
+  city: string;
+  region?: string | null;
+  interests?: string | null;
+};
+
 export async function listCategories(): Promise<Category[]> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return CATEGORIES;
@@ -513,6 +520,45 @@ export async function updateMyUserProfile(input: UserProfileUpdate): Promise<Pro
         updated_at: new Date().toISOString(),
       })
       .eq("id", existingProfessional.id);
+  }
+
+  return data;
+}
+
+export async function chooseMyAccountMode(input: {
+  userId: string;
+  mode: ProfileRow["role"];
+  displayName: string;
+  city?: string | null;
+}): Promise<ProfileRow> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    throw new Error("Supabase nao esta configurado neste ambiente.");
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({
+      role: input.mode,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.userId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  if (input.mode === "professional") {
+    await ensureMyProfessionalProfile({
+      userId: input.userId,
+      displayName: input.displayName,
+      city: input.city ?? "Sao Paulo, SP",
+    });
+  } else {
+    await ensureMyClientProfile({
+      userId: input.userId,
+      city: input.city ?? "Sao Paulo, SP",
+    });
   }
 
   return data;
@@ -1365,6 +1411,36 @@ export async function ensureMyClientProfile(input: {
       user_id: input.userId,
       city: input.city ?? "São Paulo, SP",
     })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateMyClientProfile(input: ClientProfileUpdate): Promise<ClientProfile> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    throw new Error("Supabase nao esta configurado neste ambiente.");
+  }
+
+  const city = input.city.trim();
+  if (!city) throw new Error("Informe sua cidade.");
+
+  const clientProfile = await ensureMyClientProfile({
+    userId: input.userId,
+    city,
+  });
+
+  const { data, error } = await supabase
+    .from("client_profiles")
+    .update({
+      city,
+      region: input.region?.trim() || null,
+      interests: input.interests?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", clientProfile.id)
     .select("*")
     .single();
 
