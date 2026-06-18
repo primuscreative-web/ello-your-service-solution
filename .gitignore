@@ -38,3 +38,4 @@ ello-frontend/
 *.sln
 *.sw?
 .vercel
+.worktrees/
