@@ -5,6 +5,11 @@ import {
   type Professional,
   type TrustLevel,
 } from "./ello-data";
+import {
+  assertFutureAppointment,
+  formatAppointmentError,
+  type AppointmentStatus,
+} from "./appointments";
 import { getSupabaseBrowserClient } from "./supabase/client";
 import type { Database, Json } from "./supabase/database.types";
 
@@ -119,6 +124,7 @@ export type QuoteThread = {
   lastMessage: string;
   timestamp: string;
   status: QuoteRequest["status"];
+  professionalView: boolean;
 };
 
 export type QuoteMessage = {
@@ -132,12 +138,17 @@ export type QuoteMessage = {
 
 export type AgendaItem = {
   id: string;
+  quoteRequestId: string | null;
   professionalId: string;
   professionalName: string;
   professionalInitials: string;
   service: string;
+  startsAt: string;
   date: string;
   time: string;
+  address: string | null;
+  notes: string | null;
+  professionalView: boolean;
   status: Database["public"]["Tables"]["appointments"]["Row"]["status"];
 };
 
@@ -1537,10 +1548,11 @@ export async function createDetailedQuoteRequest(input: {
   return data;
 }
 
-export async function listMyQuoteThreads(): Promise<QuoteThread[]> {
+export async function listMyQuoteThreads(userId: string): Promise<QuoteThread[]> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return [];
 
+  const professionalProfile = await getMyProfessionalProfile(userId);
   const { data, error } = await supabase
     .from("quote_requests")
     .select(
@@ -1549,6 +1561,7 @@ export async function listMyQuoteThreads(): Promise<QuoteThread[]> {
       description,
       status,
       created_at,
+      professional_id,
       professional_profiles(public_name, specialty),
       client_profiles(city)
     `,
@@ -1566,13 +1579,20 @@ export async function listMyQuoteThreads(): Promise<QuoteThread[]> {
       public_name: string | null;
       specialty: string;
     }>(row.professional_profiles);
+    const client = asRelatedObject<{ city: string }>(row.client_profiles);
+    const professionalView = professionalProfile?.id === row.professional_id;
     return {
       id: row.id,
-      title: professional?.public_name ?? "Atendimento ELLO",
-      subtitle: professional?.specialty ?? "Orcamento",
+      title: professionalView
+        ? `Cliente - ${client?.city ?? "ELLO"}`
+        : (professional?.public_name ?? "Atendimento ELLO"),
+      subtitle: professionalView
+        ? "Solicitacao recebida"
+        : (professional?.specialty ?? "Orcamento"),
       lastMessage: row.description,
       timestamp: formatShortDate(row.created_at),
       status: row.status,
+      professionalView,
     };
   });
 }
@@ -1844,60 +1864,59 @@ export async function createAppointmentFromQuote(input: {
     throw new Error("Supabase nao esta configurado neste ambiente.");
   }
 
-  const { data: quote, error: quoteError } = await supabase
-    .from("quote_requests")
-    .select("id, client_id, professional_id, service_id, location, description")
-    .eq("id", input.quoteRequestId)
-    .single();
+  const startsAt = assertFutureAppointment(input.startsAt);
+  const { data, error } = await supabase.rpc("propose_appointment", {
+    p_quote_request_id: input.quoteRequestId,
+    p_starts_at: startsAt,
+    p_notes: input.notes?.trim() || null,
+  });
 
-  if (quoteError) throw quoteError;
-
-  const { data, error } = await supabase
-    .from("appointments")
-    .insert({
-      quote_request_id: quote.id,
-      client_id: quote.client_id,
-      professional_id: quote.professional_id,
-      service_id: quote.service_id,
-      starts_at: input.startsAt,
-      status: "confirmed",
-      address: quote.location,
-      notes: input.notes ?? quote.description,
-    })
-    .select("*")
-    .single();
-
-  if (error) throw error;
-
-  await supabase
-    .from("quote_requests")
-    .update({
-      status: "accepted",
-      accepted_at: new Date().toISOString(),
-    })
-    .eq("id", quote.id);
-
+  if (error) throw new Error(formatAppointmentError(error));
   return data;
 }
 
-export async function listMyAgendaItems(): Promise<AgendaItem[]> {
+export async function updateAppointmentStatus(input: {
+  appointmentId: string;
+  status: Extract<AppointmentStatus, "confirmed" | "completed" | "cancelled">;
+}): Promise<AppointmentRow> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    throw new Error("Supabase nao esta configurado neste ambiente.");
+  }
+
+  const { data, error } = await supabase.rpc("transition_appointment", {
+    p_appointment_id: input.appointmentId,
+    p_status: input.status,
+  });
+
+  if (error) throw new Error(formatAppointmentError(error));
+  return data;
+}
+
+export async function listMyAgendaItems(userId: string): Promise<AgendaItem[]> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return [];
 
+  const professionalProfile = await getMyProfessionalProfile(userId);
   const { data, error } = await supabase
     .from("appointments")
     .select(
       `
       id,
+      quote_request_id,
+      client_id,
       professional_id,
       starts_at,
+      address,
+      notes,
       status,
       services(title),
+      client_profiles(city),
       professional_profiles(public_name, specialty)
     `,
     )
     .order("starts_at", { ascending: true })
-    .limit(20);
+    .limit(50);
 
   if (error) {
     console.error("Failed to load agenda items", error);
@@ -1909,21 +1928,30 @@ export async function listMyAgendaItems(): Promise<AgendaItem[]> {
       public_name: string | null;
       specialty: string;
     }>(row.professional_profiles);
+    const client = asRelatedObject<{ city: string }>(row.client_profiles);
     const service = asRelatedObject<{ title: string }>(row.services);
     const startsAt = new Date(row.starts_at);
-    const professionalName = professional?.public_name ?? professional?.specialty ?? "Profissional";
+    const professionalView = professionalProfile?.id === row.professional_id;
+    const professionalName = professionalView
+      ? `Cliente - ${client?.city ?? row.address ?? "ELLO"}`
+      : (professional?.public_name ?? professional?.specialty ?? "Profissional");
 
     return {
       id: row.id,
+      quoteRequestId: row.quote_request_id,
       professionalId: row.professional_id,
       professionalName,
       professionalInitials: initialsFor(professionalName),
       service: service?.title ?? professional?.specialty ?? "Servico agendado",
+      startsAt: row.starts_at,
       date: formatShortDate(row.starts_at),
       time: startsAt.toLocaleTimeString("pt-BR", {
         hour: "2-digit",
         minute: "2-digit",
       }),
+      address: row.address,
+      notes: row.notes,
+      professionalView,
       status: row.status,
     };
   });

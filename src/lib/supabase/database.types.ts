@@ -414,7 +414,23 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      propose_appointment: {
+        Args: {
+          p_quote_request_id: string;
+          p_starts_at: string;
+          p_notes?: string | null;
+        };
+        Returns: Database["public"]["Tables"]["appointments"]["Row"];
+      };
+      transition_appointment: {
+        Args: {
+          p_appointment_id: string;
+          p_status: AppointmentStatus;
+        };
+        Returns: Database["public"]["Tables"]["appointments"]["Row"];
+      };
+    };
     Enums: {
       app_role: AppRole;
       verification_status: VerificationStatus;

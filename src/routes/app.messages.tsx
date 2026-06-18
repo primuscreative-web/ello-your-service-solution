@@ -33,7 +33,7 @@ function Messages() {
   const [appointmentDate, setAppointmentDate] = useState(defaultAppointmentDate());
   const quoteThreadsQuery = useQuery({
     queryKey: ["ello", "me", "quote-threads", user?.id],
-    queryFn: listMyQuoteThreads,
+    queryFn: () => listMyQuoteThreads(user!.id),
     enabled: Boolean(configured && user),
   });
   const quoteThreads = useMemo(() => quoteThreadsQuery.data ?? [], [quoteThreadsQuery.data]);
@@ -138,9 +138,7 @@ function Messages() {
         </Link>
         <ProPhoto initials={activeThread ? initialsFor(activeThread.title) : "MC"} size={34} />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-sm font-black">
-            {activeThread?.title ?? "Mensagens ELLO"}
-          </h1>
+          <h1 className="truncate text-sm font-black">{activeThread?.title ?? "Mensagens ELLO"}</h1>
           <p className="truncate text-[10px] text-white/75">
             {activeThread?.subtitle ?? "Orcamentos e atendimentos"}
           </p>
@@ -198,7 +196,9 @@ function Messages() {
               messagesQuery.data.map((item) => (
                 <Bubble key={item.id} align={item.mine ? "right" : "left"}>
                   <p>{item.body}</p>
-                  <span className="mt-1 block text-right text-[9px] opacity-70">{item.timestamp}</span>
+                  <span className="mt-1 block text-right text-[9px] opacity-70">
+                    {item.timestamp}
+                  </span>
                 </Bubble>
               ))
             ) : (
@@ -212,39 +212,41 @@ function Messages() {
                 {sendMutation.error.message}
               </p>
             ) : null}
-            <section className="ello-card rounded-xl p-3">
-              <p className="mb-3 rounded-lg border border-sky-100 bg-sky-50 p-2 text-[10px] font-semibold leading-relaxed text-sky-900">
-                {PAYMENT_POLICY.quotePaymentNotice}
-              </p>
-              <div className="flex items-center gap-2 text-sm font-black">
-                <CalendarDays className="size-4 text-[#083d63]" />
-                Agendar servico
-              </div>
-              <div className="mt-3 flex gap-2">
-                <input
-                  type="datetime-local"
-                  value={appointmentDate}
-                  onChange={(event) => setAppointmentDate(event.target.value)}
-                  className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-xs font-bold outline-none focus:border-primary"
-                />
-                <button
-                  disabled={appointmentMutation.isPending || !appointmentDate}
-                  onClick={() => appointmentMutation.mutate()}
-                  className="rounded-lg bg-[#083d63] px-3 text-[10px] font-black text-white disabled:bg-muted disabled:text-muted-foreground"
-                >
-                  Confirmar
-                </button>
-              </div>
-              {appointmentMutation.error ? (
-                <p className="mt-2 rounded-lg bg-red-50 p-2 text-[10px] font-semibold text-red-700">
-                  {appointmentMutation.error.message}
+            {!activeThread.professionalView ? (
+              <section className="ello-card rounded-xl p-3">
+                <p className="mb-3 rounded-lg border border-sky-100 bg-sky-50 p-2 text-[10px] font-semibold leading-relaxed text-sky-900">
+                  {PAYMENT_POLICY.quotePaymentNotice}
                 </p>
-              ) : appointmentMutation.isSuccess ? (
-                <p className="mt-2 rounded-lg bg-emerald-50 p-2 text-[10px] font-semibold text-emerald-800">
-                  Agendamento salvo no Supabase e enviado para a Agenda.
-                </p>
-              ) : null}
-            </section>
+                <div className="flex items-center gap-2 text-sm font-black">
+                  <CalendarDays className="size-4 text-[#083d63]" />
+                  Agendar servico
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    type="datetime-local"
+                    value={appointmentDate}
+                    onChange={(event) => setAppointmentDate(event.target.value)}
+                    className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-xs font-bold outline-none focus:border-primary"
+                  />
+                  <button
+                    disabled={appointmentMutation.isPending || !appointmentDate}
+                    onClick={() => appointmentMutation.mutate()}
+                    className="rounded-lg bg-[#083d63] px-3 text-[10px] font-black text-white disabled:bg-muted disabled:text-muted-foreground"
+                  >
+                    Confirmar
+                  </button>
+                </div>
+                {appointmentMutation.error ? (
+                  <p className="mt-2 rounded-lg bg-red-50 p-2 text-[10px] font-semibold text-red-700">
+                    {appointmentMutation.error.message}
+                  </p>
+                ) : appointmentMutation.isSuccess ? (
+                  <p className="mt-2 rounded-lg bg-emerald-50 p-2 text-[10px] font-semibold text-emerald-800">
+                    Agendamento salvo no Supabase e enviado para a Agenda.
+                  </p>
+                ) : null}
+              </section>
+            ) : null}
           </section>
         ) : (
           <DemoConversation />
