@@ -1280,6 +1280,7 @@ function ProfessionalQuoteCard({
         </CyanButton>
         <Link
           to="/app/messages"
+          search={{ quote: quote.id }}
           className="grid h-10 place-items-center rounded-lg bg-[#083d63] text-xs font-black text-white"
         >
           <span className="inline-flex items-center gap-1">

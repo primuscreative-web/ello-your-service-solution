@@ -159,6 +159,7 @@ function RequestCard({
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Link
           to="/app/messages"
+          search={{ quote: request.id }}
           className="grid h-10 place-items-center rounded-lg bg-[#083d63] text-xs font-black text-white"
         >
           <span className="inline-flex items-center gap-1">

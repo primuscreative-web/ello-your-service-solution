@@ -1,11 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import { CalendarDays, FileText, Image as ImageIcon, MoreVertical } from "lucide-react";
 import { ChatComposer, ProPhoto, ServicePhoto } from "@/components/ello/mobile-ui";
 import { useAuth } from "@/lib/auth/auth-context";
 import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   createAppointmentFromQuote,
   listMyQuoteThreads,
@@ -15,11 +17,16 @@ import {
 } from "@/lib/ello-repository";
 
 export const Route = createFileRoute("/app/messages")({
+  validateSearch: z.object({
+    quote: z.string().optional(),
+  }),
   component: Messages,
 });
 
 function Messages() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { quote } = Route.useSearch();
   const { configured, user } = useAuth();
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -80,10 +87,46 @@ function Messages() {
   });
 
   useEffect(() => {
+    const queryThread = quoteThreads.find((thread) => thread.id === quote);
+    if (queryThread && activeThreadId !== queryThread.id) {
+      setActiveThreadId(queryThread.id);
+      return;
+    }
+
     if (!activeThreadId && quoteThreads[0]) {
       setActiveThreadId(quoteThreads[0].id);
     }
-  }, [activeThreadId, quoteThreads]);
+  }, [activeThreadId, quote, quoteThreads]);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!configured || !user || !activeThreadId || !supabase) return;
+
+    const channel = supabase
+      .channel(`ello-quote-messages-${activeThreadId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "quote_messages",
+          filter: `quote_request_id=eq.${activeThreadId}`,
+        },
+        () => {
+          void queryClient.invalidateQueries({
+            queryKey: ["ello", "quote-messages", activeThreadId, user.id],
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["ello", "me", "quote-threads", user.id],
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [activeThreadId, configured, queryClient, user]);
 
   const canSend = Boolean(configured && user && activeThreadId && message.trim());
 
@@ -121,7 +164,14 @@ function Messages() {
                     key={thread.id}
                     thread={thread}
                     active={thread.id === activeThreadId}
-                    onClick={() => setActiveThreadId(thread.id)}
+                    onClick={() => {
+                      setActiveThreadId(thread.id);
+                      void navigate({
+                        to: "/app/messages",
+                        search: { quote: thread.id },
+                        replace: true,
+                      });
+                    }}
                   />
                 ))}
               </div>

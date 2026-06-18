@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import type React from "react";
 import { Award, BadgeCheck, ClipboardCheck, Heart, MessageCircle, Share2 } from "lucide-react";
 import { getProfessional, type Professional } from "@/lib/ello-data";
@@ -36,6 +36,7 @@ export const Route = createFileRoute("/app/professional/$id")({
 
 function ProfessionalDetail() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { id, initialPro } = Route.useLoaderData() as {
     id: string;
     initialPro: Professional | null;
@@ -75,7 +76,7 @@ function ProfessionalDetail() {
         desiredDate: input.desiredDate,
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (quoteRequest) => {
       setQuoteDescription("");
       setQuoteDesiredDate("");
       await Promise.all([
@@ -86,6 +87,12 @@ function ProfessionalDetail() {
           queryKey: ["ello", "me", "request-history", user?.id],
         }),
       ]);
+      await navigate({
+        to: "/app/messages",
+        search: {
+          quote: quoteRequest.id,
+        },
+      });
     },
   });
   const favoriteMutation = useMutation({
