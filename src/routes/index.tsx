@@ -10,10 +10,14 @@ function Splash() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col overflow-hidden bg-[#002eea] text-white">
       <section className="relative isolate flex min-h-dvh flex-col px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(4rem+env(safe-area-inset-top))]">
-        <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_50%_36%,rgba(42,105,255,0.96),rgba(0,35,184,0.98)_48%,rgba(0,14,45,1)_100%)]" />
-        <div className="absolute inset-x-0 bottom-0 -z-10 h-[58%] bg-gradient-to-t from-[#000b25] via-[#0037f1]/30 to-transparent" />
+        <img
+          src={ELLO_MEDIA.splash.src}
+          alt=""
+          className="pointer-events-none absolute inset-0 -z-20 size-full object-cover"
+        />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#001fbd]/15 via-transparent to-[#000b25]/70" />
 
-        <div className="flex flex-1 flex-col items-center text-center">
+        <div className="relative z-10 flex flex-1 flex-col items-center text-center">
           <div className="mt-[16vh] flex flex-col items-center">
             <ElloLogo
               className="text-[3.55rem] text-white"
@@ -24,12 +28,6 @@ function Splash() {
               Encontre ou ofereça serviços com facilidade.
             </p>
           </div>
-
-          <img
-            src={ELLO_MEDIA.splash.src}
-            alt="Profissionais ELLO"
-            className="pointer-events-none absolute inset-x-1/2 bottom-[8.9rem] -z-0 h-[48dvh] max-h-[430px] min-h-[310px] w-auto max-w-none -translate-x-1/2 object-contain object-bottom"
-          />
         </div>
 
         <div className="relative z-10 mt-auto space-y-4">
