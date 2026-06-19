@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { BadgeCheck, ChevronLeft, Heart, MessageCircle, Share2, Star } from "lucide-react";
 import { AvatarPhoto } from "@/components/ello/media";
 import { Availability, Rating } from "@/components/ello/status";
 import { useAuth } from "@/lib/auth/auth-context";
 import { AVAILABILITY_LABEL, getProfessional, type Professional } from "@/lib/ello-data";
 import {
-  createDetailedQuoteRequest,
   getProfessionalById,
   listMyFavoriteProfessionalIds,
   listProfessionalPortfolio,
@@ -32,16 +31,12 @@ export const Route = createFileRoute("/app/professional/$id")({
 
 function ProfessionalDetail() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const { id, initialPro } = Route.useLoaderData() as {
     id: string;
     initialPro: Professional | null;
   };
   const { configured, user } = useAuth();
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
-  const [showQuote, setShowQuote] = useState(false);
-  const [quoteDescription, setQuoteDescription] = useState("");
-  const [quoteLocation, setQuoteLocation] = useState("");
 
   const professionalQuery = useQuery({
     queryKey: ["ello", "professional", id],
@@ -78,21 +73,6 @@ function ProfessionalDetail() {
       await queryClient.invalidateQueries({
         queryKey: ["ello", "me", "favorite-professional-ids", user?.id],
       });
-    },
-  });
-
-  const quoteMutation = useMutation({
-    mutationFn: () => {
-      if (!pro || !user) throw new Error("Entre na conta para solicitar um serviço.");
-      return createDetailedQuoteRequest({
-        userId: user.id,
-        professionalId: pro.id,
-        description: quoteDescription,
-        location: quoteLocation || pro.city,
-      });
-    },
-    onSuccess: async (quoteRequest) => {
-      await navigate({ to: "/app/messages", search: { quote: quoteRequest.id } });
     },
   });
 
@@ -194,38 +174,6 @@ function ProfessionalDetail() {
           {activeTab === "services" ? <ServicesTab professional={pro} /> : null}
           {activeTab === "reviews" ? <ReviewsTab professional={pro} /> : null}
           {activeTab === "gallery" ? <GalleryTab items={portfolioItems} /> : null}
-
-          {showQuote ? (
-            <section className="mt-6 rounded-2xl border border-border p-4">
-              <h2 className="text-base font-black">Novo orçamento</h2>
-              <textarea
-                value={quoteDescription}
-                onChange={(event) => setQuoteDescription(event.target.value)}
-                placeholder="Descreva o serviço que você precisa..."
-                className="mt-4 min-h-28 w-full resize-none rounded-xl border border-border p-3 text-sm outline-none focus:border-primary"
-              />
-              <input
-                value={quoteLocation}
-                onChange={(event) => setQuoteLocation(event.target.value)}
-                placeholder="Cidade ou bairro"
-                className="mt-3 h-12 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-primary"
-              />
-              {quoteMutation.error ? (
-                <p className="mt-3 text-xs font-semibold text-destructive">
-                  {quoteMutation.error.message}
-                </p>
-              ) : null}
-              <button
-                disabled={
-                  !canPersist || quoteDescription.trim().length < 10 || quoteMutation.isPending
-                }
-                onClick={() => quoteMutation.mutate()}
-                className="mt-4 h-12 w-full rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-45"
-              >
-                {quoteMutation.isPending ? "Enviando..." : "Enviar solicitação"}
-              </button>
-            </section>
-          ) : null}
         </div>
       </main>
 
@@ -237,13 +185,13 @@ function ProfessionalDetail() {
           <MessageCircle className="size-5" />
           Chamar no chat
         </Link>
-        <button
-          type="button"
-          onClick={() => setShowQuote((visible) => !visible)}
-          className="h-12 rounded-xl bg-primary text-sm font-bold text-white"
+        <Link
+          to="/app/professional/$id/quote"
+          params={{ id }}
+          className="flex h-12 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white"
         >
           Solicitar serviço
-        </button>
+        </Link>
       </div>
     </div>
   );

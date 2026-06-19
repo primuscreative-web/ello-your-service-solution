@@ -26,6 +26,8 @@ import { Route as AppBusinessRouteImport } from './routes/app.business'
 import { Route as AppAgendaRouteImport } from './routes/app.agenda'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppProfessionalIdRouteImport } from './routes/app.professional.$id'
+import { Route as AppProfessionalIdScheduleRouteImport } from './routes/app.professional.$id_.schedule'
+import { Route as AppProfessionalIdQuoteRouteImport } from './routes/app.professional.$id_.quote'
 
 const RoleRoute = RoleRouteImport.update({
   id: '/role',
@@ -112,6 +114,17 @@ const AppProfessionalIdRoute = AppProfessionalIdRouteImport.update({
   path: '/professional/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProfessionalIdScheduleRoute =
+  AppProfessionalIdScheduleRouteImport.update({
+    id: '/professional/$id_/schedule',
+    path: '/professional/$id/schedule',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppProfessionalIdQuoteRoute = AppProfessionalIdQuoteRouteImport.update({
+  id: '/professional/$id_/quote',
+  path: '/professional/$id/quote',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -131,6 +144,8 @@ export interface FileRoutesByFullPath {
   '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
+  '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
+  '/app/professional/$id/schedule': typeof AppProfessionalIdScheduleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -149,6 +164,8 @@ export interface FileRoutesByTo {
   '/p/$slug': typeof PSlugRoute
   '/app': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
+  '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
+  '/app/professional/$id/schedule': typeof AppProfessionalIdScheduleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -169,6 +186,8 @@ export interface FileRoutesById {
   '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
+  '/app/professional/$id_/quote': typeof AppProfessionalIdQuoteRoute
+  '/app/professional/$id_/schedule': typeof AppProfessionalIdScheduleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -190,6 +209,8 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/app/'
     | '/app/professional/$id'
+    | '/app/professional/$id/quote'
+    | '/app/professional/$id/schedule'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -208,6 +229,8 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/app'
     | '/app/professional/$id'
+    | '/app/professional/$id/quote'
+    | '/app/professional/$id/schedule'
   id:
     | '__root__'
     | '/'
@@ -227,6 +250,8 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/app/'
     | '/app/professional/$id'
+    | '/app/professional/$id_/quote'
+    | '/app/professional/$id_/schedule'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -359,6 +384,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfessionalIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/professional/$id_/schedule': {
+      id: '/app/professional/$id_/schedule'
+      path: '/professional/$id/schedule'
+      fullPath: '/app/professional/$id/schedule'
+      preLoaderRoute: typeof AppProfessionalIdScheduleRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/professional/$id_/quote': {
+      id: '/app/professional/$id_/quote'
+      path: '/professional/$id/quote'
+      fullPath: '/app/professional/$id/quote'
+      preLoaderRoute: typeof AppProfessionalIdQuoteRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -374,6 +413,8 @@ interface AppRouteChildren {
   AppSearchRoute: typeof AppSearchRoute
   AppIndexRoute: typeof AppIndexRoute
   AppProfessionalIdRoute: typeof AppProfessionalIdRoute
+  AppProfessionalIdQuoteRoute: typeof AppProfessionalIdQuoteRoute
+  AppProfessionalIdScheduleRoute: typeof AppProfessionalIdScheduleRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -388,6 +429,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppSearchRoute: AppSearchRoute,
   AppIndexRoute: AppIndexRoute,
   AppProfessionalIdRoute: AppProfessionalIdRoute,
+  AppProfessionalIdQuoteRoute: AppProfessionalIdQuoteRoute,
+  AppProfessionalIdScheduleRoute: AppProfessionalIdScheduleRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
