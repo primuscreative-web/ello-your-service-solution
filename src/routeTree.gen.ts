@@ -28,6 +28,8 @@ import { Route as AppAgendaRouteImport } from './routes/app.agenda'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppQuoteIdRouteImport } from './routes/app.quote.$id'
 import { Route as AppProfessionalIdRouteImport } from './routes/app.professional.$id'
+import { Route as AppBusinessQuotesRouteImport } from './routes/app.business.quotes'
+import { Route as AppBusinessClientsRouteImport } from './routes/app.business.clients'
 import { Route as AppProfessionalIdScheduleRouteImport } from './routes/app.professional.$id_.schedule'
 import { Route as AppProfessionalIdQuoteRouteImport } from './routes/app.professional.$id_.quote'
 
@@ -126,6 +128,16 @@ const AppProfessionalIdRoute = AppProfessionalIdRouteImport.update({
   path: '/professional/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBusinessQuotesRoute = AppBusinessQuotesRouteImport.update({
+  id: '/quotes',
+  path: '/quotes',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
+const AppBusinessClientsRoute = AppBusinessClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
 const AppProfessionalIdScheduleRoute =
   AppProfessionalIdScheduleRouteImport.update({
     id: '/professional/$id_/schedule',
@@ -146,7 +158,7 @@ export interface FileRoutesByFullPath {
   '/role': typeof RoleRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
-  '/app/business': typeof AppBusinessRoute
+  '/app/business': typeof AppBusinessRouteWithChildren
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
@@ -156,6 +168,8 @@ export interface FileRoutesByFullPath {
   '/app/search': typeof AppSearchRoute
   '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
+  '/app/business/clients': typeof AppBusinessClientsRoute
+  '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
   '/app/quote/$id': typeof AppQuoteIdRoute
   '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
@@ -168,7 +182,7 @@ export interface FileRoutesByTo {
   '/role': typeof RoleRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
-  '/app/business': typeof AppBusinessRoute
+  '/app/business': typeof AppBusinessRouteWithChildren
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
@@ -178,6 +192,8 @@ export interface FileRoutesByTo {
   '/app/search': typeof AppSearchRoute
   '/p/$slug': typeof PSlugRoute
   '/app': typeof AppIndexRoute
+  '/app/business/clients': typeof AppBusinessClientsRoute
+  '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
   '/app/quote/$id': typeof AppQuoteIdRoute
   '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
@@ -192,7 +208,7 @@ export interface FileRoutesById {
   '/role': typeof RoleRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
-  '/app/business': typeof AppBusinessRoute
+  '/app/business': typeof AppBusinessRouteWithChildren
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
@@ -202,6 +218,8 @@ export interface FileRoutesById {
   '/app/search': typeof AppSearchRoute
   '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
+  '/app/business/clients': typeof AppBusinessClientsRoute
+  '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
   '/app/quote/$id': typeof AppQuoteIdRoute
   '/app/professional/$id_/quote': typeof AppProfessionalIdQuoteRoute
@@ -227,6 +245,8 @@ export interface FileRouteTypes {
     | '/app/search'
     | '/p/$slug'
     | '/app/'
+    | '/app/business/clients'
+    | '/app/business/quotes'
     | '/app/professional/$id'
     | '/app/quote/$id'
     | '/app/professional/$id/quote'
@@ -249,6 +269,8 @@ export interface FileRouteTypes {
     | '/app/search'
     | '/p/$slug'
     | '/app'
+    | '/app/business/clients'
+    | '/app/business/quotes'
     | '/app/professional/$id'
     | '/app/quote/$id'
     | '/app/professional/$id/quote'
@@ -272,6 +294,8 @@ export interface FileRouteTypes {
     | '/app/search'
     | '/p/$slug'
     | '/app/'
+    | '/app/business/clients'
+    | '/app/business/quotes'
     | '/app/professional/$id'
     | '/app/quote/$id'
     | '/app/professional/$id_/quote'
@@ -422,6 +446,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfessionalIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/business/quotes': {
+      id: '/app/business/quotes'
+      path: '/quotes'
+      fullPath: '/app/business/quotes'
+      preLoaderRoute: typeof AppBusinessQuotesRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
+    '/app/business/clients': {
+      id: '/app/business/clients'
+      path: '/clients'
+      fullPath: '/app/business/clients'
+      preLoaderRoute: typeof AppBusinessClientsRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
     '/app/professional/$id_/schedule': {
       id: '/app/professional/$id_/schedule'
       path: '/professional/$id/schedule'
@@ -439,10 +477,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppBusinessRouteChildren {
+  AppBusinessClientsRoute: typeof AppBusinessClientsRoute
+  AppBusinessQuotesRoute: typeof AppBusinessQuotesRoute
+}
+
+const AppBusinessRouteChildren: AppBusinessRouteChildren = {
+  AppBusinessClientsRoute: AppBusinessClientsRoute,
+  AppBusinessQuotesRoute: AppBusinessQuotesRoute,
+}
+
+const AppBusinessRouteWithChildren = AppBusinessRoute._addFileChildren(
+  AppBusinessRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppAgendaRoute: typeof AppAgendaRoute
-  AppBusinessRoute: typeof AppBusinessRoute
+  AppBusinessRoute: typeof AppBusinessRouteWithChildren
   AppExpressRoute: typeof AppExpressRoute
   AppFavoritesRoute: typeof AppFavoritesRoute
   AppMessagesRoute: typeof AppMessagesRoute
@@ -460,7 +512,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppAgendaRoute: AppAgendaRoute,
-  AppBusinessRoute: AppBusinessRoute,
+  AppBusinessRoute: AppBusinessRouteWithChildren,
   AppExpressRoute: AppExpressRoute,
   AppFavoritesRoute: AppFavoritesRoute,
   AppMessagesRoute: AppMessagesRoute,

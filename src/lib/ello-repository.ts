@@ -262,6 +262,14 @@ export type ProfessionalQuoteItem = {
   responseMessage: string | null;
 };
 
+export type ProfessionalClientSummary = {
+  userId: string;
+  name: string;
+  city: string;
+  completedServices: number;
+  totalRequests: number;
+};
+
 export type PublicProfessionalLink = {
   id: string;
   slug: string;
@@ -1776,6 +1784,61 @@ export async function listMyProfessionalQuotes(userId: string): Promise<Professi
   }
 
   return (data ?? []).map(mapProfessionalQuoteItem);
+}
+
+export async function listMyProfessionalClients(
+  userId: string,
+): Promise<ProfessionalClientSummary[]> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return [];
+
+  const profile = await getMyProfessionalProfile(userId);
+  if (!profile) return [];
+
+  const { data, error } = await supabase
+    .from("quote_requests")
+    .select("client_id, status, client_profiles(user_id, city)")
+    .eq("professional_id", profile.id)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const clients = new Map<
+    string,
+    { city: string; completedServices: number; totalRequests: number }
+  >();
+  for (const row of data ?? []) {
+    const client = asRelatedObject<{ user_id: string; city: string }>(row.client_profiles);
+    if (!client) continue;
+    const current = clients.get(client.user_id) ?? {
+      city: client.city,
+      completedServices: 0,
+      totalRequests: 0,
+    };
+    current.totalRequests += 1;
+    if (row.status === "completed") current.completedServices += 1;
+    clients.set(client.user_id, current);
+  }
+
+  const userIds = [...clients.keys()];
+  if (!userIds.length) return [];
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", userIds);
+  if (profilesError) throw profilesError;
+  const names = new Map((profiles ?? []).map((item) => [item.id, item.full_name]));
+
+  return userIds.map((clientUserId) => {
+    const client = clients.get(clientUserId)!;
+    return {
+      userId: clientUserId,
+      name: names.get(clientUserId) || "Cliente ELLO",
+      city: client.city,
+      completedServices: client.completedServices,
+      totalRequests: client.totalRequests,
+    };
+  });
 }
 
 export async function respondToProfessionalQuote(input: {
