@@ -5,7 +5,7 @@ import { BadgeCheck, ChevronLeft, Heart, MessageCircle, Share2, Star } from "luc
 import { AvatarPhoto } from "@/components/ello/media";
 import { Availability, Rating } from "@/components/ello/status";
 import { useAuth } from "@/lib/auth/auth-context";
-import { AVAILABILITY_LABEL, getProfessional, type Professional } from "@/lib/ello-data";
+import { AVAILABILITY_LABEL, type Professional } from "@/lib/ello-data";
 import {
   getProfessionalById,
   listMyFavoriteProfessionalIds,
@@ -17,10 +17,9 @@ type ProfileTab = "profile" | "services" | "reviews" | "gallery";
 
 export const Route = createFileRoute("/app/professional/$id")({
   component: ProfessionalDetail,
-  loader: ({ params }): { id: string; initialPro: Professional | null } => {
-    const initialPro = getProfessional(params.id) ?? null;
-    if (!initialPro && !isUuid(params.id)) throw notFound();
-    return { id: params.id, initialPro };
+  loader: ({ params }): { id: string } => {
+    if (!isUuid(params.id)) throw notFound();
+    return { id: params.id };
   },
   notFoundComponent: () => (
     <div className="p-8 text-center text-sm text-muted-foreground">
@@ -31,9 +30,8 @@ export const Route = createFileRoute("/app/professional/$id")({
 
 function ProfessionalDetail() {
   const queryClient = useQueryClient();
-  const { id, initialPro } = Route.useLoaderData() as {
+  const { id } = Route.useLoaderData() as {
     id: string;
-    initialPro: Professional | null;
   };
   const { configured, user } = useAuth();
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
@@ -41,7 +39,7 @@ function ProfessionalDetail() {
   const professionalQuery = useQuery({
     queryKey: ["ello", "professional", id],
     queryFn: () => getProfessionalById(id),
-    enabled: !initialPro && isUuid(id),
+    enabled: isUuid(id),
   });
   const portfolioQuery = useQuery({
     queryKey: ["ello", "professional", id, "portfolio"],
@@ -54,7 +52,7 @@ function ProfessionalDetail() {
     enabled: Boolean(configured && user),
   });
 
-  const pro = initialPro ?? professionalQuery.data;
+  const pro = professionalQuery.data;
   const portfolioItems = portfolioQuery.data ?? [];
   const favoriteIds = new Set(favoritesQuery.data ?? []);
   const isFavorite = pro ? favoriteIds.has(pro.id) : false;

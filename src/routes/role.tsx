@@ -52,7 +52,7 @@ function Role() {
 
       {!user ? (
         <div className="mt-7 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-xs font-semibold leading-relaxed text-primary">
-          Você está no modo protótipo. Ao entrar com Supabase, esta escolha será salva no banco.
+          Entre ou crie sua conta para manter sua escolha sincronizada em todos os dispositivos.
         </div>
       ) : null}
 

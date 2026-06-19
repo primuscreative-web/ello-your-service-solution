@@ -204,6 +204,6 @@ create policy "profile videos owner write"
 comment on table public.monetization_requests is
   'Solicitacoes comerciais iniciais da ELLO sem gateway de pagamento ativo.';
 comment on table public.ello_link_events is
-  'Eventos anonimizados para estatisticas do ELLO Link PRO.';
+  'Eventos anonimizados para estatisticas do ELLO Link.';
 comment on table public.local_partner_spaces is
   'Espacos comerciais para parceiros locais exibidos no app.';

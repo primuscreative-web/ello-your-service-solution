@@ -1,10 +1,4 @@
-import {
-  CATEGORIES,
-  PROFESSIONALS,
-  type Category,
-  type Professional,
-  type TrustLevel,
-} from "./ello-data";
+import { CATEGORIES, type Category, type Professional, type TrustLevel } from "./ello-data";
 import {
   assertFutureAppointment,
   formatAppointmentError,
@@ -410,7 +404,7 @@ export async function listProfessionals(filters?: {
   limit?: number;
 }): Promise<Professional[]> {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) return filterMockProfessionals(filters);
+  if (!supabase) return [];
 
   let query = supabase
     .from("professional_profiles")
@@ -461,9 +455,6 @@ export async function listProfessionals(filters?: {
 }
 
 export async function getProfessionalById(id: string): Promise<Professional | null> {
-  const mock = PROFESSIONALS.find((professional) => professional.id === id);
-  if (mock) return mock;
-
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return null;
 
@@ -2410,10 +2401,6 @@ export async function getMyBusinessDashboard(userId: string): Promise<BusinessDa
       };
     }),
   };
-}
-
-function filterMockProfessionals(filters?: { category?: string; query?: string; limit?: number }) {
-  return filterProfessionals(PROFESSIONALS, filters);
 }
 
 function emptyBusinessDashboard(profile: ProfessionalProfile | null): BusinessDashboard {
