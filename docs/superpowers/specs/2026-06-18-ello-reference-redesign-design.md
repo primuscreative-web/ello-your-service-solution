@@ -258,6 +258,18 @@ Somente relações originadas de interações autorizadas devem ser exibidas.
 
 ### 23. ELLO Link
 
+O ELLO Link passa a ser uma ferramenta central de automação comercial do profissional, não apenas uma página pública. Para o cliente, é o link compartilhável de apresentação e agendamento rápido. Para o profissional, é a ferramenta que otimiza, melhora, automatiza e profissionaliza ações repetitivas.
+
+Requisitos aprovados:
+
+- Página pública com foto, bio, serviços disponíveis, imagem de exemplo, título e descrição rápida opcional.
+- Agenda pública com datas e horários disponíveis.
+- O cliente só pode agendar depois de escolher um serviço.
+- Se o cliente não tiver conta, o fluxo envia para criação rápida de conta e retorna ao mesmo ELLO Link para concluir o agendamento.
+- Botão de WhatsApp leva direto ao número profissional configurado, com frase pronta automática definida pelo profissional.
+- O profissional configura 100% da página em “Configuração do ELLO Link”.
+- Painel profissional do ELLO Link deve mostrar datas/horários, clientes frequentes e criação de cupom com formato 4 letras + 2 números.
+
 - página pública compacta;
 - capa, perfil e contatos;
 - WhatsApp, ligação e solicitação de orçamento;

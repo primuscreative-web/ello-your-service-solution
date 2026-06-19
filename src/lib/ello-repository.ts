@@ -218,6 +218,10 @@ export type ProfessionalProfileUpdate = {
   elloLinkSlug?: string | null;
   introVideoUrl?: string | null;
   coverUrl?: string | null;
+  phone?: string | null;
+  elloLinkWhatsappMessage?: string | null;
+  elloLinkCouponCode?: string | null;
+  elloLinkCouponDescription?: string | null;
 };
 
 export type PortfolioItem = {
@@ -291,10 +295,24 @@ export type PublicProfessionalLink = {
   elloLinkProEnabled: boolean;
   introVideoUrl: string | null;
   coverUrl: string | null;
+  phone: string | null;
+  whatsappMessage: string;
+  whatsappUrl: string | null;
+  couponCode: string | null;
+  couponDescription: string | null;
   qrCodeEnabled: boolean;
   maxPortfolioItems: number;
   services: ProfessionalService[];
   portfolio: PortfolioItem[];
+};
+
+export type ElloLinkBookingInput = {
+  userId: string;
+  professionalId: string;
+  serviceId: string;
+  serviceTitle: string;
+  startsAt: string;
+  location: string;
 };
 
 export type MonetizationRequestItem = {
@@ -671,6 +689,12 @@ export async function updateMyProfessionalProfile(
       ello_link_slug: slug,
       intro_video_url: input.introVideoUrl?.trim() || null,
       cover_url: input.coverUrl?.trim() || null,
+      phone: input.phone?.trim() || null,
+      ello_link_whatsapp_message:
+        input.elloLinkWhatsappMessage?.trim() ||
+        "Olá! Vim pelo seu ELLO Link e gostaria de tirar uma dúvida.",
+      ello_link_coupon_code: normalizeCouponCode(input.elloLinkCouponCode),
+      ello_link_coupon_description: input.elloLinkCouponDescription?.trim() || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", profile.id)
@@ -944,6 +968,9 @@ export async function getPublicProfessionalLink(
     listProfessionalPortfolio(profile.id),
   ]);
   const name = profile.public_name ?? profile.specialty;
+  const whatsappMessage =
+    profile.ello_link_whatsapp_message ||
+    `Olá, ${name}! Vim pelo seu ELLO Link e gostaria de tirar uma dúvida.`;
 
   return {
     id: profile.id,
@@ -966,6 +993,11 @@ export async function getPublicProfessionalLink(
     elloLinkProEnabled: isProActive,
     introVideoUrl: isProActive ? profile.intro_video_url : null,
     coverUrl: isProActive ? profile.cover_url : null,
+    phone: profile.phone,
+    whatsappMessage,
+    whatsappUrl: createWhatsappUrl(profile.phone, whatsappMessage),
+    couponCode: profile.ello_link_coupon_code,
+    couponDescription: profile.ello_link_coupon_description,
     qrCodeEnabled: isProActive && profile.qr_code_enabled,
     maxPortfolioItems,
     services,
@@ -1578,6 +1610,30 @@ export async function createDetailedQuoteRequest(input: {
 
   if (messageError) throw messageError;
   return data;
+}
+
+export async function createElloLinkBooking(input: ElloLinkBookingInput): Promise<{
+  quoteRequestId: string;
+  appointmentId: string;
+}> {
+  const quote = await createDetailedQuoteRequest({
+    userId: input.userId,
+    professionalId: input.professionalId,
+    serviceId: input.serviceId,
+    desiredDate: input.startsAt,
+    location: input.location,
+    description: `Agendamento pelo ELLO Link para ${input.serviceTitle}.`,
+  });
+  const appointment = await createAppointmentFromQuote({
+    quoteRequestId: quote.id,
+    startsAt: input.startsAt,
+    notes: `Cliente selecionou ${input.serviceTitle} no ELLO Link.`,
+  });
+
+  return {
+    quoteRequestId: quote.id,
+    appointmentId: appointment.id,
+  };
 }
 
 export async function listMyQuoteThreads(userId: string): Promise<QuoteThread[]> {
@@ -2519,6 +2575,22 @@ function formatShortDate(value: string) {
     day: "2-digit",
     month: "short",
   });
+}
+
+function normalizeCouponCode(value: string | null | undefined) {
+  const coupon = value?.trim().toUpperCase() ?? "";
+  if (!coupon) return null;
+  if (!/^[A-Z]{4}[0-9]{2}$/.test(coupon)) {
+    throw new Error("O cupom do ELLO Link deve ter 4 letras e 2 nÃºmeros. Exemplo: ELLO25.");
+  }
+  return coupon;
+}
+
+function createWhatsappUrl(phone: string | null, message: string) {
+  const digits = phone?.replace(/\D/g, "") ?? "";
+  if (digits.length < 10) return null;
+  const normalized = digits.startsWith("55") ? digits : `55${digits}`;
+  return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
 }
 
 function quoteNotificationTitle(thread: QuoteThread) {

@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type React from "react";
 import { useState } from "react";
+import { z } from "zod";
 import { Apple, Mail, Phone } from "lucide-react";
 import { ElloLogo } from "@/components/ello/logo";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -8,11 +9,15 @@ import { createConfirmedPasswordAccount } from "@/lib/auth/auth.functions";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: z.object({
+    redirect: z.string().optional(),
+  }),
   component: Auth,
 });
 
 function Auth() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const { configured } = useAuth();
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -64,6 +69,11 @@ function Auth() {
 
     if (result.error) {
       setError(result.error.message);
+      return;
+    }
+
+    if (redirect?.startsWith("/p/")) {
+      await navigate({ to: redirect });
       return;
     }
 

@@ -773,16 +773,16 @@ git commit -m "Add ELLO professional budgets and CRM"
 
 **Files:**
 - Modify: `src/routes/p.$slug.tsx`
-- Modify: `src/components/ello/business/profile-editor.tsx`
+- Create: `src/routes/app.ello-link.tsx`
 - Modify: `src/lib/ello-repository.ts`
 
-- [ ] **Step 1: Match the public ELLO Link**
+- [ ] **Step 1: Match the public ELLO Link as a fast booking tool**
 
-Use cover, overlapping portrait, identity, real contact actions, tab shortcuts, bio and services. Preserve event tracking for views and contact clicks.
+Use cover, overlapping portrait, identity, WhatsApp CTA, bio, services with optional image/example, available date/time slots and booking CTA. Require a service selection before booking. If the visitor is unauthenticated, send them to quick account creation with a return URL to the same ELLO Link.
 
-- [ ] **Step 2: Match Edit Profile reference**
+- [ ] **Step 2: Build ELLO Link configuration**
 
-Provide image upload, name, category, description, service area, phone and e-mail. Keep current Supabase storage and profile update functions.
+Provide a professional dashboard for ELLO Link configuration: public page content, WhatsApp number and automatic phrase, service creation, date/time dashboard, frequent clients and coupon creation with 4 letters and 2 numbers.
 
 - [ ] **Step 3: Verify public/private boundaries**
 

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type React from "react";
-import { Bell, CalendarDays, CirclePlus, FileText, UserRound, Users } from "lucide-react";
+import { Bell, CalendarDays, CirclePlus, FileText, Link2, UserRound, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   ensureMyProfessionalProfile,
@@ -141,7 +141,7 @@ function ProfessionalHome() {
         <section>
           <h2 className="text-base font-black">Atalhos rápidos</h2>
           <div className="mt-3 grid grid-cols-4 gap-2">
-            <QuickAction icon={CirclePlus} label="Novo serviço" to="/app/settings" />
+            <QuickAction icon={Link2} label="ELLO Link" to="/app/ello-link" />
             <QuickAction icon={CalendarDays} label="Agenda" to="/app/agenda" />
             <QuickAction icon={Users} label="Clientes" to="/app/business/clients" />
             <QuickAction icon={UserRound} label="Meu perfil" to="/app/settings" />

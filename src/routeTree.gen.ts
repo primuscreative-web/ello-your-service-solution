@@ -23,6 +23,7 @@ import { Route as AppNotificationsRouteImport } from './routes/app.notifications
 import { Route as AppMessagesRouteImport } from './routes/app.messages'
 import { Route as AppFavoritesRouteImport } from './routes/app.favorites'
 import { Route as AppExpressRouteImport } from './routes/app.express'
+import { Route as AppElloLinkRouteImport } from './routes/app.ello-link'
 import { Route as AppBusinessRouteImport } from './routes/app.business'
 import { Route as AppAgendaRouteImport } from './routes/app.agenda'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
@@ -103,6 +104,11 @@ const AppExpressRoute = AppExpressRouteImport.update({
   path: '/express',
   getParentRoute: () => AppRoute,
 } as any)
+const AppElloLinkRoute = AppElloLinkRouteImport.update({
+  id: '/ello-link',
+  path: '/ello-link',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBusinessRoute = AppBusinessRouteImport.update({
   id: '/business',
   path: '/business',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRouteWithChildren
+  '/app/ello-link': typeof AppElloLinkRoute
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRouteWithChildren
+  '/app/ello-link': typeof AppElloLinkRoute
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRouteWithChildren
+  '/app/ello-link': typeof AppElloLinkRoute
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/agenda'
     | '/app/business'
+    | '/app/ello-link'
     | '/app/express'
     | '/app/favorites'
     | '/app/messages'
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/agenda'
     | '/app/business'
+    | '/app/ello-link'
     | '/app/express'
     | '/app/favorites'
     | '/app/messages'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/agenda'
     | '/app/business'
+    | '/app/ello-link'
     | '/app/express'
     | '/app/favorites'
     | '/app/messages'
@@ -411,6 +423,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppExpressRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/ello-link': {
+      id: '/app/ello-link'
+      path: '/ello-link'
+      fullPath: '/app/ello-link'
+      preLoaderRoute: typeof AppElloLinkRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/business': {
       id: '/app/business'
       path: '/business'
@@ -495,6 +514,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppAgendaRoute: typeof AppAgendaRoute
   AppBusinessRoute: typeof AppBusinessRouteWithChildren
+  AppElloLinkRoute: typeof AppElloLinkRoute
   AppExpressRoute: typeof AppExpressRoute
   AppFavoritesRoute: typeof AppFavoritesRoute
   AppMessagesRoute: typeof AppMessagesRoute
@@ -513,6 +533,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppAgendaRoute: AppAgendaRoute,
   AppBusinessRoute: AppBusinessRouteWithChildren,
+  AppElloLinkRoute: AppElloLinkRoute,
   AppExpressRoute: AppExpressRoute,
   AppFavoritesRoute: AppFavoritesRoute,
   AppMessagesRoute: AppMessagesRoute,
