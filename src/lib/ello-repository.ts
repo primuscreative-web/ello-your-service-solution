@@ -379,11 +379,11 @@ export async function listProfessionals(filters?: {
 
   if (error) {
     console.error("Failed to load professionals from Supabase", error);
-    return filterMockProfessionals(filters);
+    throw new Error("Não foi possível carregar os profissionais agora.");
   }
 
   const mapped = sortBoostedProfessionalRows(data ?? []).map(mapProfessionalRow);
-  return filterProfessionals(mapped.length ? mapped : PROFESSIONALS, filters);
+  return filterProfessionals(mapped, filters);
 }
 
 export async function getProfessionalById(id: string): Promise<Professional | null> {
