@@ -16,6 +16,8 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as AppWalletRouteImport } from './routes/app.wallet'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSearchRouteImport } from './routes/app.search'
 import { Route as AppRequestsRouteImport } from './routes/app.requests'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
@@ -29,6 +31,8 @@ import { Route as AppAgendaRouteImport } from './routes/app.agenda'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppQuoteIdRouteImport } from './routes/app.quote.$id'
 import { Route as AppProfessionalIdRouteImport } from './routes/app.professional.$id'
+import { Route as AppBusinessStatisticsRouteImport } from './routes/app.business.statistics'
+import { Route as AppBusinessReviewsRouteImport } from './routes/app.business.reviews'
 import { Route as AppBusinessQuotesRouteImport } from './routes/app.business.quotes'
 import { Route as AppBusinessClientsRouteImport } from './routes/app.business.clients'
 import { Route as AppProfessionalIdScheduleRouteImport } from './routes/app.professional.$id_.schedule'
@@ -68,6 +72,16 @@ const PSlugRoute = PSlugRouteImport.update({
   id: '/p/$slug',
   path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppWalletRoute = AppWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppSearchRoute = AppSearchRouteImport.update({
   id: '/search',
@@ -134,6 +148,16 @@ const AppProfessionalIdRoute = AppProfessionalIdRouteImport.update({
   path: '/professional/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBusinessStatisticsRoute = AppBusinessStatisticsRouteImport.update({
+  id: '/statistics',
+  path: '/statistics',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
+const AppBusinessReviewsRoute = AppBusinessReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
 const AppBusinessQuotesRoute = AppBusinessQuotesRouteImport.update({
   id: '/quotes',
   path: '/quotes',
@@ -173,10 +197,14 @@ export interface FileRoutesByFullPath {
   '/app/profile': typeof AppProfileRoute
   '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/wallet': typeof AppWalletRoute
   '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
+  '/app/business/reviews': typeof AppBusinessReviewsRoute
+  '/app/business/statistics': typeof AppBusinessStatisticsRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
   '/app/quote/$id': typeof AppQuoteIdRoute
   '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
@@ -198,10 +226,14 @@ export interface FileRoutesByTo {
   '/app/profile': typeof AppProfileRoute
   '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/wallet': typeof AppWalletRoute
   '/p/$slug': typeof PSlugRoute
   '/app': typeof AppIndexRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
+  '/app/business/reviews': typeof AppBusinessReviewsRoute
+  '/app/business/statistics': typeof AppBusinessStatisticsRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
   '/app/quote/$id': typeof AppQuoteIdRoute
   '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
@@ -225,10 +257,14 @@ export interface FileRoutesById {
   '/app/profile': typeof AppProfileRoute
   '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/wallet': typeof AppWalletRoute
   '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
+  '/app/business/reviews': typeof AppBusinessReviewsRoute
+  '/app/business/statistics': typeof AppBusinessStatisticsRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
   '/app/quote/$id': typeof AppQuoteIdRoute
   '/app/professional/$id_/quote': typeof AppProfessionalIdQuoteRoute
@@ -253,10 +289,14 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/requests'
     | '/app/search'
+    | '/app/settings'
+    | '/app/wallet'
     | '/p/$slug'
     | '/app/'
     | '/app/business/clients'
     | '/app/business/quotes'
+    | '/app/business/reviews'
+    | '/app/business/statistics'
     | '/app/professional/$id'
     | '/app/quote/$id'
     | '/app/professional/$id/quote'
@@ -278,10 +318,14 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/requests'
     | '/app/search'
+    | '/app/settings'
+    | '/app/wallet'
     | '/p/$slug'
     | '/app'
     | '/app/business/clients'
     | '/app/business/quotes'
+    | '/app/business/reviews'
+    | '/app/business/statistics'
     | '/app/professional/$id'
     | '/app/quote/$id'
     | '/app/professional/$id/quote'
@@ -304,10 +348,14 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/requests'
     | '/app/search'
+    | '/app/settings'
+    | '/app/wallet'
     | '/p/$slug'
     | '/app/'
     | '/app/business/clients'
     | '/app/business/quotes'
+    | '/app/business/reviews'
+    | '/app/business/statistics'
     | '/app/professional/$id'
     | '/app/quote/$id'
     | '/app/professional/$id_/quote'
@@ -373,6 +421,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$slug'
       preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/wallet': {
+      id: '/app/wallet'
+      path: '/wallet'
+      fullPath: '/app/wallet'
+      preLoaderRoute: typeof AppWalletRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/search': {
       id: '/app/search'
@@ -465,6 +527,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfessionalIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/business/statistics': {
+      id: '/app/business/statistics'
+      path: '/statistics'
+      fullPath: '/app/business/statistics'
+      preLoaderRoute: typeof AppBusinessStatisticsRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
+    '/app/business/reviews': {
+      id: '/app/business/reviews'
+      path: '/reviews'
+      fullPath: '/app/business/reviews'
+      preLoaderRoute: typeof AppBusinessReviewsRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
     '/app/business/quotes': {
       id: '/app/business/quotes'
       path: '/quotes'
@@ -499,11 +575,15 @@ declare module '@tanstack/react-router' {
 interface AppBusinessRouteChildren {
   AppBusinessClientsRoute: typeof AppBusinessClientsRoute
   AppBusinessQuotesRoute: typeof AppBusinessQuotesRoute
+  AppBusinessReviewsRoute: typeof AppBusinessReviewsRoute
+  AppBusinessStatisticsRoute: typeof AppBusinessStatisticsRoute
 }
 
 const AppBusinessRouteChildren: AppBusinessRouteChildren = {
   AppBusinessClientsRoute: AppBusinessClientsRoute,
   AppBusinessQuotesRoute: AppBusinessQuotesRoute,
+  AppBusinessReviewsRoute: AppBusinessReviewsRoute,
+  AppBusinessStatisticsRoute: AppBusinessStatisticsRoute,
 }
 
 const AppBusinessRouteWithChildren = AppBusinessRoute._addFileChildren(
@@ -522,6 +602,8 @@ interface AppRouteChildren {
   AppProfileRoute: typeof AppProfileRoute
   AppRequestsRoute: typeof AppRequestsRoute
   AppSearchRoute: typeof AppSearchRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppWalletRoute: typeof AppWalletRoute
   AppIndexRoute: typeof AppIndexRoute
   AppProfessionalIdRoute: typeof AppProfessionalIdRoute
   AppQuoteIdRoute: typeof AppQuoteIdRoute
@@ -541,6 +623,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppProfileRoute: AppProfileRoute,
   AppRequestsRoute: AppRequestsRoute,
   AppSearchRoute: AppSearchRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppWalletRoute: AppWalletRoute,
   AppIndexRoute: AppIndexRoute,
   AppProfessionalIdRoute: AppProfessionalIdRoute,
   AppQuoteIdRoute: AppQuoteIdRoute,

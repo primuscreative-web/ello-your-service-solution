@@ -1,7 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type React from "react";
-import { Bell, CalendarDays, CirclePlus, FileText, Link2, UserRound, Users } from "lucide-react";
+import {
+  BarChart3,
+  Bell,
+  CalendarDays,
+  FileText,
+  Link2,
+  Star,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   ensureMyProfessionalProfile,
@@ -148,6 +157,21 @@ function ProfessionalHome() {
           </div>
         </section>
 
+        <section className="grid grid-cols-2 gap-3">
+          <InsightLink
+            icon={BarChart3}
+            title="EstatÃ­sticas"
+            body="Visitas, contatos e conversÃ£o"
+            to="/app/business/statistics"
+          />
+          <InsightLink
+            icon={Star}
+            title="AvaliaÃ§Ãµes"
+            body="Notas e comentÃ¡rios recebidos"
+            to="/app/business/reviews"
+          />
+        </section>
+
         {dashboard.recentQuotes.length ? (
           <section>
             <div className="flex items-center justify-between">
@@ -196,7 +220,7 @@ function QuickAction({
   label,
   to,
 }: {
-  icon: typeof CirclePlus;
+  icon: typeof CalendarDays;
   label: string;
   to: string;
 }) {
@@ -220,5 +244,25 @@ function ProfessionalEmpty({ action, text }: { action?: React.ReactNode; text: s
         {action}
       </div>
     </div>
+  );
+}
+
+function InsightLink({
+  body,
+  icon: Icon,
+  title,
+  to,
+}: {
+  body: string;
+  icon: typeof CalendarDays;
+  title: string;
+  to: string;
+}) {
+  return (
+    <Link to={to} className="rounded-2xl border border-border p-4">
+      <Icon className="size-5 text-primary" />
+      <strong className="mt-3 block text-sm">{title}</strong>
+      <span className="text-xs text-muted-foreground">{body}</span>
+    </Link>
   );
 }

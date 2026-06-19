@@ -6,5 +6,5 @@ export const PAYMENT_POLICY = {
   quotePaymentNotice:
     "A ELLO ainda nao processa pagamentos. Combine o valor e a forma de pagamento diretamente com o profissional.",
   professionalPaymentNotice:
-    "A carteira ELLO esta desativada nesta fase. O recebimento acontece fora da plataforma, combinado diretamente com o cliente.",
+    "A Carteira ELLO esta desativada nesta fase. Saldos, Pix, saque e dados bancarios so serao liberados depois da integracao do gateway de pagamentos.",
 } as const;

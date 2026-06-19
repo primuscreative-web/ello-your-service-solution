@@ -274,6 +274,28 @@ export type ProfessionalClientSummary = {
   totalRequests: number;
 };
 
+export type ProfessionalStatistics = {
+  views: number;
+  contacts: number;
+  quotes: number;
+  appointments: number;
+  services: number;
+  conversionRate: number;
+  rating: number;
+  reviewCount: number;
+  completedJobs: number;
+  dailyViews: Array<{ label: string; value: number }>;
+  trafficSources: Array<{ label: string; value: number }>;
+};
+
+export type ProfessionalReviewItem = {
+  id: string;
+  clientName: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+};
+
 export type PublicProfessionalLink = {
   id: string;
   slug: string;
@@ -432,7 +454,9 @@ export async function listProfessionals(filters?: {
     throw new Error("Não foi possível carregar os profissionais agora.");
   }
 
-  const mapped = sortBoostedProfessionalRows(data ?? []).map(mapProfessionalRow);
+  const mapped = [...(data ?? [])]
+    .sort((a, b) => Number(b.rating) - Number(a.rating) || b.completed_jobs - a.completed_jobs)
+    .map(mapProfessionalRow);
   return filterProfessionals(mapped, filters);
 }
 
@@ -959,10 +983,7 @@ export async function getPublicProfessionalLink(
 
   if (!profile) return null;
 
-  const isProActive =
-    Boolean(profile.ello_link_pro_enabled) &&
-    (!profile.ello_link_pro_until || new Date(profile.ello_link_pro_until).getTime() > Date.now());
-  const maxPortfolioItems = isProActive ? profile.max_portfolio_items : 6;
+  const maxPortfolioItems = profile.max_portfolio_items || 12;
   const [services, portfolio] = await Promise.all([
     listPublicProfessionalServices(profile.id),
     listProfessionalPortfolio(profile.id),
@@ -989,16 +1010,16 @@ export async function getPublicProfessionalLink(
     rating: Number(profile.rating),
     completedJobs: profile.completed_jobs,
     trustLevel: normalizeTrustLevel(profile.trust_level),
-    boosted: isActiveUntil(profile.boosted_until),
-    elloLinkProEnabled: isProActive,
-    introVideoUrl: isProActive ? profile.intro_video_url : null,
-    coverUrl: isProActive ? profile.cover_url : null,
+    boosted: false,
+    elloLinkProEnabled: false,
+    introVideoUrl: profile.intro_video_url,
+    coverUrl: profile.cover_url,
     phone: profile.phone,
     whatsappMessage,
     whatsappUrl: createWhatsappUrl(profile.phone, whatsappMessage),
     couponCode: profile.ello_link_coupon_code,
     couponDescription: profile.ello_link_coupon_description,
-    qrCodeEnabled: isProActive && profile.qr_code_enabled,
+    qrCodeEnabled: profile.qr_code_enabled,
     maxPortfolioItems,
     services,
     portfolio: portfolio.slice(0, maxPortfolioItems),
@@ -1080,7 +1101,7 @@ export async function createMonetizationRequest(input: {
 
   const profile = await getMyProfessionalProfile(input.userId);
   if (!profile) {
-    throw new Error("Crie seu perfil profissional antes de solicitar monetizacao.");
+    throw new Error("Crie seu perfil profissional antes de solicitar uma acao comercial.");
   }
 
   const pending = await listMyMonetizationRequests(input.userId);
@@ -1192,7 +1213,7 @@ export async function reviewMonetizationRequest(input: {
 }): Promise<void> {
   const profile = await getUserProfile(input.userId);
   if (profile?.role !== "admin") {
-    throw new Error("Apenas administradores podem revisar monetizacao.");
+    throw new Error("Apenas administradores podem revisar solicitacoes comerciais.");
   }
 
   const supabase = getSupabaseBrowserClient();
@@ -1208,7 +1229,7 @@ export async function reviewMonetizationRequest(input: {
 
   if (requestError) throw requestError;
   const request = requestData as MonetizationRequestRow | null;
-  if (!request) throw new Error("Solicitacao de monetizacao nao encontrada.");
+  if (!request) throw new Error("Solicitacao comercial nao encontrada.");
 
   if (input.status === "approved") {
     const days = Math.max(
@@ -1897,6 +1918,106 @@ export async function listMyProfessionalClients(
   });
 }
 
+export async function getMyProfessionalStatistics(userId: string): Promise<ProfessionalStatistics> {
+  const supabase = getSupabaseBrowserClient();
+  const profile = await getMyProfessionalProfile(userId);
+  if (!supabase || !profile) return emptyProfessionalStatistics();
+
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
+  const sinceIso = since.toISOString();
+
+  const [dashboard, eventsResult, reviewsResult, completedAppointmentsResult] = await Promise.all([
+    getMyBusinessDashboard(userId),
+    supabase
+      .from("ello_link_events")
+      .select("event_type, created_at")
+      .eq("professional_id", profile.id)
+      .gte("created_at", sinceIso),
+    supabase.from("reviews").select("id, rating").eq("professional_id", profile.id),
+    supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("professional_id", profile.id)
+      .eq("status", "completed"),
+  ]);
+
+  if (eventsResult.error) console.error("Failed to load ELLO Link events", eventsResult.error);
+  if (reviewsResult.error)
+    console.error("Failed to load professional reviews", reviewsResult.error);
+  if (completedAppointmentsResult.error) {
+    console.error("Failed to count completed appointments", completedAppointmentsResult.error);
+  }
+
+  const events = eventsResult.data ?? [];
+  const views = events.filter((event) => event.event_type === "view").length;
+  const contacts = events.filter((event) => event.event_type === "quote_click").length;
+  const reviewRows = reviewsResult.data ?? [];
+  const reviewAverage = reviewRows.length
+    ? reviewRows.reduce((sum, review) => sum + Number(review.rating), 0) / reviewRows.length
+    : dashboard.rating;
+
+  return {
+    views,
+    contacts,
+    quotes: dashboard.quoteCount,
+    appointments: dashboard.appointmentCount,
+    services: dashboard.serviceCount,
+    conversionRate: views ? Math.round((contacts / views) * 100) : 0,
+    rating: reviewAverage,
+    reviewCount: reviewRows.length,
+    completedJobs: completedAppointmentsResult.count ?? dashboard.completedJobs,
+    dailyViews: buildDailySeries(events),
+    trafficSources: [
+      { label: "Busca ELLO", value: dashboard.quoteCount },
+      { label: "ELLO Link", value: contacts },
+      {
+        label: "Compartilhamentos",
+        value: events.filter((event) => event.event_type === "share_click").length,
+      },
+      { label: "QR Code", value: events.filter((event) => event.event_type === "qr_view").length },
+    ],
+  };
+}
+
+export async function listMyProfessionalReviews(userId: string): Promise<ProfessionalReviewItem[]> {
+  const supabase = getSupabaseBrowserClient();
+  const profile = await getMyProfessionalProfile(userId);
+  if (!supabase || !profile) return [];
+
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("id, rating, comment, created_at, client_profiles(user_id, city)")
+    .eq("professional_id", profile.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to load professional reviews", error);
+    return [];
+  }
+
+  const rows = data ?? [];
+  const userIds = rows
+    .map((row) => asRelatedObject<{ user_id: string; city: string }>(row.client_profiles)?.user_id)
+    .filter(Boolean) as string[];
+  const { data: profiles } = userIds.length
+    ? await supabase.from("profiles").select("id, full_name").in("id", userIds)
+    : { data: [] };
+  const names = new Map((profiles ?? []).map((item) => [item.id, item.full_name]));
+
+  return rows.map((row) => {
+    const client = asRelatedObject<{ user_id: string; city: string }>(row.client_profiles);
+    return {
+      id: row.id,
+      clientName:
+        (client?.user_id ? names.get(client.user_id) : null) || client?.city || "Cliente ELLO",
+      rating: Number(row.rating),
+      comment: row.comment,
+      createdAt: formatShortDate(row.created_at),
+    };
+  });
+}
+
 export async function respondToProfessionalQuote(input: {
   userId: string;
   quoteRequestId: string;
@@ -2309,6 +2430,44 @@ function emptyBusinessDashboard(profile: ProfessionalProfile | null): BusinessDa
   };
 }
 
+function emptyProfessionalStatistics(): ProfessionalStatistics {
+  return {
+    views: 0,
+    contacts: 0,
+    quotes: 0,
+    appointments: 0,
+    services: 0,
+    conversionRate: 0,
+    rating: 0,
+    reviewCount: 0,
+    completedJobs: 0,
+    dailyViews: [],
+    trafficSources: [],
+  };
+}
+
+function buildDailySeries(events: Array<{ event_type: string; created_at: string }>) {
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (6 - index));
+    return {
+      key: date.toISOString().slice(0, 10),
+      label: date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }),
+      value: 0,
+    };
+  });
+  const byKey = new Map(days.map((day) => [day.key, day]));
+
+  for (const event of events) {
+    if (event.event_type !== "view") continue;
+    const key = new Date(event.created_at).toISOString().slice(0, 10);
+    const day = byKey.get(key);
+    if (day) day.value += 1;
+  }
+
+  return days.map(({ label, value }) => ({ label, value }));
+}
+
 function mapQuoteMessage(message: QuoteMessageRow, currentUserId: string): QuoteMessage {
   return {
     id: message.id,
@@ -2447,15 +2606,6 @@ async function countElloLinkEvents(
   }
 
   return count ?? 0;
-}
-
-function sortBoostedProfessionalRows(rows: ProfessionalRow[]): ProfessionalRow[] {
-  return [...rows].sort((a, b) => {
-    const aBoosted = isActiveUntil(a.boosted_until);
-    const bBoosted = isActiveUntil(b.boosted_until);
-    if (aBoosted !== bBoosted) return aBoosted ? -1 : 1;
-    return Number(b.rating) - Number(a.rating) || b.completed_jobs - a.completed_jobs;
-  });
 }
 
 function isActiveUntil(value: string | null | undefined): boolean {

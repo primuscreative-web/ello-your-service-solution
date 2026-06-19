@@ -1,17 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, ExternalLink, ShieldCheck, Store, Trash2, X } from "lucide-react";
+import { ExternalLink, ShieldCheck, Store, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { AppTopBar, CyanButton, Metric } from "@/components/ello/mobile-ui";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   deleteAdminLocalPartnerSpace,
   listAdminLocalPartnerSpaces,
-  listAdminMonetizationRequests,
-  reviewMonetizationRequest,
   upsertAdminLocalPartnerSpace,
   type AdminLocalPartnerSpace,
-  type AdminMonetizationRequest,
 } from "@/lib/ello-repository";
 
 export const Route = createFileRoute("/app/admin")({
@@ -24,32 +21,10 @@ function Admin() {
   const isAdmin = profile?.role === "admin";
   const [partnerForm, setPartnerForm] = useState<PartnerFormState>(emptyPartnerForm);
 
-  const requestsQuery = useQuery({
-    queryKey: ["ello", "admin", "monetization-requests", user?.id],
-    queryFn: () => listAdminMonetizationRequests(user!.id),
-    enabled: Boolean(configured && user && isAdmin),
-  });
   const partnersQuery = useQuery({
     queryKey: ["ello", "admin", "local-partners", user?.id],
     queryFn: () => listAdminLocalPartnerSpaces(user!.id),
     enabled: Boolean(configured && user && isAdmin),
-  });
-
-  const reviewMutation = useMutation({
-    mutationFn: (input: { requestId: string; status: "approved" | "rejected"; days?: number }) =>
-      reviewMonetizationRequest({
-        userId: user!.id,
-        ...input,
-      }),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["ello", "admin", "monetization-requests", user?.id],
-        }),
-        queryClient.invalidateQueries({ queryKey: ["ello", "professionals"] }),
-        queryClient.invalidateQueries({ queryKey: ["ello", "me"] }),
-      ]);
-    },
   });
 
   const partnerMutation = useMutation({
@@ -91,9 +66,7 @@ function Admin() {
     },
   });
 
-  const requests = requestsQuery.data ?? [];
   const partners = partnersQuery.data ?? [];
-  const pendingRequests = requests.filter((request) => request.status === "pending");
   const activePartners = partners.filter((partner) => partner.active);
 
   if (!configured) {
@@ -113,14 +86,14 @@ function Admin() {
     return (
       <AdminNotice
         title="Acesso restrito"
-        body="Seu usuario precisa estar com role admin em profiles para revisar monetizacao."
+        body="Seu usuario precisa estar com role admin em profiles para gerenciar configuracoes comerciais."
       />
     );
   }
 
   return (
     <div>
-      <AppTopBar title="Admin ELLO" subtitle="Monetizacao e parceiros" backTo="/app/profile" />
+      <AppTopBar title="Admin ELLO" subtitle="Parceiros e operacao" backTo="/app/profile" />
 
       <main className="space-y-4 px-4 pb-6 pt-4">
         <section className="ello-card rounded-xl p-3">
@@ -128,60 +101,15 @@ function Admin() {
             <div>
               <h1 className="text-base font-black">Controle comercial</h1>
               <p className="mt-1 text-xs text-muted-foreground">
-                Aprova ativacoes sem gateway: destaque, ELLO LINK PRO e parceiros locais.
+                Gerencie parceiros locais e conteudos comerciais sem ofertas pagas no app.
               </p>
             </div>
             <ShieldCheck className="size-6 text-primary" />
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            <Metric label="Pendentes" value={String(pendingRequests.length)} accent />
-            <Metric label="Pedidos" value={String(requests.length)} accent />
+          <div className="mt-3 grid grid-cols-2 gap-2">
             <Metric label="Parceiros" value={String(activePartners.length)} accent />
+            <Metric label="Cadastrados" value={String(partners.length)} accent />
           </div>
-        </section>
-
-        <section className="ello-card rounded-xl p-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black">Fila de monetizacao</h2>
-            <span className="text-[10px] font-bold text-muted-foreground">
-              {requestsQuery.isPending ? "Carregando" : `${requests.length} pedidos`}
-            </span>
-          </div>
-
-          <div className="mt-3 space-y-3">
-            {requests.length ? (
-              requests.map((request) => (
-                <AdminRequestCard
-                  key={request.id}
-                  request={request}
-                  busy={reviewMutation.isPending}
-                  onApprove={(days) =>
-                    reviewMutation.mutate({
-                      requestId: request.id,
-                      status: "approved",
-                      days,
-                    })
-                  }
-                  onReject={() =>
-                    reviewMutation.mutate({
-                      requestId: request.id,
-                      status: "rejected",
-                    })
-                  }
-                />
-              ))
-            ) : (
-              <p className="rounded-lg bg-background p-3 text-xs font-semibold text-muted-foreground">
-                Nenhuma solicitacao comercial ainda.
-              </p>
-            )}
-          </div>
-
-          {reviewMutation.error ? (
-            <p className="mt-3 rounded-lg bg-red-50 p-2 text-[10px] font-semibold text-red-700">
-              {reviewMutation.error.message}
-            </p>
-          ) : null}
         </section>
 
         <section className="ello-card rounded-xl p-3">
@@ -323,68 +251,6 @@ function Admin() {
   );
 }
 
-function AdminRequestCard({
-  busy,
-  onApprove,
-  onReject,
-  request,
-}: {
-  busy: boolean;
-  onApprove: (days: number) => void;
-  onReject: () => void;
-  request: AdminMonetizationRequest;
-}) {
-  const [days, setDays] = useState(defaultDaysForRequest(request.requestType));
-
-  return (
-    <article className="rounded-xl bg-background p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-black">{requestLabel(request.requestType)}</p>
-          <p className="mt-0.5 truncate text-[10px] font-semibold text-muted-foreground">
-            {request.professional?.name ?? "Profissional"} -{" "}
-            {request.professional?.city ?? "cidade nao informada"}
-          </p>
-        </div>
-        <StatusPill status={request.status} />
-      </div>
-
-      <p className="mt-2 text-[10px] text-muted-foreground">
-        Criado em {request.createdAt}
-        {request.professional?.slug ? ` - /p/${request.professional.slug}` : ""}
-      </p>
-
-      <div className="mt-3 grid grid-cols-[1fr_auto_auto] gap-2">
-        <input
-          value={days}
-          onChange={(event) => setDays(Number(event.target.value) || 1)}
-          min={1}
-          max={365}
-          type="number"
-          disabled={request.status !== "pending" || busy}
-          className="h-9 min-w-0 rounded-lg border border-border bg-white px-3 text-xs font-semibold outline-none focus:border-primary disabled:opacity-60"
-        />
-        <button
-          disabled={request.status !== "pending" || busy}
-          onClick={() => onApprove(days)}
-          className="grid size-9 place-items-center rounded-lg bg-emerald-600 text-white disabled:bg-muted disabled:text-muted-foreground"
-          aria-label="Aprovar"
-        >
-          <Check className="size-4" />
-        </button>
-        <button
-          disabled={request.status !== "pending" || busy}
-          onClick={onReject}
-          className="grid size-9 place-items-center rounded-lg bg-red-600 text-white disabled:bg-muted disabled:text-muted-foreground"
-          aria-label="Recusar"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
-    </article>
-  );
-}
-
 function AdminPartnerCard({
   busy,
   onDelete,
@@ -471,29 +337,6 @@ function AdminNotice({ body, title }: { body: string; title: string }) {
   );
 }
 
-function StatusPill({ status }: { status: AdminMonetizationRequest["status"] }) {
-  const className =
-    status === "approved"
-      ? "bg-emerald-100 text-emerald-800"
-      : status === "rejected"
-        ? "bg-red-100 text-red-800"
-        : status === "cancelled"
-          ? "bg-slate-100 text-slate-700"
-          : "bg-amber-100 text-amber-800";
-
-  return (
-    <span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black ${className}`}>
-      {status === "approved"
-        ? "Aprovado"
-        : status === "rejected"
-          ? "Recusado"
-          : status === "cancelled"
-            ? "Cancelado"
-            : "Pendente"}
-    </span>
-  );
-}
-
 type PartnerFormState = {
   id: string | null;
   name: string;
@@ -542,16 +385,4 @@ function toDateTimeInput(value: string | null) {
   if (!value) return "";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 16);
-}
-
-function requestLabel(type: AdminMonetizationRequest["requestType"]) {
-  if (type === "profile_boost") return "Impulsionamento de Perfil";
-  if (type === "ello_link_pro") return "ELLO LINK PRO";
-  return "Espaco para parceiros locais";
-}
-
-function defaultDaysForRequest(type: AdminMonetizationRequest["requestType"]) {
-  if (type === "profile_boost") return 7;
-  if (type === "ello_link_pro") return 30;
-  return 30;
 }
