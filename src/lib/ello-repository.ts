@@ -136,6 +136,30 @@ export type QuoteMessage = {
   mine: boolean;
 };
 
+export type QuoteDetail = {
+  id: string;
+  professionalId: string;
+  professionalName: string;
+  professionalAvatarUrl: string | null;
+  serviceTitle: string;
+  description: string;
+  location: string;
+  status: QuoteRequest["status"];
+  responsePrice: string | null;
+  responseEta: string | null;
+  responseMessage: string | null;
+  professionalView: boolean;
+};
+
+export type NotificationItem = {
+  id: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  kind: "appointment" | "message" | "professional" | "promotion" | "quote";
+  href: string;
+};
+
 export type AgendaItem = {
   id: string;
   quoteRequestId: string | null;
@@ -1597,6 +1621,106 @@ export async function listMyQuoteThreads(userId: string): Promise<QuoteThread[]>
   });
 }
 
+export async function getAuthorizedQuoteDetail(input: {
+  quoteRequestId: string;
+  userId: string;
+}): Promise<QuoteDetail | null> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return null;
+
+  const professionalProfile = await getMyProfessionalProfile(input.userId);
+  const { data, error } = await supabase
+    .from("quote_requests")
+    .select(
+      `
+      *,
+      professional_profiles(public_name, specialty, avatar_url),
+      services(title)
+    `,
+    )
+    .eq("id", input.quoteRequestId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const professional = asRelatedObject<{
+    public_name: string | null;
+    specialty: string;
+    avatar_url: string | null;
+  }>(data.professional_profiles);
+  const service = asRelatedObject<{ title: string }>(data.services);
+
+  return {
+    id: data.id,
+    professionalId: data.professional_id,
+    professionalName: professional?.public_name ?? professional?.specialty ?? "Profissional ELLO",
+    professionalAvatarUrl: professional?.avatar_url ?? null,
+    serviceTitle: service?.title ?? professional?.specialty ?? "Serviço profissional",
+    description: data.description,
+    location: data.location,
+    status: data.status,
+    responsePrice: data.response_price,
+    responseEta: data.response_eta,
+    responseMessage: data.response_message,
+    professionalView: professionalProfile?.id === data.professional_id,
+  };
+}
+
+export async function updateClientQuoteStatus(input: {
+  quoteRequestId: string;
+  status: Extract<QuoteRequest["status"], "accepted" | "declined">;
+  userId: string;
+}): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error("Supabase não está configurado neste ambiente.");
+
+  const clientProfile = await getMyClientProfile(input.userId);
+  if (!clientProfile) throw new Error("Perfil de cliente não encontrado.");
+
+  const patch: Database["public"]["Tables"]["quote_requests"]["Update"] = {
+    status: input.status,
+    updated_at: new Date().toISOString(),
+  };
+  if (input.status === "accepted") patch.accepted_at = new Date().toISOString();
+  if (input.status === "declined") patch.cancelled_at = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("quote_requests")
+    .update(patch)
+    .eq("id", input.quoteRequestId)
+    .eq("client_id", clientProfile.id);
+
+  if (error) throw error;
+}
+
+export async function listMyNotifications(userId: string): Promise<NotificationItem[]> {
+  const [threads, agenda] = await Promise.all([
+    listMyQuoteThreads(userId),
+    listMyAgendaItems(userId),
+  ]);
+
+  const quoteItems: NotificationItem[] = threads.slice(0, 12).map((thread) => ({
+    id: `quote-${thread.id}`,
+    title: quoteNotificationTitle(thread),
+    description: thread.lastMessage,
+    timestamp: thread.timestamp,
+    kind: thread.status === "new" ? "message" : "quote",
+    href: thread.professionalView ? `/app/messages?quote=${thread.id}` : `/app/quote/${thread.id}`,
+  }));
+
+  const appointmentItems: NotificationItem[] = agenda.slice(0, 8).map((appointment) => ({
+    id: `appointment-${appointment.id}`,
+    title: appointmentNotificationTitle(appointment.status),
+    description: `${appointment.service} • ${appointment.date} às ${appointment.time}`,
+    timestamp: appointment.date,
+    kind: "appointment",
+    href: "/app/agenda",
+  }));
+
+  return [...quoteItems, ...appointmentItems];
+}
+
 export async function listMyRequestHistory(userId: string): Promise<RequestHistoryItem[]> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return [];
@@ -2332,4 +2456,21 @@ function formatShortDate(value: string) {
     day: "2-digit",
     month: "short",
   });
+}
+
+function quoteNotificationTitle(thread: QuoteThread) {
+  if (thread.professionalView && thread.status === "new") return "Novo orçamento recebido";
+  if (thread.status === "quoted") return "Você recebeu um orçamento";
+  if (thread.status === "accepted") return "Orçamento aceito";
+  if (thread.status === "declined") return "Orçamento recusado";
+  if (thread.status === "completed") return "Serviço concluído";
+  return `Atualização de ${thread.title}`;
+}
+
+function appointmentNotificationTitle(status: AgendaItem["status"]) {
+  if (status === "confirmed") return "Agendamento confirmado";
+  if (status === "completed") return "Atendimento concluído";
+  if (status === "cancelled") return "Agendamento cancelado";
+  if (status === "reschedule_requested") return "Novo horário solicitado";
+  return "Novo agendamento";
 }

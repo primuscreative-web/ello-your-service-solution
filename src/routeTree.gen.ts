@@ -19,12 +19,14 @@ import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as AppSearchRouteImport } from './routes/app.search'
 import { Route as AppRequestsRouteImport } from './routes/app.requests'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
+import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppMessagesRouteImport } from './routes/app.messages'
 import { Route as AppFavoritesRouteImport } from './routes/app.favorites'
 import { Route as AppExpressRouteImport } from './routes/app.express'
 import { Route as AppBusinessRouteImport } from './routes/app.business'
 import { Route as AppAgendaRouteImport } from './routes/app.agenda'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
+import { Route as AppQuoteIdRouteImport } from './routes/app.quote.$id'
 import { Route as AppProfessionalIdRouteImport } from './routes/app.professional.$id'
 import { Route as AppProfessionalIdScheduleRouteImport } from './routes/app.professional.$id_.schedule'
 import { Route as AppProfessionalIdQuoteRouteImport } from './routes/app.professional.$id_.quote'
@@ -79,6 +81,11 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMessagesRoute = AppMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -107,6 +114,11 @@ const AppAgendaRoute = AppAgendaRouteImport.update({
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQuoteIdRoute = AppQuoteIdRouteImport.update({
+  id: '/quote/$id',
+  path: '/quote/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfessionalIdRoute = AppProfessionalIdRouteImport.update({
@@ -138,12 +150,14 @@ export interface FileRoutesByFullPath {
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
   '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
+  '/app/quote/$id': typeof AppQuoteIdRoute
   '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
   '/app/professional/$id/schedule': typeof AppProfessionalIdScheduleRoute
 }
@@ -158,12 +172,14 @@ export interface FileRoutesByTo {
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
   '/p/$slug': typeof PSlugRoute
   '/app': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
+  '/app/quote/$id': typeof AppQuoteIdRoute
   '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
   '/app/professional/$id/schedule': typeof AppProfessionalIdScheduleRoute
 }
@@ -180,12 +196,14 @@ export interface FileRoutesById {
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
   '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
+  '/app/quote/$id': typeof AppQuoteIdRoute
   '/app/professional/$id_/quote': typeof AppProfessionalIdQuoteRoute
   '/app/professional/$id_/schedule': typeof AppProfessionalIdScheduleRoute
 }
@@ -203,12 +221,14 @@ export interface FileRouteTypes {
     | '/app/express'
     | '/app/favorites'
     | '/app/messages'
+    | '/app/notifications'
     | '/app/profile'
     | '/app/requests'
     | '/app/search'
     | '/p/$slug'
     | '/app/'
     | '/app/professional/$id'
+    | '/app/quote/$id'
     | '/app/professional/$id/quote'
     | '/app/professional/$id/schedule'
   fileRoutesByTo: FileRoutesByTo
@@ -223,12 +243,14 @@ export interface FileRouteTypes {
     | '/app/express'
     | '/app/favorites'
     | '/app/messages'
+    | '/app/notifications'
     | '/app/profile'
     | '/app/requests'
     | '/app/search'
     | '/p/$slug'
     | '/app'
     | '/app/professional/$id'
+    | '/app/quote/$id'
     | '/app/professional/$id/quote'
     | '/app/professional/$id/schedule'
   id:
@@ -244,12 +266,14 @@ export interface FileRouteTypes {
     | '/app/express'
     | '/app/favorites'
     | '/app/messages'
+    | '/app/notifications'
     | '/app/profile'
     | '/app/requests'
     | '/app/search'
     | '/p/$slug'
     | '/app/'
     | '/app/professional/$id'
+    | '/app/quote/$id'
     | '/app/professional/$id_/quote'
     | '/app/professional/$id_/schedule'
   fileRoutesById: FileRoutesById
@@ -335,6 +359,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/notifications': {
+      id: '/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/messages': {
       id: '/app/messages'
       path: '/messages'
@@ -377,6 +408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/quote/$id': {
+      id: '/app/quote/$id'
+      path: '/quote/$id'
+      fullPath: '/app/quote/$id'
+      preLoaderRoute: typeof AppQuoteIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/professional/$id': {
       id: '/app/professional/$id'
       path: '/professional/$id'
@@ -408,11 +446,13 @@ interface AppRouteChildren {
   AppExpressRoute: typeof AppExpressRoute
   AppFavoritesRoute: typeof AppFavoritesRoute
   AppMessagesRoute: typeof AppMessagesRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppRequestsRoute: typeof AppRequestsRoute
   AppSearchRoute: typeof AppSearchRoute
   AppIndexRoute: typeof AppIndexRoute
   AppProfessionalIdRoute: typeof AppProfessionalIdRoute
+  AppQuoteIdRoute: typeof AppQuoteIdRoute
   AppProfessionalIdQuoteRoute: typeof AppProfessionalIdQuoteRoute
   AppProfessionalIdScheduleRoute: typeof AppProfessionalIdScheduleRoute
 }
@@ -424,11 +464,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppExpressRoute: AppExpressRoute,
   AppFavoritesRoute: AppFavoritesRoute,
   AppMessagesRoute: AppMessagesRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
   AppRequestsRoute: AppRequestsRoute,
   AppSearchRoute: AppSearchRoute,
   AppIndexRoute: AppIndexRoute,
   AppProfessionalIdRoute: AppProfessionalIdRoute,
+  AppQuoteIdRoute: AppQuoteIdRoute,
   AppProfessionalIdQuoteRoute: AppProfessionalIdQuoteRoute,
   AppProfessionalIdScheduleRoute: AppProfessionalIdScheduleRoute,
 }
