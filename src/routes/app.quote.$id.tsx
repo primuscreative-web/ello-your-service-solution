@@ -64,10 +64,9 @@ function QuoteDetailScreen() {
       <main className="px-5 py-6">
         <section className="flex items-center gap-3 border-b border-border pb-5">
           <AvatarPhoto
-            src={quote.professionalAvatarUrl}
-            alt={quote.professionalName}
+            imageUrl={quote.professionalAvatarUrl}
             initials={initialsFor(quote.professionalName)}
-            size="lg"
+            size={56}
           />
           <div>
             <h2 className="text-base font-black">{quote.professionalName}</h2>

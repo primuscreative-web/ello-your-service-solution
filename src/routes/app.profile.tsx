@@ -4,70 +4,62 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Bell,
   Camera,
-  FileText,
+  ChevronRight,
+  CircleHelp,
+  FileClock,
   Heart,
-  HelpCircle,
-  History,
-  Lock,
+  LockKeyhole,
+  MessageCircle,
   Save,
   Settings,
   ShieldCheck,
+  UserRoundCog,
+  WalletCards,
 } from "lucide-react";
-import { AppTopBar, Metric, ProPhoto } from "@/components/ello/mobile-ui";
+import { AvatarPhoto } from "@/components/ello/media";
+import { useAuth } from "@/lib/auth/auth-context";
 import {
   getMyClientProfile,
   updateMyClientProfile,
   updateMyUserProfile,
 } from "@/lib/ello-repository";
-import { useAuth } from "@/lib/auth/auth-context";
-import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
 export const Route = createFileRoute("/app/profile")({
-  component: Profile,
+  component: ProfileScreen,
 });
 
 const MENU = [
   { icon: Heart, label: "Favoritos", to: "/app/favorites" },
-  { icon: History, label: "Historico de solicitacoes", to: "/app/requests" },
-  { icon: FileText, label: "Combinados de servico", to: "/app/messages" },
-  { icon: Bell, label: "Notificacoes" },
-  { icon: Lock, label: "Privacidade" },
-  { icon: Settings, label: "Configuracoes" },
-  { icon: HelpCircle, label: "Ajuda" },
-];
+  { icon: FileClock, label: "Histórico de solicitações", to: "/app/requests" },
+  { icon: MessageCircle, label: "Mensagens", to: "/app/messages" },
+  { icon: Bell, label: "Notificações", to: "/app/notifications" },
+] as const;
 
-function Profile() {
-  const queryClient = useQueryClient();
+function ProfileScreen() {
   const { configured, loading, profile, refreshProfile, user } = useAuth();
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name ?? user?.email ?? "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [clientCity, setClientCity] = useState("Sao Paulo, SP");
-  const [clientRegion, setClientRegion] = useState("");
-  const [clientInterests, setClientInterests] = useState("");
-
+  const [city, setCity] = useState("São Paulo, SP");
+  const [region, setRegion] = useState("");
+  const [interests, setInterests] = useState("");
   const clientProfileQuery = useQuery({
     queryKey: ["ello", "me", "client-profile", user?.id],
     queryFn: () => getMyClientProfile(user!.id),
     enabled: Boolean(configured && user),
   });
-
-  const previewUrl = useMemo(() => {
-    if (!avatarFile) return profile?.avatar_url ?? null;
-    return URL.createObjectURL(avatarFile);
-  }, [avatarFile, profile?.avatar_url]);
-
-  useEffect(() => {
-    if (profile?.full_name && !fullName) {
-      setFullName(profile.full_name);
-    }
-  }, [fullName, profile?.full_name]);
+  const previewUrl = useMemo(
+    () => (avatarFile ? URL.createObjectURL(avatarFile) : profile?.avatar_url),
+    [avatarFile, profile?.avatar_url],
+  );
 
   useEffect(() => {
     const clientProfile = clientProfileQuery.data;
     if (!clientProfile) return;
-    setClientCity(clientProfile.city ?? "Sao Paulo, SP");
-    setClientRegion(clientProfile.region ?? "");
-    setClientInterests(clientProfile.interests ?? "");
+    setCity(clientProfile.city || "São Paulo, SP");
+    setRegion(clientProfile.region ?? "");
+    setInterests(clientProfile.interests ?? "");
   }, [clientProfileQuery.data]);
 
   useEffect(() => {
@@ -75,37 +67,25 @@ function Profile() {
     return () => URL.revokeObjectURL(previewUrl);
   }, [avatarFile, previewUrl]);
 
-  const initials = useMemo(() => {
-    const name = fullName || profile?.full_name || user?.email || "ELLO";
-    return name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join("");
-  }, [fullName, profile?.full_name, user?.email]);
-
   const mutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Entre na sua conta para atualizar o perfil.");
-      const updatedProfile = await updateMyUserProfile({
+      await updateMyUserProfile({
         userId: user.id,
         fullName,
         avatarFile,
         avatarUrl: profile?.avatar_url ?? null,
       });
-
       await updateMyClientProfile({
         userId: user.id,
-        city: clientCity,
-        region: clientRegion,
-        interests: clientInterests,
+        city,
+        region,
+        interests,
       });
-
-      return updatedProfile;
     },
     onSuccess: async () => {
       setAvatarFile(null);
+      setEditing(false);
       await Promise.all([
         refreshProfile(),
         queryClient.invalidateQueries({
@@ -115,193 +95,168 @@ function Profile() {
     },
   });
 
-  const roleLabel = profile?.role === "professional" ? "Profissional" : "Cliente";
-  const displayName = profile?.full_name ?? user?.email ?? "Perfil ELLO";
+  const displayName = profile?.full_name || user?.email || "Perfil ELLO";
+  const initials = initialsFor(displayName);
 
   return (
-    <div>
-      <AppTopBar title="Meu Perfil" subtitle={roleLabel} />
+    <div className="min-h-dvh bg-white pb-24">
+      <header className="flex items-center justify-between px-5 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
+        <h1 className="text-xl font-black">Meu perfil</h1>
+        <button
+          type="button"
+          onClick={() => setEditing((value) => !value)}
+          className="text-sm font-bold text-primary"
+        >
+          {editing ? "Cancelar" : "Editar"}
+        </button>
+      </header>
 
-      <main className="space-y-4 px-4 pb-6 pt-4">
-        <section className="ello-card rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <label className="group relative cursor-pointer">
-              <ProPhoto initials={initials} imageUrl={previewUrl} size={72} />
-              <span className="absolute bottom-0 right-0 grid size-8 place-items-center rounded-full bg-primary text-white shadow-md ring-2 ring-white">
-                <Camera className="size-4" />
-              </span>
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="sr-only"
-                disabled={!configured || !user || mutation.isPending}
-                onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)}
-              />
-            </label>
-
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-lg font-black">{displayName}</h1>
-              <p className="truncate text-xs text-muted-foreground">
-                {user?.email ?? "Conta ainda nao conectada"}
-              </p>
-              <span className="mt-2 inline-flex rounded-full bg-[#083d63] px-3 py-1 text-[10px] font-black text-white">
-                {roleLabel}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-2">
-            <label className="text-[11px] font-black uppercase text-muted-foreground">
-              Nome publico
-            </label>
-            <input
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              placeholder="Seu nome"
-              disabled={!configured || !user || mutation.isPending}
-              className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm font-bold outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase text-muted-foreground">
-                Cidade
-              </label>
-              <input
-                value={clientCity}
-                onChange={(event) => setClientCity(event.target.value)}
-                placeholder="Sao Paulo, SP"
-                disabled={!configured || !user || mutation.isPending}
-                className="h-11 min-w-0 w-full rounded-lg border border-border bg-white px-3 text-sm font-bold outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase text-muted-foreground">
-                Regiao
-              </label>
-              <input
-                value={clientRegion}
-                onChange={(event) => setClientRegion(event.target.value)}
-                placeholder="Zona Sul"
-                disabled={!configured || !user || mutation.isPending}
-                className="h-11 min-w-0 w-full rounded-lg border border-border bg-white px-3 text-sm font-bold outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-2">
-            <label className="text-[11px] font-black uppercase text-muted-foreground">
-              Interesses
-            </label>
-            <textarea
-              value={clientInterests}
-              onChange={(event) => setClientInterests(event.target.value)}
-              placeholder="Ex: eletricista, diarista, manutencao residencial"
-              disabled={!configured || !user || mutation.isPending}
-              className="min-h-20 w-full resize-none rounded-lg border border-border bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-
-          {mutation.error ? (
-            <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
-              {mutation.error.message}
-            </p>
-          ) : null}
-          {mutation.isSuccess ? (
-            <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
-              Perfil atualizado com sucesso.
-            </p>
-          ) : null}
-
-          <button
-            className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-xs font-black text-white disabled:opacity-50"
-            disabled={
-              !configured ||
-              !user ||
-              loading ||
-              mutation.isPending ||
-              !fullName.trim() ||
-              !clientCity.trim()
-            }
-            onClick={() => mutation.mutate()}
-          >
-            <Save className="size-4" />
-            {mutation.isPending ? "Salvando..." : "Salvar perfil"}
-          </button>
+      <main className="px-5">
+        <section className="flex flex-col items-center border-b border-border pb-6 text-center">
+          <label className="relative">
+            <AvatarPhoto imageUrl={previewUrl} initials={initials} size={88} />
+            {editing ? (
+              <>
+                <span className="absolute bottom-0 right-0 grid size-8 place-items-center rounded-full bg-primary text-white ring-2 ring-white">
+                  <Camera className="size-4" />
+                </span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)}
+                />
+              </>
+            ) : null}
+          </label>
+          <h2 className="mt-4 text-lg font-black">{displayName}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {user?.email ?? "Conta não conectada"}
+          </p>
+          <span className="mt-3 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+            {profile?.role === "professional" ? "Modo profissional" : "Modo cliente"}
+          </span>
         </section>
 
-        <div className="grid grid-cols-3 gap-2">
-          <Metric value="12" label="Contratacoes" />
-          <Metric value="4" label="Em andamento" />
-          <Metric value="8" label="Avaliacoes" />
-        </div>
+        {editing ? (
+          <section className="space-y-4 border-b border-border py-6">
+            <ProfileField label="Nome" value={fullName} onChange={setFullName} />
+            <ProfileField label="Cidade" value={city} onChange={setCity} />
+            <ProfileField label="Região" value={region} onChange={setRegion} />
+            <label className="block">
+              <span className="text-sm font-black">Interesses</span>
+              <textarea
+                value={interests}
+                onChange={(event) => setInterests(event.target.value)}
+                className="mt-2 min-h-24 w-full resize-none rounded-xl border border-border p-3 text-sm outline-none focus:border-primary"
+              />
+            </label>
+            {mutation.error ? (
+              <p className="rounded-xl bg-destructive/10 p-3 text-xs font-semibold text-destructive">
+                {mutation.error.message}
+              </p>
+            ) : null}
+            <button
+              disabled={
+                !configured ||
+                !user ||
+                loading ||
+                mutation.isPending ||
+                !fullName.trim() ||
+                !city.trim()
+              }
+              onClick={() => mutation.mutate()}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-45"
+            >
+              <Save className="size-4" />
+              {mutation.isPending ? "Salvando..." : "Salvar alterações"}
+            </button>
+          </section>
+        ) : null}
 
-        <Link to="/app/business" className="ello-header block rounded-xl p-4 text-white">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-white/70">Novo</p>
-          <h2 className="mt-1 text-base font-black">Ative seu perfil profissional</h2>
-          <p className="mt-1 text-xs text-white/75">Comece a oferecer servicos hoje</p>
-        </Link>
+        <section className="divide-y divide-border py-3">
+          {MENU.map((item) => (
+            <MenuLink key={item.label} {...item} />
+          ))}
+          <MenuLink icon={WalletCards} label="Carteira ELLO" to="/app/wallet" />
+          <MenuLink icon={UserRoundCog} label="Alternar modo" to="/role" />
+          <MenuLink icon={Settings} label="Configurações" to="/app/settings" />
+        </section>
+
+        <section className="rounded-2xl bg-secondary p-4">
+          <div className="flex items-start gap-3">
+            <WalletCards className="mt-0.5 size-5 text-primary" />
+            <div>
+              <h2 className="text-sm font-black">Pagamentos em preparação</h2>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                A Carteira ELLO será ativada quando o gateway de pagamentos for conectado.
+              </p>
+            </div>
+          </div>
+        </section>
 
         {profile?.role === "admin" ? (
           <Link
             to="/app/admin"
-            className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/10 p-4 text-[#083d63]"
+            className="mt-4 flex items-center gap-3 rounded-2xl border border-border p-4"
           >
-            <span className="grid size-10 place-items-center rounded-lg bg-white text-primary">
-              <ShieldCheck className="size-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-black">Painel Administrativo</span>
-              <span className="text-xs font-semibold text-muted-foreground">
-                Aprovar monetizacao e parceiros locais
-              </span>
-            </span>
+            <ShieldCheck className="size-5 text-primary" />
+            <span className="flex-1 text-sm font-bold">Painel administrativo</span>
+            <ChevronRight className="size-5 text-muted-foreground" />
           </Link>
         ) : null}
 
-        <section className="ello-card rounded-xl border border-sky-100 bg-sky-50 p-4">
-          <p className="text-[10px] font-black uppercase tracking-wide text-[#083d63]">
-            Pagamento fora da plataforma
-          </p>
-          <h2 className="mt-1 text-sm font-black text-[#083d63]">Sem carteira ELLO nesta fase</h2>
-          <p className="mt-1 text-xs leading-relaxed text-sky-900">
-            {PAYMENT_POLICY.quotePaymentNotice}
-          </p>
-        </section>
-
-        <section className="ello-card rounded-xl p-2">
-          {MENU.map((item) => {
-            const Icon = item.icon;
-            const content = (
-              <>
-                <Icon className="size-5 text-[#083d63]" />
-                <span className="flex-1 text-xs font-bold">{item.label}</span>
-                <span className="text-muted-foreground">{">"}</span>
-              </>
-            );
-            if (item.to) {
-              return (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left active:bg-muted"
-                >
-                  {content}
-                </Link>
-              );
-            }
-            return (
-              <button
-                key={item.label}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left active:bg-muted"
-              >
-                {content}
-              </button>
-            );
-          })}
-        </section>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button className="flex items-center justify-center gap-2 rounded-xl border border-border py-3 text-xs font-bold">
+            <LockKeyhole className="size-4" />
+            Privacidade
+          </button>
+          <button className="flex items-center justify-center gap-2 rounded-xl border border-border py-3 text-xs font-bold">
+            <CircleHelp className="size-4" />
+            Ajuda
+          </button>
+        </div>
       </main>
     </div>
   );
+}
+
+function ProfileField({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-black">{label}</span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 h-12 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-primary"
+      />
+    </label>
+  );
+}
+
+function MenuLink({ icon: Icon, label, to }: { icon: typeof Heart; label: string; to: string }) {
+  return (
+    <Link to={to} className="flex items-center gap-3 py-4">
+      <Icon className="size-5 text-foreground/80" />
+      <span className="flex-1 text-sm font-semibold">{label}</span>
+      <ChevronRight className="size-5 text-muted-foreground" />
+    </Link>
+  );
+}
+
+function initialsFor(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 }

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Heart } from "lucide-react";
 import type React from "react";
 import type { Professional } from "@/lib/ello-data";
 import { AVAILABILITY_LABEL } from "@/lib/ello-data";
@@ -27,6 +27,51 @@ export function ProfessionalMiniCard({ professional }: { professional: Professio
         <Availability label={AVAILABILITY_LABEL[professional.available]} />
       </div>
     </Link>
+  );
+}
+
+export function ProfessionalListRow({
+  favorite = false,
+  favoriteDisabled = false,
+  onFavorite,
+  professional,
+}: {
+  favorite?: boolean;
+  favoriteDisabled?: boolean;
+  onFavorite?: () => void;
+  professional: Professional;
+}) {
+  return (
+    <div className="flex items-center gap-3 border-b border-border py-4 last:border-b-0">
+      <AvatarPhoto imageUrl={professional.avatarUrl} initials={professional.initials} size={54} />
+      <Link to="/app/professional/$id" params={{ id: professional.id }} className="min-w-0 flex-1">
+        <h3 className="truncate text-sm font-black">{professional.name}</h3>
+        <p className="truncate text-xs text-muted-foreground">{professional.profession}</p>
+        <div className="mt-1 flex items-center gap-2">
+          <Rating value={professional.rating} />
+          <span className="text-xs text-muted-foreground">
+            ({professional.completedJobs} avaliações)
+          </span>
+        </div>
+        <div className="mt-1">
+          <Availability label={AVAILABILITY_LABEL[professional.available]} />
+        </div>
+      </Link>
+      {onFavorite ? (
+        <button
+          type="button"
+          aria-label={favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          disabled={favoriteDisabled}
+          onClick={onFavorite}
+          className="grid size-9 place-items-center rounded-full disabled:opacity-40"
+        >
+          <Heart
+            className={`size-5 ${favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+          />
+        </button>
+      ) : null}
+      <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
+    </div>
   );
 }
 

@@ -2,11 +2,10 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { ChevronLeft, ChevronRight, Heart, Search as SearchIcon, Wrench } from "lucide-react";
-import { AvatarPhoto } from "@/components/ello/media";
-import { Availability, Rating } from "@/components/ello/status";
+import { ChevronLeft, ChevronRight, Search as SearchIcon, Wrench } from "lucide-react";
+import { ProfessionalListRow } from "@/components/ello/cards";
 import { useAuth } from "@/lib/auth/auth-context";
-import { AVAILABILITY_LABEL, CATEGORIES } from "@/lib/ello-data";
+import { CATEGORIES } from "@/lib/ello-data";
 import {
   listCategories,
   listMyFavoriteProfessionalIds,
@@ -145,61 +144,27 @@ function SearchScreen() {
                 ))}
               </div>
             ) : professionals.length ? (
-              <div className="mt-3 divide-y divide-border">
+              <div className="mt-3">
                 {professionals.slice(0, 5).map((professional) => {
                   const isFavorite = favoriteIds.has(professional.id);
                   return (
-                    <div key={professional.id} className="flex items-center gap-3 py-4">
-                      <AvatarPhoto
-                        imageUrl={professional.avatarUrl}
-                        initials={professional.initials}
-                        size={54}
-                      />
-                      <Link
-                        to="/app/professional/$id"
-                        params={{ id: professional.id }}
-                        className="min-w-0 flex-1"
-                      >
-                        <h3 className="truncate text-sm font-black text-foreground">
-                          {professional.name}
-                        </h3>
-                        <div className="mt-1 flex items-center gap-2">
-                          <Rating value={professional.rating} />
-                          <span className="text-xs text-muted-foreground">
-                            ({professional.completedJobs} avaliações)
-                          </span>
-                        </div>
-                        <div className="mt-1">
-                          <Availability label={AVAILABILITY_LABEL[professional.available]} />
-                        </div>
-                      </Link>
-                      <button
-                        type="button"
-                        aria-label={
-                          isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"
-                        }
-                        disabled={
-                          !configured ||
-                          !user ||
-                          !isUuid(professional.id) ||
-                          favoriteMutation.isPending
-                        }
-                        onClick={() =>
-                          favoriteMutation.mutate({
-                            professionalId: professional.id,
-                            favorite: !isFavorite,
-                          })
-                        }
-                        className="grid size-9 place-items-center rounded-full disabled:opacity-40"
-                      >
-                        <Heart
-                          className={`size-5 ${
-                            isFavorite ? "fill-primary text-primary" : "text-muted-foreground"
-                          }`}
-                        />
-                      </button>
-                      <ChevronRight className="size-5 text-muted-foreground" />
-                    </div>
+                    <ProfessionalListRow
+                      key={professional.id}
+                      professional={professional}
+                      favorite={isFavorite}
+                      favoriteDisabled={
+                        !configured ||
+                        !user ||
+                        !isUuid(professional.id) ||
+                        favoriteMutation.isPending
+                      }
+                      onFavorite={() =>
+                        favoriteMutation.mutate({
+                          professionalId: professional.id,
+                          favorite: !isFavorite,
+                        })
+                      }
+                    />
                   );
                 })}
               </div>
