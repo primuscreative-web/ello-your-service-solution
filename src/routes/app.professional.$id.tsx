@@ -1,24 +1,19 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import type React from "react";
-import { Award, BadgeCheck, ClipboardCheck, Heart, MessageCircle, Share2 } from "lucide-react";
-import { getProfessional, type Professional } from "@/lib/ello-data";
-import {
-  CyanButton,
-  ProPhoto,
-  RatingLine,
-  ServicePhoto,
-  TrustBadge,
-} from "@/components/ello/mobile-ui";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { BadgeCheck, ChevronLeft, Heart, MessageCircle, Share2, Star } from "lucide-react";
+import { AvatarPhoto } from "@/components/ello/media";
+import { Availability, Rating } from "@/components/ello/status";
 import { useAuth } from "@/lib/auth/auth-context";
+import { AVAILABILITY_LABEL, getProfessional, type Professional } from "@/lib/ello-data";
 import {
-  createDetailedQuoteRequest,
   getProfessionalById,
   listMyFavoriteProfessionalIds,
   listProfessionalPortfolio,
   setProfessionalFavorite,
 } from "@/lib/ello-repository";
-import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
+
+type ProfileTab = "profile" | "services" | "reviews" | "gallery";
 
 export const Route = createFileRoute("/app/professional/$id")({
   component: ProfessionalDetail,
@@ -29,22 +24,20 @@ export const Route = createFileRoute("/app/professional/$id")({
   },
   notFoundComponent: () => (
     <div className="p-8 text-center text-sm text-muted-foreground">
-      Profissional nao encontrado.
+      Profissional não encontrado.
     </div>
   ),
 });
 
 function ProfessionalDetail() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const { id, initialPro } = Route.useLoaderData() as {
     id: string;
     initialPro: Professional | null;
   };
   const { configured, user } = useAuth();
-  const [quoteDescription, setQuoteDescription] = React.useState("");
-  const [quoteLocation, setQuoteLocation] = React.useState("");
-  const [quoteDesiredDate, setQuoteDesiredDate] = React.useState("");
+  const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
+
   const professionalQuery = useQuery({
     queryKey: ["ello", "professional", id],
     queryFn: () => getProfessionalById(id),
@@ -60,45 +53,16 @@ function ProfessionalDetail() {
     queryFn: () => listMyFavoriteProfessionalIds(user!.id),
     enabled: Boolean(configured && user),
   });
+
   const pro = initialPro ?? professionalQuery.data;
   const portfolioItems = portfolioQuery.data ?? [];
   const favoriteIds = new Set(favoritesQuery.data ?? []);
   const isFavorite = pro ? favoriteIds.has(pro.id) : false;
-  const canPersistQuote = Boolean(configured && user && pro && isUuid(pro.id));
-  const quoteMutation = useMutation({
-    mutationFn: (input: { description: string; location: string; desiredDate?: string | null }) => {
-      if (!pro) throw new Error("Profissional ainda nao foi carregado.");
-      return createDetailedQuoteRequest({
-        userId: user!.id,
-        professionalId: pro.id,
-        description: input.description,
-        location: input.location,
-        desiredDate: input.desiredDate,
-      });
-    },
-    onSuccess: async (quoteRequest) => {
-      setQuoteDescription("");
-      setQuoteDesiredDate("");
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["ello", "me", "quote-threads", user?.id],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["ello", "me", "request-history", user?.id],
-        }),
-      ]);
-      await navigate({
-        to: "/app/messages",
-        search: {
-          quote: quoteRequest.id,
-        },
-      });
-    },
-  });
+
   const favoriteMutation = useMutation({
     mutationFn: () => {
       if (!user) throw new Error("Entre na sua conta para favoritar profissionais.");
-      if (!pro) throw new Error("Profissional ainda nao foi carregado.");
+      if (!pro) throw new Error("Profissional ainda não foi carregado.");
       return setProfessionalFavorite({
         userId: user.id,
         professionalId: pro.id,
@@ -113,284 +77,239 @@ function ProfessionalDetail() {
   });
 
   if (!pro && professionalQuery.isPending) {
-    return (
-      <div className="grid min-h-[70vh] place-items-center p-8 text-center text-sm font-semibold text-muted-foreground">
-        Carregando profissional...
-      </div>
-    );
+    return <div className="min-h-dvh animate-pulse bg-secondary" />;
   }
 
   if (!pro) {
     return (
       <div className="p-8 text-center text-sm text-muted-foreground">
-        Profissional nao encontrado.
+        Profissional não encontrado.
       </div>
     );
   }
 
-  const canSendQuote =
-    canPersistQuote &&
-    quoteDescription.trim().length >= 10 &&
-    quoteLocation.trim().length >= 3 &&
-    !quoteMutation.isPending &&
-    !quoteMutation.isSuccess;
+  const canPersist = Boolean(configured && user && isUuid(pro.id));
 
   return (
-    <div className="pb-5">
-      <header className="ello-header relative h-36 px-4 pt-5 text-white">
-        <div className="flex items-center justify-between">
+    <div className="min-h-dvh bg-white pb-24">
+      <header className="relative h-52 overflow-hidden bg-slate-900 text-white">
+        <img
+          src="/images/ello/home-services-1.webp"
+          alt=""
+          className="absolute inset-0 size-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/20" />
+        <div className="relative flex items-center justify-between px-5 pt-[calc(1rem+env(safe-area-inset-top))]">
           <Link
             to="/app/search"
-            className="grid size-8 place-items-center rounded-full bg-white/10"
+            aria-label="Voltar"
+            className="grid size-10 place-items-center rounded-full bg-black/20 backdrop-blur"
           >
-            &larr;
+            <ChevronLeft className="size-6" />
           </Link>
-          <span className="text-xl font-black tracking-tight">ELLO</span>
-          <div className="flex items-center gap-2">
-            <button
-              className="grid size-8 place-items-center rounded-full bg-white/10 disabled:opacity-45"
-              disabled={!configured || !user || !pro || !isUuid(pro.id) || favoriteMutation.isPending}
-              onClick={() => favoriteMutation.mutate()}
-              aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-            >
-              <Heart className={`size-4 ${isFavorite ? "fill-primary text-primary" : ""}`} />
+          <div className="flex gap-2">
+            <button className="grid size-10 place-items-center rounded-full bg-black/20 backdrop-blur">
+              <Share2 className="size-5" />
             </button>
-            <Share2 className="size-5" />
+            <button
+              aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+              disabled={!canPersist || favoriteMutation.isPending}
+              onClick={() => favoriteMutation.mutate()}
+              className="grid size-10 place-items-center rounded-full bg-black/20 backdrop-blur disabled:opacity-50"
+            >
+              <Heart className={`size-5 ${isFavorite ? "fill-white" : ""}`} />
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="-mt-14 px-4">
-        <section className="ello-card relative rounded-xl p-4 pt-14">
-          <ProPhoto
-            initials={pro.initials}
-            imageUrl={pro.avatarUrl}
-            size={92}
-            className="absolute -top-12 left-4"
-          />
-          <div className="absolute right-4 top-4">
-            <TrustBadge label={pro.trustLevel} />
+      <main className="-mt-5 rounded-t-[1.7rem] bg-white">
+        <section className="relative px-5 pb-5 pt-12">
+          <div className="absolute -top-11 left-5 rounded-full border-4 border-white">
+            <AvatarPhoto imageUrl={pro.avatarUrl} initials={pro.initials} size={88} />
+          </div>
+          <h1 className="flex items-center gap-2 text-[1.55rem] font-black tracking-[-0.04em]">
+            {pro.name}
+            <BadgeCheck className="size-5 fill-primary text-white" />
+          </h1>
+          <div className="mt-2 flex items-center gap-3">
+            <Rating value={pro.rating} />
+            <span className="text-xs text-muted-foreground">({pro.completedJobs} avaliações)</span>
+          </div>
+          <div className="mt-3">
+            <Availability label={AVAILABILITY_LABEL[pro.available]} />
           </div>
 
-          <h1 className="text-xl font-black uppercase leading-tight">
-            {pro.name} - {shortProfession(pro.profession)}
-          </h1>
-          <p className="text-xs text-muted-foreground">Profissional · {pro.category}</p>
-
-          <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-            <Info
-              label="Avaliacao"
-              value={
-                <RatingLine rating={String(pro.rating)} reviews={`${pro.completedJobs} servicos`} />
-              }
-            />
-            <Info label="Experiencia" value={`${pro.experienceYears} anos`} />
-            <Info label="Cidade" value={pro.city.replace(", SP", "")} />
+          <div className="mt-7 grid grid-cols-3 divide-x divide-border">
+            <Metric value={String(pro.completedJobs)} label="Serviços" />
+            <Metric value="98%" label="Concluídos" />
+            <Metric value={pro.responseTime} label="Tempo de resposta" />
           </div>
         </section>
 
-        <section className="mt-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-black">Portfolio de Servicos</h2>
-            <div className="flex gap-3 text-xs font-semibold text-muted-foreground">
-              <span>Servicos</span>
-              <span>Agenda</span>
-              <span>Avaliacoes</span>
+        <nav className="grid grid-cols-4 border-y border-border px-3">
+          {[
+            ["profile", "Perfil"],
+            ["services", "Serviços"],
+            ["reviews", "Avaliações"],
+            ["gallery", "Galeria"],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setActiveTab(value as ProfileTab)}
+              className={`border-b-2 py-4 text-xs font-bold ${
+                activeTab === value
+                  ? "border-primary text-primary"
+                  : "border-transparent text-foreground/70"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="px-5 py-6">
+          {activeTab === "profile" ? <ProfileOverview professional={pro} /> : null}
+          {activeTab === "services" ? <ServicesTab professional={pro} /> : null}
+          {activeTab === "reviews" ? <ReviewsTab professional={pro} /> : null}
+          {activeTab === "gallery" ? <GalleryTab items={portfolioItems} /> : null}
+        </div>
+      </main>
+
+      <div className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[430px] -translate-x-1/2 grid-cols-2 gap-3 border-t border-border bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <Link
+          to="/app/messages"
+          className="flex h-12 items-center justify-center gap-2 rounded-xl border border-primary text-sm font-bold text-primary"
+        >
+          <MessageCircle className="size-5" />
+          Chamar no chat
+        </Link>
+        <Link
+          to="/app/professional/$id/quote"
+          params={{ id }}
+          className="flex h-12 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white"
+        >
+          Solicitar serviço
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function ProfileOverview({ professional }: { professional: Professional }) {
+  return (
+    <section>
+      <h2 className="text-base font-black">Sobre mim</h2>
+      <p className="mt-3 text-sm leading-7 text-foreground/75">{professional.description}</p>
+      <h2 className="mt-7 text-base font-black">Serviços principais</h2>
+      <div className="mt-3 divide-y divide-border rounded-2xl border border-border px-4">
+        {professional.specialties.slice(0, 4).map((specialty) => (
+          <div key={specialty} className="py-4 text-sm font-semibold">
+            {specialty}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ServicesTab({ professional }: { professional: Professional }) {
+  return (
+    <section>
+      <h2 className="text-base font-black">Meus serviços</h2>
+      <div className="mt-4 space-y-3">
+        {professional.specialties.map((specialty, index) => (
+          <div
+            key={specialty}
+            className="flex items-center gap-3 rounded-2xl border border-border p-3"
+          >
+            <img
+              src={`/images/ello/home-services-${(index % 3) + 1}.webp`}
+              alt=""
+              className="size-16 rounded-xl object-cover"
+            />
+            <div>
+              <h3 className="text-sm font-black">{specialty}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">Valor sob consulta</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {(portfolioItems.length
-              ? portfolioItems.slice(0, 6)
-              : [
-                  { id: "disjuntores", title: "Instalacao de Disjuntores", mediaUrl: null },
-                  { id: "reparos", title: "Reparos Residenciais", mediaUrl: null },
-                  { id: "lampadas", title: "Substituicao de Lampadas LED", mediaUrl: null },
-                ]
-            ).map((item, index) => (
-              <ServicePhoto
-                key={item.id}
-                index={index}
-                label={item.title}
-                imageUrl={item.mediaUrl}
-                className="aspect-square"
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ReviewsTab({ professional }: { professional: Professional }) {
+  return (
+    <section>
+      <div className="flex items-end gap-3">
+        <strong className="text-4xl font-black">{professional.rating}</strong>
+        <span className="mb-1 flex">
+          {[0, 1, 2, 3, 4].map((star) => (
+            <Star key={star} className="size-5 fill-warning text-warning" />
+          ))}
+        </span>
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Baseado em {professional.completedJobs} avaliações
+      </p>
+      <div className="mt-7 space-y-3">
+        {[5, 4, 3, 2, 1].map((score, index) => (
+          <div key={score} className="flex items-center gap-3 text-xs font-bold">
+            <span className="w-5">{score}★</span>
+            <span className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
+              <span
+                className="block h-full rounded-full bg-primary"
+                style={{ width: `${index === 0 ? 86 : Math.max(2, 12 - index * 3)}%` }}
               />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-4">
-          <h2 className="text-sm font-black">Verificados</h2>
-          <div className="mt-2 grid grid-cols-4 gap-2">
-            {["NR10", "SENAI", "SAMHQ", "Selo"].map((cert, index) => (
-              <div
-                key={cert}
-                className="grid aspect-square place-items-center rounded-full border-2 border-[#d4a634] bg-[#fff5ce] text-center text-[10px] font-black text-[#805f00]"
-              >
-                {index === 3 ? <BadgeCheck className="size-6 text-[#083d63]" /> : cert}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-4 ello-card rounded-xl p-4">
-          <h2 className="text-sm font-black">Sobre Mim</h2>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{pro.description}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {pro.specialties.map((item) => (
-              <span key={item} className="rounded-lg bg-muted px-2.5 py-1.5 text-[10px] font-bold">
-                {item}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-4">
-          <p className="text-[10px] font-black uppercase tracking-wide text-[#083d63]">
-            Pagamento externo
-          </p>
-          <p className="mt-1 text-xs font-semibold leading-relaxed text-sky-900">
-            {PAYMENT_POLICY.quotePaymentNotice}
-          </p>
-        </section>
-
-        <section className="mt-4 ello-card rounded-xl p-4">
-          <h2 className="text-sm font-black">Solicitar orcamento</h2>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Explique o problema, informe onde sera o atendimento e, se quiser, sugira uma data.
-          </p>
-          <textarea
-            value={quoteDescription}
-            onChange={(event) => setQuoteDescription(event.target.value)}
-            placeholder={`Ex: preciso de ${pro.specialties[0] ?? pro.profession.toLowerCase()} esta semana...`}
-            disabled={!canPersistQuote || quoteMutation.isPending || quoteMutation.isSuccess}
-            className="mt-3 min-h-24 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold outline-none focus:border-primary disabled:opacity-60"
-          />
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <input
-              value={quoteLocation}
-              onChange={(event) => setQuoteLocation(event.target.value)}
-              placeholder={pro.city || "Cidade ou bairro"}
-              disabled={!canPersistQuote || quoteMutation.isPending || quoteMutation.isSuccess}
-              className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary disabled:opacity-60"
-            />
-            <input
-              type="datetime-local"
-              value={quoteDesiredDate}
-              onChange={(event) => setQuoteDesiredDate(event.target.value)}
-              disabled={!canPersistQuote || quoteMutation.isPending || quoteMutation.isSuccess}
-              className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary disabled:opacity-60"
-            />
-          </div>
-        </section>
-
-        <section className="mt-4 ello-card rounded-xl p-4">
-          <div className="flex items-center gap-2">
-            <Award className="size-4 text-primary" />
-            <h2 className="text-sm font-black">Niveis de Confianca</h2>
-          </div>
-          <div className="mt-3 h-2 rounded-full bg-gradient-to-r from-[#b8782a] via-[#d4a634] to-[#083d63]" />
-          <div className="mt-1 flex justify-between text-[10px] font-bold text-muted-foreground">
-            <span>Bronze</span>
-            <span>Elite</span>
-          </div>
-        </section>
-
-        <div className="sticky bottom-20 mt-4 grid grid-cols-2 gap-2 rounded-xl border border-border bg-white p-2 shadow-xl">
-          <Link
-            to="/app/messages"
-            className="grid h-10 place-items-center rounded-lg bg-[#083d63] text-xs font-bold text-white"
-          >
-            <span className="inline-flex items-center gap-1">
-              <MessageCircle className="size-4" />
-              Conversar por Chat
             </span>
-          </Link>
-          <CyanButton
-            className="w-full disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
-            disabled={!canSendQuote}
-            onClick={() =>
-              quoteMutation.mutate({
-                description: quoteDescription,
-                location: quoteLocation || pro.city,
-                desiredDate: quoteDesiredDate
-                  ? new Date(quoteDesiredDate).toISOString()
-                  : null,
-              })
-            }
-          >
-            <span className="inline-flex items-center gap-1">
-              <ClipboardCheck className="size-4" />
-              {quoteMutation.isPending
-                ? "Enviando..."
-                : quoteMutation.isSuccess
-                  ? "Orcamento enviado"
-                  : "Solicitar Orcamento"}
-            </span>
-          </CyanButton>
-        </div>
-
-        {!configured ? (
-          <QuoteNotice>Configure o Supabase para salvar solicitacoes reais.</QuoteNotice>
-        ) : !user ? (
-          <QuoteNotice>
-            <Link to="/auth" className="font-black text-primary">
-              Entre na conta
-            </Link>{" "}
-            para solicitar orcamento e abrir o atendimento.
-          </QuoteNotice>
-        ) : !isUuid(pro.id) ? (
-          <QuoteNotice>
-            Este profissional e demonstrativo. Profissionais vindos do Supabase ja salvam o
-            orcamento no banco.
-          </QuoteNotice>
-        ) : quoteMutation.error ? (
-          <QuoteNotice tone="error">{quoteMutation.error.message}</QuoteNotice>
-        ) : quoteMutation.isSuccess ? (
-          <QuoteNotice tone="success">
-            Solicitacao criada no Supabase e conversa iniciada em Mensagens.
-          </QuoteNotice>
-        ) : null}
-      </main>
-    </div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-8 rounded-2xl bg-secondary p-5 text-center text-sm text-muted-foreground">
+        As avaliações reais aparecerão aqui após serviços concluídos.
+      </p>
+    </section>
   );
 }
 
-function Info({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
-      <div className="mt-1 text-xs font-black">{value}</div>
-    </div>
-  );
-}
-
-function QuoteNotice({
-  children,
-  tone = "info",
+function GalleryTab({
+  items,
 }: {
-  children: React.ReactNode;
-  tone?: "info" | "success" | "error";
+  items: Array<{ id: string; title: string; mediaUrl: string | null }>;
 }) {
-  const toneClass =
-    tone === "success"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-      : tone === "error"
-        ? "border-red-200 bg-red-50 text-red-700"
-        : "border-sky-200 bg-sky-50 text-sky-900";
+  const gallery = items.length
+    ? items
+    : [
+        { id: "one", title: "Serviço realizado", mediaUrl: "/images/ello/home-services-1.webp" },
+        { id: "two", title: "Atendimento", mediaUrl: "/images/ello/home-services-2.webp" },
+        { id: "three", title: "Resultado", mediaUrl: "/images/ello/home-services-3.webp" },
+      ];
 
   return (
-    <div className={`mt-3 rounded-xl border p-3 text-xs font-semibold ${toneClass}`}>
-      {children}
-    </div>
+    <section className="grid grid-cols-2 gap-2">
+      {gallery.map((item, index) => (
+        <img
+          key={item.id}
+          src={item.mediaUrl ?? `/images/ello/home-services-${(index % 3) + 1}.webp`}
+          alt={item.title}
+          className="aspect-square w-full rounded-2xl object-cover"
+        />
+      ))}
+    </section>
   );
 }
 
-function shortProfession(profession: string) {
-  return profession.split(" ")[0] ?? profession;
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-2 text-center">
+      <strong className="block text-lg font-black">{value}</strong>
+      <span className="mt-1 block text-[0.68rem] text-muted-foreground">{label}</span>
+    </div>
+  );
 }
 
 function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
-  );
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }

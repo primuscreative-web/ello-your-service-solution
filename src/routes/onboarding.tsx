@@ -1,5 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { completeOnboarding } from "@/lib/onboarding-state";
+import { ELLO_MEDIA } from "@/lib/ello-media";
 
 export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
@@ -7,30 +9,50 @@ export const Route = createFileRoute("/onboarding")({
 
 const SLIDES = [
   {
-    eyebrow: "Clientes",
-    title: "Contrate profissionais de confiança.",
-    body: "Encontre milhares de profissionais avaliados pela comunidade ELLO.",
-    accent: "⚡",
+    title: (
+      <>
+        Contrate profissionais de <span className="text-primary">confiança.</span>
+      </>
+    ),
+    body: "Encontre milhares de profissionais avaliados pela comunidade.",
+    image: ELLO_MEDIA.onboardingClient.src,
+    alt: "Cliente usando o celular para contratar profissionais",
+    imageClassName: "right-[-3.2rem] bottom-24 h-[54%]",
   },
   {
-    eyebrow: "Profissionais",
-    title: "Organize e divulgue seus serviços.",
-    body: "Crie seu perfil profissional em poucos minutos com a ajuda da IA.",
-    accent: "📈",
+    title: (
+      <>
+        Organize e <span className="text-primary">divulgue</span> seus serviços.
+      </>
+    ),
+    body: "Crie seu perfil profissional e encontre mais clientes.",
+    image: ELLO_MEDIA.onboardingProfessional.src,
+    alt: "Profissional organizando serviços pelo celular",
+    imageClassName: "right-[-2.7rem] bottom-20 h-[57%]",
   },
   {
-    eyebrow: "Tudo em um só lugar",
-    title: "Agenda, portfólio e clientes integrados.",
-    body: "Tudo que você precisa para trabalhar melhor e crescer mais rápido.",
-    accent: "🗂️",
+    title: (
+      <>
+        Agenda, portfólio e clientes em um <span className="text-primary">só lugar.</span>
+      </>
+    ),
+    body: "Tudo que você precisa para trabalhar melhor.",
+    image: ELLO_MEDIA.onboardingAgenda.src,
+    alt: "Interface de agenda da ELLO",
+    imageClassName: "right-[-2.1rem] bottom-28 h-[48%]",
   },
   {
-    eyebrow: "ELLO IA",
-    title: "A IA trabalha junto com você.",
-    body: "Automatize tarefas, encontre oportunidades e cresça com inteligência.",
-    accent: "✨",
+    title: (
+      <>
+        A IA da ELLO trabalha junto com <span className="text-primary">você.</span>
+      </>
+    ),
+    body: "Automatize tarefas e encontre oportunidades.",
+    image: ELLO_MEDIA.onboardingAssistant.src,
+    alt: "Assistente inteligente da ELLO",
+    imageClassName: "right-[-1.7rem] bottom-28 h-[43%]",
   },
-];
+] as const;
 
 function Onboarding() {
   const navigate = useNavigate();
@@ -38,43 +60,72 @@ function Onboarding() {
   const slide = SLIDES[step];
   const last = step === SLIDES.length - 1;
 
+  function finish() {
+    completeOnboarding();
+    void navigate({ to: "/auth" });
+  }
+
+  function next() {
+    if (last) {
+      finish();
+      return;
+    }
+    setStep((current) => current + 1);
+  }
+
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background px-6 pb-10 pt-6">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-1.5">
-          {SLIDES.map((_, i) => (
-            <div
-              key={i}
-              className={`h-1 rounded-full transition-all ${
-                i === step ? "w-8 bg-foreground" : "w-4 bg-border"
-              }`}
-            />
-          ))}
-        </div>
-        <Link to="/auth" className="text-sm font-medium text-muted-foreground">
-          Pular
-        </Link>
-      </div>
+    <main className="mx-auto min-h-dvh w-full max-w-[430px] bg-white">
+      <section className="relative flex min-h-dvh flex-col overflow-hidden px-7 pb-[calc(1.6rem+env(safe-area-inset-bottom))] pt-[calc(4.4rem+env(safe-area-inset-top))]">
+        <div className="pointer-events-none absolute inset-x-6 bottom-[10.6rem] h-[38%] rounded-[45%] bg-primary/8 blur-sm" />
 
-      <div key={step} className="animate-reveal flex flex-1 flex-col justify-center">
-        <div className="mb-8 flex h-48 w-48 items-center justify-center self-center rounded-[3rem] bg-primary/10 text-7xl">
-          {slide.accent}
+        <div key={step} className="animate-reveal relative z-10">
+          <h1 className="max-w-[18rem] text-[2rem] font-black leading-[1.18] tracking-[-0.04em] text-foreground">
+            {slide.title}
+          </h1>
+          <p className="mt-5 max-w-[15.5rem] text-[1.03rem] leading-relaxed text-muted-foreground">
+            {slide.body}
+          </p>
         </div>
-        <span className="font-mono text-xs uppercase tracking-widest text-primary">
-          {slide.eyebrow}
-        </span>
-        <h2 className="font-display mt-2 text-3xl font-extrabold leading-tight tracking-tight">
-          {slide.title}
-        </h2>
-        <p className="mt-3 text-base text-muted-foreground">{slide.body}</p>
-      </div>
 
-      <button
-        onClick={() => (last ? navigate({ to: "/auth" }) : setStep(step + 1))}
-        className="flex h-14 w-full items-center justify-center rounded-2xl bg-foreground font-semibold text-background transition-transform active:scale-[0.98]"
-      >
-        {last ? "Criar minha conta" : "Próximo"}
-      </button>
-    </div>
+        <img
+          key={slide.image}
+          src={slide.image}
+          alt={slide.alt}
+          className={`animate-reveal pointer-events-none absolute z-0 w-auto max-w-none object-contain ${slide.imageClassName}`}
+        />
+
+        <div className="relative z-10 mt-auto">
+          <div className="mb-10 flex justify-center gap-3">
+            {SLIDES.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                aria-label={`Ir para onboarding ${index + 1}`}
+                onClick={() => setStep(index)}
+                className={`size-2.5 rounded-full transition ${
+                  index === step ? "w-6 bg-primary" : "bg-slate-300"
+                }`}
+              />
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={next}
+            className="h-14 w-full rounded-xl bg-primary text-base font-bold text-white shadow-[0_14px_34px_rgba(0,58,255,0.22)] transition active:scale-[0.99]"
+          >
+            {last ? "Começar" : "Próximo"}
+          </button>
+
+          <button
+            type="button"
+            onClick={finish}
+            className="mt-5 h-10 w-full text-center text-base font-semibold text-muted-foreground"
+          >
+            Pular
+          </button>
+        </div>
+      </section>
+    </main>
   );
 }

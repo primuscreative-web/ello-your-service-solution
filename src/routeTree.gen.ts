@@ -16,16 +16,27 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as AppWalletRouteImport } from './routes/app.wallet'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSearchRouteImport } from './routes/app.search'
 import { Route as AppRequestsRouteImport } from './routes/app.requests'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
+import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppMessagesRouteImport } from './routes/app.messages'
 import { Route as AppFavoritesRouteImport } from './routes/app.favorites'
 import { Route as AppExpressRouteImport } from './routes/app.express'
+import { Route as AppElloLinkRouteImport } from './routes/app.ello-link'
 import { Route as AppBusinessRouteImport } from './routes/app.business'
 import { Route as AppAgendaRouteImport } from './routes/app.agenda'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
+import { Route as AppQuoteIdRouteImport } from './routes/app.quote.$id'
 import { Route as AppProfessionalIdRouteImport } from './routes/app.professional.$id'
+import { Route as AppBusinessStatisticsRouteImport } from './routes/app.business.statistics'
+import { Route as AppBusinessReviewsRouteImport } from './routes/app.business.reviews'
+import { Route as AppBusinessQuotesRouteImport } from './routes/app.business.quotes'
+import { Route as AppBusinessClientsRouteImport } from './routes/app.business.clients'
+import { Route as AppProfessionalIdScheduleRouteImport } from './routes/app.professional.$id_.schedule'
+import { Route as AppProfessionalIdQuoteRouteImport } from './routes/app.professional.$id_.quote'
 
 const RoleRoute = RoleRouteImport.update({
   id: '/role',
@@ -62,6 +73,16 @@ const PSlugRoute = PSlugRouteImport.update({
   path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppWalletRoute = AppWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSearchRoute = AppSearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -75,6 +96,11 @@ const AppRequestsRoute = AppRequestsRouteImport.update({
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMessagesRoute = AppMessagesRouteImport.update({
@@ -92,6 +118,11 @@ const AppExpressRoute = AppExpressRouteImport.update({
   path: '/express',
   getParentRoute: () => AppRoute,
 } as any)
+const AppElloLinkRoute = AppElloLinkRouteImport.update({
+  id: '/ello-link',
+  path: '/ello-link',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBusinessRoute = AppBusinessRouteImport.update({
   id: '/business',
   path: '/business',
@@ -107,9 +138,45 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const AppQuoteIdRoute = AppQuoteIdRouteImport.update({
+  id: '/quote/$id',
+  path: '/quote/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProfessionalIdRoute = AppProfessionalIdRouteImport.update({
   id: '/professional/$id',
   path: '/professional/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBusinessStatisticsRoute = AppBusinessStatisticsRouteImport.update({
+  id: '/statistics',
+  path: '/statistics',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
+const AppBusinessReviewsRoute = AppBusinessReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
+const AppBusinessQuotesRoute = AppBusinessQuotesRouteImport.update({
+  id: '/quotes',
+  path: '/quotes',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
+const AppBusinessClientsRoute = AppBusinessClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
+const AppProfessionalIdScheduleRoute =
+  AppProfessionalIdScheduleRouteImport.update({
+    id: '/professional/$id_/schedule',
+    path: '/professional/$id/schedule',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppProfessionalIdQuoteRoute = AppProfessionalIdQuoteRouteImport.update({
+  id: '/professional/$id_/quote',
+  path: '/professional/$id/quote',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -121,16 +188,27 @@ export interface FileRoutesByFullPath {
   '/role': typeof RoleRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
-  '/app/business': typeof AppBusinessRoute
+  '/app/business': typeof AppBusinessRouteWithChildren
+  '/app/ello-link': typeof AppElloLinkRoute
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/wallet': typeof AppWalletRoute
   '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
+  '/app/business/clients': typeof AppBusinessClientsRoute
+  '/app/business/quotes': typeof AppBusinessQuotesRoute
+  '/app/business/reviews': typeof AppBusinessReviewsRoute
+  '/app/business/statistics': typeof AppBusinessStatisticsRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
+  '/app/quote/$id': typeof AppQuoteIdRoute
+  '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
+  '/app/professional/$id/schedule': typeof AppProfessionalIdScheduleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -139,16 +217,27 @@ export interface FileRoutesByTo {
   '/role': typeof RoleRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
-  '/app/business': typeof AppBusinessRoute
+  '/app/business': typeof AppBusinessRouteWithChildren
+  '/app/ello-link': typeof AppElloLinkRoute
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/wallet': typeof AppWalletRoute
   '/p/$slug': typeof PSlugRoute
   '/app': typeof AppIndexRoute
+  '/app/business/clients': typeof AppBusinessClientsRoute
+  '/app/business/quotes': typeof AppBusinessQuotesRoute
+  '/app/business/reviews': typeof AppBusinessReviewsRoute
+  '/app/business/statistics': typeof AppBusinessStatisticsRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
+  '/app/quote/$id': typeof AppQuoteIdRoute
+  '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
+  '/app/professional/$id/schedule': typeof AppProfessionalIdScheduleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -159,16 +248,27 @@ export interface FileRoutesById {
   '/role': typeof RoleRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
-  '/app/business': typeof AppBusinessRoute
+  '/app/business': typeof AppBusinessRouteWithChildren
+  '/app/ello-link': typeof AppElloLinkRoute
   '/app/express': typeof AppExpressRoute
   '/app/favorites': typeof AppFavoritesRoute
   '/app/messages': typeof AppMessagesRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/requests': typeof AppRequestsRoute
   '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/wallet': typeof AppWalletRoute
   '/p/$slug': typeof PSlugRoute
   '/app/': typeof AppIndexRoute
+  '/app/business/clients': typeof AppBusinessClientsRoute
+  '/app/business/quotes': typeof AppBusinessQuotesRoute
+  '/app/business/reviews': typeof AppBusinessReviewsRoute
+  '/app/business/statistics': typeof AppBusinessStatisticsRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
+  '/app/quote/$id': typeof AppQuoteIdRoute
+  '/app/professional/$id_/quote': typeof AppProfessionalIdQuoteRoute
+  '/app/professional/$id_/schedule': typeof AppProfessionalIdScheduleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -181,15 +281,26 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/agenda'
     | '/app/business'
+    | '/app/ello-link'
     | '/app/express'
     | '/app/favorites'
     | '/app/messages'
+    | '/app/notifications'
     | '/app/profile'
     | '/app/requests'
     | '/app/search'
+    | '/app/settings'
+    | '/app/wallet'
     | '/p/$slug'
     | '/app/'
+    | '/app/business/clients'
+    | '/app/business/quotes'
+    | '/app/business/reviews'
+    | '/app/business/statistics'
     | '/app/professional/$id'
+    | '/app/quote/$id'
+    | '/app/professional/$id/quote'
+    | '/app/professional/$id/schedule'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -199,15 +310,26 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/agenda'
     | '/app/business'
+    | '/app/ello-link'
     | '/app/express'
     | '/app/favorites'
     | '/app/messages'
+    | '/app/notifications'
     | '/app/profile'
     | '/app/requests'
     | '/app/search'
+    | '/app/settings'
+    | '/app/wallet'
     | '/p/$slug'
     | '/app'
+    | '/app/business/clients'
+    | '/app/business/quotes'
+    | '/app/business/reviews'
+    | '/app/business/statistics'
     | '/app/professional/$id'
+    | '/app/quote/$id'
+    | '/app/professional/$id/quote'
+    | '/app/professional/$id/schedule'
   id:
     | '__root__'
     | '/'
@@ -218,15 +340,26 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/agenda'
     | '/app/business'
+    | '/app/ello-link'
     | '/app/express'
     | '/app/favorites'
     | '/app/messages'
+    | '/app/notifications'
     | '/app/profile'
     | '/app/requests'
     | '/app/search'
+    | '/app/settings'
+    | '/app/wallet'
     | '/p/$slug'
     | '/app/'
+    | '/app/business/clients'
+    | '/app/business/quotes'
+    | '/app/business/reviews'
+    | '/app/business/statistics'
     | '/app/professional/$id'
+    | '/app/quote/$id'
+    | '/app/professional/$id_/quote'
+    | '/app/professional/$id_/schedule'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -289,6 +422,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/wallet': {
+      id: '/app/wallet'
+      path: '/wallet'
+      fullPath: '/app/wallet'
+      preLoaderRoute: typeof AppWalletRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/search': {
       id: '/app/search'
       path: '/search'
@@ -308,6 +455,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/app/profile'
       preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/notifications': {
+      id: '/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/messages': {
@@ -331,6 +485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppExpressRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/ello-link': {
+      id: '/app/ello-link'
+      path: '/ello-link'
+      fullPath: '/app/ello-link'
+      preLoaderRoute: typeof AppElloLinkRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/business': {
       id: '/app/business'
       path: '/business'
@@ -352,6 +513,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/quote/$id': {
+      id: '/app/quote/$id'
+      path: '/quote/$id'
+      fullPath: '/app/quote/$id'
+      preLoaderRoute: typeof AppQuoteIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/professional/$id': {
       id: '/app/professional/$id'
       path: '/professional/$id'
@@ -359,35 +527,109 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfessionalIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/business/statistics': {
+      id: '/app/business/statistics'
+      path: '/statistics'
+      fullPath: '/app/business/statistics'
+      preLoaderRoute: typeof AppBusinessStatisticsRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
+    '/app/business/reviews': {
+      id: '/app/business/reviews'
+      path: '/reviews'
+      fullPath: '/app/business/reviews'
+      preLoaderRoute: typeof AppBusinessReviewsRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
+    '/app/business/quotes': {
+      id: '/app/business/quotes'
+      path: '/quotes'
+      fullPath: '/app/business/quotes'
+      preLoaderRoute: typeof AppBusinessQuotesRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
+    '/app/business/clients': {
+      id: '/app/business/clients'
+      path: '/clients'
+      fullPath: '/app/business/clients'
+      preLoaderRoute: typeof AppBusinessClientsRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
+    '/app/professional/$id_/schedule': {
+      id: '/app/professional/$id_/schedule'
+      path: '/professional/$id/schedule'
+      fullPath: '/app/professional/$id/schedule'
+      preLoaderRoute: typeof AppProfessionalIdScheduleRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/professional/$id_/quote': {
+      id: '/app/professional/$id_/quote'
+      path: '/professional/$id/quote'
+      fullPath: '/app/professional/$id/quote'
+      preLoaderRoute: typeof AppProfessionalIdQuoteRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
+
+interface AppBusinessRouteChildren {
+  AppBusinessClientsRoute: typeof AppBusinessClientsRoute
+  AppBusinessQuotesRoute: typeof AppBusinessQuotesRoute
+  AppBusinessReviewsRoute: typeof AppBusinessReviewsRoute
+  AppBusinessStatisticsRoute: typeof AppBusinessStatisticsRoute
+}
+
+const AppBusinessRouteChildren: AppBusinessRouteChildren = {
+  AppBusinessClientsRoute: AppBusinessClientsRoute,
+  AppBusinessQuotesRoute: AppBusinessQuotesRoute,
+  AppBusinessReviewsRoute: AppBusinessReviewsRoute,
+  AppBusinessStatisticsRoute: AppBusinessStatisticsRoute,
+}
+
+const AppBusinessRouteWithChildren = AppBusinessRoute._addFileChildren(
+  AppBusinessRouteChildren,
+)
 
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppAgendaRoute: typeof AppAgendaRoute
-  AppBusinessRoute: typeof AppBusinessRoute
+  AppBusinessRoute: typeof AppBusinessRouteWithChildren
+  AppElloLinkRoute: typeof AppElloLinkRoute
   AppExpressRoute: typeof AppExpressRoute
   AppFavoritesRoute: typeof AppFavoritesRoute
   AppMessagesRoute: typeof AppMessagesRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppRequestsRoute: typeof AppRequestsRoute
   AppSearchRoute: typeof AppSearchRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppWalletRoute: typeof AppWalletRoute
   AppIndexRoute: typeof AppIndexRoute
   AppProfessionalIdRoute: typeof AppProfessionalIdRoute
+  AppQuoteIdRoute: typeof AppQuoteIdRoute
+  AppProfessionalIdQuoteRoute: typeof AppProfessionalIdQuoteRoute
+  AppProfessionalIdScheduleRoute: typeof AppProfessionalIdScheduleRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppAgendaRoute: AppAgendaRoute,
-  AppBusinessRoute: AppBusinessRoute,
+  AppBusinessRoute: AppBusinessRouteWithChildren,
+  AppElloLinkRoute: AppElloLinkRoute,
   AppExpressRoute: AppExpressRoute,
   AppFavoritesRoute: AppFavoritesRoute,
   AppMessagesRoute: AppMessagesRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
   AppRequestsRoute: AppRequestsRoute,
   AppSearchRoute: AppSearchRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppWalletRoute: AppWalletRoute,
   AppIndexRoute: AppIndexRoute,
   AppProfessionalIdRoute: AppProfessionalIdRoute,
+  AppQuoteIdRoute: AppQuoteIdRoute,
+  AppProfessionalIdQuoteRoute: AppProfessionalIdQuoteRoute,
+  AppProfessionalIdScheduleRoute: AppProfessionalIdScheduleRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

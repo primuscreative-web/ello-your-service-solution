@@ -1,35 +1,39 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type React from "react";
 import { useState } from "react";
-import { Mail, ShieldCheck, Smartphone } from "lucide-react";
+import { z } from "zod";
+import { Apple, Mail, Phone } from "lucide-react";
 import { ElloLogo } from "@/components/ello/logo";
 import { useAuth } from "@/lib/auth/auth-context";
 import { createConfirmedPasswordAccount } from "@/lib/auth/auth.functions";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: z.object({
+    redirect: z.string().optional(),
+  }),
   component: Auth,
 });
 
 function Auth() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const { configured } = useAuth();
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setMessage(null);
 
     const supabase = getSupabaseBrowserClient();
     if (!configured || !supabase) {
-      setError("Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para ativar o backend.");
+      setError("Configure o Supabase para ativar o backend.");
       return;
     }
 
@@ -56,7 +60,7 @@ function Auth() {
     } catch (caughtError) {
       setSubmitting(false);
       setError(
-        caughtError instanceof Error ? caughtError.message : "Nao foi possivel criar a conta.",
+        caughtError instanceof Error ? caughtError.message : "Não foi possível criar a conta.",
       );
       return;
     }
@@ -68,118 +72,158 @@ function Auth() {
       return;
     }
 
+    if (redirect?.startsWith("/p/")) {
+      await navigate({ to: redirect });
+      return;
+    }
+
     await navigate({ to: "/role" });
   }
 
+  function toggleMode() {
+    setMode((current) => (current === "sign-in" ? "sign-up" : "sign-in"));
+    setShowEmailForm(true);
+    setError(null);
+  }
+
   return (
-    <div className="ello-shell flex min-h-screen flex-col px-6 pb-10 pt-12">
-      <div className="flex flex-col items-center text-center">
-        <ElloLogo className="text-4xl" />
-        <h1 className="mt-8 text-3xl font-extrabold tracking-tight">
-          {mode === "sign-in" ? "Entre na sua conta" : "Crie sua conta"}
+    <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-white px-7 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(5.2rem+env(safe-area-inset-top))]">
+      <section className="flex flex-col items-center text-center">
+        <ElloLogo className="text-[2rem]" />
+        <h1 className="mt-10 text-[1.55rem] font-black tracking-[-0.035em] text-foreground">
+          Bem-vindo(a)! 👋
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {mode === "sign-in"
-            ? "Acesse sua conta ELLO."
-            : "Crie sua conta e entre direto, sem verificacao de e-mail nesta fase."}
+        <p className="mt-4 max-w-[17rem] text-base leading-relaxed text-muted-foreground">
+          Faça login ou crie sua conta para continuar
         </p>
-      </div>
+      </section>
 
       {!configured ? (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900">
-          Backend ainda nao configurado neste ambiente. Preencha o `.env` com as chaves publicas do
-          Supabase.
+        <div className="mt-8 rounded-xl border border-warning/30 bg-warning/10 p-4 text-xs font-semibold text-warning-foreground">
+          Configure o Supabase para ativar o login real neste ambiente.
         </div>
       ) : null}
 
-      {mode === "sign-up" && configured ? (
-        <div className="mt-6 rounded-xl border border-sky-200 bg-sky-50 p-4 text-xs font-semibold text-sky-900">
-          A verificacao de e-mail esta desativada temporariamente. Ela sera implementada depois.
-        </div>
-      ) : null}
+      <section className="mt-10 space-y-3">
+        <ProviderButton disabled icon={<GoogleMark />} label="Continuar com Google" />
+        <ProviderButton
+          disabled
+          icon={<Apple className="size-5 fill-black text-black" />}
+          label="Continuar com Apple"
+        />
+        <ProviderButton
+          disabled
+          icon={<Phone className="size-5" />}
+          label="Continuar com telefone"
+        />
+        <ProviderButton
+          icon={<Mail className="size-5" />}
+          label="Continuar com e-mail"
+          onClick={() => setShowEmailForm((visible) => !visible)}
+        />
+      </section>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-3">
-        {mode === "sign-up" ? (
+      {showEmailForm ? (
+        <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+          {mode === "sign-up" ? (
+            <input
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              placeholder="Seu nome"
+              className="h-12 w-full rounded-xl border border-border bg-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+            />
+          ) : null}
           <input
-            value={fullName}
-            onChange={(event) => setFullName(event.target.value)}
-            placeholder="Seu nome"
-            className="h-13 w-full rounded-xl border border-border bg-white px-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+            required
+            placeholder="seu@email.com"
+            className="h-12 w-full rounded-xl border border-border bg-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
           />
-        ) : null}
-        <input
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          type="email"
-          required
-          placeholder="seu@email.com"
-          className="h-13 w-full rounded-xl border border-border bg-white px-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-        />
-        <input
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          type="password"
-          required
-          placeholder="Senha"
-          className="h-13 w-full rounded-xl border border-border bg-white px-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-        />
+          <input
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            type="password"
+            required
+            placeholder="Senha"
+            className="h-12 w-full rounded-xl border border-border bg-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+          />
 
-        {error ? (
-          <p className="rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-700">{error}</p>
-        ) : null}
-        {message ? (
-          <p className="rounded-lg bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">
-            {message}
-          </p>
-        ) : null}
+          {mode === "sign-up" ? (
+            <p className="rounded-xl bg-primary/5 p-3 text-xs font-semibold leading-relaxed text-primary">
+              A confirmação de e-mail será adicionada quando o e-mail oficial da ELLO estiver
+              pronto.
+            </p>
+          ) : null}
 
-        <button
-          disabled={submitting}
-          className="ello-action flex h-13 w-full items-center justify-center rounded-xl font-bold disabled:opacity-60"
-        >
-          {submitting ? "Aguarde..." : mode === "sign-in" ? "Entrar" : "Criar conta"}
-        </button>
-      </form>
+          {error ? (
+            <p className="rounded-xl bg-destructive/10 p-3 text-xs font-semibold leading-relaxed text-destructive">
+              {error}
+            </p>
+          ) : null}
 
-      <button
-        onClick={() => {
-          setMode(mode === "sign-in" ? "sign-up" : "sign-in");
-          setError(null);
-          setMessage(null);
-        }}
-        className="mt-4 text-sm font-bold text-[#083d63]"
-      >
-        {mode === "sign-in" ? "Ainda nao tenho conta" : "Ja tenho conta"}
+          <button
+            disabled={submitting}
+            className="h-12 w-full rounded-xl bg-primary text-sm font-bold text-white transition active:scale-[0.99] disabled:opacity-60"
+          >
+            {submitting ? "Aguarde..." : mode === "sign-in" ? "Entrar" : "Criar conta"}
+          </button>
+        </form>
+      ) : null}
+
+      <div className="my-9 flex items-center gap-4 text-xs font-medium text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        ou
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <button type="button" onClick={toggleMode} className="text-sm font-semibold text-foreground">
+        {mode === "sign-in" ? (
+          <>
+            Ainda não tem conta? <span className="text-primary">Criar conta</span>
+          </>
+        ) : (
+          <>
+            Já tem uma conta? <span className="text-primary">Entrar</span>
+          </>
+        )}
       </button>
 
-      <div className="my-8 flex items-center gap-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-        <div className="h-px flex-1 bg-border" />
-        ou
-        <div className="h-px flex-1 bg-border" />
-      </div>
-
-      <div className="space-y-3">
-        <SocialButton icon={<Smartphone className="size-4" />} label="Continuar com Telefone" />
-        <SocialButton icon={<Mail className="size-4" />} label="Continuar com Google" />
-        <SocialButton icon={<ShieldCheck className="size-4" />} label="Continuar com Apple" />
-      </div>
-
-      <p className="mt-auto pt-8 text-center text-xs text-muted-foreground">
-        Ao continuar, voce concorda com os Termos e Politica de Privacidade da ELLO.
+      <p className="mt-auto pt-10 text-center text-xs leading-relaxed text-muted-foreground">
+        Ao continuar, você concorda com os{" "}
+        <span className="font-semibold text-primary">Termos de uso</span> e{" "}
+        <span className="font-semibold text-primary">Política de privacidade</span>
       </p>
-
-      <Link to="/app" className="mt-4 text-center text-xs font-semibold text-muted-foreground">
-        Ver prototipo sem entrar
-      </Link>
-    </div>
+    </main>
   );
 }
 
-function SocialButton({ icon, label }: { icon: React.ReactNode; label: string }) {
+function ProviderButton({
+  disabled = false,
+  icon,
+  label,
+  onClick,
+}: {
+  disabled?: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+}) {
   return (
-    <button className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-white text-sm font-semibold text-foreground transition-colors active:bg-muted">
-      {icon}
-      {label}
+    <button
+      type="button"
+      aria-disabled={disabled}
+      onClick={disabled ? undefined : onClick}
+      className="flex h-14 w-full items-center gap-4 rounded-xl border border-border bg-white px-5 text-sm font-bold text-foreground shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition active:scale-[0.99] aria-disabled:cursor-not-allowed aria-disabled:opacity-55"
+    >
+      <span className="grid size-6 place-items-center">{icon}</span>
+      <span className="flex-1 text-center">{label}</span>
+      <span className="size-6" />
     </button>
   );
+}
+
+function GoogleMark() {
+  return <span className="text-[1.35rem] font-black text-[#4285f4]">G</span>;
 }

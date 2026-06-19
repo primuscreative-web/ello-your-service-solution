@@ -115,6 +115,9 @@ export type Database = {
           cover_url: string | null;
           qr_code_enabled: boolean;
           max_portfolio_items: number;
+          ello_link_whatsapp_message: string | null;
+          ello_link_coupon_code: string | null;
+          ello_link_coupon_description: string | null;
         };
         Insert: {
           id?: string;
@@ -153,6 +156,9 @@ export type Database = {
           cover_url?: string | null;
           qr_code_enabled?: boolean;
           max_portfolio_items?: number;
+          ello_link_whatsapp_message?: string | null;
+          ello_link_coupon_code?: string | null;
+          ello_link_coupon_description?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["professional_profiles"]["Insert"]>;
       };

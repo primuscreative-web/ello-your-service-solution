@@ -1,38 +1,45 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import {
-  BriefcaseBusiness,
   CalendarDays,
+  CheckCircle2,
+  Clock,
   MapPin,
   MessageCircle,
   QrCode,
   Share2,
   Sparkles,
   Star,
-  Video,
 } from "lucide-react";
-import { CyanButton, ProPhoto, ServicePhoto, TrustBadge } from "@/components/ello/mobile-ui";
+import { ProPhoto, ServicePhoto } from "@/components/ello/mobile-ui";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
-  createQuoteRequest,
+  createElloLinkBooking,
   getPublicProfessionalLink,
   recordElloLinkEvent,
+  type ProfessionalService,
 } from "@/lib/ello-repository";
-import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
 export const Route = createFileRoute("/p/$slug")({
   component: PublicProfessionalPage,
 });
 
+const PENDING_LINK_KEY = "ello:link:pending:v1";
+
 function PublicProfessionalPage() {
   const { slug } = Route.useParams();
+  const navigate = useNavigate();
   const { configured, user } = useAuth();
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const profileQuery = useQuery({
     queryKey: ["ello", "public-link", slug],
     queryFn: () => getPublicProfessionalLink(slug),
   });
   const profile = profileQuery.data;
+  const slots = useMemo(() => createVisibleSlots(), []);
+  const selectedService = profile?.services.find((service) => service.id === selectedServiceId);
   const publicUrl = typeof window === "undefined" ? "" : window.location.href;
   const qrCodeUrl =
     profile?.qrCodeEnabled && publicUrl
@@ -40,17 +47,25 @@ function PublicProfessionalPage() {
           publicUrl,
         )}`
       : null;
-  const quoteMutation = useMutation({
+  const bookingMutation = useMutation({
     mutationFn: () => {
-      if (!profile) throw new Error("Perfil ainda nao carregado.");
-      if (!user) throw new Error("Entre na ELLO para solicitar orcamento.");
+      if (!profile) throw new Error("Perfil ainda nÃ£o carregado.");
+      if (!user) throw new Error("Crie sua conta rÃ¡pida para concluir o agendamento.");
+      if (!selectedService) throw new Error("Escolha um serviÃ§o antes de agendar.");
+      if (!selectedSlot) throw new Error("Escolha uma data e horÃ¡rio.");
       void recordElloLinkEvent({ professionalId: profile.id, eventType: "quote_click" });
-      return createQuoteRequest({
+      return createElloLinkBooking({
         userId: user.id,
         professionalId: profile.id,
-        description: `Solicitacao iniciada pelo ELLO Link de ${profile.name}.`,
+        serviceId: selectedService.id,
+        serviceTitle: selectedService.title,
+        startsAt: selectedSlot,
         location: profile.city,
       });
+    },
+    onSuccess: async (result) => {
+      clearPendingLink();
+      await navigate({ to: "/app/messages", search: { quote: result.quoteRequestId } });
     },
   });
 
@@ -58,6 +73,14 @@ function PublicProfessionalPage() {
     if (!profile?.id) return;
     void recordElloLinkEvent({ professionalId: profile.id, eventType: "view" });
   }, [profile]);
+
+  useEffect(() => {
+    if (!profile || typeof window === "undefined") return;
+    const pending = readPendingLink();
+    if (pending?.slug !== slug) return;
+    setSelectedServiceId(pending.serviceId);
+    setSelectedSlot(pending.startsAt);
+  }, [profile, slug]);
 
   function handleShare() {
     if (!profile) return;
@@ -73,9 +96,22 @@ function PublicProfessionalPage() {
     void globalThis.navigator?.clipboard?.writeText(publicUrl);
   }
 
+  function handleBookingClick() {
+    if (!selectedService || !selectedSlot) return;
+    if (!user) {
+      savePendingLink({ slug, serviceId: selectedService.id, startsAt: selectedSlot });
+      void navigate({
+        to: "/auth",
+        search: { redirect: `/p/${slug}` },
+      });
+      return;
+    }
+    bookingMutation.mutate();
+  }
+
   if (profileQuery.isPending) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#eef8fb] p-6 text-center text-sm font-bold text-muted-foreground">
+      <div className="grid min-h-screen place-items-center bg-[#f8fafc] p-6 text-center text-sm font-bold text-muted-foreground">
         Carregando ELLO Link...
       </div>
     );
@@ -83,15 +119,15 @@ function PublicProfessionalPage() {
 
   if (!profile) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#eef8fb] p-6 text-center">
-        <div className="max-w-sm rounded-xl bg-white p-6 shadow-sm">
-          <h1 className="text-lg font-black">ELLO Link nao encontrado</h1>
+      <div className="grid min-h-screen place-items-center bg-[#f8fafc] p-6 text-center">
+        <div className="max-w-sm rounded-3xl bg-white p-6 shadow-sm">
+          <h1 className="text-lg font-black">ELLO Link nÃ£o encontrado</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             O perfil pode estar em rascunho ou o link foi alterado.
           </p>
           <Link
             to="/app/search"
-            className="mt-4 inline-flex h-10 items-center rounded-lg bg-primary px-4 text-xs font-black text-white"
+            className="mt-4 inline-flex h-11 items-center rounded-xl bg-primary px-4 text-xs font-black text-white"
           >
             Buscar profissionais
           </Link>
@@ -100,14 +136,16 @@ function PublicProfessionalPage() {
     );
   }
 
+  const canBook = Boolean(selectedService && selectedSlot);
+
   return (
-    <div className="min-h-screen bg-[#eef8fb] pb-8">
+    <div className="min-h-screen bg-[#f8fafc] pb-8">
       <header
-        className="ello-header relative overflow-hidden px-5 pb-16 pt-6 text-white"
+        className="relative overflow-hidden bg-gradient-to-br from-blue-700 to-blue-950 px-5 pb-20 pt-6 text-white"
         style={
           profile.coverUrl
             ? {
-                backgroundImage: `linear-gradient(180deg, rgba(8, 61, 99, 0.86), rgba(8, 61, 99, 0.58)), url(${profile.coverUrl})`,
+                backgroundImage: `linear-gradient(180deg, rgba(7, 32, 87, 0.72), rgba(7, 32, 87, 0.9)), url(${profile.coverUrl})`,
                 backgroundPosition: "center",
                 backgroundSize: "cover",
               }
@@ -115,212 +153,248 @@ function PublicProfessionalPage() {
         }
       >
         <div className="mx-auto flex max-w-md items-center justify-between">
-          <Link to="/app" className="text-xl font-black tracking-tight">
-            ELLO
-          </Link>
-          <div className="flex items-center gap-2">
-            {profile.boosted ? (
-              <span className="rounded-full bg-white/20 px-2 py-1 text-[10px] font-black">
-                Destaque
-              </span>
-            ) : null}
-            <TrustBadge label={profile.trustLevel} />
-          </div>
+          <strong className="text-xl tracking-tight">ELLO Link</strong>
+          <button
+            onClick={handleShare}
+            className="grid size-10 place-items-center rounded-full bg-white/15"
+            aria-label="Compartilhar ELLO Link"
+          >
+            <Share2 className="size-4" />
+          </button>
         </div>
       </header>
 
-      <main className="mx-auto -mt-12 max-w-md space-y-4 px-4">
-        <section className="ello-card rounded-xl p-4">
+      <main className="mx-auto -mt-14 max-w-md space-y-4 px-4">
+        <section className="rounded-3xl border border-border bg-white p-4 shadow-sm">
           <div className="flex items-start gap-3">
-            <ProPhoto initials={profile.initials} imageUrl={profile.avatarUrl} size={76} />
+            <ProPhoto initials={profile.initials} imageUrl={profile.avatarUrl} size={82} />
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-black leading-tight">{profile.name}</h1>
-              <p className="text-sm font-bold text-[#083d63]">{profile.headline}</p>
-              {profile.elloLinkProEnabled ? (
-                <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-1 text-[9px] font-black text-[#0c6670]">
-                  <Sparkles className="size-3" />
-                  ELLO LINK PRO
-                </p>
-              ) : null}
-              <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+              <h1 className="text-2xl font-black leading-tight">{profile.name}</h1>
+              <p className="text-sm font-bold text-primary">{profile.headline}</p>
+              <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="size-3.5" />
                 {profile.city}
               </p>
             </div>
           </div>
-
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{profile.bio}</p>
-
           <div className="mt-4 grid grid-cols-3 gap-2">
-            <MiniMetric label="Avaliacao" value={profile.rating.toFixed(1)} />
-            <MiniMetric label="Servicos" value={String(profile.completedJobs)} />
-            <MiniMetric label="Preco" value={profile.basePrice} />
+            <MiniMetric label="AvaliaÃ§Ã£o" value={profile.rating.toFixed(1)} />
+            <MiniMetric label="ServiÃ§os" value={String(profile.completedJobs)} />
+            <MiniMetric label="Atende" value={profile.coverage.split(",")[0] ?? profile.city} />
           </div>
         </section>
 
-        {profile.introVideoUrl ? (
-          <section className="ello-card rounded-xl p-4">
-            <h2 className="flex items-center gap-2 text-sm font-black">
-              <Video className="size-4 text-primary" />
-              Video de apresentacao
-            </h2>
-            <video
-              controls
-              playsInline
-              preload="metadata"
-              src={profile.introVideoUrl}
-              className="mt-3 aspect-video w-full rounded-lg bg-black object-cover"
-            />
+        {profile.couponCode ? (
+          <section className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
+            <p className="flex items-center gap-2 text-sm font-black text-blue-900">
+              <Sparkles className="size-4" />
+              Cupom {profile.couponCode}
+            </p>
+            <p className="mt-1 text-xs font-semibold text-blue-800">
+              {profile.couponDescription ?? "Informe esse cupom ao profissional no atendimento."}
+            </p>
           </section>
         ) : null}
 
-        <section className="ello-card rounded-xl p-4">
-          <h2 className="text-sm font-black">Atendimento</h2>
-          <div className="mt-3 space-y-2 text-xs font-semibold text-muted-foreground">
-            <p className="flex items-center gap-2">
-              <MapPin className="size-4 text-primary" />
-              {profile.coverage}
-            </p>
-            <p className="flex items-center gap-2">
-              <CalendarDays className="size-4 text-primary" />
-              {profile.availability ?? "Disponibilidade sob consulta"}
-            </p>
-            <p className="flex items-center gap-2">
-              <BriefcaseBusiness className="size-4 text-primary" />
-              {profile.chargeType}
-            </p>
-          </div>
-        </section>
-
-        <section className="rounded-xl border border-sky-200 bg-sky-50 p-4">
-          <p className="text-[10px] font-black uppercase tracking-wide text-[#083d63]">
-            Pagamento externo
+        <section className="rounded-3xl border border-border bg-white p-4">
+          <h2 className="text-base font-black">Escolha um serviÃ§o</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            O agendamento sÃ³ libera depois que um serviÃ§o for selecionado.
           </p>
-          <p className="mt-1 text-xs font-semibold leading-relaxed text-sky-900">
-            {PAYMENT_POLICY.quotePaymentNotice}
-          </p>
-        </section>
-
-        <section className="ello-card rounded-xl p-4">
-          <h2 className="text-sm font-black">Servicos</h2>
-          <div className="mt-3 space-y-2">
+          <div className="mt-4 space-y-3">
             {profile.services.length ? (
-              profile.services.map((service) => (
-                <div key={service.id} className="rounded-lg bg-background p-3">
-                  <p className="text-xs font-black">{service.title}</p>
-                  <p className="mt-1 text-[10px] text-muted-foreground">
-                    {service.description ?? service.category}
-                  </p>
-                  <p className="mt-2 text-[10px] font-black text-primary">
-                    {service.basePrice ?? profile.basePrice}
-                  </p>
-                </div>
+              profile.services.map((service, index) => (
+                <ServiceOption
+                  key={service.id}
+                  service={service}
+                  selected={service.id === selectedServiceId}
+                  index={index}
+                  onSelect={() => setSelectedServiceId(service.id)}
+                />
               ))
             ) : (
-              <p className="rounded-lg bg-background p-3 text-xs font-semibold text-muted-foreground">
-                Servicos em configuracao.
+              <p className="rounded-2xl bg-secondary p-4 text-sm text-muted-foreground">
+                Este profissional ainda estÃ¡ configurando os serviÃ§os do ELLO Link.
               </p>
             )}
           </div>
         </section>
 
-        <section className="ello-card rounded-xl p-4">
-          <h2 className="text-sm font-black">Portfolio</h2>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {(profile.portfolio.length
-              ? profile.portfolio.slice(0, profile.maxPortfolioItems)
-              : [
-                  { id: "placeholder-1", title: "Trabalho", mediaUrl: null },
-                  { id: "placeholder-2", title: "Servico", mediaUrl: null },
-                  { id: "placeholder-3", title: "Resultado", mediaUrl: null },
-                ]
-            ).map((item, index) => (
-              <ServicePhoto
-                key={item.id}
-                index={index}
-                label={item.title}
-                imageUrl={item.mediaUrl}
-                className="aspect-square"
-              />
+        <section className="rounded-3xl border border-border bg-white p-4">
+          <h2 className="text-base font-black">Agenda disponÃ­vel</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Escolha um horÃ¡rio para solicitar o agendamento rÃ¡pido.
+          </p>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {slots.map((slot) => (
+              <button
+                key={slot.value}
+                type="button"
+                onClick={() => setSelectedSlot(slot.value)}
+                className={`rounded-2xl border p-3 text-left ${
+                  selectedSlot === slot.value
+                    ? "border-primary bg-primary text-white"
+                    : "border-border bg-white"
+                }`}
+              >
+                <span className="flex items-center gap-1 text-xs font-black">
+                  <CalendarDays className="size-3.5" />
+                  {slot.date}
+                </span>
+                <span className="mt-1 flex items-center gap-1 text-xs">
+                  <Clock className="size-3.5" />
+                  {slot.time}
+                </span>
+              </button>
             ))}
           </div>
         </section>
 
+        <section className="rounded-3xl border border-border bg-white p-4">
+          <h2 className="text-base font-black">Fale direto com o profissional</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            O WhatsApp jÃ¡ abre com a mensagem pronta configurada pelo profissional.
+          </p>
+          <a
+            href={profile.whatsappUrl ?? undefined}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={!profile.whatsappUrl}
+            className="mt-4 flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white aria-disabled:pointer-events-none aria-disabled:opacity-50"
+          >
+            <MessageCircle className="size-4" />
+            Tirar dÃºvida no WhatsApp
+          </a>
+        </section>
+
         {qrCodeUrl ? (
-          <section className="ello-card rounded-xl p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="flex items-center gap-2 text-sm font-black">
-                  <QrCode className="size-4 text-primary" />
-                  QR Code ELLO
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Compartilhe este link em cartoes, vitrines e redes sociais.
-                </p>
-              </div>
-              <button
-                onClick={handleShare}
-                className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary"
-                aria-label="Compartilhar ELLO Link"
-              >
-                <Share2 className="size-4" />
-              </button>
-            </div>
+          <section className="rounded-3xl border border-border bg-white p-4">
+            <h2 className="flex items-center gap-2 text-base font-black">
+              <QrCode className="size-4 text-primary" />
+              QR Code do ELLO Link
+            </h2>
             <button
               onClick={() =>
-                profile
-                  ? void recordElloLinkEvent({ professionalId: profile.id, eventType: "qr_view" })
-                  : undefined
+                void recordElloLinkEvent({ professionalId: profile.id, eventType: "qr_view" })
               }
-              className="mt-3 grid w-full place-items-center rounded-xl bg-white p-4"
+              className="mt-3 grid w-full place-items-center rounded-2xl bg-secondary p-4"
             >
               <img src={qrCodeUrl} alt={`QR Code de ${profile.name}`} className="size-40" />
             </button>
           </section>
         ) : null}
 
-        {quoteMutation.error ? (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
-            {quoteMutation.error.message}
-          </p>
-        ) : quoteMutation.isSuccess ? (
-          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
-            Orcamento criado. A conversa ja esta em Mensagens.
+        {bookingMutation.error ? (
+          <p className="rounded-2xl bg-red-50 px-4 py-3 text-xs font-bold text-red-700">
+            {bookingMutation.error.message}
           </p>
         ) : null}
 
-        <div className="sticky bottom-4 grid grid-cols-2 gap-2 rounded-xl border border-border bg-white p-2 shadow-xl">
-          <Link
-            to="/app/professional/$id"
-            params={{ id: profile.id }}
-            className="grid h-11 place-items-center rounded-lg bg-[#083d63] text-xs font-black text-white"
+        <div className="sticky bottom-4 space-y-2 rounded-3xl border border-border bg-white p-3 shadow-xl">
+          {!configured ? (
+            <p className="text-center text-xs font-semibold text-muted-foreground">
+              Configure o Supabase para concluir agendamentos reais.
+            </p>
+          ) : null}
+          <button
+            disabled={!canBook || !configured || bookingMutation.isPending}
+            onClick={handleBookingClick}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-black text-white disabled:bg-muted disabled:text-muted-foreground"
           >
-            <span className="inline-flex items-center gap-1">
-              <MessageCircle className="size-4" />
-              Ver perfil
-            </span>
-          </Link>
-          <CyanButton
-            disabled={!configured || !user || quoteMutation.isPending || quoteMutation.isSuccess}
-            className="w-full disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
-            onClick={() => quoteMutation.mutate()}
-          >
-            Solicitar
-          </CyanButton>
+            <CheckCircle2 className="size-4" />
+            {user ? "Agendar agora" : "Criar conta rÃ¡pida e agendar"}
+          </button>
         </div>
       </main>
     </div>
   );
 }
 
+function ServiceOption({
+  index,
+  onSelect,
+  selected,
+  service,
+}: {
+  index: number;
+  onSelect: () => void;
+  selected: boolean;
+  service: ProfessionalService;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left ${
+        selected ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border"
+      }`}
+    >
+      <ServicePhoto index={index} label={service.title} className="size-16" />
+      <span className="min-w-0 flex-1">
+        <strong className="block truncate text-sm">{service.title}</strong>
+        <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">
+          {service.description ?? "DescriÃ§Ã£o rÃ¡pida configurada pelo profissional."}
+        </span>
+        <span className="mt-1 block text-xs font-black text-primary">
+          {service.basePrice ?? "Valor sob consulta"}
+        </span>
+      </span>
+      {selected ? <CheckCircle2 className="size-5 text-primary" /> : null}
+    </button>
+  );
+}
+
 function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-background p-2 text-center">
+    <div className="rounded-2xl bg-secondary p-2 text-center">
       <p className="flex items-center justify-center gap-1 text-sm font-black">
-        {label === "Avaliacao" ? <Star className="size-3.5 fill-primary text-primary" /> : null}
+        {label === "AvaliaÃ§Ã£o" ? <Star className="size-3.5 fill-primary text-primary" /> : null}
         {value}
       </p>
       <p className="mt-0.5 text-[9px] font-bold uppercase text-muted-foreground">{label}</p>
     </div>
   );
+}
+
+function createVisibleSlots() {
+  const slots: Array<{ date: string; time: string; value: string }> = [];
+  const hours = [9, 10, 14, 16];
+  for (let index = 1; index <= 3; index += 1) {
+    const date = new Date();
+    date.setDate(date.getDate() + index);
+    for (const hour of hours.slice(0, 2)) {
+      const option = new Date(date);
+      option.setHours(hour, 0, 0, 0);
+      slots.push({
+        date: option.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }),
+        time: option.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        value: option.toISOString(),
+      });
+    }
+  }
+  return slots.slice(0, 6);
+}
+
+function savePendingLink(value: { slug: string; serviceId: string; startsAt: string }) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(PENDING_LINK_KEY, JSON.stringify(value));
+}
+
+function readPendingLink(): { slug: string; serviceId: string; startsAt: string } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return JSON.parse(window.localStorage.getItem(PENDING_LINK_KEY) ?? "null") as {
+      slug: string;
+      serviceId: string;
+      startsAt: string;
+    } | null;
+  } catch {
+    return null;
+  }
+}
+
+function clearPendingLink() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(PENDING_LINK_KEY);
 }
