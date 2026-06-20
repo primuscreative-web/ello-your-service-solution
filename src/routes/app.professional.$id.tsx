@@ -175,7 +175,7 @@ function ProfessionalDetail() {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[430px] -translate-x-1/2 grid-cols-2 gap-3 border-t border-border bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[393px] -translate-x-1/2 grid-cols-2 gap-3 border-t border-border bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <Link
           to="/app/messages"
           className="flex h-12 items-center justify-center gap-2 rounded-xl border border-primary text-sm font-bold text-primary"

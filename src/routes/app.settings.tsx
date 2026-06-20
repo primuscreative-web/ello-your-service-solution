@@ -31,8 +31,8 @@ function SettingsScreen() {
       await chooseMyAccountMode({
         userId: user.id,
         mode,
-        displayName: profile?.full_name ?? user.email?.split("@")[0] ?? "UsuÃ¡rio ELLO",
-        city: "SÃ£o Paulo, SP",
+        displayName: profile?.full_name ?? user.email?.split("@")[0] ?? "Usuário ELLO",
+        city: "São Paulo, SP",
       });
     },
     onSuccess: async (_data, mode) => {
@@ -57,7 +57,7 @@ function SettingsScreen() {
         <Link to="/app/profile" aria-label="Voltar" className="grid size-10 place-items-center">
           <ChevronLeft className="size-6" />
         </Link>
-        <h1 className="flex-1 text-center text-base font-black">ConfiguraÃ§Ãµes</h1>
+        <h1 className="flex-1 text-center text-base font-black">Configurações</h1>
         <span className="size-10" />
       </header>
 
@@ -78,8 +78,8 @@ function SettingsScreen() {
           title="Conta"
           items={[
             { icon: UserRound, label: "Dados pessoais", to: "/app/profile" },
-            { icon: Shield, label: "SeguranÃ§a" },
-            { icon: Bell, label: "NotificaÃ§Ãµes", to: "/app/notifications" },
+            { icon: Shield, label: "Segurança" },
+            { icon: Bell, label: "Notificações", to: "/app/notifications" },
             { icon: LockKeyhole, label: "Privacidade" },
           ]}
         />
@@ -87,9 +87,9 @@ function SettingsScreen() {
         <SettingsGroup
           title="Profissional"
           items={[
-            { icon: MessageCircle, label: "ConfiguraÃ§Ã£o do ELLO Link", to: "/app/ello-link" },
-            { icon: FileText, label: "ServiÃ§os e orÃ§amentos", to: "/app/business/quotes" },
-            { icon: MapPin, label: "Ãrea de atendimento", to: "/app/ello-link" },
+            { icon: MessageCircle, label: "Configuração do ELLO Link", to: "/app/ello-link" },
+            { icon: FileText, label: "Serviços e orçamentos", to: "/app/business/quotes" },
+            { icon: MapPin, label: "Área de atendimento", to: "/app/ello-link" },
             { icon: WalletCards, label: "Carteira ELLO", to: "/app/wallet" },
           ]}
         />

@@ -32,15 +32,15 @@ function ProfessionalReviewsScreen() {
         <Link to="/app/business" aria-label="Voltar" className="grid size-10 place-items-center">
           <ChevronLeft className="size-6" />
         </Link>
-        <h1 className="flex-1 text-center text-base font-black">AvaliaÃ§Ãµes</h1>
+        <h1 className="flex-1 text-center text-base font-black">Avaliações</h1>
         <span className="size-10" />
       </header>
 
       <main className="space-y-5 px-5 py-5">
         {!configured || !user ? (
-          <Empty text="Entre no modo profissional para ver avaliaÃ§Ãµes reais." />
+          <Empty text="Entre no modo profissional para ver avaliações reais." />
         ) : reviewsQuery.isPending ? (
-          <Empty text="Carregando avaliaÃ§Ãµes..." />
+          <Empty text="Carregando avaliações..." />
         ) : (
           <>
             <section className="rounded-3xl border border-border p-5">
@@ -56,7 +56,7 @@ function ProfessionalReviewsScreen() {
                     ))}
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Baseado em {reviews.length} avaliaÃ§Ãµes
+                    Baseado em {reviews.length} avaliações
                   </p>
                 </div>
               </div>
@@ -92,13 +92,13 @@ function ProfessionalReviewsScreen() {
                       </span>
                     </div>
                     <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                      {review.comment ?? "Cliente nÃ£o deixou comentÃ¡rio."}
+                      {review.comment ?? "Cliente não deixou comentário."}
                     </p>
                   </article>
                 ))}
               </section>
             ) : (
-              <Empty text="As avaliaÃ§Ãµes aparecem aqui apÃ³s serviÃ§os concluÃ­dos." />
+              <Empty text="As avaliações aparecem aqui após serviços concluídos." />
             )}
           </>
         )}

@@ -2718,7 +2718,7 @@ function normalizeCouponCode(value: string | null | undefined) {
   const coupon = value?.trim().toUpperCase() ?? "";
   if (!coupon) return null;
   if (!/^[A-Z]{4}[0-9]{2}$/.test(coupon)) {
-    throw new Error("O cupom do ELLO Link deve ter 4 letras e 2 nÃºmeros. Exemplo: ELLO25.");
+    throw new Error("O cupom do ELLO Link deve ter 4 letras e 2 números. Exemplo: ELLO25.");
   }
   return coupon;
 }

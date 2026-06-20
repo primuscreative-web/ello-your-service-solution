@@ -94,7 +94,7 @@ function QuoteDetailScreen() {
       </main>
 
       {!quote.professionalView && quote.status === "quoted" ? (
-        <div className="fixed bottom-0 left-1/2 grid w-full max-w-[430px] -translate-x-1/2 grid-cols-2 gap-3 border-t border-border bg-white px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4">
+        <div className="fixed bottom-0 left-1/2 grid w-full max-w-[393px] -translate-x-1/2 grid-cols-2 gap-3 border-t border-border bg-white px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4">
           <button
             onClick={() => statusMutation.mutate("declined")}
             disabled={statusMutation.isPending}

@@ -116,7 +116,9 @@
   body {
     min-width: 320px;
     min-height: 100dvh;
-    background-color: var(--color-background);
+    background:
+      radial-gradient(circle at 50% 0%, oklch(0.96 0.01 255), transparent 34rem),
+      oklch(0.94 0.01 255);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -141,11 +143,18 @@
 
   .ello-shell {
     position: relative;
-    width: min(100%, 430px);
+    width: min(100%, 393px);
     min-height: 100dvh;
     margin-inline: auto;
     overflow-x: hidden;
     background: var(--color-background);
+  }
+
+  @media (min-width: 768px) {
+    .ello-shell {
+      border-inline: 1px solid var(--color-border);
+      box-shadow: 0 24px 70px oklch(0.16 0.045 264 / 0.14);
+    }
   }
 
   .ello-screen {

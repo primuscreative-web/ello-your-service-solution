@@ -86,7 +86,7 @@ export function SearchBox({ placeholder = "O que você precisa hoje?" }: { place
 export function SmartSearchBox({
   onChange,
   onSubmit,
-  placeholder = "O que voce precisa hoje?",
+  placeholder = "O que você precisa hoje?",
   value,
 }: {
   onChange?: (value: string) => void;
@@ -252,7 +252,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[390px] -translate-x-1/2 grid-cols-5 border-t border-border bg-white px-2 pb-2 pt-1.5 shadow-[0_-8px_24px_rgba(7,32,57,0.08)]">
+    <nav className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[393px] -translate-x-1/2 grid-cols-5 border-t border-border bg-white px-2 pb-2 pt-1.5 shadow-[0_-8px_24px_rgba(7,32,57,0.08)]">
       {items.map((item) => {
         const active = item.to === "/app" ? pathname === "/app" : pathname.startsWith(item.to);
         const Icon = item.icon;

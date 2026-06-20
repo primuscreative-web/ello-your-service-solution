@@ -29,7 +29,7 @@ export function BottomNavigation({ mode }: { mode: AppMode }) {
   const items = getBottomNavigation(mode);
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[430px] -translate-x-1/2 grid-cols-5 border-t border-border bg-white px-3 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgba(15,23,42,0.06)]">
+    <nav className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[393px] -translate-x-1/2 grid-cols-5 border-t border-border bg-white px-3 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgba(15,23,42,0.06)]">
       {items.map((item) => {
         const Icon = ICONS[item.icon];
         const active = item.to === "/app" ? pathname === "/app" : pathname.startsWith(item.to);

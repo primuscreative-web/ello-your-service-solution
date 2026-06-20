@@ -160,14 +160,14 @@ function ProfessionalHome() {
         <section className="grid grid-cols-2 gap-3">
           <InsightLink
             icon={BarChart3}
-            title="EstatÃ­sticas"
-            body="Visitas, contatos e conversÃ£o"
+            title="Estatísticas"
+            body="Visitas, contatos e conversão"
             to="/app/business/statistics"
           />
           <InsightLink
             icon={Star}
-            title="AvaliaÃ§Ãµes"
-            body="Notas e comentÃ¡rios recebidos"
+            title="Avaliações"
+            body="Notas e comentários recebidos"
             to="/app/business/reviews"
           />
         </section>

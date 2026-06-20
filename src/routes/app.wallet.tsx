@@ -24,7 +24,7 @@ function WalletScreen() {
         <section className="rounded-3xl bg-gradient-to-br from-blue-600 to-blue-900 p-5 text-white">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-bold text-white/75">Saldo disponÃ­vel</p>
+              <p className="text-sm font-bold text-white/75">Saldo disponível</p>
               <h2 className="mt-2 text-4xl font-black">
                 {formatWalletCurrency(wallet.availableCents)}
               </h2>
@@ -38,7 +38,7 @@ function WalletScreen() {
         </section>
 
         <section className="rounded-3xl border border-border p-4">
-          <h2 className="text-base font-black">Gateway ainda nÃ£o conectado</h2>
+          <h2 className="text-base font-black">Gateway ainda não conectado</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             {PAYMENT_POLICY.professionalPaymentNotice}
           </p>
@@ -50,10 +50,10 @@ function WalletScreen() {
         </section>
 
         <section className="rounded-3xl border border-border p-4">
-          <h2 className="text-base font-black">HistÃ³rico</h2>
+          <h2 className="text-base font-black">Histórico</h2>
           {wallet.transactions.length ? null : (
             <p className="mt-4 rounded-2xl bg-secondary p-4 text-center text-sm text-muted-foreground">
-              Nenhuma transaÃ§Ã£o serÃ¡ exibida atÃ© o gateway ser conectado.
+              Nenhuma transação será exibida até o gateway ser conectado.
             </p>
           )}
         </section>

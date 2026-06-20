@@ -25,25 +25,25 @@ function ProfessionalStatisticsScreen() {
         <Link to="/app/business" aria-label="Voltar" className="grid size-10 place-items-center">
           <ChevronLeft className="size-6" />
         </Link>
-        <h1 className="flex-1 text-center text-base font-black">EstatÃ­sticas</h1>
+        <h1 className="flex-1 text-center text-base font-black">Estatísticas</h1>
         <span className="size-10" />
       </header>
 
       <main className="space-y-5 px-5 py-5">
         {!configured || !user ? (
-          <Empty text="Entre no modo profissional para ver suas estatÃ­sticas reais." />
+          <Empty text="Entre no modo profissional para ver suas estatísticas reais." />
         ) : statsQuery.isPending ? (
-          <Empty text="Carregando estatÃ­sticas..." />
+          <Empty text="Carregando estatísticas..." />
         ) : stats ? (
           <>
             <section className="rounded-3xl bg-gradient-to-br from-blue-50 to-white p-5">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-black uppercase text-primary">
-                    VisualizaÃ§Ãµes do perfil
+                    Visualizações do perfil
                   </p>
                   <h2 className="mt-2 text-4xl font-black">{stats.views}</h2>
-                  <p className="text-xs text-muted-foreground">Ãšltimos 30 dias</p>
+                  <p className="text-xs text-muted-foreground">Últimos 30 dias</p>
                 </div>
                 <span className="grid size-14 place-items-center rounded-2xl bg-white text-primary shadow-sm">
                   <Eye className="size-6" />
@@ -53,13 +53,13 @@ function ProfessionalStatisticsScreen() {
 
             <section className="grid grid-cols-2 gap-3">
               <Metric icon={MessageCircle} label="Contatos recebidos" value={stats.contacts} />
-              <Metric icon={BarChart3} label="OrÃ§amentos" value={stats.quotes} />
-              <Metric icon={TrendingUp} label="ConversÃ£o" value={`${stats.conversionRate}%`} />
-              <Metric icon={Star} label="AvaliaÃ§Ãµes" value={stats.reviewCount} />
+              <Metric icon={BarChart3} label="Orçamentos" value={stats.quotes} />
+              <Metric icon={TrendingUp} label="Conversão" value={`${stats.conversionRate}%`} />
+              <Metric icon={Star} label="Avaliações" value={stats.reviewCount} />
             </section>
 
             <section className="rounded-3xl border border-border p-4">
-              <h2 className="text-base font-black">VisualizaÃ§Ãµes</h2>
+              <h2 className="text-base font-black">Visualizações</h2>
               {stats.dailyViews.some((item) => item.value > 0) ? (
                 <div className="mt-4 flex h-36 items-end gap-2">
                   {stats.dailyViews.map((item) => (
@@ -75,12 +75,12 @@ function ProfessionalStatisticsScreen() {
                   ))}
                 </div>
               ) : (
-                <Empty text="Ainda nÃ£o hÃ¡ visualizaÃ§Ãµes suficientes para desenhar o grÃ¡fico." />
+                <Empty text="Ainda não há visualizações suficientes para desenhar o gráfico." />
               )}
             </section>
 
             <section className="rounded-3xl border border-border p-4">
-              <h2 className="text-base font-black">Fontes de trÃ¡fego</h2>
+              <h2 className="text-base font-black">Fontes de tráfego</h2>
               <div className="mt-4 space-y-3">
                 {stats.trafficSources.map((source) => (
                   <div key={source.label}>

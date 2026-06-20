@@ -40,7 +40,7 @@ function Role() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-white px-7 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(5.7rem+env(safe-area-inset-top))]">
+    <main className="ello-shell flex min-h-dvh flex-col bg-white px-7 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(5.4rem+env(safe-area-inset-top))]">
       <section>
         <h1 className="max-w-[17rem] text-[1.8rem] font-black leading-[1.15] tracking-[-0.045em] text-foreground">
           Como você deseja começar?

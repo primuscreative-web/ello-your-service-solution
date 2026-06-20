@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { Apple, Mail, Phone } from "lucide-react";
 import { ElloLogo } from "@/components/ello/logo";
@@ -15,25 +15,44 @@ export const Route = createFileRoute("/auth")({
   component: Auth,
 });
 
+type AuthMethod = "email" | "phone" | null;
+type OAuthProvider = "google" | "apple";
+
 function Auth() {
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
-  const { configured } = useAuth();
+  const { configured, loading, user } = useAuth();
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
-  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [method, setMethod] = useState<AuthMethod>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [phoneCode, setPhoneCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submittingProvider, setSubmittingProvider] = useState<OAuthProvider | "phone" | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const destination = useMemo(() => {
+    return redirect?.startsWith("/p/") ? redirect : "/role";
+  }, [redirect]);
+
+  useEffect(() => {
+    if (!loading && user) {
+      void navigate({ to: destination });
+    }
+  }, [destination, loading, navigate, user]);
+
+  async function handleEmailSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
     const supabase = getSupabaseBrowserClient();
     if (!configured || !supabase) {
-      setError("Configure o Supabase para ativar o backend.");
+      setError("O login ainda não está configurado neste ambiente.");
       return;
     }
 
@@ -72,107 +91,226 @@ function Auth() {
       return;
     }
 
-    if (redirect?.startsWith("/p/")) {
-      await navigate({ to: redirect });
+    await navigate({ to: destination });
+  }
+
+  async function handleOAuth(provider: OAuthProvider) {
+    setError(null);
+
+    const supabase = getSupabaseBrowserClient();
+    if (!configured || !supabase) {
+      setError("O login ainda não está configurado neste ambiente.");
       return;
     }
 
-    await navigate({ to: "/role" });
+    setSubmittingProvider(provider);
+    const redirectTo = new URL("/auth", window.location.origin);
+    if (redirect?.startsWith("/p/")) redirectTo.searchParams.set("redirect", redirect);
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: redirectTo.toString(),
+      },
+    });
+
+    setSubmittingProvider(null);
+    if (oauthError) setError(oauthError.message);
+  }
+
+  async function handlePhoneSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    const supabase = getSupabaseBrowserClient();
+    if (!configured || !supabase) {
+      setError("O login por celular ainda não está configurado neste ambiente.");
+      return;
+    }
+
+    const normalizedPhone = normalizeBrazilianPhone(phone);
+    if (!normalizedPhone) {
+      setError("Informe um celular válido com DDD.");
+      return;
+    }
+
+    setSubmittingProvider("phone");
+
+    if (!otpSent) {
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        phone: normalizedPhone,
+        options: {
+          data: {
+            full_name: fullName.trim() || normalizedPhone,
+          },
+        },
+      });
+      setSubmittingProvider(null);
+      if (otpError) {
+        setError(otpError.message);
+        return;
+      }
+      setOtpSent(true);
+      return;
+    }
+
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      phone: normalizedPhone,
+      token: phoneCode.trim(),
+      type: "sms",
+    });
+    setSubmittingProvider(null);
+
+    if (verifyError) {
+      setError(verifyError.message);
+      return;
+    }
+
+    await navigate({ to: destination });
+  }
+
+  function openMethod(nextMethod: AuthMethod) {
+    setMethod((current) => (current === nextMethod ? null : nextMethod));
+    setError(null);
+    if (nextMethod !== "phone") {
+      setOtpSent(false);
+      setPhoneCode("");
+    }
   }
 
   function toggleMode() {
     setMode((current) => (current === "sign-in" ? "sign-up" : "sign-in"));
-    setShowEmailForm(true);
+    setMethod("email");
     setError(null);
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-white px-7 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(5.2rem+env(safe-area-inset-top))]">
+    <main className="mx-auto flex min-h-dvh w-full max-w-[393px] flex-col bg-white px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(4.6rem+env(safe-area-inset-top))]">
       <section className="flex flex-col items-center text-center">
-        <ElloLogo className="text-[2rem]" />
-        <h1 className="mt-10 text-[1.55rem] font-black tracking-[-0.035em] text-foreground">
-          Bem-vindo(a)! 👋
+        <ElloLogo className="text-[1.9rem]" />
+        <h1 className="mt-9 text-[1.52rem] font-black tracking-[-0.035em] text-foreground">
+          Bem-vindo(a)!
         </h1>
-        <p className="mt-4 max-w-[17rem] text-base leading-relaxed text-muted-foreground">
-          Faça login ou crie sua conta para continuar
+        <p className="mt-3 max-w-[17rem] text-[0.98rem] leading-relaxed text-muted-foreground">
+          Entre ou crie sua conta para continuar na ELLO.
         </p>
       </section>
 
       {!configured ? (
-        <div className="mt-8 rounded-xl border border-warning/30 bg-warning/10 p-4 text-xs font-semibold text-warning-foreground">
-          Configure o Supabase para ativar o login real neste ambiente.
+        <div className="mt-7 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-xs font-semibold leading-relaxed text-warning-foreground">
+          O backend de autenticação ainda não está configurado neste ambiente.
         </div>
       ) : null}
 
-      <section className="mt-10 space-y-3">
-        <ProviderButton disabled icon={<GoogleMark />} label="Continuar com Google" />
+      <section className="mt-9 space-y-3">
         <ProviderButton
-          disabled
-          icon={<Apple className="size-5 fill-black text-black" />}
-          label="Continuar com Apple"
+          disabled={!configured || submittingProvider !== null}
+          icon={<GoogleMark />}
+          label={submittingProvider === "google" ? "Abrindo Google..." : "Continuar com Google"}
+          onClick={() => void handleOAuth("google")}
         />
         <ProviderButton
-          disabled
+          disabled={!configured || submittingProvider !== null}
+          icon={<Apple className="size-5 fill-black text-black" />}
+          label={submittingProvider === "apple" ? "Abrindo Apple..." : "Continuar com iPhone"}
+          onClick={() => void handleOAuth("apple")}
+        />
+        <ProviderButton
+          disabled={!configured || submittingProvider !== null}
           icon={<Phone className="size-5" />}
-          label="Continuar com telefone"
+          label="Continuar com celular"
+          onClick={() => openMethod("phone")}
         />
         <ProviderButton
           icon={<Mail className="size-5" />}
           label="Continuar com e-mail"
-          onClick={() => setShowEmailForm((visible) => !visible)}
+          onClick={() => openMethod("email")}
         />
       </section>
 
-      {showEmailForm ? (
-        <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+      {method === "email" ? (
+        <form onSubmit={handleEmailSubmit} className="mt-5 space-y-3">
           {mode === "sign-up" ? (
-            <input
+            <AuthInput
               value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
+              onChange={setFullName}
               placeholder="Seu nome"
-              className="h-12 w-full rounded-xl border border-border bg-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+              autoComplete="name"
             />
           ) : null}
-          <input
+          <AuthInput
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={setEmail}
             type="email"
             required
             placeholder="seu@email.com"
-            className="h-12 w-full rounded-xl border border-border bg-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+            autoComplete="email"
           />
-          <input
+          <AuthInput
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={setPassword}
             type="password"
             required
             placeholder="Senha"
-            className="h-12 w-full rounded-xl border border-border bg-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+            autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
           />
 
-          {mode === "sign-up" ? (
-            <p className="rounded-xl bg-primary/5 p-3 text-xs font-semibold leading-relaxed text-primary">
-              A confirmação de e-mail será adicionada quando o e-mail oficial da ELLO estiver
-              pronto.
-            </p>
-          ) : null}
-
-          {error ? (
-            <p className="rounded-xl bg-destructive/10 p-3 text-xs font-semibold leading-relaxed text-destructive">
-              {error}
-            </p>
-          ) : null}
-
-          <button
-            disabled={submitting}
-            className="h-12 w-full rounded-xl bg-primary text-sm font-bold text-white transition active:scale-[0.99] disabled:opacity-60"
-          >
+          <PrimaryButton disabled={submitting}>
             {submitting ? "Aguarde..." : mode === "sign-in" ? "Entrar" : "Criar conta"}
-          </button>
+          </PrimaryButton>
         </form>
       ) : null}
 
-      <div className="my-9 flex items-center gap-4 text-xs font-medium text-muted-foreground">
+      {method === "phone" ? (
+        <form onSubmit={handlePhoneSubmit} className="mt-5 space-y-3">
+          {mode === "sign-up" ? (
+            <AuthInput
+              value={fullName}
+              onChange={setFullName}
+              placeholder="Seu nome"
+              autoComplete="name"
+            />
+          ) : null}
+          <AuthInput
+            value={phone}
+            onChange={(value) => {
+              setPhone(value);
+              setOtpSent(false);
+              setPhoneCode("");
+            }}
+            type="tel"
+            required
+            placeholder="(11) 99999-8888"
+            autoComplete="tel"
+          />
+          {otpSent ? (
+            <AuthInput
+              value={phoneCode}
+              onChange={setPhoneCode}
+              inputMode="numeric"
+              required
+              placeholder="Código recebido por SMS"
+              autoComplete="one-time-code"
+            />
+          ) : null}
+
+          <PrimaryButton disabled={submittingProvider === "phone"}>
+            {submittingProvider === "phone"
+              ? "Aguarde..."
+              : otpSent
+                ? "Confirmar código"
+                : "Enviar código por SMS"}
+          </PrimaryButton>
+        </form>
+      ) : null}
+
+      {error ? (
+        <p className="mt-4 rounded-2xl bg-destructive/10 p-3 text-xs font-semibold leading-relaxed text-destructive">
+          {error}
+        </p>
+      ) : null}
+
+      <div className="my-8 flex items-center gap-4 text-xs font-medium text-muted-foreground">
         <span className="h-px flex-1 bg-border" />
         ou
         <span className="h-px flex-1 bg-border" />
@@ -190,10 +328,10 @@ function Auth() {
         )}
       </button>
 
-      <p className="mt-auto pt-10 text-center text-xs leading-relaxed text-muted-foreground">
+      <p className="mt-auto pt-9 text-center text-xs leading-relaxed text-muted-foreground">
         Ao continuar, você concorda com os{" "}
         <span className="font-semibold text-primary">Termos de uso</span> e{" "}
-        <span className="font-semibold text-primary">Política de privacidade</span>
+        <span className="font-semibold text-primary">Política de privacidade</span>.
       </p>
     </main>
   );
@@ -215,7 +353,7 @@ function ProviderButton({
       type="button"
       aria-disabled={disabled}
       onClick={disabled ? undefined : onClick}
-      className="flex h-14 w-full items-center gap-4 rounded-xl border border-border bg-white px-5 text-sm font-bold text-foreground shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition active:scale-[0.99] aria-disabled:cursor-not-allowed aria-disabled:opacity-55"
+      className="flex h-13 w-full items-center gap-4 rounded-2xl border border-border bg-white px-5 text-sm font-bold text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.055)] transition active:scale-[0.99] aria-disabled:cursor-not-allowed aria-disabled:opacity-55"
     >
       <span className="grid size-6 place-items-center">{icon}</span>
       <span className="flex-1 text-center">{label}</span>
@@ -224,6 +362,40 @@ function ProviderButton({
   );
 }
 
+function AuthInput({
+  onChange,
+  ...props
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
+  onChange: (value: string) => void;
+}) {
+  return (
+    <input
+      {...props}
+      onChange={(event) => onChange(event.target.value)}
+      className="h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm font-semibold outline-none transition placeholder:text-muted-foreground/65 focus:border-primary focus:ring-4 focus:ring-primary/10"
+    />
+  );
+}
+
+function PrimaryButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
+  return (
+    <button
+      disabled={disabled}
+      className="h-12 w-full rounded-2xl bg-primary text-sm font-bold text-white shadow-[0_16px_32px_rgba(0,58,255,0.18)] transition active:scale-[0.99] disabled:opacity-60"
+    >
+      {children}
+    </button>
+  );
+}
+
 function GoogleMark() {
   return <span className="text-[1.35rem] font-black text-[#4285f4]">G</span>;
+}
+
+function normalizeBrazilianPhone(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length === 11) return `+55${digits}`;
+  if (digits.length === 13 && digits.startsWith("55")) return `+${digits}`;
+  if (value.trim().startsWith("+") && digits.length >= 11) return `+${digits}`;
+  return "";
 }

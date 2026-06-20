@@ -49,10 +49,10 @@ function PublicProfessionalPage() {
       : null;
   const bookingMutation = useMutation({
     mutationFn: () => {
-      if (!profile) throw new Error("Perfil ainda nÃ£o carregado.");
-      if (!user) throw new Error("Crie sua conta rÃ¡pida para concluir o agendamento.");
-      if (!selectedService) throw new Error("Escolha um serviÃ§o antes de agendar.");
-      if (!selectedSlot) throw new Error("Escolha uma data e horÃ¡rio.");
+      if (!profile) throw new Error("Perfil ainda não carregado.");
+      if (!user) throw new Error("Crie sua conta rápida para concluir o agendamento.");
+      if (!selectedService) throw new Error("Escolha um serviço antes de agendar.");
+      if (!selectedSlot) throw new Error("Escolha uma data e horário.");
       void recordElloLinkEvent({ professionalId: profile.id, eventType: "quote_click" });
       return createElloLinkBooking({
         userId: user.id,
@@ -121,7 +121,7 @@ function PublicProfessionalPage() {
     return (
       <div className="grid min-h-screen place-items-center bg-[#f8fafc] p-6 text-center">
         <div className="max-w-sm rounded-3xl bg-white p-6 shadow-sm">
-          <h1 className="text-lg font-black">ELLO Link nÃ£o encontrado</h1>
+          <h1 className="text-lg font-black">ELLO Link não encontrado</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             O perfil pode estar em rascunho ou o link foi alterado.
           </p>
@@ -179,8 +179,8 @@ function PublicProfessionalPage() {
           </div>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{profile.bio}</p>
           <div className="mt-4 grid grid-cols-3 gap-2">
-            <MiniMetric label="AvaliaÃ§Ã£o" value={profile.rating.toFixed(1)} />
-            <MiniMetric label="ServiÃ§os" value={String(profile.completedJobs)} />
+            <MiniMetric label="Avaliação" value={profile.rating.toFixed(1)} />
+            <MiniMetric label="Serviços" value={String(profile.completedJobs)} />
             <MiniMetric label="Atende" value={profile.coverage.split(",")[0] ?? profile.city} />
           </div>
         </section>
@@ -198,9 +198,9 @@ function PublicProfessionalPage() {
         ) : null}
 
         <section className="rounded-3xl border border-border bg-white p-4">
-          <h2 className="text-base font-black">Escolha um serviÃ§o</h2>
+          <h2 className="text-base font-black">Escolha um serviço</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            O agendamento sÃ³ libera depois que um serviÃ§o for selecionado.
+            O agendamento só libera depois que um serviço for selecionado.
           </p>
           <div className="mt-4 space-y-3">
             {profile.services.length ? (
@@ -215,16 +215,16 @@ function PublicProfessionalPage() {
               ))
             ) : (
               <p className="rounded-2xl bg-secondary p-4 text-sm text-muted-foreground">
-                Este profissional ainda estÃ¡ configurando os serviÃ§os do ELLO Link.
+                Este profissional ainda está configurando os serviços do ELLO Link.
               </p>
             )}
           </div>
         </section>
 
         <section className="rounded-3xl border border-border bg-white p-4">
-          <h2 className="text-base font-black">Agenda disponÃ­vel</h2>
+          <h2 className="text-base font-black">Agenda disponível</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Escolha um horÃ¡rio para solicitar o agendamento rÃ¡pido.
+            Escolha um horário para solicitar o agendamento rápido.
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2">
             {slots.map((slot) => (
@@ -254,7 +254,7 @@ function PublicProfessionalPage() {
         <section className="rounded-3xl border border-border bg-white p-4">
           <h2 className="text-base font-black">Fale direto com o profissional</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            O WhatsApp jÃ¡ abre com a mensagem pronta configurada pelo profissional.
+            O WhatsApp já abre com a mensagem pronta configurada pelo profissional.
           </p>
           <a
             href={profile.whatsappUrl ?? undefined}
@@ -264,7 +264,7 @@ function PublicProfessionalPage() {
             className="mt-4 flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white aria-disabled:pointer-events-none aria-disabled:opacity-50"
           >
             <MessageCircle className="size-4" />
-            Tirar dÃºvida no WhatsApp
+            Tirar dúvida no WhatsApp
           </a>
         </section>
 
@@ -303,7 +303,7 @@ function PublicProfessionalPage() {
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-black text-white disabled:bg-muted disabled:text-muted-foreground"
           >
             <CheckCircle2 className="size-4" />
-            {user ? "Agendar agora" : "Criar conta rÃ¡pida e agendar"}
+            {user ? "Agendar agora" : "Criar conta rápida e agendar"}
           </button>
         </div>
       </main>
@@ -334,7 +334,7 @@ function ServiceOption({
       <span className="min-w-0 flex-1">
         <strong className="block truncate text-sm">{service.title}</strong>
         <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">
-          {service.description ?? "DescriÃ§Ã£o rÃ¡pida configurada pelo profissional."}
+          {service.description ?? "Descrição rápida configurada pelo profissional."}
         </span>
         <span className="mt-1 block text-xs font-black text-primary">
           {service.basePrice ?? "Valor sob consulta"}
@@ -349,7 +349,7 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-secondary p-2 text-center">
       <p className="flex items-center justify-center gap-1 text-sm font-black">
-        {label === "AvaliaÃ§Ã£o" ? <Star className="size-3.5 fill-primary text-primary" /> : null}
+        {label === "Avaliação" ? <Star className="size-3.5 fill-primary text-primary" /> : null}
         {value}
       </p>
       <p className="mt-0.5 text-[9px] font-bold uppercase text-muted-foreground">{label}</p>

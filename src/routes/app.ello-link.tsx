@@ -58,7 +58,7 @@ function ElloLinkSettings() {
     chargeType: "",
     slug: "",
     phone: "",
-    whatsappMessage: "OlÃ¡! Vim pelo seu ELLO Link e gostaria de tirar uma dÃºvida.",
+    whatsappMessage: "Olá! Vim pelo seu ELLO Link e gostaria de tirar uma dúvida.",
     couponCode: "",
     couponDescription: "",
   });
@@ -82,7 +82,7 @@ function ElloLinkSettings() {
       phone: profile.phone ?? "",
       whatsappMessage:
         profile.ello_link_whatsapp_message ??
-        "OlÃ¡! Vim pelo seu ELLO Link e gostaria de tirar uma dÃºvida.",
+        "Olá! Vim pelo seu ELLO Link e gostaria de tirar uma dúvida.",
       couponCode: profile.ello_link_coupon_code ?? "",
       couponDescription: profile.ello_link_coupon_description ?? "",
     });
@@ -104,7 +104,7 @@ function ElloLinkSettings() {
         bio: form.bio,
         city: form.city,
         coverage: form.coverage,
-        availability: "Agenda disponÃ­vel pelo ELLO Link",
+        availability: "Agenda disponível pelo ELLO Link",
         basePrice: form.basePrice,
         chargeType: form.chargeType,
         elloLinkSlug: form.slug,
@@ -118,14 +118,14 @@ function ElloLinkSettings() {
   });
   const serviceMutation = useMutation({
     mutationFn: () => {
-      if (!user) throw new Error("Entre para cadastrar serviÃ§os.");
+      if (!user) throw new Error("Entre para cadastrar serviços.");
       return createMyService({
         userId: user.id,
         title: serviceForm.title,
         category: serviceForm.title,
         description: serviceForm.description,
         basePrice: serviceForm.basePrice,
-        chargeType: "por serviÃ§o",
+        chargeType: "por serviço",
       });
     },
     onSuccess: async () => {
@@ -145,7 +145,7 @@ function ElloLinkSettings() {
     return <EmptyState text="Entre na sua conta profissional para configurar o ELLO Link." />;
   }
   if (dashboardQuery.isPending) {
-    return <EmptyState text="Carregando configuraÃ§Ãµes do ELLO Link..." />;
+    return <EmptyState text="Carregando configurações do ELLO Link..." />;
   }
   if (!profile) {
     return <EmptyState text="Crie seu perfil profissional antes de configurar o ELLO Link." />;
@@ -160,7 +160,7 @@ function ElloLinkSettings() {
         <Link to="/app/business" className="grid size-10 place-items-center" aria-label="Voltar">
           <ChevronLeft className="size-6" />
         </Link>
-        <h1 className="flex-1 text-center text-base font-black">ConfiguraÃ§Ã£o do ELLO Link</h1>
+        <h1 className="flex-1 text-center text-base font-black">Configuração do ELLO Link</h1>
         <span className="size-10" />
       </header>
 
@@ -171,7 +171,7 @@ function ElloLinkSettings() {
             Otimizar, melhorar, automatizar e profissionalizar.
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-white/80">
-            Seu link compartilhÃ¡vel de apresentaÃ§Ã£o, WhatsApp e agendamento rÃ¡pido.
+            Seu link compartilhável de apresentação, WhatsApp e agendamento rápido.
           </p>
           <button
             onClick={() => void navigator.clipboard?.writeText(publicLink)}
@@ -183,7 +183,7 @@ function ElloLinkSettings() {
         </section>
 
         <section className="space-y-3 rounded-3xl border border-border p-4">
-          <h2 className="text-base font-black">PÃ¡gina pÃºblica</h2>
+          <h2 className="text-base font-black">Página pública</h2>
           <Input
             label="Nome exibido"
             value={form.publicName}
@@ -194,16 +194,16 @@ function ElloLinkSettings() {
             value={form.specialty}
             onChange={setFormValue("specialty")}
           />
-          <Textarea label="Bio/apresentaÃ§Ã£o" value={form.bio} onChange={setFormValue("bio")} />
+          <Textarea label="Bio/apresentação" value={form.bio} onChange={setFormValue("bio")} />
           <Input label="Cidade" value={form.city} onChange={setFormValue("city")} />
           <Input
-            label="Ãrea de atendimento"
+            label="Área de atendimento"
             value={form.coverage}
             onChange={setFormValue("coverage")}
           />
-          <Input label="PreÃ§o base" value={form.basePrice} onChange={setFormValue("basePrice")} />
+          <Input label="Preço base" value={form.basePrice} onChange={setFormValue("basePrice")} />
           <Input
-            label="Tipo de cobranÃ§a"
+            label="Tipo de cobrança"
             value={form.chargeType}
             onChange={setFormValue("chargeType")}
           />
@@ -213,9 +213,9 @@ function ElloLinkSettings() {
         <section className="space-y-3 rounded-3xl border border-border p-4">
           <h2 className="flex items-center gap-2 text-base font-black">
             <MessageCircle className="size-4 text-emerald-600" />
-            WhatsApp automÃ¡tico
+            WhatsApp automático
           </h2>
-          <Input label="NÃºmero profissional" value={form.phone} onChange={setFormValue("phone")} />
+          <Input label="Número profissional" value={form.phone} onChange={setFormValue("phone")} />
           <Textarea
             label="Frase pronta para o cliente enviar"
             value={form.whatsappMessage}
@@ -229,13 +229,13 @@ function ElloLinkSettings() {
             Cupom de desconto
           </h2>
           <Input
-            label="CÃ³digo: 4 letras + 2 nÃºmeros"
+            label="Código: 4 letras + 2 números"
             value={form.couponCode}
             onChange={(value) => setFormValue("couponCode")(value.toUpperCase().slice(0, 6))}
             placeholder="ELLO25"
           />
           <Input
-            label="DescriÃ§Ã£o do cupom"
+            label="Descrição do cupom"
             value={form.couponDescription}
             onChange={setFormValue("couponDescription")}
             placeholder="10% na primeira visita"
@@ -249,16 +249,16 @@ function ElloLinkSettings() {
           disabled={saveMutation.isPending}
           className="h-12 w-full rounded-xl bg-primary text-sm font-black text-white disabled:opacity-50"
         >
-          {saveMutation.isPending ? "Salvando..." : "Salvar configuraÃ§Ãµes"}
+          {saveMutation.isPending ? "Salvando..." : "Salvar configurações"}
         </button>
 
         <section className="space-y-3 rounded-3xl border border-border p-4">
-          <h2 className="text-base font-black">ServiÃ§os do ELLO Link</h2>
+          <h2 className="text-base font-black">Serviços do ELLO Link</h2>
           {(servicesQuery.data ?? []).map((service) => (
             <article key={service.id} className="rounded-2xl bg-secondary p-3">
               <p className="text-sm font-black">{service.title}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {service.description ?? "Sem descriÃ§Ã£o rÃ¡pida."}
+                {service.description ?? "Sem descrição rápida."}
               </p>
               <p className="mt-1 text-xs font-black text-primary">
                 {service.basePrice ?? "Valor sob consulta"}
@@ -267,12 +267,12 @@ function ElloLinkSettings() {
           ))}
           <div className="rounded-2xl border border-dashed border-border p-3">
             <Input
-              label="Novo serviÃ§o"
+              label="Novo serviço"
               value={serviceForm.title}
               onChange={(title) => setServiceForm((current) => ({ ...current, title }))}
             />
             <Input
-              label="DescriÃ§Ã£o rÃ¡pida opcional"
+              label="Descrição rápida opcional"
               value={serviceForm.description}
               onChange={(description) => setServiceForm((current) => ({ ...current, description }))}
             />
@@ -287,7 +287,7 @@ function ElloLinkSettings() {
               className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-black text-white disabled:opacity-50"
             >
               <Plus className="size-4" />
-              Adicionar serviÃ§o
+              Adicionar serviço
             </button>
           </div>
         </section>
@@ -295,7 +295,7 @@ function ElloLinkSettings() {
         <section className="rounded-3xl border border-border p-4">
           <h2 className="flex items-center gap-2 text-base font-black">
             <CalendarDays className="size-4 text-primary" />
-            Datas e horÃ¡rios
+            Datas e horários
           </h2>
           <div className="mt-3 space-y-2">
             {agenda.length ? (
@@ -306,7 +306,7 @@ function ElloLinkSettings() {
               ))
             ) : (
               <p className="rounded-2xl bg-secondary p-3 text-sm text-muted-foreground">
-                Os horÃ¡rios pÃºblicos aparecem no link; agendamentos reais entram aqui.
+                Os horários públicos aparecem no link; agendamentos reais entram aqui.
               </p>
             )}
           </div>
@@ -324,12 +324,12 @@ function ElloLinkSettings() {
                   key={client.userId}
                   className="rounded-2xl bg-secondary p-3 text-sm font-semibold"
                 >
-                  {client.name} â€¢ {client.totalRequests} solicitaÃ§Ãµes
+                  {client.name} • {client.totalRequests} solicitações
                 </p>
               ))
             ) : (
               <p className="rounded-2xl bg-secondary p-3 text-sm text-muted-foreground">
-                Clientes frequentes aparecerÃ£o apÃ³s solicitaÃ§Ãµes reais pelo ELLO Link.
+                Clientes frequentes aparecerão após solicitações reais pelo ELLO Link.
               </p>
             )}
           </div>
