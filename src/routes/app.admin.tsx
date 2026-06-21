@@ -72,7 +72,7 @@ function Admin() {
   if (!configured) {
     return (
       <AdminNotice
-        title="Supabase nao configurado"
+        title="Supabase não configurado"
         body="Configure o Supabase para abrir o painel administrativo."
       />
     );
@@ -86,7 +86,7 @@ function Admin() {
     return (
       <AdminNotice
         title="Acesso restrito"
-        body="Seu usuario precisa estar com role admin em profiles para gerenciar configuracoes comerciais."
+        body="Seu usuário precisa estar com role admin em profiles para gerenciar configurações comerciais."
       />
     );
   }
@@ -146,7 +146,7 @@ function Admin() {
               onChange={(event) =>
                 setPartnerForm({ ...partnerForm, description: event.target.value })
               }
-              placeholder="Descricao curta"
+              placeholder="Descrição curta"
               className="min-h-20 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold outline-none focus:border-primary"
             />
             <div className="grid grid-cols-2 gap-2">

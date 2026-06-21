@@ -16,7 +16,7 @@ export const createConfirmedPasswordAccount = createServerFn({ method: "POST" })
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
 
     if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error("Backend de cadastro direto nao esta configurado.");
+      throw new Error("Backend de cadastro direto não está configurado.");
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {

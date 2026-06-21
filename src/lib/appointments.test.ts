@@ -20,8 +20,8 @@ test("accepts a valid future appointment", () => {
 test("rejects invalid and past appointment dates", () => {
   const now = new Date("2026-06-17T12:00:00.000Z");
 
-  assert.throws(() => assertFutureAppointment("invalid", now), /data e horario validos/i);
-  assert.throws(() => assertFutureAppointment("2026-06-17T11:59:59.000Z", now), /horario futuro/i);
+  assert.throws(() => assertFutureAppointment("invalid", now), /data e horário válidos/i);
+  assert.throws(() => assertFutureAppointment("2026-06-17T11:59:59.000Z", now), /horário futuro/i);
 });
 
 test("allows only valid appointment status transitions", () => {
@@ -59,14 +59,14 @@ test("enforces appointment transitions by participant role", () => {
 test("turns scheduling conflicts into a useful message", () => {
   assert.match(
     formatAppointmentError({ code: "23505", message: "duplicate key value" }),
-    /horario ja esta reservado/i,
+    /horário já está reservado/i,
   );
 });
 
 test("turns invalid database transitions into a useful message", () => {
   assert.match(
     formatAppointmentError({ code: "23514", message: "invalid appointment status transition" }),
-    /nao e permitida/i,
+    /não é permitida/i,
   );
 });
 

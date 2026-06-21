@@ -92,7 +92,7 @@ function ProfessionalDetail() {
     <div className="min-h-dvh bg-white pb-24">
       <header className="relative h-52 overflow-hidden bg-slate-900 text-white">
         <img
-          src="/images/ello/home-services-1.webp"
+          src="/images/ello/home-services-1-v2.webp"
           alt=""
           className="absolute inset-0 size-full object-cover"
         />
@@ -223,7 +223,7 @@ function ServicesTab({ professional }: { professional: Professional }) {
             className="flex items-center gap-3 rounded-2xl border border-border p-3"
           >
             <img
-              src={`/images/ello/home-services-${(index % 3) + 1}.webp`}
+              src={`/images/ello/home-services-${(index % 3) + 1}-v2.webp`}
               alt=""
               className="size-16 rounded-xl object-cover"
             />
@@ -280,9 +280,9 @@ function GalleryTab({
   const gallery = items.length
     ? items
     : [
-        { id: "one", title: "Serviço realizado", mediaUrl: "/images/ello/home-services-1.webp" },
-        { id: "two", title: "Atendimento", mediaUrl: "/images/ello/home-services-2.webp" },
-        { id: "three", title: "Resultado", mediaUrl: "/images/ello/home-services-3.webp" },
+        { id: "one", title: "Serviço realizado", mediaUrl: "/images/ello/home-services-1-v2.webp" },
+        { id: "two", title: "Atendimento", mediaUrl: "/images/ello/home-services-2-v2.webp" },
+        { id: "three", title: "Resultado", mediaUrl: "/images/ello/home-services-3-v2.webp" },
       ];
 
   return (
@@ -290,7 +290,7 @@ function GalleryTab({
       {gallery.map((item, index) => (
         <img
           key={item.id}
-          src={item.mediaUrl ?? `/images/ello/home-services-${(index % 3) + 1}.webp`}
+          src={item.mediaUrl ?? `/images/ello/home-services-${(index % 3) + 1}-v2.webp`}
           alt={item.title}
           className="aspect-square w-full rounded-2xl object-cover"
         />

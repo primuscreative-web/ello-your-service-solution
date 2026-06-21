@@ -14,10 +14,10 @@ const SLIDES = [
         Contrate profissionais de <span className="text-primary">confiança.</span>
       </>
     ),
-    body: "Encontre milhares de profissionais avaliados pela comunidade.",
+    body: "Peça um serviço, acompanhe tudo pelo celular e fale com quem vai atender você.",
     image: ELLO_MEDIA.onboardingClient.src,
     alt: "Cliente usando o celular para contratar profissionais",
-    imageClassName: "right-[-3.45rem] bottom-[9.6rem] h-[54%]",
+    imageClassName: "right-[-4.2rem] bottom-[9.7rem] h-[56%]",
   },
   {
     title: (
@@ -25,10 +25,10 @@ const SLIDES = [
         Organize e <span className="text-primary">divulgue</span> seus serviços.
       </>
     ),
-    body: "Crie seu perfil profissional e encontre mais clientes.",
+    body: "Mostre seu trabalho, receba pedidos e transforme contatos em clientes reais.",
     image: ELLO_MEDIA.onboardingProfessional.src,
     alt: "Profissional organizando serviços pelo celular",
-    imageClassName: "right-[-2.95rem] bottom-[8.9rem] h-[57%]",
+    imageClassName: "right-[-4rem] bottom-[9rem] h-[57%]",
   },
   {
     title: (
@@ -36,10 +36,10 @@ const SLIDES = [
         Agenda, portfólio e clientes em um <span className="text-primary">só lugar.</span>
       </>
     ),
-    body: "Tudo que você precisa para trabalhar melhor.",
+    body: "Tenha horários, clientes e solicitações organizados em uma rotina mais simples.",
     image: ELLO_MEDIA.onboardingAgenda.src,
-    alt: "Interface de agenda da ELLO",
-    imageClassName: "right-[-2.2rem] bottom-[10.6rem] h-[48%]",
+    alt: "Agenda profissional da ELLO",
+    imageClassName: "right-[-3.8rem] bottom-[9.8rem] h-[56%]",
   },
   {
     title: (

@@ -560,7 +560,7 @@ export async function ensureMyProfessionalProfile(input: {
 export async function updateMyUserProfile(input: UserProfileUpdate): Promise<ProfileRow> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const fullName = input.fullName.trim();
@@ -609,7 +609,7 @@ export async function chooseMyAccountMode(input: {
 }): Promise<ProfileRow> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const { data, error } = await supabase
@@ -663,7 +663,7 @@ export async function updateMyProfessionalProfile(
 ): Promise<ProfessionalProfile> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const profile = await getMyProfessionalProfile(input.userId);
@@ -751,18 +751,18 @@ export async function createMyService(input: {
 }): Promise<ProfessionalService> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const profile = await getMyProfessionalProfile(input.userId);
   if (!profile) {
-    throw new Error("Crie o perfil profissional antes de cadastrar servicos.");
+    throw new Error("Crie o perfil profissional antes de cadastrar serviços.");
   }
 
   const title = input.title.trim();
   const category = slugify(input.category.trim() || title);
-  if (!title) throw new Error("Informe o nome do servico.");
-  if (!category) throw new Error("Informe a categoria do servico.");
+  if (!title) throw new Error("Informe o nome do serviço.");
+  if (!category) throw new Error("Informe a categoria do serviço.");
 
   const { data, error } = await supabase
     .from("services")
@@ -772,7 +772,7 @@ export async function createMyService(input: {
       category,
       description: input.description?.trim() || null,
       base_price: input.basePrice?.trim() || null,
-      charge_type: input.chargeType?.trim() || "por servico",
+      charge_type: input.chargeType?.trim() || "por serviço",
       active: true,
     })
     .select("*")
@@ -788,7 +788,7 @@ export async function setMyProfessionalProfilePublished(input: {
 }): Promise<ProfessionalProfile> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const profile = await getMyProfessionalProfile(input.userId);
@@ -842,7 +842,7 @@ export async function createMyPortfolioItem(input: {
 }): Promise<PortfolioItem> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const profile = await getMyProfessionalProfile(input.userId);
@@ -882,7 +882,7 @@ export async function createMyPortfolioItem(input: {
 async function uploadPortfolioFile(input: { profileId: string; file: File }): Promise<string> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   if (!input.file.type.startsWith("image/")) {
@@ -908,7 +908,7 @@ async function uploadPortfolioFile(input: { profileId: string; file: File }): Pr
 async function uploadAvatarFile(input: { userId: string; file: File }): Promise<string> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   if (!input.file.type.startsWith("image/")) {
@@ -1087,7 +1087,7 @@ export async function createMonetizationRequest(input: {
 }): Promise<MonetizationRequestItem> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const profile = await getMyProfessionalProfile(input.userId);
@@ -1204,12 +1204,12 @@ export async function reviewMonetizationRequest(input: {
 }): Promise<void> {
   const profile = await getUserProfile(input.userId);
   if (profile?.role !== "admin") {
-    throw new Error("Apenas administradores podem revisar solicitacoes comerciais.");
+    throw new Error("Apenas administradores podem revisar solicitações comerciais.");
   }
 
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const { data: requestData, error: requestError } = await supabase
@@ -1220,7 +1220,7 @@ export async function reviewMonetizationRequest(input: {
 
   if (requestError) throw requestError;
   const request = requestData as MonetizationRequestRow | null;
-  if (!request) throw new Error("Solicitacao comercial nao encontrada.");
+  if (!request) throw new Error("Solicitação comercial não encontrada.");
 
   if (input.status === "approved") {
     const days = Math.max(
@@ -1307,7 +1307,7 @@ export async function upsertAdminLocalPartnerSpace(input: {
 
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const payload = {
@@ -1327,7 +1327,7 @@ export async function upsertAdminLocalPartnerSpace(input: {
   if (!payload.name) throw new Error("Informe o nome do parceiro.");
   if (!payload.category) throw new Error("Informe a categoria do parceiro.");
   if (!payload.city) throw new Error("Informe a cidade do parceiro.");
-  if (!payload.description) throw new Error("Informe a descricao do parceiro.");
+  if (!payload.description) throw new Error("Informe a descrição do parceiro.");
 
   const query = input.id
     ? supabase.from("local_partner_spaces").update(payload).eq("id", input.id)
@@ -1349,7 +1349,7 @@ export async function deleteAdminLocalPartnerSpace(input: {
 
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const { error } = await supabase.from("local_partner_spaces").delete().eq("id", input.id);
@@ -1448,7 +1448,7 @@ export async function setProfessionalFavorite(input: {
 }): Promise<void> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const clientProfile = await ensureMyClientProfile({
@@ -1508,7 +1508,7 @@ export async function ensureMyClientProfile(input: {
 export async function updateMyClientProfile(input: ClientProfileUpdate): Promise<ClientProfile> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const city = input.city.trim();
@@ -1582,12 +1582,12 @@ export async function createDetailedQuoteRequest(input: {
 }): Promise<QuoteRequest> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const description = input.description.trim();
   const location = input.location.trim();
-  if (!description) throw new Error("Descreva o servico que voce precisa.");
+  if (!description) throw new Error("Descreva o serviço que você precisa.");
   if (!location) throw new Error("Informe a cidade ou bairro do atendimento.");
 
   const clientProfile = await ensureMyClientProfile({
@@ -1688,7 +1688,7 @@ export async function listMyQuoteThreads(userId: string): Promise<QuoteThread[]>
         : (professional?.public_name ?? "Atendimento ELLO"),
       subtitle: professionalView
         ? "Solicitacao recebida"
-        : (professional?.specialty ?? "Orcamento"),
+        : (professional?.specialty ?? "Orçamento"),
       lastMessage: row.description,
       timestamp: formatShortDate(row.created_at),
       status: row.status,
@@ -2018,16 +2018,16 @@ export async function respondToProfessionalQuote(input: {
 }): Promise<void> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const profile = await getMyProfessionalProfile(input.userId);
-  if (!profile) throw new Error("Perfil profissional nao encontrado.");
+  if (!profile) throw new Error("Perfil profissional não encontrado.");
 
   const responsePrice = input.responsePrice.trim();
   const responseEta = input.responseEta.trim();
   const responseMessage = input.responseMessage.trim();
-  if (!responsePrice) throw new Error("Informe o valor combinado ou condicao do orcamento.");
+  if (!responsePrice) throw new Error("Informe o valor combinado ou condição do orçamento.");
   if (!responseEta) throw new Error("Informe o prazo ou disponibilidade.");
   if (!responseMessage) throw new Error("Escreva uma mensagem para o cliente.");
 
@@ -2049,7 +2049,7 @@ export async function respondToProfessionalQuote(input: {
   await sendQuoteMessage({
     quoteRequestId: input.quoteRequestId,
     senderUserId: input.userId,
-    body: `Orcamento enviado: ${responsePrice}. Prazo: ${responseEta}. ${responseMessage}`,
+    body: `Orçamento enviado: ${responsePrice}. Prazo: ${responseEta}. ${responseMessage}`,
   });
 }
 
@@ -2060,11 +2060,11 @@ export async function updateProfessionalQuoteStatus(input: {
 }): Promise<void> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const profile = await getMyProfessionalProfile(input.userId);
-  if (!profile) throw new Error("Perfil profissional nao encontrado.");
+  if (!profile) throw new Error("Perfil profissional não encontrado.");
 
   const patch: Database["public"]["Tables"]["quote_requests"]["Update"] = {
     status: input.status,
@@ -2091,11 +2091,11 @@ export async function markQuoteRequestCompleted(input: {
 }): Promise<void> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const clientProfile = await getMyClientProfile(input.userId);
-  if (!clientProfile) throw new Error("Perfil de cliente nao encontrado.");
+  if (!clientProfile) throw new Error("Perfil de cliente não encontrado.");
 
   const { error } = await supabase
     .from("quote_requests")
@@ -2126,11 +2126,11 @@ export async function createOrUpdateReview(input: {
 }): Promise<void> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const clientProfile = await getMyClientProfile(input.userId);
-  if (!clientProfile) throw new Error("Perfil de cliente nao encontrado.");
+  if (!clientProfile) throw new Error("Perfil de cliente não encontrado.");
 
   const rating = Math.max(1, Math.min(5, Math.round(input.rating)));
   const { data: quote, error: quoteError } = await supabase
@@ -2142,7 +2142,7 @@ export async function createOrUpdateReview(input: {
 
   if (quoteError) throw quoteError;
   if (quote.status !== "completed") {
-    throw new Error("Conclua o servico antes de avaliar.");
+    throw new Error("Conclua o serviço antes de avaliar.");
   }
 
   const { error } = await supabase.from("reviews").upsert(
@@ -2189,7 +2189,7 @@ export async function sendQuoteMessage(input: {
 }): Promise<QuoteMessage> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const body = input.body.trim();
@@ -2216,7 +2216,7 @@ export async function createAppointmentFromQuote(input: {
 }): Promise<AppointmentRow> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const startsAt = assertFutureAppointment(input.startsAt);
@@ -2236,7 +2236,7 @@ export async function updateAppointmentStatus(input: {
 }): Promise<AppointmentRow> {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
-    throw new Error("Supabase nao esta configurado neste ambiente.");
+    throw new Error("Supabase não está configurado neste ambiente.");
   }
 
   const { data, error } = await supabase.rpc("transition_appointment", {
@@ -2297,7 +2297,7 @@ export async function listMyAgendaItems(userId: string): Promise<AgendaItem[]> {
       professionalId: row.professional_id,
       professionalName,
       professionalInitials: initialsFor(professionalName),
-      service: service?.title ?? professional?.specialty ?? "Servico agendado",
+      service: service?.title ?? professional?.specialty ?? "Serviço agendado",
       startsAt: row.starts_at,
       date: formatShortDate(row.starts_at),
       time: startsAt.toLocaleTimeString("pt-BR", {
@@ -2491,10 +2491,10 @@ function mapRequestHistoryItem(row: RequestHistoryRow): RequestHistoryItem {
     id: row.id,
     professionalId: row.professional_id,
     professionalName,
-    professionalSpecialty: professional?.specialty ?? "Servico ELLO",
+    professionalSpecialty: professional?.specialty ?? "Serviço ELLO",
     professionalInitials: initialsFor(professionalName),
     professionalAvatarUrl: professional?.avatar_url ?? null,
-    serviceTitle: service?.title ?? professional?.specialty ?? "Orcamento",
+    serviceTitle: service?.title ?? professional?.specialty ?? "Orçamento",
     description: row.description,
     location: row.location,
     status: row.status,
@@ -2512,7 +2512,7 @@ function mapProfessionalQuoteItem(row: ProfessionalQuoteRow): ProfessionalQuoteI
   return {
     id: row.id,
     clientCity: client?.city ?? row.location ?? "Cliente ELLO",
-    serviceTitle: service?.title ?? "Orcamento",
+    serviceTitle: service?.title ?? "Orçamento",
     description: row.description,
     location: row.location,
     status: row.status,
@@ -2640,7 +2640,7 @@ function filterProfessionals(
 function mapProfessionalRow(row: ProfessionalRow): Professional {
   const displayName = row.public_name ?? row.specialty;
   const firstService = row.services?.[0];
-  const categorySlug = firstService?.category ?? slugify(row.specialty) ?? "servicos";
+  const categorySlug = firstService?.category ?? slugify(row.specialty) ?? "serviços";
   const categoryName = firstService ? humanizeSlug(firstService.category) : row.specialty;
   const responseTime = row.response_time_minutes ? `${row.response_time_minutes} min` : "~1h";
 

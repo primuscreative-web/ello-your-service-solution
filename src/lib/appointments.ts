@@ -11,10 +11,10 @@ const ALLOWED_TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
 export function assertFutureAppointment(value: string, now = new Date()): string {
   const appointmentDate = new Date(value);
   if (Number.isNaN(appointmentDate.getTime())) {
-    throw new Error("Informe uma data e horario validos.");
+    throw new Error("Informe uma data e horário válidos.");
   }
   if (appointmentDate.getTime() <= now.getTime()) {
-    throw new Error("Escolha um horario futuro para o servico.");
+    throw new Error("Escolha um horário futuro para o serviço.");
   }
   return appointmentDate.toISOString();
 }
@@ -61,10 +61,10 @@ export function formatAppointmentError(error: unknown): string {
     const code = databaseError.code;
     const message = databaseError.message ?? "";
     if (code === "23505") {
-      return "Este horario ja esta reservado. Escolha outro horario.";
+      return "Este horário já está reservado. Escolha outro horário.";
     }
     if (code === "23514") {
-      return "Esta mudanca de agendamento nao e permitida.";
+      return "Esta mudança de agendamento não é permitida.";
     }
     if (code === "42501") {
       if (message.includes("only the quote client")) {
@@ -76,9 +76,9 @@ export function formatAppointmentError(error: unknown): string {
       if (message.includes("only the professional can complete")) {
         return "Somente o profissional pode concluir um agendamento confirmado.";
       }
-      return "Voce nao tem permissao para alterar este agendamento.";
+      return "Você não tem permissão para alterar este agendamento.";
     }
   }
 
-  return error instanceof Error ? error.message : "Nao foi possivel atualizar o agendamento.";
+  return error instanceof Error ? error.message : "Não foi possível atualizar o agendamento.";
 }

@@ -26,7 +26,7 @@ function Requests() {
   });
   const completeMutation = useMutation({
     mutationFn: (quoteRequestId: string) => {
-      if (!user) throw new Error("Entre na sua conta para concluir o servico.");
+      if (!user) throw new Error("Entre na sua conta para concluir o serviço.");
       return markQuoteRequestCompleted({ quoteRequestId, userId: user.id });
     },
     onSuccess: invalidateRequestData,
@@ -62,16 +62,16 @@ function Requests() {
 
   return (
     <div>
-      <AppTopBar title="Historico" subtitle="Solicitacoes e avaliacoes" backTo="/app/profile" />
+      <AppTopBar title="Histórico" subtitle="Solicitações e avaliações" backTo="/app/profile" />
 
       <main className="space-y-4 px-4 pb-6 pt-4">
         {!configured ? (
-          <EmptyState message="Configure o Supabase para salvar historico real." />
+          <EmptyState message="Configure o Supabase para salvar histórico real." />
         ) : !user ? (
-          <EmptyState message="Entre na sua conta para ver suas solicitacoes." />
+          <EmptyState message="Entre na sua conta para ver suas solicitações." />
         ) : requestsQuery.isPending ? (
           <div className="ello-card rounded-xl p-6 text-center text-sm font-bold text-muted-foreground">
-            Carregando historico...
+            Carregando histórico...
           </div>
         ) : requests.length ? (
           requests.map((request) => (
@@ -91,12 +91,10 @@ function Requests() {
             />
           ))
         ) : (
-          <EmptyState message="Voce ainda nao solicitou nenhum orcamento real." />
+          <EmptyState message="Você ainda não solicitou nenhum orçamento real." />
         )}
 
-        {completeMutation.error ? (
-          <ErrorText>{completeMutation.error.message}</ErrorText>
-        ) : null}
+        {completeMutation.error ? <ErrorText>{completeMutation.error.message}</ErrorText> : null}
         {reviewMutation.error ? <ErrorText>{reviewMutation.error.message}</ErrorText> : null}
       </main>
     </div>
@@ -139,9 +137,7 @@ function RequestCard({
             </div>
             <StatusPill status={request.status} />
           </div>
-          <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
-            {request.description}
-          </p>
+          <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{request.description}</p>
         </div>
       </div>
 
@@ -232,7 +228,7 @@ function StatusPill({ status }: { status: RequestHistoryItem["status"] }) {
   const labelByStatus: Record<RequestHistoryItem["status"], string> = {
     accepted: "Aceito",
     cancelled: "Cancelado",
-    completed: "Concluido",
+    completed: "Concluído",
     declined: "Recusado",
     in_progress: "Em andamento",
     new: "Novo",
@@ -252,7 +248,7 @@ function EmptyState({ message }: { message: string }) {
       <div className="mx-auto grid size-12 place-items-center rounded-full bg-primary/10 text-primary">
         <MessageCircle className="size-5" />
       </div>
-      <h2 className="mt-3 text-base font-black">Historico ELLO</h2>
+      <h2 className="mt-3 text-base font-black">Histórico ELLO</h2>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{message}</p>
       <Link
         to="/app/search"
@@ -265,5 +261,7 @@ function EmptyState({ message }: { message: string }) {
 }
 
 function ErrorText({ children }: { children: string }) {
-  return <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{children}</p>;
+  return (
+    <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{children}</p>
+  );
 }
