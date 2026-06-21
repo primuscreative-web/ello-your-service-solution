@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ElloLogo } from "@/components/ello/logo";
+
 import { ELLO_MEDIA } from "@/lib/ello-media";
 
 export const Route = createFileRoute("/")({
@@ -17,18 +17,7 @@ function Splash() {
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#001fbd]/15 via-transparent to-[#000b25]/70" />
 
-        <div className="relative z-10 flex flex-1 flex-col items-center text-center">
-          <div className="mt-[15vh] flex flex-col items-center">
-            <ElloLogo
-              className="text-[3.5rem] text-white"
-              markClassName="text-white"
-              dotClassName="text-white"
-            />
-            <p className="mt-8 max-w-[18rem] text-[1rem] font-bold leading-relaxed text-white">
-              Encontre ou ofereça serviços com facilidade.
-            </p>
-          </div>
-        </div>
+        <div className="relative z-10 flex flex-1" />
 
         <div className="relative z-10 mt-auto space-y-4">
           <Link
