@@ -116,11 +116,26 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: createPublicRuntimeConfigScript(),
+          }}
+        />
         {children}
         <Scripts />
       </body>
     </html>
   );
+}
+
+function createPublicRuntimeConfigScript() {
+  const env = typeof process !== "undefined" ? process.env : {};
+  const config = {
+    supabaseUrl: env.VITE_SUPABASE_URL ?? "",
+    supabaseAnonKey: env.VITE_SUPABASE_ANON_KEY ?? "",
+  };
+
+  return `window.__ELLO_CONFIG__=${JSON.stringify(config).replace(/</g, "\\u003c")};`;
 }
 
 function RootComponent() {
