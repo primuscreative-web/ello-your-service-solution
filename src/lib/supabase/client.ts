@@ -11,9 +11,9 @@ declare global {
 
 const runtimeConfig = typeof window !== "undefined" ? window.__ELLO_CONFIG__ : undefined;
 const supabaseUrl =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? runtimeConfig?.supabaseUrl;
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) || runtimeConfig?.supabaseUrl;
 const supabaseAnonKey =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? runtimeConfig?.supabaseAnonKey;
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || runtimeConfig?.supabaseAnonKey;
 
 let browserClient: SupabaseClient | null = null;
 

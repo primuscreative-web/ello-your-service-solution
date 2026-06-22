@@ -37,7 +37,7 @@ export const createConfirmedPasswordAccount = createServerFn({ method: "POST" })
 
     if (error) {
       if (error.message.toLowerCase().includes("already")) {
-        throw new Error("Esta conta ja existe. Entre usando sua senha.");
+        throw new Error("Esta conta já existe. Entre usando sua senha.");
       }
       throw new Error(error.message);
     }
