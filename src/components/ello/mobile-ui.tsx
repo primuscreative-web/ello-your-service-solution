@@ -52,7 +52,7 @@ export function AppTopBar({
           ) : null}
           <div className="min-w-0">
             {logo ? (
-              <ElloLogo className="text-2xl text-white [&>span]:text-primary" />
+              <ElloLogo tone="white" className="w-[4.4rem]" />
             ) : (
               <h1 className="truncate text-base font-extrabold">{title}</h1>
             )}

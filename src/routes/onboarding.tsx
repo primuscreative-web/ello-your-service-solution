@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import type React from "react";
+import { useMemo, useRef, useState } from "react";
+
 import { ELLO_MEDIA } from "@/lib/ello-media";
 import { completeOnboarding } from "@/lib/onboarding-state";
 
@@ -9,60 +11,75 @@ export const Route = createFileRoute("/onboarding")({
 
 const SLIDES = [
   {
+    eyebrow: "Para clientes",
     title: (
       <>
         Contrate profissionais de <span className="text-primary">confiança.</span>
       </>
     ),
-    body: "Peça um serviço, acompanhe tudo pelo celular e fale com quem vai atender você.",
+    body: "Peça um serviço, acompanhe o atendimento e fale com o profissional pelo celular.",
     image: ELLO_MEDIA.onboardingClient.src,
-    alt: "Cliente usando o celular para contratar profissionais",
-    imageClassName: "right-[-4.2rem] bottom-[9.7rem] h-[56%]",
+    alt: "Cliente usando a ELLO pelo celular",
   },
   {
+    eyebrow: "Para profissionais",
     title: (
       <>
         Organize e <span className="text-primary">divulgue</span> seus serviços.
       </>
     ),
-    body: "Mostre seu trabalho, receba pedidos e transforme contatos em clientes reais.",
+    body: "Monte seu perfil, mostre seu portfólio e transforme contatos em clientes reais.",
     image: ELLO_MEDIA.onboardingProfessional.src,
-    alt: "Profissional organizando serviços pelo celular",
-    imageClassName: "right-[-4rem] bottom-[9rem] h-[57%]",
+    alt: "Profissional usando a ELLO para divulgar seus serviços",
   },
   {
+    eyebrow: "Rotina simples",
     title: (
       <>
         Agenda, portfólio e clientes em um <span className="text-primary">só lugar.</span>
       </>
     ),
-    body: "Tenha horários, clientes e solicitações organizados em uma rotina mais simples.",
+    body: "Veja horários, pedidos e clientes em uma rotina mais organizada e profissional.",
     image: ELLO_MEDIA.onboardingAgenda.src,
-    alt: "Agenda profissional da ELLO",
-    imageClassName: "right-[-3.8rem] bottom-[9.8rem] h-[56%]",
+    alt: "Agenda e ferramentas profissionais da ELLO",
   },
   {
+    eyebrow: "Assistente ELLO",
     title: (
       <>
         A IA da ELLO trabalha junto com <span className="text-primary">você.</span>
       </>
     ),
-    body: "Automatize tarefas e encontre oportunidades.",
+    body: "Automatize tarefas, responda mais rápido e encontre novas oportunidades.",
     image: ELLO_MEDIA.onboardingAssistant.src,
     alt: "Assistente inteligente da ELLO",
-    imageClassName: "right-[-1.8rem] bottom-[10.2rem] h-[43%]",
   },
 ] as const;
+
+const SWIPE_THRESHOLD = 42;
 
 function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragStartX = useRef<number | null>(null);
   const slide = SLIDES[step];
   const last = step === SLIDES.length - 1;
+
+  const trackStyle = useMemo(
+    () => ({
+      transform: `translateX(calc(${-step * 100}% + ${dragOffset}px))`,
+    }),
+    [dragOffset, step],
+  );
 
   function finish() {
     completeOnboarding();
     void navigate({ to: "/auth" });
+  }
+
+  function goTo(nextStep: number) {
+    setStep(Math.min(Math.max(nextStep, 0), SLIDES.length - 1));
   }
 
   function next() {
@@ -70,40 +87,93 @@ function Onboarding() {
       finish();
       return;
     }
-    setStep((current) => current + 1);
+    goTo(step + 1);
+  }
+
+  function handlePointerDown(event: React.PointerEvent<HTMLElement>) {
+    dragStartX.current = event.clientX;
+    setDragOffset(0);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLElement>) {
+    if (dragStartX.current === null) return;
+    const nextOffset = event.clientX - dragStartX.current;
+    setDragOffset(Math.max(Math.min(nextOffset, 86), -86));
+  }
+
+  function handlePointerUp(event: React.PointerEvent<HTMLElement>) {
+    if (dragStartX.current === null) return;
+    const distance = event.clientX - dragStartX.current;
+    dragStartX.current = null;
+    setDragOffset(0);
+
+    if (distance < -SWIPE_THRESHOLD && step < SLIDES.length - 1) {
+      goTo(step + 1);
+      return;
+    }
+    if (distance > SWIPE_THRESHOLD && step > 0) {
+      goTo(step - 1);
+    }
   }
 
   return (
-    <main className="ello-shell min-h-dvh bg-white">
-      <section className="relative flex min-h-dvh flex-col overflow-hidden px-7 pb-[calc(1.45rem+env(safe-area-inset-bottom))] pt-[calc(4.15rem+env(safe-area-inset-top))]">
-        <div className="pointer-events-none absolute inset-x-5 bottom-[10.2rem] h-[39%] rounded-[45%] bg-primary/8 blur-sm" />
+    <main className="ello-shell min-h-dvh bg-[#f7fbff]">
+      <section
+        className="relative flex min-h-dvh touch-pan-y flex-col overflow-hidden px-7 pb-[calc(1.35rem+env(safe-area-inset-bottom))] pt-[calc(3.15rem+env(safe-area-inset-top))]"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerCancel={() => {
+          dragStartX.current = null;
+          setDragOffset(0);
+        }}
+        onPointerUp={handlePointerUp}
+      >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-primary/10 to-transparent" />
 
-        <div key={step} className="animate-reveal relative z-10">
-          <h1 className="max-w-[18rem] text-[1.93rem] font-black leading-[1.18] tracking-[-0.045em] text-foreground">
-            {slide.title}
-          </h1>
-          <p className="mt-5 max-w-[15.5rem] text-[1rem] leading-relaxed text-muted-foreground">
-            {slide.body}
-          </p>
+        <div className="relative z-10 flex flex-1 overflow-hidden">
+          <div
+            className="flex w-full transition-transform duration-300 ease-out"
+            style={trackStyle}
+          >
+            {SLIDES.map((item) => (
+              <article key={item.eyebrow} className="flex min-w-full flex-col">
+                <div className="min-h-[14.7rem]">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-primary/75">
+                    {item.eyebrow}
+                  </p>
+                  <h1 className="mt-4 max-w-[17.8rem] text-[2rem] font-black leading-[1.12] tracking-[-0.05em] text-foreground">
+                    {item.title}
+                  </h1>
+                  <p className="mt-4 max-w-[18.5rem] text-[1.02rem] font-medium leading-relaxed text-slate-600">
+                    {item.body}
+                  </p>
+                </div>
+
+                <div className="relative mt-2 overflow-hidden rounded-[2rem] border border-white/80 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/0 to-white/12" />
+                  <img
+                    src={item.image}
+                    alt={item.alt}
+                    draggable={false}
+                    className="h-[17.7rem] w-full select-none object-cover"
+                  />
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
 
-        <img
-          key={slide.image}
-          src={slide.image}
-          alt={slide.alt}
-          className={`animate-reveal pointer-events-none absolute z-0 w-auto max-w-none object-contain ${slide.imageClassName}`}
-        />
-
-        <div className="relative z-10 mt-auto">
-          <div className="mb-9 flex justify-center gap-3">
-            {SLIDES.map((_, index) => (
+        <div className="relative z-20 mt-6">
+          <div className="mb-7 flex justify-center gap-2.5">
+            {SLIDES.map((item, index) => (
               <button
-                key={index}
+                key={item.eyebrow}
                 type="button"
                 aria-label={`Ir para onboarding ${index + 1}`}
-                onClick={() => setStep(index)}
+                onClick={() => goTo(index)}
                 className={`h-2.5 rounded-full transition ${
-                  index === step ? "w-6 bg-primary" : "w-2.5 bg-slate-300"
+                  index === step ? "w-7 bg-primary" : "w-2.5 bg-slate-300"
                 }`}
               />
             ))}
@@ -120,7 +190,7 @@ function Onboarding() {
           <button
             type="button"
             onClick={finish}
-            className="mt-4 h-10 w-full text-center text-base font-semibold text-muted-foreground"
+            className="mt-4 h-10 w-full text-center text-base font-semibold text-slate-500"
           >
             Pular
           </button>
