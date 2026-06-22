@@ -6,7 +6,7 @@ import { Apple, Mail, Phone } from "lucide-react";
 import { ElloLogo } from "@/components/ello/logo";
 import { useAuth } from "@/lib/auth/auth-context";
 import { createConfirmedPasswordAccount } from "@/lib/auth/auth.functions";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSupabaseBrowserClient, getSupabasePublicConfig } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: z.object({
@@ -17,6 +17,11 @@ export const Route = createFileRoute("/auth")({
 
 type AuthMethod = "email" | "phone" | null;
 type OAuthProvider = "google" | "apple";
+type AuthProviderAvailability = {
+  apple: boolean;
+  google: boolean;
+  phone: boolean;
+};
 
 function Auth() {
   const navigate = useNavigate();
@@ -34,6 +39,9 @@ function Auth() {
   const [submittingProvider, setSubmittingProvider] = useState<OAuthProvider | "phone" | null>(
     null,
   );
+  const [providerAvailability, setProviderAvailability] = useState<AuthProviderAvailability | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const destination = useMemo(() => {
@@ -45,6 +53,51 @@ function Auth() {
       void navigate({ to: destination });
     }
   }, [destination, loading, navigate, user]);
+
+  useEffect(() => {
+    if (!configured) {
+      setProviderAvailability(null);
+      return;
+    }
+
+    const publicConfig = getSupabasePublicConfig();
+    if (!publicConfig) return;
+
+    const controller = new AbortController();
+
+    async function loadProviderAvailability() {
+      try {
+        const response = await fetch(`${publicConfig.url}/auth/v1/settings`, {
+          headers: {
+            apikey: publicConfig.anonKey,
+            Authorization: `Bearer ${publicConfig.anonKey}`,
+          },
+          signal: controller.signal,
+        });
+
+        if (!response.ok) throw new Error("Não foi possível consultar os provedores.");
+
+        const settings = (await response.json()) as {
+          external?: Partial<Record<"apple" | "google" | "phone", boolean>>;
+        };
+
+        setProviderAvailability({
+          apple: Boolean(settings.external?.apple),
+          google: Boolean(settings.external?.google),
+          phone: Boolean(settings.external?.phone),
+        });
+      } catch (caughtError) {
+        if (!controller.signal.aborted) {
+          console.warn(caughtError);
+          setProviderAvailability({ apple: false, google: false, phone: false });
+        }
+      }
+    }
+
+    void loadProviderAvailability();
+
+    return () => controller.abort();
+  }, [configured]);
 
   async function handleEmailSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -184,6 +237,11 @@ function Auth() {
     setError(null);
   }
 
+  const providerStatusLoaded = providerAvailability !== null;
+  const googleAvailable = Boolean(providerAvailability?.google);
+  const appleAvailable = Boolean(providerAvailability?.apple);
+  const phoneAvailable = Boolean(providerAvailability?.phone);
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[393px] flex-col bg-white px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(4.6rem+env(safe-area-inset-top))]">
       <section className="flex flex-col items-center text-center">
@@ -204,21 +262,43 @@ function Auth() {
 
       <section className="mt-9 space-y-3">
         <ProviderButton
-          disabled={!configured || submittingProvider !== null}
+          disabled={
+            !configured || !providerStatusLoaded || !googleAvailable || submittingProvider !== null
+          }
           icon={<GoogleMark />}
-          label={submittingProvider === "google" ? "Abrindo Google..." : "Continuar com Google"}
+          label={
+            submittingProvider === "google"
+              ? "Abrindo Google..."
+              : providerStatusLoaded && !googleAvailable
+                ? "Google em configuração"
+                : "Continuar com Google"
+          }
           onClick={() => void handleOAuth("google")}
         />
         <ProviderButton
-          disabled={!configured || submittingProvider !== null}
+          disabled={
+            !configured || !providerStatusLoaded || !appleAvailable || submittingProvider !== null
+          }
           icon={<Apple className="size-5 fill-black text-black" />}
-          label={submittingProvider === "apple" ? "Abrindo Apple..." : "Continuar com iPhone"}
+          label={
+            submittingProvider === "apple"
+              ? "Abrindo Apple..."
+              : providerStatusLoaded && !appleAvailable
+                ? "iPhone em configuração"
+                : "Continuar com iPhone"
+          }
           onClick={() => void handleOAuth("apple")}
         />
         <ProviderButton
-          disabled={!configured || submittingProvider !== null}
+          disabled={
+            !configured || !providerStatusLoaded || !phoneAvailable || submittingProvider !== null
+          }
           icon={<Phone className="size-5" />}
-          label="Continuar com celular"
+          label={
+            providerStatusLoaded && !phoneAvailable
+              ? "Celular em configuração"
+              : "Continuar com celular"
+          }
           onClick={() => openMethod("phone")}
         />
         <ProviderButton
@@ -227,6 +307,13 @@ function Auth() {
           onClick={() => openMethod("email")}
         />
       </section>
+
+      {providerStatusLoaded && (!googleAvailable || !appleAvailable || !phoneAvailable) ? (
+        <p className="mt-4 rounded-2xl bg-muted px-4 py-3 text-center text-xs font-semibold leading-relaxed text-muted-foreground">
+          Google, iPhone e celular serão ativados assim que os provedores forem conectados no
+          Supabase.
+        </p>
+      ) : null}
 
       {method === "email" ? (
         <form onSubmit={handleEmailSubmit} className="mt-5 space-y-3">

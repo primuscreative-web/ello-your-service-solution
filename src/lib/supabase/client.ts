@@ -21,6 +21,15 @@ export function isSupabaseConfigured() {
   return Boolean(supabaseUrl && supabaseAnonKey);
 }
 
+export function getSupabasePublicConfig() {
+  if (!isSupabaseConfigured()) return null;
+
+  return {
+    anonKey: supabaseAnonKey!,
+    url: supabaseUrl!,
+  };
+}
+
 export function getSupabaseBrowserClient() {
   if (!isSupabaseConfigured()) return null;
 
