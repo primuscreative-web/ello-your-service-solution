@@ -33,6 +33,16 @@ function HomeScreen() {
   const professionals = professionalsQuery.data ?? [];
   const firstName = profile?.full_name?.split(" ")[0] || "Ana";
 
+  const currentHour = new Date().getHours();
+  let greeting = "Olá";
+  if (currentHour >= 5 && currentHour < 12) {
+    greeting = "Bom dia";
+  } else if (currentHour >= 12 && currentHour < 18) {
+    greeting = "Boa tarde";
+  } else {
+    greeting = "Boa noite";
+  }
+
   function submitSearch() {
     void navigate({
       to: "/app/search",
@@ -44,20 +54,20 @@ function HomeScreen() {
     <div className="min-h-dvh bg-white">
       <ClientHomeHeader />
 
-      <main className="space-y-7 px-5 pb-8">
-        <section>
-          <h1 className="text-[1.55rem] font-black leading-tight tracking-[-0.04em] text-foreground">
-            Olá, {firstName}! 👋
+      <main className="space-y-7 px-5 pb-8 pt-4">
+        <section className="animate-reveal">
+          <h1 className="text-2xl font-black leading-tight tracking-[-0.04em] text-foreground/90">
+            {greeting}, {firstName}! 👋
           </h1>
-          <p className="mt-1 text-[1.35rem] font-black leading-tight tracking-[-0.04em] text-foreground">
-            O que você precisa hoje?
+          <p className="mt-1 text-sm font-semibold tracking-tight text-muted-foreground">
+            O que você precisa resolver hoje?
           </p>
           <div className="mt-5">
             <SearchField value={searchTerm} onChange={setSearchTerm} onSubmit={submitSearch} />
           </div>
         </section>
 
-        <section>
+        <section className="animate-reveal" style={{ animationDelay: "100ms" }}>
           <div className="flex items-center justify-between">
             <h2 className="text-base font-black text-foreground">Categorias populares</h2>
             <Link to="/app/search" className="text-xs font-bold text-primary">
@@ -79,9 +89,11 @@ function HomeScreen() {
           </div>
         </section>
 
-        <PhotoCarousel />
+        <div className="animate-reveal" style={{ animationDelay: "175ms" }}>
+          <PhotoCarousel />
+        </div>
 
-        <section>
+        <section className="animate-reveal" style={{ animationDelay: "250ms" }}>
           <div className="flex items-center justify-between">
             <h2 className="text-base font-black text-foreground">Profissionais em destaque</h2>
             <Link to="/app/search" className="text-xs font-bold text-primary">

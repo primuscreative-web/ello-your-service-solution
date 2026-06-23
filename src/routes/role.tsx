@@ -3,6 +3,7 @@ import { Lightbulb, Phone, UserRound } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
+import { ElloAppShell } from "@/components/ello/app-shell";
 import { chooseMyAccountMode } from "@/lib/ello-repository";
 
 export const Route = createFileRoute("/role")({
@@ -40,58 +41,60 @@ function Role() {
   }
 
   return (
-    <main className="ello-shell flex min-h-dvh flex-col bg-white px-7 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(5.4rem+env(safe-area-inset-top))]">
-      <section>
-        <h1 className="max-w-[17rem] text-[1.8rem] font-black leading-[1.15] tracking-[-0.045em] text-foreground">
-          Como você deseja começar?
-        </h1>
-        <p className="mt-5 max-w-[18rem] text-base leading-relaxed text-foreground/75">
-          Você poderá usar os dois modos quando quiser.
-        </p>
-      </section>
+    <ElloAppShell statusBarClassName="text-slate-800">
+      <main className="relative flex h-full min-h-[700px] flex-col bg-white px-7 pb-8 pt-4">
+        <section className="animate-reveal">
+          <h1 className="max-w-[17rem] text-2xl font-black leading-tight tracking-[-0.04em] text-foreground">
+            Como você deseja começar?
+          </h1>
+          <p className="mt-2.5 max-w-[18rem] text-sm font-semibold tracking-tight text-muted-foreground">
+            Você poderá usar os dois modos quando quiser.
+          </p>
+        </section>
 
-      {!user ? (
-        <div className="mt-7 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-xs font-semibold leading-relaxed text-primary">
-          Entre ou crie sua conta para manter sua escolha sincronizada em todos os dispositivos.
-        </div>
-      ) : null}
+        {!user ? (
+          <div className="mt-5 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-xs font-semibold leading-relaxed text-primary">
+            Entre ou crie sua conta para manter sua escolha sincronizada em todos os dispositivos.
+          </div>
+        ) : null}
 
-      {error ? (
-        <div className="mt-7 rounded-2xl bg-destructive/10 p-4 text-xs font-semibold leading-relaxed text-destructive">
-          {error}
-        </div>
-      ) : null}
+        {error ? (
+          <div className="mt-5 rounded-2xl bg-destructive/10 p-4 text-xs font-semibold leading-relaxed text-destructive">
+            {error}
+          </div>
+        ) : null}
 
-      <section className="mt-9 space-y-5">
-        <RoleCard
-          disabled={saving !== null}
-          variant="client"
-          icon={<UserRound className="size-10 fill-white/20" />}
-          title={saving === "client" ? "Salvando..." : "Cliente"}
-          body="Quero contratar profissionais e serviços."
-          onClick={() => void chooseMode("client")}
-        />
-        <RoleCard
-          disabled={saving !== null}
-          variant="professional"
-          icon={<UserRound className="size-10 fill-white/20" />}
-          title={saving === "professional" ? "Salvando..." : "Profissional"}
-          body="Quero divulgar meus serviços e encontrar clientes."
-          onClick={() => void chooseMode("professional")}
-        />
-      </section>
+        <section className="mt-6 space-y-4 animate-reveal" style={{ animationDelay: "100ms" }}>
+          <RoleCard
+            disabled={saving !== null}
+            variant="client"
+            icon={<UserRound className="size-8 fill-white/20" />}
+            title={saving === "client" ? "Salvando..." : "Cliente"}
+            body="Quero contratar profissionais e serviços."
+            onClick={() => void chooseMode("client")}
+          />
+          <RoleCard
+            disabled={saving !== null}
+            variant="professional"
+            icon={<UserRound className="size-8 fill-white/20" />}
+            title={saving === "professional" ? "Salvando..." : "Profissional"}
+            body="Quero divulgar meus serviços e encontrar clientes."
+            onClick={() => void chooseMode("professional")}
+          />
+        </section>
 
-      <div className="mt-auto rounded-2xl bg-secondary p-5 text-sm leading-relaxed text-foreground/75">
-        <div className="flex gap-3">
-          <Lightbulb className="mt-0.5 size-5 shrink-0 text-warning" />
-          <p>Você poderá alternar entre os modos a qualquer momento nas configurações.</p>
+        <div className="mt-auto rounded-3xl bg-secondary p-5 text-xs leading-relaxed text-slate-500 animate-reveal" style={{ animationDelay: "200ms" }}>
+          <div className="flex gap-3">
+            <Lightbulb className="mt-0.5 size-5 shrink-0 text-warning" />
+            <p className="font-semibold text-foreground/80">Você poderá alternar entre os modos a qualquer momento nas configurações.</p>
+          </div>
+          <div className="mt-4 flex items-center gap-2 text-[10px] font-semibold text-muted-foreground">
+            <Phone className="size-4" />
+            <span>Toda conta da ELLO pode contratar e oferecer serviços.</span>
+          </div>
         </div>
-        <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-          <Phone className="size-4" />
-          <span>Toda conta da ELLO pode contratar e oferecer serviços.</span>
-        </div>
-      </div>
-    </main>
+      </main>
+    </ElloAppShell>
   );
 }
 

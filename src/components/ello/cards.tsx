@@ -11,20 +11,22 @@ export function ProfessionalMiniCard({ professional }: { professional: Professio
     <Link
       to="/app/professional/$id"
       params={{ id: professional.id }}
-      className="w-[7.4rem] shrink-0 rounded-2xl bg-white p-3 shadow-[0_12px_32px_rgba(15,23,42,0.08)]"
+      className="btn-tactile w-[8.2rem] shrink-0 rounded-[24px] border border-slate-100 bg-white p-3.5 shadow-[0_12px_28px_-8px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-6px_rgba(15,23,42,0.1)] transition-all duration-300 flex flex-col items-center text-center"
     >
-      <AvatarPhoto imageUrl={professional.avatarUrl} initials={professional.initials} size={60} />
-      <h3 className="mt-3 line-clamp-2 text-sm font-black leading-tight text-foreground">
+      <div className="relative">
+        <AvatarPhoto imageUrl={professional.avatarUrl} initials={professional.initials} size={64} />
+        {professional.available === "yes" && (
+          <span className="absolute bottom-0 right-0 size-3 rounded-full bg-emerald-500 ring-2 ring-white" />
+        )}
+      </div>
+      <h3 className="mt-3 line-clamp-1 text-xs font-black tracking-tight text-foreground">
         {professional.name}
       </h3>
-      <p className="mt-1 line-clamp-1 text-xs font-medium text-muted-foreground">
+      <p className="mt-0.5 line-clamp-1 text-[10px] font-semibold text-muted-foreground">
         {professional.profession}
       </p>
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-2.5 flex items-center justify-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded-full">
         <Rating value={professional.rating} />
-      </div>
-      <div className="mt-1">
-        <Availability label={AVAILABILITY_LABEL[professional.available]} />
       </div>
     </Link>
   );
@@ -42,19 +44,21 @@ export function ProfessionalListRow({
   professional: Professional;
 }) {
   return (
-    <div className="flex items-center gap-3 border-b border-border py-4 last:border-b-0">
-      <AvatarPhoto imageUrl={professional.avatarUrl} initials={professional.initials} size={54} />
+    <div className="group flex items-center gap-4 rounded-3xl border border-transparent p-3 -mx-3 hover:bg-slate-50/50 hover:border-slate-100/50 transition-all duration-300">
+      <div className="relative shrink-0">
+        <AvatarPhoto imageUrl={professional.avatarUrl} initials={professional.initials} size={58} />
+        {professional.available === "yes" && (
+          <span className="absolute bottom-0 right-0 size-3 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
+        )}
+      </div>
       <Link to="/app/professional/$id" params={{ id: professional.id }} className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-black">{professional.name}</h3>
-        <p className="truncate text-xs text-muted-foreground">{professional.profession}</p>
-        <div className="mt-1 flex items-center gap-2">
+        <h3 className="truncate text-sm font-black text-foreground group-hover:text-primary transition-colors">{professional.name}</h3>
+        <p className="truncate text-xs font-medium text-muted-foreground">{professional.profession}</p>
+        <div className="mt-1.5 flex items-center gap-2">
           <Rating value={professional.rating} />
-          <span className="text-xs text-muted-foreground">
-            ({professional.completedJobs} avaliações)
+          <span className="text-[10px] font-semibold text-muted-foreground">
+            • {professional.completedJobs} jobs
           </span>
-        </div>
-        <div className="mt-1">
-          <Availability label={AVAILABILITY_LABEL[professional.available]} />
         </div>
       </Link>
       {onFavorite ? (
@@ -63,14 +67,14 @@ export function ProfessionalListRow({
           aria-label={favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
           disabled={favoriteDisabled}
           onClick={onFavorite}
-          className="grid size-9 place-items-center rounded-full disabled:opacity-40"
+          className="btn-tactile grid size-9 place-items-center rounded-full bg-slate-50/60 hover:bg-slate-100/80 transition-colors disabled:opacity-40"
         >
           <Heart
-            className={`size-5 ${favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+            className={`size-4.5 transition-all duration-350 ${favorite ? "fill-destructive text-destructive" : "text-muted-foreground"}`}
           />
         </button>
       ) : null}
-      <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
+      <ChevronRight className="size-5 shrink-0 text-muted-foreground/60 group-hover:translate-x-0.5 transition-transform" />
     </div>
   );
 }
@@ -85,11 +89,11 @@ export function ServiceCategoryCard({
   to: string;
 }) {
   return (
-    <Link to={to} className="flex flex-col items-center gap-2 text-center">
-      <span className="grid size-12 place-items-center rounded-2xl border border-border bg-white text-primary shadow-[0_8px_22px_rgba(15,23,42,0.05)]">
+    <Link to={to} className="btn-tactile flex flex-col items-center gap-2 text-center group">
+      <span className="grid size-12 place-items-center rounded-2xl border border-slate-100/60 bg-white text-primary shadow-[0_8px_20px_-4px_rgba(15,23,42,0.05)] group-hover:scale-110 group-hover:shadow-[0_12px_24px_-6px_rgba(15,23,42,0.1)] group-hover:text-[#0052ff] transition-all duration-300">
         {icon}
       </span>
-      <span className="text-xs font-semibold text-foreground">{label}</span>
+      <span className="text-[10px] font-extrabold text-foreground/75 tracking-tight group-hover:text-primary transition-colors">{label}</span>
     </Link>
   );
 }
@@ -98,10 +102,10 @@ export function ListRow({ children, to }: { children: React.ReactNode; to: strin
   return (
     <Link
       to={to}
-      className="flex items-center justify-between rounded-2xl border border-border bg-white p-4"
+      className="btn-tactile flex items-center justify-between rounded-[24px] border border-slate-100 bg-white p-4 shadow-[0_8px_20px_-4px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_28px_-6px_rgba(15,23,42,0.08)] transition-all duration-300"
     >
-      {children}
-      <ChevronRight className="size-5 text-muted-foreground" />
+      <div className="flex-1 min-w-0 pr-4">{children}</div>
+      <ChevronRight className="size-5 text-muted-foreground/60 shrink-0" />
     </Link>
   );
 }

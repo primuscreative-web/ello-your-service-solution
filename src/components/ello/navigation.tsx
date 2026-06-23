@@ -29,7 +29,7 @@ export function BottomNavigation({ mode }: { mode: AppMode }) {
   const items = getBottomNavigation(mode);
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[393px] -translate-x-1/2 grid-cols-5 border-t border-border bg-white px-3 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgba(15,23,42,0.06)]">
+    <nav className="absolute bottom-5 left-4 right-4 z-40 flex items-center justify-around rounded-[24px] border border-white/40 bg-white/70 px-2 py-2 shadow-[0_16px_40px_-10px_rgba(15,23,42,0.18)] backdrop-blur-xl">
       {items.map((item) => {
         const Icon = ICONS[item.icon];
         const active = item.to === "/app" ? pathname === "/app" : pathname.startsWith(item.to);
@@ -37,11 +37,13 @@ export function BottomNavigation({ mode }: { mode: AppMode }) {
           <Link
             key={item.to}
             to={item.to}
-            className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[0.68rem] font-semibold ${
-              active ? "text-primary" : "text-foreground/70"
+            className={`btn-tactile flex flex-col items-center gap-1.5 rounded-[18px] px-3.5 py-2 text-[0.65rem] font-extrabold tracking-tight transition-all duration-300 ${
+              active
+                ? "bg-primary/10 text-primary scale-105"
+                : "text-foreground/60 hover:bg-slate-50/40 hover:text-foreground/85"
             }`}
           >
-            <Icon className={`size-5 ${active ? "fill-primary/10" : ""}`} />
+            <Icon className={`size-4.5 transition-transform duration-300 ${active ? "stroke-[2.5px] fill-primary/10" : "stroke-[2px]"}`} />
             {item.label}
           </Link>
         );

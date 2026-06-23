@@ -63,8 +63,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-display: "Inter Display", "Inter", sans-serif;
-  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Inter", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
 
@@ -116,18 +116,17 @@
   body {
     min-width: 320px;
     min-height: 100dvh;
-    background:
-      radial-gradient(circle at 50% 0%, oklch(0.96 0.01 255), transparent 34rem),
-      oklch(0.94 0.01 255);
+    background: #090d16; /* Deep midnight background for desktop preview */
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    overflow-x: hidden;
   }
 
   .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.04em;
   }
 
   .font-mono {
@@ -141,20 +140,168 @@
     scrollbar-width: none;
   }
 
-  .ello-shell {
-    position: relative;
-    width: min(100%, 393px);
+  /* Mobile-first by default: full bleed screen */
+  .desktop-mockup-bg {
+    display: flex;
+    flex-direction: column;
     min-height: 100dvh;
-    margin-inline: auto;
-    overflow-x: hidden;
-    background: var(--color-background);
+    width: 100%;
+    background-color: var(--color-background);
   }
 
+  .phone-chassis {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .phone-screen {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-background);
+    width: 100%;
+    height: 100%;
+  }
+
+  .phone-dynamic-island {
+    display: none;
+  }
+
+  .phone-home-indicator {
+    display: none;
+  }
+
+  /* Desktop layout: wraps in iPhone mockup bezel */
   @media (min-width: 768px) {
-    .ello-shell {
-      border-inline: 1px solid var(--color-border);
-      box-shadow: 0 24px 70px oklch(0.16 0.045 264 / 0.14);
+    .desktop-mockup-bg {
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      width: 100vw;
+      background-color: #0b0f19;
+      background-image: 
+        radial-gradient(at 0% 0%, oklch(0.25 0.1 270 / 0.4) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, oklch(0.22 0.08 300 / 0.3) 0px, transparent 50%),
+        radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
+      background-size: 100% 100%, 100% 100%, 24px 24px;
+      padding: 2rem;
     }
+
+    .phone-chassis {
+      flex: none;
+      position: relative;
+      width: 402px;
+      height: 844px;
+      background: #1e2230;
+      border: 14px solid #121520;
+      border-radius: 56px;
+      box-shadow: 
+        0 25px 60px -15px rgba(0, 0, 0, 0.85),
+        inset 0 4px 6px rgba(255, 255, 255, 0.15),
+        inset 0 -4px 6px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        0 0 40px oklch(0.55 0.25 264 / 0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translate3d(0, 0, 0);
+    }
+
+    /* Side Buttons simulation */
+    .phone-chassis::before,
+    .phone-chassis::after {
+      content: "";
+      position: absolute;
+      background: #121520;
+      width: 3px;
+      border-radius: 2px;
+      z-index: 10;
+    }
+    /* Volume buttons on left */
+    .phone-chassis::before {
+      top: 150px;
+      left: -17px;
+      height: 100px;
+      box-shadow: 0 20px 0 #121520; /* Creates 2 distinct volume buttons */
+    }
+    /* Power button on right */
+    .phone-chassis::after {
+      top: 180px;
+      right: -17px;
+      height: 75px;
+    }
+
+    /* Screen content */
+    .phone-screen {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--color-background);
+      border-radius: 42px;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+
+    .phone-dynamic-island {
+      position: absolute;
+      top: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 30px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 100;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .phone-home-indicator {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 130px;
+      height: 5px;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 3px;
+      z-index: 99;
+      pointer-events: none;
+      display: block;
+    }
+
+    /* Desktop app outer wrapper gets scroll bar styling */
+    .phone-screen-content-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .phone-screen-content-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .phone-screen-content-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+  }
+
+  /* Core shell wrapper mapping */
+  .ello-shell {
+    position: relative;
+    width: 100%;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-background);
+    overflow-x: hidden;
   }
 
   .ello-screen {
@@ -172,36 +319,115 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .ello-card {
-    border: 1px solid var(--color-border);
-    background: var(--color-card);
-    box-shadow: 0 1px 2px oklch(0.16 0.045 264 / 0.04);
+  /* Premium Card Styles */
+  .ello-card-premium {
+    border: 1px solid rgba(15, 23, 42, 0.05);
+    background: oklch(1 0 0);
+    box-shadow: 
+      0 10px 30px -10px rgba(15, 23, 42, 0.06),
+      0 1px 3px rgba(15, 23, 42, 0.02);
+    border-radius: 24px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .ello-header {
+  .ello-card-premium:active {
+    transform: scale(0.985);
+    box-shadow: 
+      0 4px 15px -5px rgba(15, 23, 42, 0.04),
+      0 1px 2px rgba(15, 23, 42, 0.01);
+  }
+
+  /* Frosted Glass UI elements */
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(14px) saturate(190%);
+    -webkit-backdrop-filter: blur(14px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+  }
+
+  .glass-panel-dark {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Elevated Header styling */
+  .ello-header-premium {
     color: var(--color-primary-foreground);
-    background: linear-gradient(145deg, oklch(0.59 0.25 258), oklch(0.43 0.25 268));
+    background: linear-gradient(135deg, oklch(0.55 0.28 264), oklch(0.42 0.24 275));
+    border-bottom-left-radius: 32px;
+    border-bottom-right-radius: 32px;
+    box-shadow: 0 12px 30px -8px oklch(0.52 0.27 263 / 0.25);
   }
 
-  .ello-gradient-primary {
-    color: var(--color-primary-foreground);
-    background: linear-gradient(145deg, oklch(0.59 0.25 258), oklch(0.43 0.25 268));
+  /* Custom gradients */
+  .ello-gradient-primary-glow {
+    background: linear-gradient(135deg, oklch(0.58 0.26 260), oklch(0.46 0.26 270));
+    box-shadow: 0 12px 28px -6px oklch(0.52 0.27 263 / 0.3);
   }
 
-  .ello-gradient-professional {
-    color: var(--color-success-foreground);
-    background: linear-gradient(145deg, oklch(0.68 0.18 151), oklch(0.5 0.16 153));
+  .ello-gradient-pro-glow {
+    background: linear-gradient(135deg, oklch(0.68 0.18 151), oklch(0.52 0.17 155));
+    box-shadow: 0 12px 28px -6px oklch(0.62 0.18 148 / 0.25);
   }
 
-  .ello-action {
-    background: var(--color-primary);
-    color: var(--color-primary-foreground);
+  /* Pulsing highlight for active elements */
+  @keyframes active-pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0 oklch(0.52 0.27 263 / 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 6px oklch(0.52 0.27 263 / 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 oklch(0.52 0.27 263 / 0);
+    }
+  }
+
+  .pulse-active {
+    animation: active-pulse-ring 2s infinite;
+  }
+
+  /* Ambient Floating Blobs */
+  .ambient-blob-1 {
+    position: absolute;
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, oklch(0.62 0.26 264 / 0.15) 0%, transparent 70%);
+    top: -10%;
+    left: -10%;
+    filter: blur(40px);
+    animation: float-blob-slow 12s infinite alternate;
+  }
+
+  .ambient-blob-2 {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, oklch(0.75 0.16 320 / 0.12) 0%, transparent 70%);
+    bottom: 10%;
+    right: -20%;
+    filter: blur(40px);
+    animation: float-blob-slow 18s infinite alternate-reverse;
+  }
+
+  @keyframes float-blob-slow {
+    0% {
+      transform: translate(0px, 0px) scale(1);
+    }
+    50% {
+      transform: translate(30px, -40px) scale(1.1);
+    }
+    100% {
+      transform: translate(-20px, 20px) scale(0.95);
+    }
   }
 
   @keyframes ello-slide-up {
     from {
       opacity: 0;
-      transform: translateY(12px);
+      transform: translateY(16px);
     }
     to {
       opacity: 1;
@@ -209,7 +435,15 @@
     }
   }
   .animate-reveal {
-    animation: ello-slide-up 0.6s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation: ello-slide-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Micro interactions for tactile buttons */
+  .btn-tactile {
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .btn-tactile:active {
+    transform: scale(0.96);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -223,3 +457,4 @@
     }
   }
 }
+

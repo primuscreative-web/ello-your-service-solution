@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { BottomNavigation } from "@/components/ello/navigation";
+import { ElloAppShell } from "@/components/ello/app-shell";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { AppMode } from "@/lib/ello-navigation";
 
@@ -16,9 +17,13 @@ function AppShell() {
   const hideNavigation = FULL_SCREEN_ROUTES.some((prefix) => pathname.startsWith(prefix));
 
   return (
-    <div className="ello-shell min-h-dvh bg-white pb-20">
-      <Outlet />
-      {hideNavigation ? null : <BottomNavigation mode={mode} />}
-    </div>
+    <ElloAppShell
+      footer={hideNavigation ? null : <BottomNavigation mode={mode} />}
+      statusBarClassName="text-slate-800"
+    >
+      <div className={`flex flex-1 flex-col ${hideNavigation ? "" : "pb-24"}`}>
+        <Outlet />
+      </div>
+    </ElloAppShell>
   );
 }
