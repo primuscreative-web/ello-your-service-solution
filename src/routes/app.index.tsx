@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+<<<<<<< HEAD
 import { Gift, Home, MoreHorizontal, Scissors, Store, Wrench } from "lucide-react";
 import { ProfessionalMiniCard, ServiceCategoryCard } from "@/components/ello/cards";
 import { SearchField } from "@/components/ello/fields";
@@ -9,6 +10,29 @@ import { ClientHomeHeader } from "@/components/ello/screen-header";
 import { useAuth } from "@/lib/auth/auth-context";
 import { CATEGORIES } from "@/lib/ello-data";
 import { listCategories, listProfessionals } from "@/lib/ello-repository";
+=======
+import {
+  BriefcaseBusiness,
+  CalendarDays,
+  Droplets,
+  Heart,
+  Search,
+  Sparkles,
+  Store,
+  UserRound,
+  Wrench,
+} from "lucide-react";
+import {
+  AppTopBar,
+  MiniMap,
+  ProPhoto,
+  ServicePhoto,
+  SmartSearchBox,
+  TrustBadge,
+} from "@/components/ello/mobile-ui";
+import { CATEGORIES, PROFESSIONALS } from "@/lib/ello-data";
+import { listCategories, listLocalPartnerSpaces, listProfessionals } from "@/lib/ello-repository";
+>>>>>>> 3fc0f0d (Refine ELLO positioning across onboarding and home)
 
 export const Route = createFileRoute("/app/")({
   component: HomeScreen,
@@ -69,9 +93,77 @@ function HomeScreen() {
 
         <section className="animate-reveal" style={{ animationDelay: "100ms" }}>
           <div className="flex items-center justify-between">
+<<<<<<< HEAD
             <h2 className="text-base font-black text-foreground">Categorias populares</h2>
             <Link to="/app/search" className="text-xs font-bold text-primary">
               Ver todas
+=======
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-primary">
+                Operação completa
+              </p>
+              <h2 className="text-sm font-black">Tudo em um só lugar</h2>
+            </div>
+            <Sparkles className="size-4 text-primary" />
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {[
+              {
+                title: "ELLO Link",
+                body: "Portfólio, catálogo e agenda em um link profissional.",
+                icon: Search,
+              },
+              {
+                title: "Agenda",
+                body: "Agendamento, urgência e confirmação no mesmo fluxo.",
+                icon: CalendarDays,
+              },
+              {
+                title: "ELLO IA",
+                body: "Sugestões de melhoria e oportunidades para crescer.",
+                icon: Sparkles,
+              },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="rounded-xl border border-border bg-muted/40 p-3">
+                  <div className="mb-2 inline-flex rounded-lg bg-white p-2 text-primary shadow-sm">
+                    <Icon className="size-4" />
+                  </div>
+                  <p className="text-[11px] font-black">{item.title}</p>
+                  <p className="mt-1 text-[10px] leading-4 text-muted-foreground">{item.body}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="grid grid-cols-4 gap-2">
+          {categories.slice(0, 4).map((category, index) => {
+            const icons = [Wrench, UserRound, Droplets, BriefcaseBusiness];
+            const Icon = icons[index];
+            return (
+              <Link
+                key={category.slug}
+                to="/app/search"
+                search={{ category: category.slug }}
+                className="ello-card flex min-h-[74px] flex-col items-center justify-center gap-1 rounded-xl p-2 text-center"
+              >
+                <span className="grid size-9 place-items-center rounded-lg bg-primary/15 text-primary">
+                  <Icon className="size-5" />
+                </span>
+                <span className="text-[10px] font-bold leading-tight">{category.name}</span>
+              </Link>
+            );
+          })}
+        </section>
+
+        <section className="ello-card rounded-xl p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-black">Mapa Inteligente</h2>
+            <Link to="/app/search" className="text-[10px] font-bold text-primary">
+              Ver mapa
+>>>>>>> 3fc0f0d (Refine ELLO positioning across onboarding and home)
             </Link>
           </div>
           <div className="mt-4 grid grid-cols-5 gap-3">

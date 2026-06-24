@@ -12,13 +12,14 @@ export const Route = createFileRoute("/onboarding")({
 
 const SLIDES = [
   {
+<<<<<<< HEAD
     eyebrow: "Para clientes",
     title: (
       <>
         Contrate profissionais de <span className="text-primary">confiança.</span>
       </>
     ),
-    body: "Peça um serviço, acompanhe o atendimento e fale com o profissional pelo celular.",
+    body: "Busque por intenção, veja profissionais qualificados e contrate sem perder tempo.",
     image: ELLO_MEDIA.onboardingClient.src,
     alt: "Cliente usando a ELLO pelo celular",
   },
@@ -29,7 +30,7 @@ const SLIDES = [
         Organize e <span className="text-primary">divulgue</span> seus serviços.
       </>
     ),
-    body: "Monte seu perfil, mostre seu portfólio e transforme contatos em clientes reais.",
+    body: "Organize agenda, portfólio, clientes e orçamentos em um ambiente pensado para crescer.",
     image: ELLO_MEDIA.onboardingProfessional.src,
     alt: "Profissional usando a ELLO para divulgar seus serviços",
   },
@@ -40,7 +41,7 @@ const SLIDES = [
         Agenda, portfólio e clientes em um <span className="text-primary">só lugar.</span>
       </>
     ),
-    body: "Veja horários, pedidos e clientes em uma rotina mais organizada e profissional.",
+    body: "Cada profissional ganha um link com catálogo, avaliações, agenda e presença online.",
     image: ELLO_MEDIA.onboardingAgenda.src,
     alt: "Agenda e ferramentas profissionais da ELLO",
   },
@@ -51,9 +52,33 @@ const SLIDES = [
         A IA da ELLO trabalha junto com <span className="text-primary">você.</span>
       </>
     ),
-    body: "Automatize tarefas, responda mais rápido e encontre novas oportunidades.",
+    body: "Sugestões de melhoria, oportunidades e comunicação mais inteligente em cada etapa.",
     image: ELLO_MEDIA.onboardingAssistant.src,
     alt: "Assistente inteligente da ELLO",
+=======
+    eyebrow: "Clientes",
+    title: "Encontre soluções com rapidez e confiança.",
+    body: "Busque por intenção, veja profissionais qualificados e contrate sem perder tempo.",
+    accent: "⚡",
+  },
+  {
+    eyebrow: "Profissionais",
+    title: "Transforme seu perfil em uma operação completa.",
+    body: "Organize agenda, portfólio, clientes e orçamentos em um ambiente pensado para crescer.",
+    accent: "📈",
+  },
+  {
+    eyebrow: "ELLO Link",
+    title: "Seu próprio espaço digital.",
+    body: "Cada profissional ganha um link com catálogo, avaliações, agenda e presença online.",
+    accent: "🔗",
+  },
+  {
+    eyebrow: "ELLO IA",
+    title: "A IA acompanha o seu crescimento.",
+    body: "Sugestões de melhoria, oportunidades e comunicação mais inteligente em cada etapa.",
+    accent: "✨",
+>>>>>>> 3fc0f0d (Refine ELLO positioning across onboarding and home)
   },
 ] as const;
 

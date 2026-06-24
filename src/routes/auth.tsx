@@ -249,8 +249,15 @@ function Auth() {
         <h1 className="mt-9 text-[1.52rem] font-black tracking-[-0.035em] text-foreground">
           Bem-vindo(a)!
         </h1>
+<<<<<<< HEAD
         <p className="mt-3 max-w-[17rem] text-[0.98rem] leading-relaxed text-muted-foreground">
           Entre ou crie sua conta para continuar na ELLO.
+=======
+        <p className="mt-2 text-sm text-muted-foreground">
+          {mode === "sign-in"
+            ? "Acesse sua conta e continue sua operação ELLO."
+            : "Crie sua conta e transforme seu perfil em uma presença profissional completa."}
+>>>>>>> 3fc0f0d (Refine ELLO positioning across onboarding and home)
         </p>
       </section>
 
