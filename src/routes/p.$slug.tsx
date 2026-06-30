@@ -111,7 +111,7 @@ function PublicProfessionalPage() {
 
   if (profileQuery.isPending) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#f8fafc] p-6 text-center text-sm font-bold text-muted-foreground">
+      <div className="grid min-h-screen place-items-center ello-mesh-bg p-6 text-center text-sm font-bold text-muted-foreground">
         Carregando ELLO Link...
       </div>
     );
@@ -119,15 +119,15 @@ function PublicProfessionalPage() {
 
   if (!profile) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#f8fafc] p-6 text-center">
-        <div className="max-w-sm rounded-3xl bg-white p-6 shadow-sm">
+      <div className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_top,_rgba(0,76,255,0.16),_transparent_32%),linear-gradient(180deg,_#f8faff_0%,_#f2f6ff_100%)] p-6 text-center">
+        <div className="max-w-sm rounded-[32px] border border-border/70 bg-white/85 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl">
           <h1 className="text-lg font-black">ELLO Link não encontrado</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             O perfil pode estar em rascunho ou o link foi alterado.
           </p>
           <Link
             to="/app/search"
-            className="mt-4 inline-flex h-11 items-center rounded-xl bg-primary px-4 text-xs font-black text-white"
+            className="mt-4 inline-flex h-11 items-center rounded-[16px] bg-primary px-4 text-xs font-black text-white shadow-[0_16px_35px_rgba(0,76,255,0.2)]"
           >
             Buscar profissionais
           </Link>
@@ -139,9 +139,9 @@ function PublicProfessionalPage() {
   const canBook = Boolean(selectedService && selectedSlot);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-8">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(0,76,255,0.16),_transparent_32%),linear-gradient(180deg,_#f8faff_0%,_#f2f6ff_100%)] pb-8">
       <header
-        className="relative overflow-hidden bg-gradient-to-br from-blue-700 to-blue-950 px-5 pb-20 pt-6 text-white"
+        className="relative overflow-hidden bg-[linear-gradient(145deg,_#004cff_0%,_#001f7a_100%)] px-5 pb-20 pt-6 text-white"
         style={
           profile.coverUrl
             ? {
@@ -156,7 +156,7 @@ function PublicProfessionalPage() {
           <strong className="text-xl tracking-tight">ELLO Link</strong>
           <button
             onClick={handleShare}
-            className="grid size-10 place-items-center rounded-full bg-white/15"
+            className="grid size-10 place-items-center rounded-full bg-white/15 backdrop-blur"
             aria-label="Compartilhar ELLO Link"
           >
             <Share2 className="size-4" />
@@ -165,7 +165,7 @@ function PublicProfessionalPage() {
       </header>
 
       <main className="mx-auto -mt-14 max-w-md space-y-4 px-4">
-        <section className="rounded-3xl border border-border bg-white p-4 shadow-sm">
+        <section className="rounded-[32px] border border-border/70 bg-white/85 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl">
           <div className="flex items-start gap-3">
             <ProPhoto initials={profile.initials} imageUrl={profile.avatarUrl} size={82} />
             <div className="min-w-0 flex-1">
@@ -186,7 +186,7 @@ function PublicProfessionalPage() {
         </section>
 
         {profile.couponCode ? (
-          <section className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
+          <section className="rounded-[28px] border border-blue-100 bg-blue-50/90 p-4 shadow-sm">
             <p className="flex items-center gap-2 text-sm font-black text-blue-900">
               <Sparkles className="size-4" />
               Cupom {profile.couponCode}
@@ -197,7 +197,7 @@ function PublicProfessionalPage() {
           </section>
         ) : null}
 
-        <section className="rounded-3xl border border-border bg-white p-4">
+        <section className="rounded-[28px] border border-border/70 bg-white/85 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur-xl">
           <h2 className="text-base font-black">Escolha um serviço</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             O agendamento só libera depois que um serviço for selecionado.
@@ -214,14 +214,14 @@ function PublicProfessionalPage() {
                 />
               ))
             ) : (
-              <p className="rounded-2xl bg-secondary p-4 text-sm text-muted-foreground">
+              <p className="rounded-[20px] bg-secondary/80 p-4 text-sm text-muted-foreground">
                 Este profissional ainda está configurando os serviços do ELLO Link.
               </p>
             )}
           </div>
         </section>
 
-        <section className="rounded-3xl border border-border bg-white p-4">
+        <section className="rounded-[28px] border border-border/70 bg-white/85 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur-xl">
           <h2 className="text-base font-black">Agenda disponível</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Escolha um horário para solicitar o agendamento rápido.
@@ -232,9 +232,9 @@ function PublicProfessionalPage() {
                 key={slot.value}
                 type="button"
                 onClick={() => setSelectedSlot(slot.value)}
-                className={`rounded-2xl border p-3 text-left ${
+                className={`rounded-[20px] border p-3 text-left ${
                   selectedSlot === slot.value
-                    ? "border-primary bg-primary text-white"
+                    ? "border-primary bg-primary text-white shadow-[0_12px_30px_rgba(0,76,255,0.2)]"
                     : "border-border bg-white"
                 }`}
               >
@@ -251,7 +251,7 @@ function PublicProfessionalPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-border bg-white p-4">
+        <section className="rounded-[28px] border border-border/70 bg-white/85 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur-xl">
           <h2 className="text-base font-black">Fale direto com o profissional</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             O WhatsApp já abre com a mensagem pronta configurada pelo profissional.
@@ -261,7 +261,7 @@ function PublicProfessionalPage() {
             target="_blank"
             rel="noreferrer"
             aria-disabled={!profile.whatsappUrl}
-            className="mt-4 flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white aria-disabled:pointer-events-none aria-disabled:opacity-50"
+            className="mt-4 flex h-12 items-center justify-center gap-2 rounded-[18px] bg-emerald-600 text-sm font-black text-white shadow-[0_16px_35px_rgba(5,136,63,0.2)] aria-disabled:pointer-events-none aria-disabled:opacity-50"
           >
             <MessageCircle className="size-4" />
             Tirar dúvida no WhatsApp
@@ -269,7 +269,7 @@ function PublicProfessionalPage() {
         </section>
 
         {qrCodeUrl ? (
-          <section className="rounded-3xl border border-border bg-white p-4">
+          <section className="rounded-[28px] border border-border/70 bg-white/85 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur-xl">
             <h2 className="flex items-center gap-2 text-base font-black">
               <QrCode className="size-4 text-primary" />
               QR Code do ELLO Link
@@ -278,7 +278,7 @@ function PublicProfessionalPage() {
               onClick={() =>
                 void recordElloLinkEvent({ professionalId: profile.id, eventType: "qr_view" })
               }
-              className="mt-3 grid w-full place-items-center rounded-2xl bg-secondary p-4"
+              className="mt-3 grid w-full place-items-center rounded-[22px] bg-secondary/80 p-4"
             >
               <img src={qrCodeUrl} alt={`QR Code de ${profile.name}`} className="size-40" />
             </button>
@@ -286,12 +286,12 @@ function PublicProfessionalPage() {
         ) : null}
 
         {bookingMutation.error ? (
-          <p className="rounded-2xl bg-red-50 px-4 py-3 text-xs font-bold text-red-700">
+          <p className="rounded-[20px] bg-red-50 px-4 py-3 text-xs font-bold text-red-700">
             {bookingMutation.error.message}
           </p>
         ) : null}
 
-        <div className="sticky bottom-4 space-y-2 rounded-3xl border border-border bg-white p-3 shadow-xl">
+        <div className="sticky bottom-4 space-y-2 rounded-[28px] border border-border/70 bg-white/90 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.16)] backdrop-blur-xl">
           {!configured ? (
             <p className="text-center text-xs font-semibold text-muted-foreground">
               Configure o Supabase para concluir agendamentos reais.
@@ -300,7 +300,7 @@ function PublicProfessionalPage() {
           <button
             disabled={!canBook || !configured || bookingMutation.isPending}
             onClick={handleBookingClick}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-black text-white disabled:bg-muted disabled:text-muted-foreground"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[18px] bg-primary text-sm font-black text-white shadow-[0_16px_35px_rgba(0,76,255,0.2)] disabled:bg-muted disabled:text-muted-foreground"
           >
             <CheckCircle2 className="size-4" />
             {user ? "Agendar agora" : "Criar conta rápida e agendar"}
@@ -326,7 +326,7 @@ function ServiceOption({
     <button
       type="button"
       onClick={onSelect}
-      className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left ${
+      className={`flex w-full items-center gap-3 rounded-[22px] border p-3 text-left ${
         selected ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border"
       }`}
     >
@@ -347,7 +347,7 @@ function ServiceOption({
 
 function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-secondary p-2 text-center">
+    <div className="rounded-[18px] bg-secondary/80 p-2 text-center">
       <p className="flex items-center justify-center gap-1 text-sm font-black">
         {label === "Avaliação" ? <Star className="size-3.5 fill-primary text-primary" /> : null}
         {value}

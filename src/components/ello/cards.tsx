@@ -11,7 +11,7 @@ export function ProfessionalMiniCard({ professional }: { professional: Professio
     <Link
       to="/app/professional/$id"
       params={{ id: professional.id }}
-      className="btn-tactile w-[8.2rem] shrink-0 rounded-[24px] border border-slate-100 bg-white p-3.5 shadow-[0_12px_28px_-8px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-6px_rgba(15,23,42,0.1)] transition-all duration-300 flex flex-col items-center text-center"
+      className="btn-tactile premium-card flex w-[8.5rem] shrink-0 flex-col items-center rounded-[1.5rem] p-3.5 text-center transition-all duration-300 hover:-translate-y-0.5"
     >
       <div className="relative">
         <AvatarPhoto imageUrl={professional.avatarUrl} initials={professional.initials} size={64} />
@@ -25,7 +25,7 @@ export function ProfessionalMiniCard({ professional }: { professional: Professio
       <p className="mt-0.5 line-clamp-1 text-[10px] font-semibold text-muted-foreground">
         {professional.profession}
       </p>
-      <div className="mt-2.5 flex items-center justify-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded-full">
+      <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-full bg-slate-50/90 px-2 py-0.5">
         <Rating value={professional.rating} />
       </div>
     </Link>
@@ -44,7 +44,7 @@ export function ProfessionalListRow({
   professional: Professional;
 }) {
   return (
-    <div className="group flex items-center gap-4 rounded-3xl border border-transparent p-3 -mx-3 hover:bg-slate-50/50 hover:border-slate-100/50 transition-all duration-300">
+    <div className="group -mx-3 flex items-center gap-4 rounded-[24px] border border-transparent p-3 transition-all duration-300 hover:border-white/80 hover:bg-white/80 hover:shadow-[0_16px_40px_-24px_rgba(15,23,42,0.25)]">
       <div className="relative shrink-0">
         <AvatarPhoto imageUrl={professional.avatarUrl} initials={professional.initials} size={58} />
         {professional.available === "yes" && (
@@ -90,7 +90,7 @@ export function ServiceCategoryCard({
 }) {
   return (
     <Link to={to} className="btn-tactile flex flex-col items-center gap-2 text-center group">
-      <span className="grid size-12 place-items-center rounded-2xl border border-slate-100/60 bg-white text-primary shadow-[0_8px_20px_-4px_rgba(15,23,42,0.05)] group-hover:scale-110 group-hover:shadow-[0_12px_24px_-6px_rgba(15,23,42,0.1)] group-hover:text-[#0052ff] transition-all duration-300">
+      <span className="grid size-[3.25rem] place-items-center rounded-[1.125rem] border border-white/80 bg-white text-primary shadow-[var(--ello-shadow-sm)] transition-all duration-300 group-hover:scale-105 group-hover:border-primary/25 group-hover:shadow-[var(--ello-shadow-md)]">
         {icon}
       </span>
       <span className="text-[10px] font-extrabold text-foreground/75 tracking-tight group-hover:text-primary transition-colors">{label}</span>
@@ -102,7 +102,7 @@ export function ListRow({ children, to }: { children: React.ReactNode; to: strin
   return (
     <Link
       to={to}
-      className="btn-tactile flex items-center justify-between rounded-[24px] border border-slate-100 bg-white p-4 shadow-[0_8px_20px_-4px_rgba(15,23,42,0.04)] hover:shadow-[0_12px_28px_-6px_rgba(15,23,42,0.08)] transition-all duration-300"
+      className="btn-tactile premium-card flex items-center justify-between rounded-[24px] p-4 transition-all duration-300 hover:shadow-[0_18px_40px_-18px_rgba(15,23,42,0.24)]"
     >
       <div className="flex-1 min-w-0 pr-4">{children}</div>
       <ChevronRight className="size-5 text-muted-foreground/60 shrink-0" />

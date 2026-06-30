@@ -69,20 +69,30 @@
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.16 0.045 264);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.16 0.045 264);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0.045 264);
-  --primary: oklch(0.52 0.27 263);
+  --radius: 0.8rem;
+
+  /* ELLO brand palette */
+  --ello-navy: oklch(0.22 0.06 264);
+  --ello-electric: oklch(0.56 0.24 264);
+  --ello-electric-bright: oklch(0.62 0.22 250);
+  --ello-violet: oklch(0.58 0.22 285);
+  --ello-mint: oklch(0.68 0.16 155);
+  --ello-gold: oklch(0.78 0.14 75);
+  --ello-surface-glow: oklch(0.56 0.24 264 / 0.08);
+
+  --background: oklch(0.975 0.012 255);
+  --foreground: oklch(0.19 0.035 262);
+  --card: oklch(0.995 0.006 255);
+  --card-foreground: oklch(0.19 0.035 262);
+  --popover: oklch(0.995 0.006 255);
+  --popover-foreground: oklch(0.19 0.035 262);
+  --primary: var(--ello-electric);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.975 0.008 255);
-  --secondary-foreground: oklch(0.2 0.04 264);
-  --muted: oklch(0.97 0.008 255);
-  --muted-foreground: oklch(0.5 0.025 264);
-  --accent: oklch(0.52 0.27 263);
+  --secondary: oklch(0.97 0.01 255);
+  --secondary-foreground: oklch(0.22 0.04 264);
+  --muted: oklch(0.965 0.008 255);
+  --muted-foreground: oklch(0.48 0.028 264);
+  --accent: oklch(0.54 0.26 263);
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.55 0.22 28);
   --destructive-foreground: oklch(1 0 0);
@@ -90,9 +100,9 @@
   --success-foreground: oklch(1 0 0);
   --warning: oklch(0.78 0.16 75);
   --warning-foreground: oklch(0.24 0.055 63);
-  --border: oklch(0.9 0.012 255);
-  --input: oklch(0.9 0.012 255);
-  --ring: oklch(0.52 0.27 263);
+  --border: oklch(0.91 0.014 255);
+  --input: oklch(0.91 0.014 255);
+  --ring: oklch(0.54 0.26 263);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -116,12 +126,47 @@
   body {
     min-width: 320px;
     min-height: 100dvh;
-    background: #090d16; /* Deep midnight background for desktop preview */
+    background: var(--ello-mesh-bg);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
+  }
+
+  /* ── ELLO mesh & screen backgrounds ── */
+  :root {
+    --ello-mesh-bg:
+      radial-gradient(ellipse 80% 50% at 0% -10%, oklch(0.62 0.22 250 / 0.12), transparent 55%),
+      radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.58 0.22 285 / 0.08), transparent 50%),
+      linear-gradient(180deg, oklch(0.98 0.01 255) 0%, oklch(0.965 0.012 258) 100%);
+    --ello-mesh-dark:
+      radial-gradient(ellipse 70% 45% at 10% 0%, oklch(0.35 0.12 264 / 0.55), transparent 55%),
+      radial-gradient(ellipse 50% 35% at 90% 10%, oklch(0.42 0.14 285 / 0.35), transparent 50%),
+      linear-gradient(160deg, oklch(0.14 0.04 264) 0%, oklch(0.18 0.05 270) 50%, oklch(0.15 0.045 258) 100%);
+    --ello-shadow-sm: 0 8px 24px -12px oklch(0.22 0.04 264 / 0.18);
+    --ello-shadow-md: 0 18px 48px -20px oklch(0.22 0.04 264 / 0.22);
+    --ello-shadow-lg: 0 28px 70px -28px oklch(0.22 0.04 264 / 0.28);
+    --ello-shadow-glow: 0 16px 40px -8px oklch(0.56 0.24 264 / 0.32);
+  }
+
+  .ello-mesh-bg {
+    background: var(--ello-mesh-bg);
+  }
+
+  .ello-mesh-dark {
+    background: var(--ello-mesh-dark);
+  }
+
+  .ello-noise-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
   }
 
   .font-display {
@@ -138,6 +183,523 @@
   }
   .no-scrollbar {
     scrollbar-width: none;
+  }
+
+  .glass-panel {
+    background: linear-gradient(145deg, oklch(1 0 0 / 0.94) 0%, oklch(0.98 0.01 255 / 0.88) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid oklch(1 0 0 / 0.72);
+    box-shadow: var(--ello-shadow-md);
+  }
+
+  .soft-card {
+    border: 1px solid oklch(1 0 0 / 0.78);
+    background: oklch(1 0 0 / 0.88);
+    box-shadow: var(--ello-shadow-md);
+  }
+
+  .premium-surface {
+    border: 1px solid oklch(1 0 0 / 0.75);
+    background: linear-gradient(145deg, oklch(1 0 0 / 0.96) 0%, oklch(0.98 0.01 255 / 0.9) 100%);
+    box-shadow: var(--ello-shadow-md);
+  }
+
+  .premium-card {
+    border: 1px solid oklch(1 0 0 / 0.82);
+    background: oklch(1 0 0 / 0.92);
+    box-shadow: var(--ello-shadow-sm);
+    transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .premium-card:hover {
+    box-shadow: var(--ello-shadow-md);
+  }
+
+  .surface-pill {
+    border: 1px solid oklch(1 0 0 / 0.65);
+    background: oklch(1 0 0 / 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--ello-shadow-sm);
+  }
+
+  /* ── ELLO surfaces ── */
+  .ello-surface {
+    border: 1px solid oklch(1 0 0 / 0.78);
+    background: linear-gradient(160deg, oklch(1 0 0 / 0.95) 0%, oklch(0.985 0.008 255 / 0.88) 100%);
+    border-radius: 1.5rem;
+    box-shadow: var(--ello-shadow-sm);
+  }
+
+  .ello-surface-elevated {
+    border: 1px solid oklch(1 0 0 / 0.82);
+    background: linear-gradient(160deg, oklch(1 0 0 / 0.98) 0%, oklch(0.98 0.01 255 / 0.92) 100%);
+    border-radius: 1.625rem;
+    box-shadow: var(--ello-shadow-md);
+  }
+
+  .ello-card {
+    border: 1px solid oklch(0.91 0.014 255 / 0.8);
+    background: oklch(1 0 0);
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px -6px oklch(0.22 0.04 264 / 0.1);
+  }
+
+  /* ── Typography ── */
+  .ello-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid oklch(0.56 0.24 264 / 0.15);
+    background: oklch(1 0 0 / 0.85);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: oklch(0.56 0.24 264 / 0.85);
+    box-shadow: 0 4px 12px -4px oklch(0.22 0.04 264 / 0.12);
+  }
+
+  .ello-eyebrow-dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    background: var(--ello-electric);
+    box-shadow: 0 0 8px oklch(0.56 0.24 264 / 0.5);
+  }
+
+  .ello-section-title {
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: var(--color-foreground);
+    line-height: 1.2;
+  }
+
+  .ello-section-subtitle {
+    margin-top: 0.125rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-muted-foreground);
+  }
+
+  .ello-link-action {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    transition: opacity 0.2s;
+  }
+
+  .ello-link-action:hover {
+    opacity: 0.75;
+  }
+
+  .ello-display {
+    font-size: 1.75rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    color: var(--color-foreground);
+  }
+
+  .ello-gradient-text {
+    background: linear-gradient(100deg, oklch(0.62 0.22 250) 0%, oklch(0.56 0.24 264) 45%, oklch(0.58 0.22 285) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ── Info banner ── */
+  .ello-info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    border-radius: 1.5rem;
+    border: 1px solid oklch(1 0 0 / 0.78);
+    background: oklch(1 0 0 / 0.82);
+    padding: 1rem;
+    box-shadow: var(--ello-shadow-sm);
+    backdrop-filter: blur(12px);
+  }
+
+  .ello-info-banner-icon {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 1rem;
+    background: oklch(0.56 0.24 264 / 0.1);
+    color: var(--color-primary);
+  }
+
+  .ello-info-banner-eyebrow {
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .ello-info-banner-title {
+    margin-top: 0.125rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-foreground);
+  }
+
+  .ello-info-banner-body {
+    margin-top: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.55;
+    color: var(--color-muted-foreground);
+  }
+
+  /* ── Buttons ── */
+  .ello-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 3.25rem;
+    width: 100%;
+    border-radius: 1.25rem;
+    background: linear-gradient(135deg, oklch(0.54 0.26 260) 0%, oklch(0.58 0.22 275) 100%);
+    font-size: 0.875rem;
+    font-weight: 800;
+    color: white;
+    box-shadow: var(--ello-shadow-glow);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+  }
+
+  .ello-btn-primary:hover:not(:disabled) {
+    box-shadow: 0 20px 48px -10px oklch(0.56 0.24 264 / 0.42);
+  }
+
+  .ello-btn-primary:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .ello-btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .ello-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 3rem;
+    width: 100%;
+    border-radius: 1.125rem;
+    border: 1px solid oklch(0.91 0.014 255);
+    background: oklch(1 0 0 / 0.92);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-foreground);
+    box-shadow: 0 8px 24px -12px oklch(0.22 0.04 264 / 0.14);
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .ello-btn-secondary:hover:not(:disabled) {
+    border-color: oklch(0.56 0.24 264 / 0.35);
+    transform: translateY(-1px);
+  }
+
+  .ello-btn-secondary:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  .ello-btn-ghost {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-muted-foreground);
+    transition: color 0.2s;
+  }
+
+  .ello-btn-ghost:hover {
+    color: var(--color-foreground);
+  }
+
+  .ello-action {
+    background: linear-gradient(135deg, oklch(0.54 0.26 260) 0%, oklch(0.58 0.22 275) 100%);
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 10px 28px -8px oklch(0.56 0.24 264 / 0.35);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .ello-action:active {
+    transform: scale(0.97);
+  }
+
+  .ello-textarea {
+    min-height: 6rem;
+    width: 100%;
+    resize: none;
+    border-radius: 1rem;
+    border: 1px solid oklch(0.91 0.014 255);
+    background: oklch(1 0 0 / 0.92);
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.55;
+    color: var(--color-foreground);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .ello-textarea:focus {
+    border-color: oklch(0.56 0.24 264 / 0.5);
+    box-shadow: 0 0 0 4px oklch(0.56 0.24 264 / 0.1);
+  }
+
+  .ello-field-label {
+    display: block;
+    margin-bottom: 0.625rem;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: var(--color-foreground);
+  }
+
+  .ello-skeleton {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    border-radius: 1rem;
+    background: var(--color-secondary);
+  }
+
+  .ello-input {
+    height: 3rem;
+    width: 100%;
+    border-radius: 1rem;
+    border: 1px solid oklch(0.91 0.014 255);
+    background: oklch(1 0 0 / 0.92);
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-foreground);
+    box-shadow: 0 8px 24px -14px oklch(0.22 0.04 264 / 0.16);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  }
+
+  .ello-input::placeholder {
+    color: oklch(0.48 0.028 264 / 0.65);
+    font-weight: 500;
+  }
+
+  .ello-input:focus {
+    border-color: oklch(0.56 0.24 264 / 0.5);
+    background: oklch(1 0 0);
+    box-shadow: 0 0 0 4px oklch(0.56 0.24 264 / 0.1), 0 8px 24px -14px oklch(0.22 0.04 264 / 0.16);
+  }
+
+  .ello-search-field {
+    position: relative;
+  }
+
+  .ello-search-field .ello-input {
+    height: 3rem;
+    padding-left: 3rem;
+    border-radius: 1.125rem;
+    border-color: oklch(1 0 0 / 0.78);
+    background: oklch(1 0 0 / 0.94);
+  }
+
+  .ello-search-field-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: oklch(0.56 0.24 264 / 0.7);
+    pointer-events: none;
+  }
+
+  .ello-search-ai-hint {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 9999px;
+    background: oklch(0.56 0.24 264 / 0.08);
+    padding: 0.2rem 0.5rem;
+    font-size: 0.5625rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: oklch(0.56 0.24 264 / 0.85);
+  }
+
+  /* ── Divider ── */
+  .ello-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-muted-foreground);
+  }
+
+  .ello-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+
+  .ello-divider-label {
+    flex-shrink: 0;
+  }
+
+  /* ── Navigation dock ── */
+  .ello-nav-dock {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 1rem;
+    right: 1rem;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    border-radius: 1.625rem;
+    border: 1px solid oklch(1 0 0 / 0.55);
+    background: oklch(1 0 0 / 0.78);
+    padding: 0.375rem 0.5rem;
+    box-shadow: 0 20px 50px -12px oklch(0.22 0.04 264 / 0.28), 0 0 0 1px oklch(1 0 0 / 0.4) inset;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+
+  .ello-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 1.125rem;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: oklch(0.48 0.028 264 / 0.85);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .ello-nav-item:hover {
+    color: var(--color-foreground);
+    background: oklch(0.97 0.01 255 / 0.6);
+  }
+
+  .ello-nav-item-active {
+    color: var(--color-primary);
+    background: oklch(0.56 0.24 264 / 0.1);
+    box-shadow: 0 8px 20px -10px oklch(0.56 0.24 264 / 0.45);
+    transform: scale(1.04);
+  }
+
+  /* ── Header bar ── */
+  .ello-header-bar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid oklch(0.91 0.014 255 / 0.7);
+    background: oklch(1 0 0 / 0.78);
+    padding: 0.875rem 1rem;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+
+  .ello-header-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    border: 1px solid oklch(0.91 0.014 255);
+    background: oklch(1 0 0 / 0.88);
+    padding: 0.5rem 0.875rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--color-foreground);
+    box-shadow: var(--ello-shadow-sm);
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .ello-header-pill:hover {
+    border-color: oklch(0.56 0.24 264 / 0.3);
+  }
+
+  .ello-icon-btn {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    border: 1px solid oklch(0.91 0.014 255);
+    background: oklch(1 0 0 / 0.88);
+    color: var(--color-foreground);
+    box-shadow: var(--ello-shadow-sm);
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .ello-icon-btn:hover {
+    border-color: oklch(0.56 0.24 264 / 0.3);
+  }
+
+  .ello-icon-btn-badge {
+    position: absolute;
+    right: 0.375rem;
+    top: 0.375rem;
+    display: grid;
+    min-width: 1rem;
+    height: 1rem;
+    place-items: center;
+    border-radius: 9999px;
+    background: var(--color-primary);
+    padding: 0 0.25rem;
+    font-size: 0.5625rem;
+    font-weight: 900;
+    color: white;
+    ring: 2px solid white;
+    box-shadow: 0 0 0 2px white;
+  }
+
+  /* ── Trust badge ── */
+  .ello-trust-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 9999px;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  .ello-trust-bronze { background: oklch(0.88 0.06 65 / 0.25); color: oklch(0.45 0.08 55); }
+  .ello-trust-silver { background: oklch(0.88 0.01 255 / 0.5); color: oklch(0.42 0.02 255); }
+  .ello-trust-gold { background: oklch(0.88 0.12 85 / 0.3); color: oklch(0.48 0.1 75); }
+  .ello-trust-diamond { background: oklch(0.88 0.08 230 / 0.3); color: oklch(0.42 0.1 250); }
+  .ello-trust-elite { background: oklch(0.56 0.24 264 / 0.12); color: oklch(0.42 0.14 264); }
+
+  .apple-gradient {
+    background: linear-gradient(135deg, oklch(0.54 0.26 260) 0%, oklch(0.6 0.22 255) 40%, oklch(0.58 0.22 285) 100%);
+  }
+
+  .apple-text-gradient {
+    background: linear-gradient(100deg, oklch(0.62 0.22 250) 0%, oklch(0.58 0.24 264) 55%, oklch(0.6 0.2 285) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   /* Mobile-first by default: full bleed screen */
@@ -242,11 +804,15 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      background: var(--color-background);
+      background: var(--ello-mesh-bg);
       border-radius: 42px;
       overflow: hidden;
       width: 100%;
       height: 100%;
+    }
+
+    .phone-screen-content-scroll {
+      background: var(--ello-mesh-bg);
     }
 
     .phone-dynamic-island {
@@ -338,13 +904,6 @@
   }
 
   /* Frosted Glass UI elements */
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(14px) saturate(190%);
-    -webkit-backdrop-filter: blur(14px) saturate(190%);
-    border: 1px solid rgba(255, 255, 255, 0.45);
-  }
-
   .glass-panel-dark {
     background: rgba(15, 23, 42, 0.7);
     backdrop-filter: blur(14px);

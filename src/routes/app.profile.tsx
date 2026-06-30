@@ -16,7 +16,10 @@ import {
   UserRoundCog,
   WalletCards,
 } from "lucide-react";
+import { PrimaryButton } from "@/components/ello/actions";
 import { AvatarPhoto } from "@/components/ello/media";
+import { ElloInfoBanner, ElloSurface } from "@/components/ello/primitives";
+import { ScreenMain, ScreenPage } from "@/components/ello/screen-layout";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   getMyClientProfile,
@@ -76,12 +79,7 @@ function ProfileScreen() {
         avatarFile,
         avatarUrl: profile?.avatar_url ?? null,
       });
-      await updateMyClientProfile({
-        userId: user.id,
-        city,
-        region,
-        interests,
-      });
+      await updateMyClientProfile({ userId: user.id, city, region, interests });
     },
     onSuccess: async () => {
       setAvatarFile(null);
@@ -99,25 +97,25 @@ function ProfileScreen() {
   const initials = initialsFor(displayName);
 
   return (
-    <div className="min-h-dvh bg-white pb-24">
-      <header className="flex items-center justify-between px-5 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
-        <h1 className="text-xl font-black">Meu perfil</h1>
+    <ScreenPage>
+      <header className="ello-header-bar !static flex items-center justify-between pt-[calc(0.25rem+env(safe-area-inset-top))]">
+        <h1 className="text-xl font-black tracking-[-0.03em]">Meu perfil</h1>
         <button
           type="button"
           onClick={() => setEditing((value) => !value)}
-          className="text-sm font-bold text-primary"
+          className="ello-header-pill btn-tactile text-sm font-bold text-primary"
         >
           {editing ? "Cancelar" : "Editar"}
         </button>
       </header>
 
-      <main className="px-5">
-        <section className="flex flex-col items-center border-b border-border pb-6 text-center">
-          <label className="relative">
+      <ScreenMain>
+        <ElloSurface elevated className="p-5 text-center">
+          <label className="relative inline-flex cursor-pointer">
             <AvatarPhoto imageUrl={previewUrl} initials={initials} size={88} />
             {editing ? (
               <>
-                <span className="absolute bottom-0 right-0 grid size-8 place-items-center rounded-full bg-primary text-white ring-2 ring-white">
+                <span className="absolute bottom-0 right-0 grid size-8 place-items-center rounded-full bg-primary text-white ring-2 ring-white shadow-[var(--ello-shadow-sm)]">
                   <Camera className="size-4" />
                 </span>
                 <input
@@ -130,75 +128,65 @@ function ProfileScreen() {
             ) : null}
           </label>
           <h2 className="mt-4 text-lg font-black">{displayName}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {user?.email ?? "Conta não conectada"}
-          </p>
-          <span className="mt-3 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+          <p className="mt-1 text-sm text-muted-foreground">{user?.email ?? "Conta não conectada"}</p>
+          <span className="mt-3 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
             {profile?.role === "professional" ? "Modo profissional" : "Modo cliente"}
           </span>
-        </section>
+        </ElloSurface>
 
         {editing ? (
-          <section className="space-y-4 border-b border-border py-6">
+          <ElloSurface className="space-y-4 p-4">
             <ProfileField label="Nome" value={fullName} onChange={setFullName} />
             <ProfileField label="Cidade" value={city} onChange={setCity} />
             <ProfileField label="Região" value={region} onChange={setRegion} />
             <label className="block">
-              <span className="text-sm font-black">Interesses</span>
+              <span className="ello-field-label">Interesses</span>
               <textarea
                 value={interests}
                 onChange={(event) => setInterests(event.target.value)}
-                className="mt-2 min-h-24 w-full resize-none rounded-xl border border-border p-3 text-sm outline-none focus:border-primary"
+                className="ello-textarea"
               />
             </label>
             {mutation.error ? (
-              <p className="rounded-xl bg-destructive/10 p-3 text-xs font-semibold text-destructive">
+              <p className="rounded-[1rem] bg-destructive/10 p-3 text-xs font-semibold text-destructive">
                 {mutation.error.message}
               </p>
             ) : null}
-            <button
+            <PrimaryButton
               disabled={
-                !configured ||
-                !user ||
-                loading ||
-                mutation.isPending ||
-                !fullName.trim() ||
-                !city.trim()
+                !configured || !user || loading || mutation.isPending || !fullName.trim() || !city.trim()
               }
               onClick={() => mutation.mutate()}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-45"
+              className="!h-12"
             >
               <Save className="size-4" />
               {mutation.isPending ? "Salvando..." : "Salvar alterações"}
-            </button>
-          </section>
+            </PrimaryButton>
+          </ElloSurface>
         ) : null}
 
-        <section className="divide-y divide-border py-3">
-          {MENU.map((item) => (
-            <MenuLink key={item.label} {...item} />
-          ))}
-          <MenuLink icon={WalletCards} label="Carteira ELLO" to="/app/wallet" />
-          <MenuLink icon={UserRoundCog} label="Alternar modo" to="/role" />
-          <MenuLink icon={Settings} label="Configurações" to="/app/settings" />
-        </section>
-
-        <section className="rounded-2xl bg-secondary p-4">
-          <div className="flex items-start gap-3">
-            <WalletCards className="mt-0.5 size-5 text-primary" />
-            <div>
-              <h2 className="text-sm font-black">Pagamentos em preparação</h2>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                A Carteira ELLO será ativada quando o gateway de pagamentos for conectado.
-              </p>
-            </div>
+        <ElloSurface className="overflow-hidden">
+          <div className="divide-y divide-border/60 px-4">
+            {MENU.map((item) => (
+              <MenuLink key={item.label} {...item} />
+            ))}
+            <MenuLink icon={WalletCards} label="Carteira ELLO" to="/app/wallet" />
+            <MenuLink icon={UserRoundCog} label="Alternar modo" to="/role" />
+            <MenuLink icon={Settings} label="Configurações" to="/app/settings" />
           </div>
-        </section>
+        </ElloSurface>
+
+        <ElloInfoBanner
+          icon={<WalletCards className="size-5" />}
+          eyebrow="Em breve"
+          title="Pagamentos"
+          body="A Carteira ELLO será ativada quando o gateway de pagamentos for conectado."
+        />
 
         {profile?.role === "admin" ? (
           <Link
             to="/app/admin"
-            className="mt-4 flex items-center gap-3 rounded-2xl border border-border p-4"
+            className="premium-card flex items-center gap-3 rounded-[1.25rem] p-4"
           >
             <ShieldCheck className="size-5 text-primary" />
             <span className="flex-1 text-sm font-bold">Painel administrativo</span>
@@ -206,18 +194,18 @@ function ProfileScreen() {
           </Link>
         ) : null}
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <button className="flex items-center justify-center gap-2 rounded-xl border border-border py-3 text-xs font-bold">
+        <div className="grid grid-cols-2 gap-3">
+          <button type="button" className="ello-btn-secondary !h-11 text-xs">
             <LockKeyhole className="size-4" />
             Privacidade
           </button>
-          <button className="flex items-center justify-center gap-2 rounded-xl border border-border py-3 text-xs font-bold">
+          <button type="button" className="ello-btn-secondary !h-11 text-xs">
             <CircleHelp className="size-4" />
             Ajuda
           </button>
         </div>
-      </main>
-    </div>
+      </ScreenMain>
+    </ScreenPage>
   );
 }
 
@@ -232,22 +220,18 @@ function ProfileField({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-black">{label}</span>
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="mt-2 h-12 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-primary"
-      />
+      <span className="ello-field-label">{label}</span>
+      <input value={value} onChange={(event) => onChange(event.target.value)} className="ello-input" />
     </label>
   );
 }
 
 function MenuLink({ icon: Icon, label, to }: { icon: typeof Heart; label: string; to: string }) {
   return (
-    <Link to={to} className="flex items-center gap-3 py-4">
-      <Icon className="size-5 text-foreground/80" />
+    <Link to={to} className="flex items-center gap-3 py-4 transition-colors hover:text-primary">
+      <Icon className="size-5 text-foreground/75" />
       <span className="flex-1 text-sm font-semibold">{label}</span>
-      <ChevronRight className="size-5 text-muted-foreground" />
+      <ChevronRight className="size-5 text-muted-foreground/60" />
     </Link>
   );
 }

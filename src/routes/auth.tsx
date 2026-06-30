@@ -2,7 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { Apple, Mail, Phone } from "lucide-react";
+import { Apple, Mail, Phone, ShieldCheck } from "lucide-react";
+import { ElloDivider, ElloEyebrow, ElloInfoBanner } from "@/components/ello/primitives";
+import { PrimaryButton } from "@/components/ello/actions";
 import { ElloLogo } from "@/components/ello/logo";
 import { useAuth } from "@/lib/auth/auth-context";
 import { createConfirmedPasswordAccount } from "@/lib/auth/auth.functions";
@@ -243,21 +245,22 @@ function Auth() {
   const phoneAvailable = Boolean(providerAvailability?.phone);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[393px] flex-col bg-white px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(4.6rem+env(safe-area-inset-top))]">
+    <main className="ello-mesh-bg flex min-h-dvh items-center justify-center px-4 py-6">
+      <div className="glass-panel w-full max-w-[393px] rounded-[2.125rem] p-6">
       <section className="flex flex-col items-center text-center">
-        <ElloLogo className="text-[1.9rem]" />
-        <h1 className="mt-9 text-[1.52rem] font-black tracking-[-0.035em] text-foreground">
+        <div className="rounded-full border border-slate-200/80 bg-white/80 p-3 shadow-[0_10px_30px_-16px_rgba(15,23,42,0.35)]">
+          <ElloLogo className="text-[1.9rem]" />
+        </div>
+        <div className="mt-4">
+          <ElloEyebrow>Acesso seguro</ElloEyebrow>
+        </div>
+        <h1 className="mt-8 text-[1.52rem] font-black tracking-[-0.035em] text-foreground">
           Bem-vindo(a)!
         </h1>
-<<<<<<< HEAD
         <p className="mt-3 max-w-[17rem] text-[0.98rem] leading-relaxed text-muted-foreground">
-          Entre ou crie sua conta para continuar na ELLO.
-=======
-        <p className="mt-2 text-sm text-muted-foreground">
           {mode === "sign-in"
             ? "Acesse sua conta e continue sua operação ELLO."
             : "Crie sua conta e transforme seu perfil em uma presença profissional completa."}
->>>>>>> 3fc0f0d (Refine ELLO positioning across onboarding and home)
         </p>
       </section>
 
@@ -267,7 +270,14 @@ function Auth() {
         </div>
       ) : null}
 
-      <section className="mt-9 space-y-3">
+      <ElloInfoBanner
+        className="mt-7"
+        icon={<ShieldCheck className="size-5" />}
+        eyebrow="Sua conta, em poucos toques"
+        body="Entre rápido, siga com segurança e continue exatamente de onde parou."
+      />
+
+      <section className="mt-6 space-y-3">
         <ProviderButton
           disabled={
             !configured || !providerStatusLoaded || !googleAvailable || submittingProvider !== null
@@ -404,11 +414,7 @@ function Auth() {
         </p>
       ) : null}
 
-      <div className="my-8 flex items-center gap-4 text-xs font-medium text-muted-foreground">
-        <span className="h-px flex-1 bg-border" />
-        ou
-        <span className="h-px flex-1 bg-border" />
-      </div>
+      <ElloDivider className="my-8" />
 
       <button type="button" onClick={toggleMode} className="text-sm font-semibold text-foreground">
         {mode === "sign-in" ? (
@@ -427,6 +433,7 @@ function Auth() {
         <span className="font-semibold text-primary">Termos de uso</span> e{" "}
         <span className="font-semibold text-primary">Política de privacidade</span>.
       </p>
+      </div>
     </main>
   );
 }
@@ -447,7 +454,7 @@ function ProviderButton({
       type="button"
       aria-disabled={disabled}
       onClick={disabled ? undefined : onClick}
-      className="flex h-13 w-full items-center gap-4 rounded-2xl border border-border bg-white px-5 text-sm font-bold text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.055)] transition active:scale-[0.99] aria-disabled:cursor-not-allowed aria-disabled:opacity-55"
+      className="ello-btn-secondary btn-tactile flex !h-[3.25rem] items-center gap-4 !rounded-[1.25rem] px-5 text-sm aria-disabled:cursor-not-allowed aria-disabled:opacity-55"
     >
       <span className="grid size-6 place-items-center">{icon}</span>
       <span className="flex-1 text-center">{label}</span>
@@ -466,19 +473,8 @@ function AuthInput({
     <input
       {...props}
       onChange={(event) => onChange(event.target.value)}
-      className="h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm font-semibold outline-none transition placeholder:text-muted-foreground/65 focus:border-primary focus:ring-4 focus:ring-primary/10"
+      className="ello-input"
     />
-  );
-}
-
-function PrimaryButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
-  return (
-    <button
-      disabled={disabled}
-      className="h-12 w-full rounded-2xl bg-primary text-sm font-bold text-white shadow-[0_16px_32px_rgba(0,58,255,0.18)] transition active:scale-[0.99] disabled:opacity-60"
-    >
-      {children}
-    </button>
   );
 }
 

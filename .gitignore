@@ -7,6 +7,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dev server / preview logs (transient)
+.dev-*.log
+.preview-*.log
+
 node_modules
 dist
 dist-ssr
@@ -39,3 +43,14 @@ ello-frontend/
 *.sw?
 .vercel
 .worktrees/
+
+# Playwright CLI scratch (transient test artifacts)
+.playwright-cli/
+
+# Personal Obsidian vault (not part of the project)
+ello/
+
+# OS / editor scratch
+Thumbs.db
+ehthumbs.db
+desktop.ini

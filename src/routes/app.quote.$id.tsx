@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft, Star } from "lucide-react";
+import { Star } from "lucide-react";
+import { PrimaryButton, SecondaryButton } from "@/components/ello/actions";
 import { AvatarPhoto } from "@/components/ello/media";
+import { ElloSurface } from "@/components/ello/primitives";
+import { ScreenHeader, ScreenMain, ScreenPage } from "@/components/ello/screen-layout";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getAuthorizedQuoteDetail, updateClientQuoteStatus } from "@/lib/ello-repository";
 
@@ -47,22 +50,15 @@ function QuoteDetailScreen() {
     return <CenteredMessage>Orçamento não encontrado ou sem permissão de acesso.</CenteredMessage>;
 
   return (
-    <div className="min-h-dvh bg-white">
-      <header className="flex items-center border-b border-border px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
-        <Link
-          to="/app/messages"
-          search={{ quote: id }}
-          aria-label="Voltar"
-          className="grid size-10 place-items-center"
-        >
-          <ChevronLeft className="size-6" />
-        </Link>
-        <h1 className="flex-1 text-center text-base font-black">Orçamento recebido</h1>
-        <span className="size-10" />
-      </header>
+    <ScreenPage className="!pb-28">
+      <ScreenHeader
+        title="Orçamento recebido"
+        subtitle="Revise e responda"
+        backTo="/app/messages"
+      />
 
-      <main className="px-5 py-6">
-        <section className="flex items-center gap-3 border-b border-border pb-5">
+      <ScreenMain>
+        <ElloSurface className="flex items-center gap-3 p-4">
           <AvatarPhoto
             imageUrl={quote.professionalAvatarUrl}
             initials={initialsFor(quote.professionalName)}
@@ -72,46 +68,48 @@ function QuoteDetailScreen() {
             <h2 className="text-base font-black">{quote.professionalName}</h2>
             <div className="mt-1 flex items-center gap-1 text-sm">
               <strong>4,9</strong>
-              <Star className="size-4 fill-amber-400 text-amber-400" />
+              <Star className="size-4 fill-[oklch(0.78_0.14_75)] text-[oklch(0.78_0.14_75)]" />
               <span className="text-muted-foreground">profissional ELLO</span>
             </div>
           </div>
-        </section>
+        </ElloSurface>
 
-        <dl className="divide-y divide-border">
+        <ElloSurface className="divide-y divide-border/60 px-4">
           <QuoteRow label="Serviço" value={quote.serviceTitle} />
           <QuoteRow label="Valor" value={quote.responsePrice ?? "A combinar"} large />
           <QuoteRow label="Prazo" value={quote.responseEta ?? "A combinar"} large />
           <QuoteRow label="Descrição" value={quote.responseMessage ?? quote.description} />
           <QuoteRow label="Local" value={quote.location} />
-        </dl>
+        </ElloSurface>
 
         {statusMutation.error ? (
-          <p className="mt-5 rounded-xl bg-destructive/10 p-3 text-xs font-semibold text-destructive">
+          <p className="rounded-[1rem] bg-destructive/10 p-3 text-xs font-semibold text-destructive">
             {statusMutation.error.message}
           </p>
         ) : null}
-      </main>
+      </ScreenMain>
 
       {!quote.professionalView && quote.status === "quoted" ? (
-        <div className="fixed bottom-0 left-1/2 grid w-full max-w-[393px] -translate-x-1/2 grid-cols-2 gap-3 border-t border-border bg-white px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4">
-          <button
+        <div className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[393px] -translate-x-1/2 grid-cols-2 gap-3 border-t border-border/60 bg-white/90 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 backdrop-blur-xl">
+          <SecondaryButton
+            type="button"
             onClick={() => statusMutation.mutate("declined")}
             disabled={statusMutation.isPending}
-            className="h-12 rounded-xl border border-border text-sm font-bold"
+            className="!h-12"
           >
             Recusar
-          </button>
+          </SecondaryButton>
           <button
+            type="button"
             onClick={() => statusMutation.mutate("accepted")}
             disabled={statusMutation.isPending}
-            className="h-12 rounded-xl bg-emerald-600 text-sm font-bold text-white"
+            className="ello-btn-primary btn-tactile !h-12 !bg-gradient-to-r !from-emerald-600 !to-emerald-500"
           >
             Aceitar orçamento
           </button>
         </div>
       ) : null}
-    </div>
+    </ScreenPage>
   );
 }
 
@@ -127,7 +125,7 @@ function QuoteRow({
   return (
     <div className="py-5">
       <dt className="text-sm font-black">{label}</dt>
-      <dd className={`mt-2 leading-relaxed ${large ? "text-xl font-black" : "text-sm"}`}>
+      <dd className={`mt-2 leading-relaxed ${large ? "text-xl font-black" : "text-sm text-muted-foreground"}`}>
         {value}
       </dd>
     </div>
@@ -136,9 +134,9 @@ function QuoteRow({
 
 function CenteredMessage({ children }: { children: string }) {
   return (
-    <div className="grid min-h-dvh place-items-center bg-white px-8 text-center text-sm font-semibold text-muted-foreground">
-      {children}
-    </div>
+    <ScreenPage className="grid place-items-center px-8 text-center">
+      <p className="text-sm font-semibold text-muted-foreground">{children}</p>
+    </ScreenPage>
   );
 }
 

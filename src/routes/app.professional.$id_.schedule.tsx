@@ -2,7 +2,10 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { ChevronLeft, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { PrimaryButton } from "@/components/ello/actions";
+import { ElloSurface } from "@/components/ello/primitives";
+import { ScreenHeader, ScreenMain, ScreenPage } from "@/components/ello/screen-layout";
 import { createAppointmentFromQuote, getProfessionalById } from "@/lib/ello-repository";
 
 const scheduleSearchSchema = z.object({
@@ -47,59 +50,52 @@ function ScheduleScreen() {
   });
 
   return (
-    <div className="min-h-dvh bg-white pb-6">
-      <header className="flex items-center border-b border-border px-5 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
-        <Link
-          to="/app/professional/$id"
-          params={{ id }}
-          aria-label="Voltar"
-          className="grid size-10 place-items-center"
-        >
-          <ChevronLeft className="size-6" />
-        </Link>
-        <h1 className="flex-1 text-center text-base font-black">Agendar serviço</h1>
-        <span className="size-10" />
-      </header>
+    <ScreenPage>
+      <ScreenHeader title="Agendar serviço" subtitle="Escolha data e horário" backTo={`/app/professional/${id}`} />
 
-      <main className="space-y-7 px-5 py-6">
+      <ScreenMain className="space-y-6">
         <section>
-          <h2 className="text-sm font-black">Serviço</h2>
-          <div className="mt-3 rounded-xl border border-border p-4 text-sm font-semibold">
+          <span className="ello-field-label">Serviço</span>
+          <ElloSurface className="p-4 text-sm font-semibold">
             {professionalQuery.data?.specialties[0] ?? "Serviço profissional"}
-          </div>
+          </ElloSurface>
         </section>
 
         <section>
-          <h2 className="text-sm font-black">Data</h2>
-          <div className="mt-4 rounded-2xl border border-border p-4">
+          <span className="ello-field-label">Data</span>
+          <ElloSurface className="p-4">
             <div className="text-center text-sm font-black">Próximos dias</div>
             <div className="mt-4 grid grid-cols-7 gap-2">
               {[15, 16, 17, 18, 19, 20, 21].map((day) => (
                 <button
                   key={day}
+                  type="button"
                   onClick={() => setSelectedDay(day)}
-                  className={`aspect-square rounded-full text-sm font-bold ${
-                    selectedDay === day ? "bg-primary text-white" : "bg-secondary"
+                  className={`aspect-square rounded-full text-sm font-bold transition ${
+                    selectedDay === day
+                      ? "bg-primary text-white shadow-[var(--ello-shadow-glow)]"
+                      : "bg-secondary text-foreground hover:bg-secondary/80"
                   }`}
                 >
                   {day}
                 </button>
               ))}
             </div>
-          </div>
+          </ElloSurface>
         </section>
 
         <section>
-          <h2 className="text-sm font-black">Horários disponíveis</h2>
-          <div className="mt-3 grid grid-cols-4 gap-2">
+          <span className="ello-field-label">Horários disponíveis</span>
+          <div className="grid grid-cols-4 gap-2">
             {TIMES.map((time) => (
               <button
                 key={time}
+                type="button"
                 onClick={() => setSelectedTime(time)}
-                className={`h-11 rounded-xl border text-sm font-bold ${
+                className={`h-11 rounded-xl border text-sm font-bold transition ${
                   selectedTime === time
                     ? "border-primary bg-primary text-white"
-                    : "border-border bg-white"
+                    : "border-border bg-white hover:border-primary/30"
                 }`}
               >
                 {time}
@@ -109,44 +105,45 @@ function ScheduleScreen() {
         </section>
 
         <section>
-          <h2 className="text-sm font-black">Endereço</h2>
-          <div className="mt-3 flex items-center gap-3 rounded-xl border border-border p-4">
+          <span className="ello-field-label">Endereço</span>
+          <ElloSurface className="flex items-center gap-3 p-4">
             <MapPin className="size-5 text-primary" />
             <span className="text-sm font-semibold">
               {professionalQuery.data?.city ?? "São Paulo - SP"}
             </span>
-          </div>
+          </ElloSurface>
         </section>
 
         <section>
-          <h2 className="text-sm font-black">Observações (opcional)</h2>
+          <span className="ello-field-label">Observações (opcional)</span>
           <textarea
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             placeholder="Alguma informação importante..."
-            className="mt-3 min-h-24 w-full resize-none rounded-xl border border-border p-4 text-sm outline-none focus:border-primary"
+            className="ello-textarea"
           />
         </section>
 
         {!quote ? (
-          <p className="rounded-xl bg-primary/5 p-4 text-xs font-semibold leading-relaxed text-primary">
+          <p className="rounded-[1rem] bg-primary/5 p-4 text-xs font-semibold leading-relaxed text-primary">
             Primeiro envie uma solicitação de orçamento; depois o horário poderá ser confirmado.
           </p>
         ) : null}
         {mutation.error ? (
-          <p className="rounded-xl bg-destructive/10 p-4 text-xs font-semibold text-destructive">
+          <p className="rounded-[1rem] bg-destructive/10 p-4 text-xs font-semibold text-destructive">
             {mutation.error.message}
           </p>
         ) : null}
 
-        <button
+        <PrimaryButton
+          type="button"
           disabled={!quote || mutation.isPending}
           onClick={() => mutation.mutate()}
-          className="h-13 w-full rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-45"
+          className="!h-12"
         >
           {mutation.isPending ? "Confirmando..." : "Confirmar agendamento"}
-        </button>
-      </main>
-    </div>
+        </PrimaryButton>
+      </ScreenMain>
+    </ScreenPage>
   );
 }

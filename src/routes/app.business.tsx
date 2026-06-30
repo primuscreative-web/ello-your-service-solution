@@ -11,6 +11,16 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
+import { ElloSectionHeader } from "@/components/ello/primitives";
+import {
+  DarkHeroCard,
+  EmptyStateCard,
+  ListRowLink,
+  ScreenMain,
+  ScreenPage,
+  StatusPill,
+} from "@/components/ello/screen-layout";
+import { PrimaryButton } from "@/components/ello/actions";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   ensureMyProfessionalProfile,
@@ -70,64 +80,67 @@ function ProfessionalHome() {
       <ProfessionalEmpty
         text="Crie seu perfil profissional para publicar serviços, receber orçamentos e organizar sua agenda."
         action={
-          <button
+          <PrimaryButton
             onClick={() => activateMutation.mutate()}
             disabled={activateMutation.isPending}
-            className="mt-5 h-12 rounded-xl bg-primary px-6 text-sm font-bold text-white"
+            className="mt-5 !w-auto px-8"
           >
             {activateMutation.isPending ? "Criando perfil..." : "Criar perfil profissional"}
-          </button>
+          </PrimaryButton>
         }
       />
     );
   }
 
   return (
-    <div className="min-h-dvh bg-white pb-24">
-      <header className="flex items-center justify-between px-5 pb-5 pt-[calc(1rem+env(safe-area-inset-top))]">
+    <ScreenPage>
+      <header className="flex items-center justify-between px-5 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))]">
         <div>
-          <h1 className="text-xl font-black">Olá, {displayName}! 👋</h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary/80">
+            Modo profissional
+          </p>
+          <h1 className="text-xl font-black tracking-[-0.03em]">Olá, {displayName}! 👋</h1>
           <p className="mt-1 text-sm text-muted-foreground">Aqui está seu resumo de hoje</p>
         </div>
-        <Link
-          to="/app/notifications"
-          aria-label="Notificações"
-          className="relative grid size-10 place-items-center"
-        >
-          <Bell className="size-5" />
+        <Link to="/app/notifications" aria-label="Notificações" className="ello-icon-btn btn-tactile">
+          <Bell className="size-4" />
           {dashboard.quoteCount ? (
-            <span className="absolute right-0 top-0 grid size-5 place-items-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-              {Math.min(dashboard.quoteCount, 9)}
-            </span>
+            <span className="ello-icon-btn-badge">{Math.min(dashboard.quoteCount, 9)}</span>
           ) : null}
         </Link>
       </header>
 
-      <main className="space-y-7 px-5">
-        <section className="rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 p-5 text-white">
-          <h2 className="text-sm font-bold text-white/85">Resumo do dia</h2>
-          <div className="mt-5 grid grid-cols-2 gap-y-5">
-            <Metric value={dashboard.quoteCount} label="Novos orçamentos" />
-            <Metric value={dashboard.appointmentCount} label="Agendamentos" />
-            <Metric value={dashboard.elloLinkLeadCount} label="Contatos recebidos" />
-            <Metric value={dashboard.completedJobs} label="Serviços concluídos" />
+      <ScreenMain className="space-y-6">
+        <DarkHeroCard
+          eyebrow="Centro de operação"
+          title="Seu negócio em um lugar"
+          description="Receba orçamentos, organize a agenda e mantenha seu perfil sempre ativo."
+          icon={<Link2 className="size-5 text-white/90" />}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: "Novos orçamentos", value: dashboard.quoteCount },
+              { label: "Agendamentos", value: dashboard.appointmentCount },
+              { label: "Contatos recebidos", value: dashboard.elloLinkLeadCount },
+              { label: "Serviços concluídos", value: dashboard.completedJobs },
+            ].map((metric) => (
+              <div
+                key={metric.label}
+                className="rounded-[1.125rem] border border-white/12 bg-white/8 p-3 backdrop-blur-sm"
+              >
+                <p className="text-2xl font-black">{metric.value}</p>
+                <p className="mt-1 text-[11px] text-white/75">{metric.label}</p>
+              </div>
+            ))}
           </div>
-        </section>
+        </DarkHeroCard>
 
-        <section>
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-black">Próximos agendamentos</h2>
-            <Link to="/app/agenda" className="text-xs font-bold text-primary">
-              Ver agenda
-            </Link>
-          </div>
-          <div className="mt-3 space-y-3">
+        <section className="animate-reveal" style={{ animationDelay: "100ms" }}>
+          <ElloSectionHeader title="Próximos agendamentos" action="Ver agenda" actionTo="/app/agenda" />
+          <div className="mt-3 space-y-2">
             {upcoming.length ? (
               upcoming.map((appointment) => (
-                <article
-                  key={appointment.id}
-                  className="flex items-center gap-3 rounded-2xl border border-border p-4"
-                >
+                <article key={appointment.id} className="ello-surface flex items-center gap-3 p-4">
                   <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
                     <CalendarDays className="size-5" />
                   </span>
@@ -140,20 +153,20 @@ function ProfessionalHome() {
                 </article>
               ))
             ) : (
-              <p className="rounded-2xl bg-secondary p-5 text-center text-sm text-muted-foreground">
+              <p className="ello-surface p-5 text-center text-sm text-muted-foreground">
                 Nenhum atendimento próximo.
               </p>
             )}
           </div>
         </section>
 
-        <section>
-          <h2 className="text-base font-black">Atalhos rápidos</h2>
+        <section className="animate-reveal" style={{ animationDelay: "140ms" }}>
+          <h2 className="ello-section-title">Atalhos rápidos</h2>
           <div className="mt-3 grid grid-cols-4 gap-2">
             <QuickAction icon={Link2} label="ELLO Link" to="/app/ello-link" />
             <QuickAction icon={CalendarDays} label="Agenda" to="/app/agenda" />
             <QuickAction icon={Users} label="Clientes" to="/app/business/clients" />
-            <QuickAction icon={UserRound} label="Meu perfil" to="/app/settings" />
+            <QuickAction icon={UserRound} label="Configurações" to="/app/settings" />
           </div>
         </section>
 
@@ -173,45 +186,25 @@ function ProfessionalHome() {
         </section>
 
         {dashboard.recentQuotes.length ? (
-          <section>
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-black">Orçamentos recentes</h2>
-              <Link to="/app/business/quotes" className="text-xs font-bold text-primary">
-                Ver todos
-              </Link>
-            </div>
+          <section className="animate-reveal" style={{ animationDelay: "180ms" }}>
+            <ElloSectionHeader title="Orçamentos recentes" action="Ver todos" actionTo="/app/business/quotes" />
             <div className="mt-3 space-y-2">
               {dashboard.recentQuotes.map((quote) => (
-                <Link
+                <ListRowLink
                   key={quote.id}
                   to="/app/messages"
                   search={{ quote: quote.id }}
-                  className="flex items-center gap-3 rounded-2xl border border-border p-4"
-                >
-                  <FileText className="size-5 text-primary" />
-                  <span className="min-w-0 flex-1">
-                    <strong className="block truncate text-sm">{quote.title}</strong>
-                    <span className="text-xs text-muted-foreground">{quote.subtitle}</span>
-                  </span>
-                  <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">
-                    {quote.status}
-                  </span>
-                </Link>
+                  icon={<FileText className="size-5" />}
+                  title={quote.title}
+                  subtitle={quote.subtitle}
+                  trailing={<StatusPill>{quote.status}</StatusPill>}
+                />
               ))}
             </div>
           </section>
         ) : null}
-      </main>
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <strong className="block text-2xl font-black">{value}</strong>
-      <span className="text-xs text-white/80">{label}</span>
-    </div>
+      </ScreenMain>
+    </ScreenPage>
   );
 }
 
@@ -225,25 +218,25 @@ function QuickAction({
   to: string;
 }) {
   return (
-    <Link to={to} className="flex flex-col items-center gap-2 text-center">
-      <span className="grid size-12 place-items-center rounded-2xl border border-border text-primary">
+    <Link to={to} className="btn-tactile flex flex-col items-center gap-2 text-center">
+      <span className="grid size-12 place-items-center rounded-2xl border border-white/80 bg-white/95 text-primary shadow-[var(--ello-shadow-sm)] transition hover:shadow-[var(--ello-shadow-md)]">
         <Icon className="size-5" />
       </span>
-      <span className="text-[11px] font-semibold">{label}</span>
+      <span className="text-[10px] font-extrabold text-foreground/75">{label}</span>
     </Link>
   );
 }
 
 function ProfessionalEmpty({ action, text }: { action?: React.ReactNode; text: string }) {
   return (
-    <div className="grid min-h-dvh place-items-center bg-white px-8 text-center">
-      <div>
-        <UserRound className="mx-auto size-12 text-primary" />
-        <h1 className="mt-4 text-xl font-black">Modo profissional</h1>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p>
-        {action}
-      </div>
-    </div>
+    <ScreenPage className="grid place-items-center">
+      <EmptyStateCard
+        icon={<UserRound className="size-6" />}
+        title="Modo profissional"
+        description={text}
+        action={action}
+      />
+    </ScreenPage>
   );
 }
 
@@ -259,9 +252,9 @@ function InsightLink({
   to: string;
 }) {
   return (
-    <Link to={to} className="rounded-2xl border border-border p-4">
+    <Link to={to} className="ello-surface p-4 transition-all hover:-translate-y-0.5">
       <Icon className="size-5 text-primary" />
-      <strong className="mt-3 block text-sm">{title}</strong>
+      <strong className="mt-3 block text-sm font-black">{title}</strong>
       <span className="text-xs text-muted-foreground">{body}</span>
     </Link>
   );

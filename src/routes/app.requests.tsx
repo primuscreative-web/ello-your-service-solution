@@ -61,7 +61,7 @@ function Requests() {
   const requests = requestsQuery.data ?? [];
 
   return (
-    <div>
+    <div className="min-h-dvh ello-mesh-bg">
       <AppTopBar title="Histórico" subtitle="Solicitações e avaliações" backTo="/app/profile" />
 
       <main className="space-y-4 px-4 pb-6 pt-4">
@@ -70,7 +70,7 @@ function Requests() {
         ) : !user ? (
           <EmptyState message="Entre na sua conta para ver suas solicitações." />
         ) : requestsQuery.isPending ? (
-          <div className="ello-card rounded-xl p-6 text-center text-sm font-bold text-muted-foreground">
+          <div className="rounded-[28px] border border-border/70 bg-white/85 p-6 text-center text-sm font-bold text-muted-foreground shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur-xl">
             Carregando histórico...
           </div>
         ) : requests.length ? (
@@ -120,7 +120,7 @@ function RequestCard({
   const canReview = request.status === "completed";
 
   return (
-    <article className="ello-card rounded-xl p-4">
+    <article className="ello-surface-elevated p-4">
       <div className="flex gap-3">
         <ProPhoto
           initials={request.professionalInitials}
@@ -148,7 +148,7 @@ function RequestCard({
         </div>
       )}
 
-      <p className="mt-3 rounded-lg border border-sky-100 bg-sky-50 p-2 text-[10px] font-semibold leading-relaxed text-sky-900">
+      <p className="mt-3 rounded-[16px] border border-sky-100 bg-sky-50/90 p-2 text-[10px] font-semibold leading-relaxed text-sky-900">
         {PAYMENT_POLICY.quotePaymentNotice}
       </p>
 
@@ -156,7 +156,7 @@ function RequestCard({
         <Link
           to="/app/messages"
           search={{ quote: request.id }}
-          className="grid h-10 place-items-center rounded-lg bg-[#083d63] text-xs font-black text-white"
+          className="grid h-10 place-items-center rounded-[16px] bg-[#083d63] text-xs font-black text-white shadow-[0_12px_24px_rgba(8,61,99,0.2)]"
         >
           <span className="inline-flex items-center gap-1">
             <MessageCircle className="size-4" />
@@ -176,14 +176,14 @@ function RequestCard({
       </div>
 
       {canReview ? (
-        <section className="mt-4 rounded-xl bg-background p-3">
+        <section className="mt-4 rounded-[20px] bg-background/80 p-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-xs font-black">Avaliacao</h3>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((value) => (
                 <button
                   key={value}
-                  className="grid size-7 place-items-center rounded-full bg-white"
+                  className="grid size-7 place-items-center rounded-full bg-white shadow-sm"
                   onClick={() => setRating(value)}
                   aria-label={`${value} estrelas`}
                 >
@@ -200,7 +200,7 @@ function RequestCard({
             value={comment}
             onChange={(event) => setComment(event.target.value)}
             placeholder="Conte como foi o atendimento..."
-            className="mt-3 min-h-20 w-full resize-none rounded-lg border border-border bg-white p-3 text-xs outline-none focus:border-primary"
+            className="mt-3 min-h-20 w-full resize-none rounded-[16px] border border-border bg-white p-3 text-xs outline-none focus:border-primary"
           />
           <CyanButton
             className="mt-2 w-full disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
@@ -217,7 +217,7 @@ function RequestCard({
 
 function MiniInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-background p-2">
+    <div className="rounded-[16px] bg-background/80 p-2">
       <p className="text-[10px] font-bold uppercase text-muted-foreground">{label}</p>
       <p className="truncate text-xs font-black">{value}</p>
     </div>
@@ -244,7 +244,7 @@ function StatusPill({ status }: { status: RequestHistoryItem["status"] }) {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <section className="ello-card rounded-xl p-6 text-center">
+    <section className="rounded-[28px] border border-border/70 bg-white/85 p-6 text-center shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur-xl">
       <div className="mx-auto grid size-12 place-items-center rounded-full bg-primary/10 text-primary">
         <MessageCircle className="size-5" />
       </div>
@@ -252,7 +252,7 @@ function EmptyState({ message }: { message: string }) {
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{message}</p>
       <Link
         to="/app/search"
-        className="mt-4 inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-xs font-black text-white"
+        className="mt-4 inline-flex h-10 items-center justify-center rounded-[16px] bg-primary px-4 text-xs font-black text-white shadow-[0_16px_35px_rgba(0,76,255,0.2)]"
       >
         Buscar profissionais
       </Link>
@@ -262,6 +262,6 @@ function EmptyState({ message }: { message: string }) {
 
 function ErrorText({ children }: { children: string }) {
   return (
-    <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{children}</p>
+    <p className="rounded-[16px] bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{children}</p>
   );
 }

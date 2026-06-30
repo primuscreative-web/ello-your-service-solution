@@ -96,15 +96,18 @@ function Admin() {
       <AppTopBar title="Admin ELLO" subtitle="Parceiros e operacao" backTo="/app/profile" />
 
       <main className="space-y-4 px-4 pb-6 pt-4">
-        <section className="ello-card rounded-xl p-3">
+        <section className="rounded-[28px] border border-white/70 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-900 p-4 text-white shadow-[0_24px_70px_-36px_rgba(15,23,42,0.65)]">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-base font-black">Controle comercial</h1>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Gerencie parceiros locais e conteudos comerciais sem ofertas pagas no app.
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/70">
+                Controle comercial
+              </p>
+              <h1 className="mt-2 text-base font-black">Gerencie parceiros e campanhas</h1>
+              <p className="mt-1 text-xs text-white/75">
+                Publique destaque local e mantenha o espaço comercial sempre atualizado.
               </p>
             </div>
-            <ShieldCheck className="size-6 text-primary" />
+            <ShieldCheck className="size-6 text-cyan-300" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Metric label="Parceiros" value={String(activePartners.length)} accent />
@@ -112,9 +115,9 @@ function Admin() {
           </div>
         </section>
 
-        <section className="ello-card rounded-xl p-3">
+        <section className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_18px_56px_-30px_rgba(15,23,42,0.35)]">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black">Espaco para parceiros locais</h2>
+            <h2 className="text-sm font-black">Espaço para parceiros locais</h2>
             <Store className="size-4 text-primary" />
           </div>
 
@@ -123,7 +126,7 @@ function Admin() {
               value={partnerForm.name}
               onChange={(event) => setPartnerForm({ ...partnerForm, name: event.target.value })}
               placeholder="Nome do parceiro"
-              className="h-10 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+              className="h-11 rounded-2xl border border-slate-200 bg-slate-50/90 px-3 text-xs font-semibold outline-none transition focus:border-primary focus:bg-white"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -132,13 +135,13 @@ function Admin() {
                   setPartnerForm({ ...partnerForm, category: event.target.value })
                 }
                 placeholder="Categoria"
-                className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+                className="h-11 min-w-0 rounded-2xl border border-slate-200 bg-slate-50/90 px-3 text-xs font-semibold outline-none transition focus:border-primary focus:bg-white"
               />
               <input
                 value={partnerForm.city}
                 onChange={(event) => setPartnerForm({ ...partnerForm, city: event.target.value })}
                 placeholder="Cidade"
-                className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+                className="h-11 min-w-0 rounded-2xl border border-slate-200 bg-slate-50/90 px-3 text-xs font-semibold outline-none transition focus:border-primary focus:bg-white"
               />
             </div>
             <textarea
@@ -147,7 +150,7 @@ function Admin() {
                 setPartnerForm({ ...partnerForm, description: event.target.value })
               }
               placeholder="Descrição curta"
-              className="min-h-20 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold outline-none focus:border-primary"
+              className="min-h-24 rounded-2xl border border-slate-200 bg-slate-50/90 px-3 py-2 text-xs font-semibold outline-none transition focus:border-primary focus:bg-white"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -155,21 +158,21 @@ function Admin() {
                 onChange={(event) =>
                   setPartnerForm({ ...partnerForm, ctaLabel: event.target.value })
                 }
-                placeholder="Texto do botao"
-                className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+                placeholder="Texto do botão"
+                className="h-11 min-w-0 rounded-2xl border border-slate-200 bg-slate-50/90 px-3 text-xs font-semibold outline-none transition focus:border-primary focus:bg-white"
               />
               <input
                 value={partnerForm.ctaUrl}
                 onChange={(event) => setPartnerForm({ ...partnerForm, ctaUrl: event.target.value })}
                 placeholder="URL destino"
-                className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+                className="h-11 min-w-0 rounded-2xl border border-slate-200 bg-slate-50/90 px-3 text-xs font-semibold outline-none transition focus:border-primary focus:bg-white"
               />
             </div>
             <input
               value={partnerForm.imageUrl}
               onChange={(event) => setPartnerForm({ ...partnerForm, imageUrl: event.target.value })}
               placeholder="URL da imagem"
-              className="h-10 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+              className="h-11 rounded-2xl border border-slate-200 bg-slate-50/90 px-3 text-xs font-semibold outline-none transition focus:border-primary focus:bg-white"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -178,16 +181,16 @@ function Admin() {
                 onChange={(event) =>
                   setPartnerForm({ ...partnerForm, startsAt: event.target.value })
                 }
-                className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+                className="h-11 min-w-0 rounded-2xl border border-slate-200 bg-slate-50/90 px-3 text-xs font-semibold outline-none transition focus:border-primary focus:bg-white"
               />
               <input
                 type="datetime-local"
                 value={partnerForm.endsAt}
                 onChange={(event) => setPartnerForm({ ...partnerForm, endsAt: event.target.value })}
-                className="h-10 min-w-0 rounded-lg border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary"
+                className="h-11 min-w-0 rounded-2xl border border-slate-200 bg-slate-50/90 px-3 text-xs font-semibold outline-none transition focus:border-primary focus:bg-white"
               />
             </div>
-            <label className="flex min-h-10 items-center justify-between rounded-lg bg-background px-3 text-xs font-black">
+            <label className="flex min-h-11 items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/90 px-3 text-xs font-black">
               Parceiro ativo
               <input
                 type="checkbox"
@@ -200,7 +203,7 @@ function Admin() {
             </label>
 
             {partnerMutation.error ? (
-              <p className="rounded-lg bg-red-50 p-2 text-[10px] font-semibold text-red-700">
+              <p className="rounded-2xl bg-red-50 p-2 text-[10px] font-semibold text-red-700">
                 {partnerMutation.error.message}
               </p>
             ) : null}
@@ -220,7 +223,7 @@ function Admin() {
               <button
                 disabled={partnerMutation.isPending}
                 onClick={() => setPartnerForm(emptyPartnerForm)}
-                className="h-10 rounded-lg border border-border bg-white text-xs font-black text-[#083d63] disabled:opacity-50"
+                className="h-11 rounded-2xl border border-slate-200 bg-white text-xs font-black text-[#083d63] shadow-sm transition disabled:opacity-50"
               >
                 Limpar
               </button>
@@ -241,7 +244,7 @@ function Admin() {
               />
             ))
           ) : (
-            <p className="ello-card rounded-xl p-3 text-xs font-semibold text-muted-foreground">
+            <p className="rounded-[22px] border border-white/70 bg-white/80 p-3 text-xs font-semibold text-muted-foreground shadow-[0_14px_40px_-24px_rgba(15,23,42,0.25)]">
               Nenhum parceiro cadastrado.
             </p>
           )}

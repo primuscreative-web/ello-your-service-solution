@@ -3,7 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, MoreVertical, Paperclip, SendHorizontal } from "lucide-react";
 import { z } from "zod";
+import { PrimaryButton } from "@/components/ello/actions";
 import { AvatarPhoto } from "@/components/ello/media";
+import { EmptyStateCard, ScreenPage } from "@/components/ello/screen-layout";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   listMyQuoteThreads,
@@ -97,28 +99,29 @@ function MessagesScreen() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-white">
-      <header className="flex items-center border-b border-border px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
-        <Link to="/app" aria-label="Voltar" className="grid size-10 place-items-center">
-          <ChevronLeft className="size-6" />
+    <ScreenPage className="flex min-h-dvh flex-col !pb-0">
+      <header className="ello-header-bar flex items-center gap-3">
+        <Link to="/app" aria-label="Voltar" className="ello-icon-btn btn-tactile shrink-0">
+          <ChevronLeft className="size-5" />
         </Link>
         <AvatarPhoto
-          src={null}
-          alt={activeThread?.title ?? "Conversa"}
+          imageUrl={null}
           initials={initialsFor(activeThread?.title ?? "ELLO")}
-          size="sm"
+          size={40}
         />
-        <div className="ml-3 min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           <h1 className="truncate text-sm font-black">{activeThread?.title ?? "Mensagens"}</h1>
-          <p className="text-[11px] text-emerald-600">
+          <p className="text-[11px] font-medium text-success">
             {activeThread ? activeThread.subtitle : "Atendimento ELLO"}
           </p>
         </div>
-        <MoreVertical className="size-5" />
+        <button type="button" className="ello-icon-btn" aria-label="Mais opções">
+          <MoreVertical className="size-4" />
+        </button>
       </header>
 
       {threads.length > 1 ? (
-        <div className="flex gap-2 overflow-x-auto border-b border-border px-4 py-3">
+        <div className="flex gap-2 overflow-x-auto border-b border-border/60 bg-white/50 px-4 py-3 backdrop-blur-xl">
           {threads.map((thread) => (
             <ThreadChip
               key={thread.id}
@@ -137,17 +140,17 @@ function MessagesScreen() {
         </div>
       ) : null}
 
-      <main className="flex-1 space-y-3 overflow-y-auto bg-slate-50 px-4 py-5">
+      <main className="flex-1 space-y-3 overflow-y-auto px-4 py-5">
         {messagesQuery.isPending ? (
           <p className="text-center text-xs text-muted-foreground">Carregando conversa...</p>
         ) : messagesQuery.data?.length ? (
           messagesQuery.data.map((item) => (
             <div
               key={item.id}
-              className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              className={`max-w-[78%] rounded-[1.25rem] px-4 py-3 text-sm leading-relaxed shadow-[var(--ello-shadow-sm)] ${
                 item.mine
                   ? "ml-auto rounded-br-md bg-primary text-white"
-                  : "rounded-bl-md bg-white shadow-sm"
+                  : "rounded-bl-md border border-border/60 bg-white/95"
               }`}
             >
               <p>{item.body}</p>
@@ -155,21 +158,17 @@ function MessagesScreen() {
             </div>
           ))
         ) : (
-          <p className="mx-auto max-w-64 rounded-2xl bg-white p-4 text-center text-xs leading-relaxed text-muted-foreground shadow-sm">
+          <p className="ello-surface mx-auto max-w-64 p-4 text-center text-xs leading-relaxed text-muted-foreground">
             Esta conversa ainda não tem mensagens. Escreva a primeira resposta.
           </p>
         )}
         {activeThread && !activeThread.professionalView && activeThread.status === "quoted" ? (
-          <Link
-            to="/app/quote/$id"
-            params={{ id: activeThread.id }}
-            className="ml-auto flex h-11 w-fit items-center rounded-xl bg-primary px-4 text-xs font-bold text-white"
-          >
-            Ver orçamento recebido
+          <Link to="/app/quote/$id" params={{ id: activeThread.id }}>
+            <PrimaryButton className="ml-auto !w-fit px-5 !text-xs">Ver orçamento recebido</PrimaryButton>
           </Link>
         ) : null}
         {sendMutation.error ? (
-          <p className="rounded-xl bg-destructive/10 p-3 text-xs font-semibold text-destructive">
+          <p className="rounded-[1rem] bg-destructive/10 p-3 text-xs font-semibold text-destructive">
             {sendMutation.error.message}
           </p>
         ) : null}
@@ -180,31 +179,27 @@ function MessagesScreen() {
           event.preventDefault();
           if (message.trim() && activeThreadId) sendMutation.mutate();
         }}
-        className="flex items-center gap-2 border-t border-border bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3"
+        className="flex items-center gap-2 border-t border-border/60 bg-white/80 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl"
       >
-        <button
-          type="button"
-          aria-label="Anexar arquivo"
-          className="grid size-10 place-items-center"
-        >
-          <Paperclip className="size-5" />
+        <button type="button" aria-label="Anexar arquivo" className="ello-icon-btn !size-10">
+          <Paperclip className="size-4" />
         </button>
         <input
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           placeholder="Digite sua mensagem..."
-          className="h-11 min-w-0 flex-1 rounded-full border border-border px-4 text-sm outline-none focus:border-primary"
+          className="ello-input !h-11 min-w-0 flex-1 !rounded-full"
         />
         <button
           type="submit"
           aria-label="Enviar mensagem"
           disabled={!message.trim() || sendMutation.isPending}
-          className="grid size-10 place-items-center rounded-full text-primary disabled:text-muted-foreground"
+          className="grid size-10 place-items-center rounded-full bg-primary text-white shadow-[var(--ello-shadow-glow)] disabled:bg-secondary disabled:text-muted-foreground disabled:shadow-none"
         >
-          <SendHorizontal className="size-5" />
+          <SendHorizontal className="size-4" />
         </button>
       </form>
-    </div>
+    </ScreenPage>
   );
 }
 
@@ -219,9 +214,10 @@ function ThreadChip({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold ${
-        active ? "bg-primary text-white" : "bg-secondary text-foreground"
+      className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition ${
+        active ? "bg-primary text-white shadow-[var(--ello-shadow-glow)]" : "bg-white/90 text-foreground border border-border/60"
       }`}
     >
       {thread.title}
@@ -231,18 +227,18 @@ function ThreadChip({
 
 function EmptyMessages({ text }: { text: string }) {
   return (
-    <div className="grid min-h-dvh place-items-center bg-white px-8 text-center">
-      <div>
-        <h1 className="text-xl font-black">Mensagens</h1>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p>
-        <Link
-          to="/app/search"
-          className="mt-5 inline-flex h-11 items-center rounded-xl bg-primary px-5 text-sm font-bold text-white"
-        >
-          Buscar profissionais
-        </Link>
-      </div>
-    </div>
+    <ScreenPage className="grid place-items-center">
+      <EmptyStateCard
+        title="Mensagens"
+        description={text}
+        icon={<SendHorizontal className="size-6" />}
+        action={
+          <Link to="/app/search">
+            <PrimaryButton className="!w-auto px-6">Buscar profissionais</PrimaryButton>
+          </Link>
+        }
+      />
+    </ScreenPage>
   );
 }
 

@@ -1,7 +1,7 @@
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Bell,
   BriefcaseBusiness,
-  CalendarDays,
   Camera,
   ChevronLeft,
   ClipboardList,
@@ -18,7 +18,6 @@ import {
   Wrench,
 } from "lucide-react";
 import type React from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
 import { ElloLogo } from "@/components/ello/logo";
 
 export const servicePhotos = [
@@ -42,31 +41,30 @@ export function AppTopBar({
   backTo?: string;
 }) {
   return (
-    <header className="ello-header px-4 pb-5 pt-5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          {backTo ? (
-            <Link to={backTo} className="grid size-8 place-items-center rounded-full bg-white/10">
-              <ChevronLeft className="size-5" />
-            </Link>
-          ) : null}
-          <div className="min-w-0">
-            {logo ? (
-              <ElloLogo tone="white" className="w-[4.4rem]" />
-            ) : (
-              <h1 className="truncate text-base font-extrabold">{title}</h1>
-            )}
-            {subtitle ? <p className="truncate text-xs text-white/80">{subtitle}</p> : null}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <CalendarDays className="size-5 text-white/85" />
-          <button className="relative grid size-8 place-items-center rounded-full bg-white/10">
-            <Bell className="size-4" />
-            <span className="absolute right-1 top-1 size-2 rounded-full bg-primary ring-1 ring-white" />
-          </button>
+    <header className="ello-header-bar !static rounded-none border-x-0 border-t-0">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        {backTo ? (
+          <Link to={backTo} className="ello-icon-btn btn-tactile !size-9 shrink-0">
+            <ChevronLeft className="size-5" />
+          </Link>
+        ) : null}
+        <div className="min-w-0">
+          {logo ? (
+            <ElloLogo className="w-[4.4rem]" />
+          ) : (
+            <>
+              <h1 className="truncate text-[0.95rem] font-black tracking-[-0.02em]">{title}</h1>
+              {subtitle ? (
+                <p className="truncate text-[11px] font-medium text-muted-foreground">{subtitle}</p>
+              ) : null}
+            </>
+          )}
         </div>
       </div>
+      <Link to="/app/notifications" className="ello-icon-btn btn-tactile" aria-label="Notificações">
+        <Bell className="size-4" />
+        <span className="ello-icon-btn-badge" />
+      </Link>
     </header>
   );
 }
@@ -126,7 +124,7 @@ export function ProPhoto({
 }) {
   return (
     <div
-      className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full border-4 border-white bg-sky-100 shadow-md ${className}`}
+      className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full border-4 border-white bg-sky-100 shadow-[0_16px_34px_-18px_rgba(15,23,42,0.35)] ${className}`}
       style={{ width: size, height: size }}
     >
       {imageUrl ? (
@@ -233,7 +231,7 @@ export function CyanButton({
   return (
     <button
       type={type}
-      className={`ello-action h-10 rounded-lg px-4 text-xs font-bold active:scale-[0.98] ${className}`}
+      className={`ello-action btn-tactile h-11 rounded-[1.125rem] px-4 text-xs font-bold ${className}`}
       {...props}
     >
       {children}
@@ -252,7 +250,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[393px] -translate-x-1/2 grid-cols-5 border-t border-border bg-white px-2 pb-2 pt-1.5 shadow-[0_-8px_24px_rgba(7,32,57,0.08)]">
+    <nav className="fixed bottom-2 left-1/2 z-50 grid w-[calc(100%-1rem)] max-w-[381px] -translate-x-1/2 grid-cols-5 rounded-[24px] border border-white/70 bg-white/85 px-1.5 py-1.5 shadow-[0_18px_44px_-22px_rgba(15,23,42,0.5)] backdrop-blur-2xl">
       {items.map((item) => {
         const active = item.to === "/app" ? pathname === "/app" : pathname.startsWith(item.to);
         const Icon = item.icon;
@@ -260,11 +258,11 @@ export function BottomNav() {
           <Link
             key={item.to}
             to={item.to}
-            className={`flex flex-col items-center gap-0.5 rounded-lg py-1 text-[10px] font-semibold ${
-              active ? "text-[#083d63]" : "text-muted-foreground"
+            className={`flex flex-col items-center gap-0.5 rounded-[16px] py-1.5 text-[10px] font-semibold transition-all duration-300 ${
+              active ? "bg-primary/10 text-primary shadow-[0_8px_20px_-12px_rgba(15,111,255,0.55)]" : "text-muted-foreground"
             }`}
           >
-            <Icon className={`size-4 ${active ? "fill-[#083d63]/10" : ""}`} />
+            <Icon className={`size-4 ${active ? "fill-primary/15" : ""}`} />
             {item.label}
           </Link>
         );

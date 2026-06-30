@@ -89,8 +89,8 @@ function ProfessionalDetail() {
   const canPersist = Boolean(configured && user && isUuid(pro.id));
 
   return (
-    <div className="min-h-dvh bg-white pb-24">
-      <header className="relative h-52 overflow-hidden bg-slate-900 text-white">
+    <div className="min-h-dvh ello-mesh-bg pb-24">
+      <header className="relative h-56 overflow-hidden bg-slate-900 text-white">
         <img
           src="/images/ello/home-services-1-v2.webp"
           alt=""
@@ -121,7 +121,7 @@ function ProfessionalDetail() {
         </div>
       </header>
 
-      <main className="-mt-5 rounded-t-[1.7rem] bg-white">
+      <main className="-mt-5 rounded-t-[1.9rem] bg-white/95 backdrop-blur-xl shadow-[0_-12px_40px_-20px_rgba(15,23,42,0.15)]">
         <section className="relative px-5 pb-5 pt-12">
           <div className="absolute -top-11 left-5 rounded-full border-4 border-white">
             <AvatarPhoto imageUrl={pro.avatarUrl} initials={pro.initials} size={88} />
@@ -138,14 +138,14 @@ function ProfessionalDetail() {
             <Availability label={AVAILABILITY_LABEL[pro.available]} />
           </div>
 
-          <div className="mt-7 grid grid-cols-3 divide-x divide-border">
+          <div className="mt-7 grid grid-cols-3 divide-x divide-border rounded-[1.5rem] border border-border/70 bg-white/80 p-3 shadow-[var(--ello-shadow-sm)]">
             <Metric value={String(pro.completedJobs)} label="Serviços" />
             <Metric value="98%" label="Concluídos" />
             <Metric value={pro.responseTime} label="Tempo de resposta" />
           </div>
         </section>
 
-        <nav className="grid grid-cols-4 border-y border-border px-3">
+        <nav className="grid grid-cols-4 border-y border-border/70 bg-white/70 px-3 backdrop-blur-xl">
           {[
             ["profile", "Perfil"],
             ["services", "Serviços"],
@@ -167,7 +167,7 @@ function ProfessionalDetail() {
           ))}
         </nav>
 
-        <div className="px-5 py-6">
+        <div className="px-4 py-6 sm:px-5">
           {activeTab === "profile" ? <ProfileOverview professional={pro} /> : null}
           {activeTab === "services" ? <ServicesTab professional={pro} /> : null}
           {activeTab === "reviews" ? <ReviewsTab professional={pro} /> : null}
@@ -175,10 +175,10 @@ function ProfessionalDetail() {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[393px] -translate-x-1/2 grid-cols-2 gap-3 border-t border-border bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div className="fixed bottom-0 left-1/2 z-50 grid w-full max-w-[393px] -translate-x-1/2 grid-cols-2 gap-3 border-t border-border/60 bg-white/90 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur-xl">
         <Link
           to="/app/messages"
-          className="flex h-12 items-center justify-center gap-2 rounded-xl border border-primary text-sm font-bold text-primary"
+          className="ello-btn-secondary !h-12 flex items-center justify-center gap-2 !text-sm"
         >
           <MessageCircle className="size-5" />
           Chamar no chat
@@ -186,7 +186,7 @@ function ProfessionalDetail() {
         <Link
           to="/app/professional/$id/quote"
           params={{ id }}
-          className="flex h-12 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white"
+          className="ello-btn-primary !h-12 flex items-center justify-center !text-sm"
         >
           Solicitar serviço
         </Link>
@@ -220,7 +220,7 @@ function ServicesTab({ professional }: { professional: Professional }) {
         {professional.specialties.map((specialty, index) => (
           <div
             key={specialty}
-            className="flex items-center gap-3 rounded-2xl border border-border p-3"
+            className="flex items-center gap-3 rounded-[20px] border border-border/70 bg-white/80 p-3 shadow-sm"
           >
             <img
               src={`/images/ello/home-services-${(index % 3) + 1}-v2.webp`}
@@ -265,7 +265,7 @@ function ReviewsTab({ professional }: { professional: Professional }) {
           </div>
         ))}
       </div>
-      <p className="mt-8 rounded-2xl bg-secondary p-5 text-center text-sm text-muted-foreground">
+      <p className="mt-8 rounded-[24px] bg-secondary/80 p-5 text-center text-sm text-muted-foreground">
         As avaliações reais aparecerão aqui após serviços concluídos.
       </p>
     </section>
@@ -292,7 +292,7 @@ function GalleryTab({
           key={item.id}
           src={item.mediaUrl ?? `/images/ello/home-services-${(index % 3) + 1}-v2.webp`}
           alt={item.title}
-          className="aspect-square w-full rounded-2xl object-cover"
+          className="aspect-square w-full rounded-[22px] object-cover shadow-sm"
         />
       ))}
     </section>

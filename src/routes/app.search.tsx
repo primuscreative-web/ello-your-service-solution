@@ -2,8 +2,17 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { ChevronLeft, ChevronRight, Search as SearchIcon, Wrench } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search as SearchIcon, Sparkles, Wrench } from "lucide-react";
 import { ProfessionalListRow } from "@/components/ello/cards";
+import { SearchField } from "@/components/ello/fields";
+import { ElloSectionHeader, ElloSurface } from "@/components/ello/primitives";
+import {
+  EmptyStateCard,
+  ScreenHeader,
+  ScreenMain,
+  ScreenPage,
+  SegmentedControl,
+} from "@/components/ello/screen-layout";
 import { useAuth } from "@/lib/auth/auth-context";
 import { CATEGORIES } from "@/lib/ello-data";
 import {
@@ -81,71 +90,56 @@ function SearchScreen() {
   }
 
   return (
-    <div className="min-h-dvh bg-white">
-      <header className="border-b border-border px-5 pb-4 pt-[calc(1.1rem+env(safe-area-inset-top))]">
-        <div className="flex items-center gap-3">
-          <Link
-            to="/app"
-            aria-label="Voltar"
-            className="grid size-10 shrink-0 place-items-center rounded-full text-foreground"
-          >
-            <ChevronLeft className="size-6" />
-          </Link>
-          <form
-            className="relative flex-1"
-            onSubmit={(event) => {
-              event.preventDefault();
-              submitSearch();
-            }}
-          >
-            <SearchIcon className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="preciso instalar um chuveiro"
-              className="h-12 w-full rounded-xl border border-border bg-white pl-11 pr-4 text-sm font-semibold outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+    <ScreenPage noPadding>
+      <div className="px-4 pb-2 pt-[calc(0.25rem+env(safe-area-inset-top))]">
+        <ElloSurface className="p-3">
+          <div className="flex items-center gap-3">
+            <Link to="/app" aria-label="Voltar" className="ello-icon-btn btn-tactile shrink-0">
+              <ChevronLeft className="size-5" />
+            </Link>
+            <div className="flex-1">
+              <SearchField
+                value={query}
+                onChange={setQuery}
+                onSubmit={submitSearch}
+                placeholder="preciso instalar um chuveiro"
+              />
+            </div>
+          </div>
+          <div className="mt-3">
+            <SegmentedControl
+              options={[
+                { value: "all", label: "Todos" },
+                { value: "professionals", label: "Profissionais" },
+                { value: "services", label: "Serviços" },
+              ]}
+              value={activeTab}
+              onChange={(value) => setActiveTab(value as SearchTab)}
             />
-          </form>
-        </div>
+          </div>
+        </ElloSurface>
+        <p className="mt-2 flex items-center justify-center gap-1 text-[10px] font-semibold text-muted-foreground">
+          <Sparkles className="size-3 text-primary" />
+          Busca por intenção — a IA entende o que você precisa
+        </p>
+      </div>
 
-        <div className="mt-4 grid grid-cols-3">
-          {[
-            ["all", "Todos"],
-            ["professionals", "Profissionais"],
-            ["services", "Serviços"],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setActiveTab(value as SearchTab)}
-              className={`border-b-2 py-3 text-sm font-bold ${
-                activeTab === value
-                  ? "border-primary text-primary"
-                  : "border-transparent text-foreground/75"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </header>
-
-      <main className="space-y-7 px-5 py-6">
+      <ScreenMain className="space-y-7">
         {activeTab !== "services" ? (
-          <section>
-            <h2 className="text-base font-black text-foreground">Melhores profissionais</h2>
+          <section className="animate-reveal">
+            <ElloSectionHeader title="Melhores profissionais" />
 
             {professionalsQuery.isError ? (
               <StateMessage message="Não foi possível carregar os profissionais agora." />
             ) : professionalsQuery.isLoading ? (
               <div className="mt-4 space-y-3">
                 {[0, 1, 2].map((item) => (
-                  <div key={item} className="h-20 animate-pulse rounded-2xl bg-secondary" />
+                  <div key={item} className="ello-skeleton h-20" />
                 ))}
               </div>
             ) : professionals.length ? (
-              <div className="mt-3">
-                {professionals.slice(0, 5).map((professional) => {
+              <div className="mt-3 space-y-1">
+                {professionals.slice(0, 8).map((professional) => {
                   const isFavorite = favoriteIds.has(professional.id);
                   return (
                     <ProfessionalListRow
@@ -172,8 +166,12 @@ function SearchScreen() {
               <StateMessage message="Nenhum profissional encontrado para esta busca." />
             )}
 
-            {professionals.length > 3 ? (
-              <button className="mt-4 h-12 w-full rounded-xl bg-primary text-sm font-bold text-white">
+            {professionals.length > 5 ? (
+              <button
+                type="button"
+                onClick={submitSearch}
+                className="ello-btn-primary btn-tactile mt-4 !h-12 text-sm"
+              >
                 Ver mais profissionais
               </button>
             ) : null}
@@ -181,36 +179,34 @@ function SearchScreen() {
         ) : null}
 
         {activeTab !== "professionals" ? (
-          <section>
-            <h2 className="text-base font-black text-foreground">Outros serviços encontrados</h2>
+          <section className="animate-reveal" style={{ animationDelay: "80ms" }}>
+            <ElloSectionHeader title="Outros serviços encontrados" />
             <div className="mt-3 space-y-2">
-              {services.slice(0, 5).map((service) => (
+              {services.slice(0, 8).map((service) => (
                 <Link
                   key={service.slug}
                   to="/app/search"
                   search={{ category: service.slug }}
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-white p-4"
+                  className="premium-card flex items-center gap-3 rounded-[1.25rem] p-4 transition-all hover:-translate-y-0.5"
                 >
-                  <span className="grid size-10 place-items-center rounded-full bg-secondary text-foreground">
-                    <Wrench className="size-5" />
+                  <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-lg">
+                    {service.icon}
                   </span>
                   <span className="flex-1 text-sm font-bold text-foreground">{service.name}</span>
-                  <ChevronRight className="size-5 text-muted-foreground" />
+                  <ChevronRight className="size-5 text-muted-foreground/60" />
                 </Link>
               ))}
             </div>
           </section>
         ) : null}
-      </main>
-    </div>
+      </ScreenMain>
+    </ScreenPage>
   );
 }
 
 function StateMessage({ message }: { message: string }) {
   return (
-    <div className="mt-4 rounded-2xl bg-secondary p-5 text-center text-sm text-muted-foreground">
-      {message}
-    </div>
+    <ElloSurface className="mt-4 p-5 text-center text-sm text-muted-foreground">{message}</ElloSurface>
   );
 }
 
