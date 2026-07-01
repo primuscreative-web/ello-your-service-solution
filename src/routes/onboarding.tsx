@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 
 import { ELLO_MEDIA } from "@/lib/ello-media";
 import { ElloAppShell } from "@/components/ello/app-shell";
+import { ElloEyebrow } from "@/components/ello/primitives";
 import { completeOnboarding } from "@/lib/onboarding-state";
 
 export const Route = createFileRoute("/onboarding")({
@@ -12,11 +13,10 @@ export const Route = createFileRoute("/onboarding")({
 
 const SLIDES = [
   {
-<<<<<<< HEAD
     eyebrow: "Para clientes",
     title: (
       <>
-        Contrate profissionais de <span className="text-primary">confiança.</span>
+        Encontre soluções com <span className="text-primary">rapidez e confiança.</span>
       </>
     ),
     body: "Busque por intenção, veja profissionais qualificados e contrate sem perder tempo.",
@@ -27,7 +27,7 @@ const SLIDES = [
     eyebrow: "Para profissionais",
     title: (
       <>
-        Organize e <span className="text-primary">divulgue</span> seus serviços.
+        Transforme seu perfil em uma <span className="text-primary">operação completa.</span>
       </>
     ),
     body: "Organize agenda, portfólio, clientes e orçamentos em um ambiente pensado para crescer.",
@@ -35,10 +35,10 @@ const SLIDES = [
     alt: "Profissional usando a ELLO para divulgar seus serviços",
   },
   {
-    eyebrow: "Rotina simples",
+    eyebrow: "ELLO Link",
     title: (
       <>
-        Agenda, portfólio e clientes em um <span className="text-primary">só lugar.</span>
+        Seu próprio <span className="text-primary">espaço digital.</span>
       </>
     ),
     body: "Cada profissional ganha um link com catálogo, avaliações, agenda e presença online.",
@@ -46,39 +46,15 @@ const SLIDES = [
     alt: "Agenda e ferramentas profissionais da ELLO",
   },
   {
-    eyebrow: "Assistente ELLO",
+    eyebrow: "ELLO IA",
     title: (
       <>
-        A IA da ELLO trabalha junto com <span className="text-primary">você.</span>
+        A IA acompanha o seu <span className="text-primary">crescimento.</span>
       </>
     ),
     body: "Sugestões de melhoria, oportunidades e comunicação mais inteligente em cada etapa.",
     image: ELLO_MEDIA.onboardingAssistant.src,
     alt: "Assistente inteligente da ELLO",
-=======
-    eyebrow: "Clientes",
-    title: "Encontre soluções com rapidez e confiança.",
-    body: "Busque por intenção, veja profissionais qualificados e contrate sem perder tempo.",
-    accent: "⚡",
-  },
-  {
-    eyebrow: "Profissionais",
-    title: "Transforme seu perfil em uma operação completa.",
-    body: "Organize agenda, portfólio, clientes e orçamentos em um ambiente pensado para crescer.",
-    accent: "📈",
-  },
-  {
-    eyebrow: "ELLO Link",
-    title: "Seu próprio espaço digital.",
-    body: "Cada profissional ganha um link com catálogo, avaliações, agenda e presença online.",
-    accent: "🔗",
-  },
-  {
-    eyebrow: "ELLO IA",
-    title: "A IA acompanha o seu crescimento.",
-    body: "Sugestões de melhoria, oportunidades e comunicação mais inteligente em cada etapa.",
-    accent: "✨",
->>>>>>> 3fc0f0d (Refine ELLO positioning across onboarding and home)
   },
 ] as const;
 
@@ -145,7 +121,7 @@ function Onboarding() {
 
   return (
     <ElloAppShell statusBarClassName="text-slate-800">
-      <main className="relative flex h-full min-h-[700px] flex-col justify-between bg-[#f7fbff]">
+      <main className="relative flex h-full min-h-[700px] flex-col justify-between ello-mesh-bg">
         <section
           className="relative flex flex-1 touch-pan-y flex-col justify-between overflow-hidden px-7 pb-8 pt-4"
           onPointerDown={handlePointerDown}
@@ -156,7 +132,7 @@ function Onboarding() {
           }}
           onPointerUp={handlePointerUp}
         >
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-primary/10 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-primary/12 to-transparent" />
 
           <div className="relative z-10 flex flex-1 overflow-hidden">
             <div
@@ -164,8 +140,12 @@ function Onboarding() {
               style={trackStyle}
             >
               {SLIDES.map((item) => (
-                <article key={item.eyebrow} className="flex min-w-full flex-col justify-between py-2">
+                <article
+                  key={item.eyebrow}
+                  className="flex min-w-full flex-col justify-between py-2"
+                >
                   <div className="min-h-[12.5rem]">
+                    <ElloEyebrow className="mb-3">Guia em 4 passos</ElloEyebrow>
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-primary/75">
                       {item.eyebrow}
                     </p>
@@ -177,7 +157,7 @@ function Onboarding() {
                     </p>
                   </div>
 
-                  <div className="relative mt-2 overflow-hidden rounded-[2rem] border border-white/80 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+                  <div className="soft-card relative mt-2 overflow-hidden rounded-[2rem] border border-white/80 bg-white/90">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/0 to-white/12" />
                     <img
                       src={item.image}
@@ -192,7 +172,7 @@ function Onboarding() {
           </div>
 
           <div className="relative z-20 mt-6">
-            <div className="mb-6 flex justify-center gap-2.5">
+            <div className="mb-5 flex justify-center gap-2.5">
               {SLIDES.map((item, index) => (
                 <button
                   key={item.eyebrow}
@@ -200,17 +180,21 @@ function Onboarding() {
                   aria-label={`Ir para onboarding ${index + 1}`}
                   onClick={() => goTo(index)}
                   className={`h-2 rounded-full transition ${
-                    index === step ? "w-6 bg-primary" : "w-2 bg-slate-300"
+                    index === step
+                      ? "w-6 bg-primary shadow-[0_0_18px_rgba(15,111,255,0.28)]"
+                      : "w-2 bg-slate-300"
                   }`}
                 />
               ))}
             </div>
 
-            <button
-              type="button"
-              onClick={next}
-              className="btn-tactile h-14 w-full rounded-2xl bg-primary text-base font-bold text-white shadow-[0_14px_34px_rgba(0,58,255,0.225)]"
-            >
+            <div className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+              Deslize ou toque para avançar
+            </div>
+            <div className="mb-3 rounded-[20px] border border-white/70 bg-white/70 px-4 py-3 text-center text-[11px] font-semibold text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+              Cada etapa foi pensada para deixar sua primeira experiência mais fluida.
+            </div>
+            <button type="button" onClick={next} className="ello-btn-primary btn-tactile">
               {last ? "Começar" : "Próximo"}
             </button>
 

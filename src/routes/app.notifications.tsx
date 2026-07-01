@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Bell, BriefcaseBusiness, CalendarDays, MessageCircle, Star } from "lucide-react";
+import { ElloEyebrow } from "@/components/ello/primitives";
 import {
-  Bell,
-  BriefcaseBusiness,
-  CalendarDays,
-  ChevronLeft,
-  MessageCircle,
-  Star,
-} from "lucide-react";
+  EmptyStateCard,
+  ScreenHeader,
+  ScreenMain,
+  ScreenPage,
+  ScreenTabs,
+} from "@/components/ello/screen-layout";
 import { useAuth } from "@/lib/auth/auth-context";
 import { listMyNotifications, type NotificationItem } from "@/lib/ello-repository";
 
@@ -25,6 +27,7 @@ const ICONS = {
 
 function NotificationsScreen() {
   const { configured, user } = useAuth();
+  const [tab, setTab] = useState("all");
   const notificationsQuery = useQuery({
     queryKey: ["ello", "me", "notifications", user?.id],
     queryFn: () => listMyNotifications(user!.id),
@@ -33,66 +36,74 @@ function NotificationsScreen() {
   const notifications = notificationsQuery.data ?? [];
 
   return (
-    <div className="min-h-dvh bg-white pb-24">
-      <header className="flex items-center border-b border-border px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
-        <Link to="/app" aria-label="Voltar" className="grid size-10 place-items-center">
-          <ChevronLeft className="size-6" />
-        </Link>
-        <h1 className="flex-1 text-center text-base font-black">Notificações</h1>
-        <span className="size-10" />
-      </header>
+    <ScreenPage>
+      <ScreenHeader title="Notificações" subtitle="Atualizações da sua conta" backTo="/app" />
 
-      <div className="grid grid-cols-2 border-b border-border text-center text-sm font-bold">
-        <span className="border-b-2 border-primary py-4 text-primary">Todas</span>
-        <span className="py-4 text-muted-foreground">Não lidas</span>
-      </div>
+      <ScreenTabs
+        tabs={[
+          { value: "all", label: "Todas" },
+          { value: "unread", label: "Não lidas" },
+        ]}
+        active={tab}
+        onChange={setTab}
+      />
 
-      <main>
+      <ScreenMain className="!space-y-0 !px-0">
         {!configured || !user ? (
-          <EmptyState text="Entre na sua conta para acompanhar suas atualizações." />
+          <div className="px-4">
+            <EmptyState text="Entre na sua conta para acompanhar suas atualizações." />
+          </div>
         ) : notificationsQuery.isPending ? (
-          <EmptyState text="Carregando notificações..." />
+          <div className="px-4">
+            <EmptyState text="Carregando notificações..." />
+          </div>
+        ) : tab === "unread" ? (
+          <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+            <ElloEyebrow className="mb-3">Em breve</ElloEyebrow>
+            <p>Marcação de lidas será habilitada na próxima versão.</p>
+          </div>
         ) : notifications.length ? (
-          notifications.map((notification) => (
-            <NotificationRow key={notification.id} notification={notification} />
-          ))
+          <div className="divide-y divide-border/60">
+            {notifications.map((notification) => (
+              <NotificationRow key={notification.id} notification={notification} />
+            ))}
+          </div>
         ) : (
-          <EmptyState text="Suas atualizações de orçamentos e agendamentos aparecerão aqui." />
+          <div className="px-4">
+            <EmptyState text="Suas atualizações de orçamentos e agendamentos aparecerão aqui." />
+          </div>
         )}
-      </main>
-    </div>
+      </ScreenMain>
+    </ScreenPage>
   );
 }
 
 function NotificationRow({ notification }: { notification: NotificationItem }) {
   const Icon = ICONS[notification.kind];
   return (
-    <Link to={notification.href} className="flex gap-3 border-b border-border px-5 py-5">
-      <span className="grid size-12 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+    <Link
+      to={notification.href}
+      className="flex gap-3 px-4 py-4 transition-colors hover:bg-white/50"
+    >
+      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
         <Icon className="size-5" />
       </span>
       <span className="min-w-0 flex-1">
-        <strong className="block text-sm">{notification.title}</strong>
+        <strong className="block text-sm font-black">{notification.title}</strong>
         <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">
           {notification.description}
         </span>
-        <span className="mt-1 block text-[11px] text-muted-foreground">
+        <span className="mt-1.5 block text-[11px] font-medium text-muted-foreground/80">
           {notification.timestamp}
         </span>
       </span>
-      <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" />
+      <span className="mt-3 size-2 shrink-0 rounded-full bg-primary shadow-[0_0_8px_oklch(0.56_0.24_264_/_0.5)]" />
     </Link>
   );
 }
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <section className="px-8 py-20 text-center">
-      <span className="mx-auto grid size-14 place-items-center rounded-full bg-primary/10 text-primary">
-        <Bell className="size-6" />
-      </span>
-      <h2 className="mt-4 text-base font-black">Tudo em dia</h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p>
-    </section>
+    <EmptyStateCard icon={<Bell className="size-6" />} title="Tudo em dia" description={text} />
   );
 }

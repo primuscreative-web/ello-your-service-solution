@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Lightbulb, Phone, UserRound } from "lucide-react";
+import { Lightbulb, Phone, Sparkles, UserRound } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { useAuth } from "@/lib/auth/auth-context";
 import { ElloAppShell } from "@/components/ello/app-shell";
+import { ElloInfoBanner } from "@/components/ello/primitives";
+import { useAuth } from "@/lib/auth/auth-context";
 import { chooseMyAccountMode } from "@/lib/ello-repository";
 
 export const Route = createFileRoute("/role")({
@@ -42,8 +43,9 @@ function Role() {
 
   return (
     <ElloAppShell statusBarClassName="text-slate-800">
-      <main className="relative flex h-full min-h-[700px] flex-col bg-white px-7 pb-8 pt-4">
-        <section className="animate-reveal">
+      <main className="relative flex h-full min-h-[700px] flex-col overflow-hidden ello-mesh-bg px-5 pb-8 pt-4 sm:px-7">
+        <div className="absolute inset-x-8 top-0 h-36 rounded-full bg-white/70 blur-3xl" />
+        <section className="relative animate-reveal">
           <h1 className="max-w-[17rem] text-2xl font-black leading-tight tracking-[-0.04em] text-foreground">
             Como você deseja começar?
           </h1>
@@ -52,19 +54,30 @@ function Role() {
           </p>
         </section>
 
+        <section className="relative mt-5 animate-reveal" style={{ animationDelay: "60ms" }}>
+          <ElloInfoBanner
+            icon={<Sparkles className="size-5" />}
+            eyebrow="O modo ideal para você"
+            body="Use o cliente para contratar e o profissional para gerenciar serviços e oportunidades."
+          />
+        </section>
+
         {!user ? (
-          <div className="mt-5 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-xs font-semibold leading-relaxed text-primary">
+          <div className="relative mt-5 rounded-[24px] border border-primary/10 bg-white/80 p-4 text-xs font-semibold leading-relaxed text-primary shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl">
             Entre ou crie sua conta para manter sua escolha sincronizada em todos os dispositivos.
           </div>
         ) : null}
 
         {error ? (
-          <div className="mt-5 rounded-2xl bg-destructive/10 p-4 text-xs font-semibold leading-relaxed text-destructive">
+          <div className="relative mt-5 rounded-[24px] bg-destructive/10 p-4 text-xs font-semibold leading-relaxed text-destructive shadow-sm">
             {error}
           </div>
         ) : null}
 
-        <section className="mt-6 space-y-4 animate-reveal" style={{ animationDelay: "100ms" }}>
+        <section
+          className="relative mt-6 space-y-4 animate-reveal"
+          style={{ animationDelay: "100ms" }}
+        >
           <RoleCard
             disabled={saving !== null}
             variant="client"
@@ -83,10 +96,15 @@ function Role() {
           />
         </section>
 
-        <div className="mt-auto rounded-3xl bg-secondary p-5 text-xs leading-relaxed text-slate-500 animate-reveal" style={{ animationDelay: "200ms" }}>
+        <div
+          className="relative mt-auto rounded-[28px] border border-white/80 bg-white/80 p-5 text-xs leading-relaxed text-slate-500 shadow-[0_20px_50px_rgba(13,20,56,0.08)] backdrop-blur-xl animate-reveal"
+          style={{ animationDelay: "200ms" }}
+        >
           <div className="flex gap-3">
             <Lightbulb className="mt-0.5 size-5 shrink-0 text-warning" />
-            <p className="font-semibold text-foreground/80">Você poderá alternar entre os modos a qualquer momento nas configurações.</p>
+            <p className="font-semibold text-foreground/80">
+              Você poderá alternar entre os modos a qualquer momento nas configurações.
+            </p>
           </div>
           <div className="mt-4 flex items-center gap-2 text-[10px] font-semibold text-muted-foreground">
             <Phone className="size-4" />
@@ -122,7 +140,7 @@ function RoleCard({
     <button
       disabled={disabled}
       onClick={onClick}
-      className={`${gradient} flex min-h-36 w-full items-center justify-between rounded-2xl p-6 text-left text-white shadow-[0_18px_40px_rgba(0,58,255,0.12)] transition active:scale-[0.99] disabled:opacity-65`}
+      className={`${gradient} relative flex min-h-36 w-full items-center justify-between overflow-hidden rounded-[24px] border border-white/15 p-6 text-left text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] transition duration-200 active:scale-[0.99] disabled:opacity-65 before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.28),_transparent_45%)]`}
     >
       <span>
         <span className="block text-[1.35rem] font-black tracking-[-0.035em]">{title}</span>
@@ -130,7 +148,7 @@ function RoleCard({
           {body}
         </span>
       </span>
-      <span className="grid size-14 shrink-0 place-items-center rounded-full bg-white/10">
+      <span className="relative grid size-14 shrink-0 place-items-center rounded-full bg-white/12 ring-1 ring-white/20">
         {icon}
       </span>
     </button>

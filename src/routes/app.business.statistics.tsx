@@ -1,6 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { BarChart3, ChevronLeft, Eye, MessageCircle, Star, TrendingUp } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { BarChart3, Eye, MessageCircle, Star, TrendingUp } from "lucide-react";
+import { ElloEyebrow, ElloSurface } from "@/components/ello/primitives";
+import {
+  EmptyStateCard,
+  MetricTile,
+  ScreenHeader,
+  ScreenMain,
+  ScreenPage,
+} from "@/components/ello/screen-layout";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getMyProfessionalStatistics } from "@/lib/ello-repository";
 
@@ -20,55 +28,67 @@ function ProfessionalStatisticsScreen() {
   const maxTraffic = Math.max(1, ...(stats?.trafficSources.map((item) => item.value) ?? [0]));
 
   return (
-    <div className="min-h-dvh bg-white pb-24">
-      <header className="flex items-center border-b border-border px-5 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
-        <Link to="/app/business" aria-label="Voltar" className="grid size-10 place-items-center">
-          <ChevronLeft className="size-6" />
-        </Link>
-        <h1 className="flex-1 text-center text-base font-black">Estatísticas</h1>
-        <span className="size-10" />
-      </header>
+    <ScreenPage>
+      <ScreenHeader
+        title="Estatísticas"
+        subtitle="Performance do seu perfil"
+        backTo="/app/business"
+      />
 
-      <main className="space-y-5 px-5 py-5">
+      <ScreenMain>
         {!configured || !user ? (
           <Empty text="Entre no modo profissional para ver suas estatísticas reais." />
         ) : statsQuery.isPending ? (
           <Empty text="Carregando estatísticas..." />
         ) : stats ? (
           <>
-            <section className="rounded-3xl bg-gradient-to-br from-blue-50 to-white p-5">
+            <ElloSurface elevated className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase text-primary">
-                    Visualizações do perfil
-                  </p>
-                  <h2 className="mt-2 text-4xl font-black">{stats.views}</h2>
+                  <ElloEyebrow>Visualizações do perfil</ElloEyebrow>
+                  <h2 className="mt-3 text-4xl font-black tracking-tight">{stats.views}</h2>
                   <p className="text-xs text-muted-foreground">Últimos 30 dias</p>
                 </div>
-                <span className="grid size-14 place-items-center rounded-2xl bg-white text-primary shadow-sm">
+                <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
                   <Eye className="size-6" />
                 </span>
               </div>
-            </section>
+            </ElloSurface>
 
             <section className="grid grid-cols-2 gap-3">
-              <Metric icon={MessageCircle} label="Contatos recebidos" value={stats.contacts} />
-              <Metric icon={BarChart3} label="Orçamentos" value={stats.quotes} />
-              <Metric icon={TrendingUp} label="Conversão" value={`${stats.conversionRate}%`} />
-              <Metric icon={Star} label="Avaliações" value={stats.reviewCount} />
+              <MetricTile
+                icon={<MessageCircle className="size-4" />}
+                label="Contatos"
+                value={stats.contacts}
+              />
+              <MetricTile
+                icon={<BarChart3 className="size-4" />}
+                label="Orçamentos"
+                value={stats.quotes}
+              />
+              <MetricTile
+                icon={<TrendingUp className="size-4" />}
+                label="Conversão"
+                value={`${stats.conversionRate}%`}
+              />
+              <MetricTile
+                icon={<Star className="size-4" />}
+                label="Avaliações"
+                value={stats.reviewCount}
+              />
             </section>
 
-            <section className="rounded-3xl border border-border p-4">
-              <h2 className="text-base font-black">Visualizações</h2>
+            <ElloSurface className="p-4">
+              <h2 className="ello-section-title">Visualizações</h2>
               {stats.dailyViews.some((item) => item.value > 0) ? (
                 <div className="mt-4 flex h-36 items-end gap-2">
                   {stats.dailyViews.map((item) => (
                     <div key={item.label} className="flex min-w-0 flex-1 flex-col items-center">
                       <span
-                        className="w-full rounded-t-xl bg-primary"
+                        className="w-full rounded-t-lg bg-gradient-to-t from-primary to-primary/70"
                         style={{ height: `${Math.max(8, (item.value / maxDaily) * 120)}px` }}
                       />
-                      <span className="mt-2 truncate text-[9px] text-muted-foreground">
+                      <span className="mt-2 truncate text-[9px] font-medium text-muted-foreground">
                         {item.label}
                       </span>
                     </div>
@@ -77,10 +97,10 @@ function ProfessionalStatisticsScreen() {
               ) : (
                 <Empty text="Ainda não há visualizações suficientes para desenhar o gráfico." />
               )}
-            </section>
+            </ElloSurface>
 
-            <section className="rounded-3xl border border-border p-4">
-              <h2 className="text-base font-black">Fontes de tráfego</h2>
+            <ElloSurface className="p-4">
+              <h2 className="ello-section-title">Fontes de tráfego</h2>
               <div className="mt-4 space-y-3">
                 {stats.trafficSources.map((source) => (
                   <div key={source.label}>
@@ -97,36 +117,20 @@ function ProfessionalStatisticsScreen() {
                   </div>
                 ))}
               </div>
-            </section>
+            </ElloSurface>
           </>
         ) : null}
-      </main>
-    </div>
-  );
-}
-
-function Metric({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Eye;
-  label: string;
-  value: number | string;
-}) {
-  return (
-    <article className="rounded-3xl border border-border p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-        <Icon className="size-4 text-primary" />
-      </div>
-      <strong className="mt-3 block text-2xl font-black">{value}</strong>
-    </article>
+      </ScreenMain>
+    </ScreenPage>
   );
 }
 
 function Empty({ text }: { text: string }) {
   return (
-    <p className="rounded-3xl bg-secondary p-5 text-center text-sm text-muted-foreground">{text}</p>
+    <EmptyStateCard
+      icon={<BarChart3 className="size-6" />}
+      title="Estatísticas"
+      description={text}
+    />
   );
 }

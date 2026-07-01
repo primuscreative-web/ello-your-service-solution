@@ -7,9 +7,7 @@ export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 export function PrimaryButton({ className = "", fullWidth = true, ...props }: ButtonProps) {
   return (
     <button
-      className={`h-12 rounded-xl bg-primary px-5 text-sm font-bold text-white transition active:scale-[0.99] disabled:opacity-50 ${
-        fullWidth ? "w-full" : ""
-      } ${className}`}
+      className={`ello-btn-primary btn-tactile ${fullWidth ? "w-full" : ""} ${className}`}
       {...props}
     />
   );
@@ -18,10 +16,12 @@ export function PrimaryButton({ className = "", fullWidth = true, ...props }: Bu
 export function SecondaryButton({ className = "", fullWidth = true, ...props }: ButtonProps) {
   return (
     <button
-      className={`h-12 rounded-xl border border-border bg-white px-5 text-sm font-bold text-foreground transition active:scale-[0.99] disabled:opacity-50 ${
-        fullWidth ? "w-full" : ""
-      } ${className}`}
+      className={`ello-btn-secondary btn-tactile ${fullWidth ? "w-full" : ""} ${className}`}
       {...props}
     />
   );
+}
+
+export function GhostButton({ className = "", ...props }: ButtonProps) {
+  return <button className={`ello-btn-ghost btn-tactile ${className}`} {...props} />;
 }

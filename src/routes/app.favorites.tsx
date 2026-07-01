@@ -1,7 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { ProfessionalListRow } from "@/components/ello/cards";
+import { ElloInfoBanner } from "@/components/ello/primitives";
+import {
+  EmptyStateCard,
+  ScreenHeader,
+  ScreenMain,
+  ScreenPage,
+} from "@/components/ello/screen-layout";
+import { PrimaryButton } from "@/components/ello/actions";
 import { useAuth } from "@/lib/auth/auth-context";
 import { listMyFavoriteProfessionals, setProfessionalFavorite } from "@/lib/ello-repository";
 
@@ -34,57 +42,58 @@ function FavoritesScreen() {
   const favorites = favoritesQuery.data ?? [];
 
   return (
-    <div className="min-h-dvh bg-white pb-24">
-      <header className="flex items-center border-b border-border px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
-        <Link to="/app" aria-label="Voltar" className="grid size-10 place-items-center">
-          <ChevronLeft className="size-6" />
-        </Link>
-        <h1 className="flex-1 text-center text-base font-black">Favoritos</h1>
-        <span className="size-10" />
-      </header>
+    <ScreenPage>
+      <ScreenHeader title="Favoritos" subtitle="Profissionais salvos" backTo="/app" />
 
-      <main className="px-5 py-4">
+      <ScreenMain>
+        <ElloInfoBanner
+          icon={<Heart className="size-5" />}
+          eyebrow="Sua lista"
+          title="Profissionais que você salvou"
+          body="Acesse rapidamente os perfis que você marcou como favoritos."
+        />
+
         {!configured || !user ? (
           <EmptyFavorites text="Entre na sua conta para acessar os profissionais salvos." />
         ) : favoritesQuery.isPending ? (
           <EmptyFavorites text="Carregando favoritos..." />
         ) : favorites.length ? (
-          favorites.map((professional) => (
-            <ProfessionalListRow
-              key={professional.id}
-              professional={professional}
-              favorite
-              favoriteDisabled={removeMutation.isPending}
-              onFavorite={() => removeMutation.mutate(professional.id)}
-            />
-          ))
+          <div className="space-y-1">
+            {favorites.map((professional) => (
+              <ProfessionalListRow
+                key={professional.id}
+                professional={professional}
+                favorite
+                favoriteDisabled={removeMutation.isPending}
+                onFavorite={() => removeMutation.mutate(professional.id)}
+              />
+            ))}
+          </div>
         ) : (
           <EmptyFavorites text="Salve profissionais para encontrá-los rapidamente depois." />
         )}
+
         {removeMutation.error ? (
-          <p className="mt-4 rounded-xl bg-destructive/10 p-3 text-xs font-semibold text-destructive">
+          <p className="rounded-[1.25rem] bg-destructive/10 p-3 text-xs font-semibold text-destructive">
             {removeMutation.error.message}
           </p>
         ) : null}
-      </main>
-    </div>
+      </ScreenMain>
+    </ScreenPage>
   );
 }
 
 function EmptyFavorites({ text }: { text: string }) {
   return (
-    <section className="py-20 text-center">
-      <span className="mx-auto grid size-14 place-items-center rounded-full bg-primary/10 text-primary">
-        <Heart className="size-6" />
-      </span>
-      <h2 className="mt-4 text-base font-black">Seus favoritos</h2>
-      <p className="mx-auto mt-2 max-w-64 text-sm leading-relaxed text-muted-foreground">{text}</p>
-      <Link
-        to="/app/search"
-        className="mt-5 inline-flex h-11 items-center rounded-xl bg-primary px-5 text-sm font-bold text-white"
-      >
-        Buscar profissionais
-      </Link>
-    </section>
+    <EmptyStateCard
+      icon={<Heart className="size-6" />}
+      title="Seus favoritos"
+      description={text}
+      action={
+        <Link to="/app/search">
+          <PrimaryButton className="!w-auto px-6">Buscar profissionais</PrimaryButton>
+        </Link>
+      }
+    />
   );
 }

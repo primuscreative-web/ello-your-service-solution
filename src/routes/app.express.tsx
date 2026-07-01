@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Car, KeyRound, ShowerHead, Siren, Wrench, Zap } from "lucide-react";
-import { AppTopBar, CyanButton } from "@/components/ello/mobile-ui";
+import { PrimaryButton } from "@/components/ello/actions";
+import { ElloEyebrow, ElloSurface } from "@/components/ello/primitives";
+import {
+  DarkHeroCard,
+  ScreenHeader,
+  ScreenMain,
+  ScreenPage,
+} from "@/components/ello/screen-layout";
 
 export const Route = createFileRoute("/app/express")({
   component: Express,
@@ -17,29 +24,27 @@ const URGENT = [
 
 function Express() {
   return (
-    <div>
-      <AppTopBar title="ELLO Express" subtitle="Atendimento urgente" backTo="/app" />
+    <ScreenPage>
+      <ScreenHeader title="ELLO Express" subtitle="Atendimento urgente" backTo="/app" />
 
-      <main className="space-y-4 px-4 pb-6 pt-4">
-        <section className="ello-card rounded-xl p-4">
-          <h1 className="text-2xl font-black leading-tight">
-            Precisa <span className="text-primary">agora</span>?
-          </h1>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            Disparamos sua solicitação para profissionais próximos. O primeiro disponível assume o
-            atendimento.
-          </p>
-        </section>
+      <ScreenMain>
+        <DarkHeroCard
+          eyebrow="Atendimento rápido"
+          title="Precisa agora?"
+          description="Disparamos sua solicitação para profissionais próximos. O primeiro disponível assume o atendimento."
+          icon={<Siren className="size-5 text-cyan-300" />}
+        />
 
-        <section>
-          <h2 className="mb-2 text-sm font-black">Categorias urgentes</h2>
+        <ElloSurface className="p-4">
+          <ElloEyebrow className="mb-3">Categorias urgentes</ElloEyebrow>
           <div className="grid grid-cols-3 gap-2">
             {URGENT.map((item) => {
               const Icon = item.icon;
               return (
                 <button
                   key={item.label}
-                  className="ello-card flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl p-2"
+                  type="button"
+                  className="btn-tactile flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-[1.125rem] border border-border/70 bg-white/80 p-2 text-center transition hover:border-primary/35 hover:shadow-[var(--ello-shadow-sm)]"
                 >
                   <Icon className="size-6 text-primary" />
                   <span className="text-center text-[10px] font-black">{item.label}</span>
@@ -47,18 +52,23 @@ function Express() {
               );
             })}
           </div>
-        </section>
+        </ElloSurface>
 
-        <section className="ello-card rounded-xl p-4">
-          <h2 className="text-sm font-black">Descreva sua emergência</h2>
+        <ElloSurface className="p-4">
+          <h2 className="ello-section-title">Descreva sua emergência</h2>
           <textarea
             rows={4}
             placeholder="Ex: O disjuntor caiu e preciso de atendimento hoje..."
-            className="mt-3 w-full resize-none rounded-lg border border-border bg-background p-3 text-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="ello-textarea mt-3"
           />
-          <CyanButton className="mt-3 w-full">Solicitar atendimento urgente</CyanButton>
-        </section>
-      </main>
-    </div>
+          <PrimaryButton type="button" className="mt-4 !h-12">
+            Solicitar atendimento urgente
+          </PrimaryButton>
+          <p className="mt-3 text-center text-[10px] font-medium text-muted-foreground">
+            Funcionalidade em desenvolvimento — em breve com geolocalização
+          </p>
+        </ElloSurface>
+      </ScreenMain>
+    </ScreenPage>
   );
 }

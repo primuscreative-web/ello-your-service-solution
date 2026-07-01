@@ -1,43 +1,44 @@
 import type React from "react";
-import { Search } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 
 export function SearchField({
   onChange,
   onSubmit,
   placeholder = "Descreva o serviço ou problema...",
   value,
+  showAiHint = true,
 }: {
   onChange?: (value: string) => void;
   onSubmit?: () => void;
   placeholder?: string;
   value?: string;
+  showAiHint?: boolean;
 }) {
   return (
     <form
-      className="relative"
+      className="ello-search-field"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit?.();
       }}
     >
-      <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
+      <Search className="ello-search-field-icon size-5" />
       <input
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
         placeholder={placeholder}
-        className="h-12 w-full rounded-xl border border-border bg-white pl-12 pr-4 text-sm font-medium outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+        className={`ello-input ${showAiHint ? "pr-14" : ""}`}
       />
+      {showAiHint ? (
+        <span className="ello-search-ai-hint">
+          <Sparkles className="size-2.5" />
+          IA
+        </span>
+      ) : null}
     </form>
   );
 }
 
 export function TextField(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className={`h-12 w-full rounded-xl border border-border bg-white px-4 text-sm font-medium outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 ${
-        props.className ?? ""
-      }`}
-    />
-  );
+  return <input {...props} className={`ello-input ${props.className ?? ""}`} />;
 }

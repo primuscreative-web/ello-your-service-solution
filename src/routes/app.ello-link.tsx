@@ -155,17 +155,20 @@ function ElloLinkSettings() {
   const frequentClients = (clientsQuery.data ?? []).slice(0, 4);
 
   return (
-    <div className="min-h-dvh bg-white pb-24">
-      <header className="flex items-center border-b border-border px-5 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
-        <Link to="/app/business" className="grid size-10 place-items-center" aria-label="Voltar">
-          <ChevronLeft className="size-6" />
+    <div className="min-h-dvh ello-mesh-bg pb-24">
+      <header className="ello-header-bar flex items-center gap-3 pt-[calc(0.25rem+env(safe-area-inset-top))]">
+        <Link to="/app/business" className="ello-icon-btn btn-tactile" aria-label="Voltar">
+          <ChevronLeft className="size-5" />
         </Link>
-        <h1 className="flex-1 text-center text-base font-black">Configuração do ELLO Link</h1>
-        <span className="size-10" />
+        <div className="min-w-0 flex-1 text-center">
+          <h1 className="text-base font-black">ELLO Link</h1>
+          <p className="text-[11px] text-muted-foreground">Configuração da página pública</p>
+        </div>
+        <span className="size-10 shrink-0" />
       </header>
 
       <main className="space-y-6 px-5 py-6">
-        <section className="rounded-3xl bg-gradient-to-br from-blue-600 to-blue-900 p-5 text-white">
+        <section className="overflow-hidden rounded-[1.875rem] border border-white/10 bg-gradient-to-br from-[oklch(0.42_0.2_264)] via-[oklch(0.38_0.18_264)] to-[oklch(0.28_0.12_270)] p-5 text-white shadow-[0_28px_80px_-24px_oklch(0.32_0.14_264_/_0.5)]">
           <p className="text-xs font-bold uppercase tracking-wide text-white/75">ELLO Link</p>
           <h2 className="mt-2 text-2xl font-black leading-tight">
             Otimizar, melhorar, automatizar e profissionalizar.
@@ -182,8 +185,8 @@ function ElloLinkSettings() {
           </button>
         </section>
 
-        <section className="space-y-3 rounded-3xl border border-border p-4">
-          <h2 className="text-base font-black">Página pública</h2>
+        <section className="ello-surface space-y-3 p-4">
+          <h2 className="ello-section-title">Página pública</h2>
           <Input
             label="Nome exibido"
             value={form.publicName}
@@ -247,7 +250,7 @@ function ElloLinkSettings() {
         <button
           onClick={() => saveMutation.mutate()}
           disabled={saveMutation.isPending}
-          className="h-12 w-full rounded-xl bg-primary text-sm font-black text-white disabled:opacity-50"
+          className="ello-btn-primary btn-tactile !h-12"
         >
           {saveMutation.isPending ? "Salvando..." : "Salvar configurações"}
         </button>
@@ -356,12 +359,12 @@ function Input({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-black text-foreground">{label}</span>
+      <span className="ello-field-label">{label}</span>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="h-11 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-primary"
+        className="ello-input"
       />
     </label>
   );
@@ -378,11 +381,11 @@ function Textarea({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-black text-foreground">{label}</span>
+      <span className="ello-field-label">{label}</span>
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-24 w-full resize-none rounded-xl border border-border p-3 text-sm outline-none focus:border-primary"
+        className="ello-textarea"
       />
     </label>
   );
@@ -390,7 +393,7 @@ function Textarea({
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="grid min-h-dvh place-items-center bg-white px-8 text-center">
+    <div className="grid min-h-dvh place-items-center ello-mesh-bg px-8 text-center">
       <div>
         <Sparkles className="mx-auto size-12 text-primary" />
         <h1 className="mt-4 text-xl font-black">ELLO Link</h1>
