@@ -4,7 +4,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Users } from "lucide-react";
 import { AvatarPhoto } from "@/components/ello/media";
 import { ElloSurface } from "@/components/ello/primitives";
-import { EmptyStateCard, ScreenHeader, ScreenMain, ScreenPage } from "@/components/ello/screen-layout";
+import {
+  EmptyStateCard,
+  ScreenHeader,
+  ScreenMain,
+  ScreenPage,
+} from "@/components/ello/screen-layout";
 import { useAuth } from "@/lib/auth/auth-context";
 import { listMyProfessionalClients } from "@/lib/ello-repository";
 
@@ -68,7 +73,11 @@ function ProfessionalClientsScreen() {
 
 function Empty({ text }: { text: string }) {
   return (
-    <EmptyStateCard icon={<Users className="size-6" />} title="CRM de clientes" description={text} />
+    <EmptyStateCard
+      icon={<Users className="size-6" />}
+      title="CRM de clientes"
+      description={text}
+    />
   );
 }
 

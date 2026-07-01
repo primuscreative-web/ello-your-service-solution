@@ -26,7 +26,10 @@ export function StatusBar({ className = "text-slate-800" }: { className?: string
       <div className="w-[110px] shrink-0 md:block hidden" />
 
       <div className="flex items-center gap-1.5">
-        <div className="flex h-2.5 items-end gap-[1.5px] pb-[1px]" aria-label="Sinal de celular excelente">
+        <div
+          className="flex h-2.5 items-end gap-[1.5px] pb-[1px]"
+          aria-label="Sinal de celular excelente"
+        >
           <div className="h-1.5 w-[2.5px] rounded-[0.5px] bg-current opacity-60" />
           <div className="h-2 w-[2.5px] rounded-[0.5px] bg-current opacity-75" />
           <div className="h-2.5 w-[2.5px] rounded-[0.5px] bg-current opacity-90" />

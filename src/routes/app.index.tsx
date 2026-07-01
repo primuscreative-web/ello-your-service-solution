@@ -116,7 +116,9 @@ function HomeScreen() {
                   />
                   <div>
                     <p className="text-[11px] font-black text-foreground">{item.title}</p>
-                    <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">{item.body}</p>
+                    <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
+                      {item.body}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -125,7 +127,11 @@ function HomeScreen() {
         </section>
 
         <section className="animate-reveal" style={{ animationDelay: "120ms" }}>
-          <ElloSectionHeader title="Categorias populares" action="Ver todas" actionTo="/app/search" />
+          <ElloSectionHeader
+            title="Categorias populares"
+            action="Ver todas"
+            actionTo="/app/search"
+          />
           <div className="mt-4 grid grid-cols-5 gap-3">
             {categories.slice(0, 5).map((category, index) => {
               const Icon = CATEGORY_ICONS[index] ?? Wrench;

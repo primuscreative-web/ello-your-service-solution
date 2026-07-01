@@ -52,8 +52,12 @@ export function ProfessionalListRow({
         )}
       </div>
       <Link to="/app/professional/$id" params={{ id: professional.id }} className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-black text-foreground group-hover:text-primary transition-colors">{professional.name}</h3>
-        <p className="truncate text-xs font-medium text-muted-foreground">{professional.profession}</p>
+        <h3 className="truncate text-sm font-black text-foreground group-hover:text-primary transition-colors">
+          {professional.name}
+        </h3>
+        <p className="truncate text-xs font-medium text-muted-foreground">
+          {professional.profession}
+        </p>
         <div className="mt-1.5 flex items-center gap-2">
           <Rating value={professional.rating} />
           <span className="text-[10px] font-semibold text-muted-foreground">
@@ -93,7 +97,9 @@ export function ServiceCategoryCard({
       <span className="grid size-[3.25rem] place-items-center rounded-[1.125rem] border border-white/80 bg-white text-primary shadow-[var(--ello-shadow-sm)] transition-all duration-300 group-hover:scale-105 group-hover:border-primary/25 group-hover:shadow-[var(--ello-shadow-md)]">
         {icon}
       </span>
-      <span className="text-[10px] font-extrabold text-foreground/75 tracking-tight group-hover:text-primary transition-colors">{label}</span>
+      <span className="text-[10px] font-extrabold text-foreground/75 tracking-tight group-hover:text-primary transition-colors">
+        {label}
+      </span>
     </Link>
   );
 }

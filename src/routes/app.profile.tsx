@@ -128,7 +128,9 @@ function ProfileScreen() {
             ) : null}
           </label>
           <h2 className="mt-4 text-lg font-black">{displayName}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{user?.email ?? "Conta não conectada"}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {user?.email ?? "Conta não conectada"}
+          </p>
           <span className="mt-3 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
             {profile?.role === "professional" ? "Modo profissional" : "Modo cliente"}
           </span>
@@ -154,7 +156,12 @@ function ProfileScreen() {
             ) : null}
             <PrimaryButton
               disabled={
-                !configured || !user || loading || mutation.isPending || !fullName.trim() || !city.trim()
+                !configured ||
+                !user ||
+                loading ||
+                mutation.isPending ||
+                !fullName.trim() ||
+                !city.trim()
               }
               onClick={() => mutation.mutate()}
               className="!h-12"
@@ -221,7 +228,11 @@ function ProfileField({
   return (
     <label className="block">
       <span className="ello-field-label">{label}</span>
-      <input value={value} onChange={(event) => onChange(event.target.value)} className="ello-input" />
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="ello-input"
+      />
     </label>
   );
 }

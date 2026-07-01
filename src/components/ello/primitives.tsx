@@ -85,7 +85,13 @@ export function ElloInfoBanner({
   );
 }
 
-export function ElloDivider({ label = "ou", className = "" }: { label?: string; className?: string }) {
+export function ElloDivider({
+  label = "ou",
+  className = "",
+}: {
+  label?: string;
+  className?: string;
+}) {
   return (
     <div className={`ello-divider ${className}`}>
       <span className="ello-divider-line" />

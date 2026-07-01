@@ -102,7 +102,11 @@ function ProfessionalHome() {
           <h1 className="text-xl font-black tracking-[-0.03em]">Olá, {displayName}! 👋</h1>
           <p className="mt-1 text-sm text-muted-foreground">Aqui está seu resumo de hoje</p>
         </div>
-        <Link to="/app/notifications" aria-label="Notificações" className="ello-icon-btn btn-tactile">
+        <Link
+          to="/app/notifications"
+          aria-label="Notificações"
+          className="ello-icon-btn btn-tactile"
+        >
           <Bell className="size-4" />
           {dashboard.quoteCount ? (
             <span className="ello-icon-btn-badge">{Math.min(dashboard.quoteCount, 9)}</span>
@@ -136,7 +140,11 @@ function ProfessionalHome() {
         </DarkHeroCard>
 
         <section className="animate-reveal" style={{ animationDelay: "100ms" }}>
-          <ElloSectionHeader title="Próximos agendamentos" action="Ver agenda" actionTo="/app/agenda" />
+          <ElloSectionHeader
+            title="Próximos agendamentos"
+            action="Ver agenda"
+            actionTo="/app/agenda"
+          />
           <div className="mt-3 space-y-2">
             {upcoming.length ? (
               upcoming.map((appointment) => (
@@ -187,7 +195,11 @@ function ProfessionalHome() {
 
         {dashboard.recentQuotes.length ? (
           <section className="animate-reveal" style={{ animationDelay: "180ms" }}>
-            <ElloSectionHeader title="Orçamentos recentes" action="Ver todos" actionTo="/app/business/quotes" />
+            <ElloSectionHeader
+              title="Orçamentos recentes"
+              action="Ver todos"
+              actionTo="/app/business/quotes"
+            />
             <div className="mt-3 space-y-2">
               {dashboard.recentQuotes.map((quote) => (
                 <ListRowLink

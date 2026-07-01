@@ -74,7 +74,10 @@ function Role() {
           </div>
         ) : null}
 
-        <section className="relative mt-6 space-y-4 animate-reveal" style={{ animationDelay: "100ms" }}>
+        <section
+          className="relative mt-6 space-y-4 animate-reveal"
+          style={{ animationDelay: "100ms" }}
+        >
           <RoleCard
             disabled={saving !== null}
             variant="client"
@@ -93,10 +96,15 @@ function Role() {
           />
         </section>
 
-        <div className="relative mt-auto rounded-[28px] border border-white/80 bg-white/80 p-5 text-xs leading-relaxed text-slate-500 shadow-[0_20px_50px_rgba(13,20,56,0.08)] backdrop-blur-xl animate-reveal" style={{ animationDelay: "200ms" }}>
+        <div
+          className="relative mt-auto rounded-[28px] border border-white/80 bg-white/80 p-5 text-xs leading-relaxed text-slate-500 shadow-[0_20px_50px_rgba(13,20,56,0.08)] backdrop-blur-xl animate-reveal"
+          style={{ animationDelay: "200ms" }}
+        >
           <div className="flex gap-3">
             <Lightbulb className="mt-0.5 size-5 shrink-0 text-warning" />
-            <p className="font-semibold text-foreground/80">Você poderá alternar entre os modos a qualquer momento nas configurações.</p>
+            <p className="font-semibold text-foreground/80">
+              Você poderá alternar entre os modos a qualquer momento nas configurações.
+            </p>
           </div>
           <div className="mt-4 flex items-center gap-2 text-[10px] font-semibold text-muted-foreground">
             <Phone className="size-4" />

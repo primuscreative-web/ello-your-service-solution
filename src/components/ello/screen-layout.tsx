@@ -75,7 +75,10 @@ export function ScreenTabs({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="grid border-b border-border/70 bg-white/60 backdrop-blur-xl" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+    <div
+      className="grid border-b border-border/70 bg-white/60 backdrop-blur-xl"
+      style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}
+    >
       {tabs.map((tab) => (
         <button
           key={tab.value}
@@ -106,7 +109,10 @@ export function SegmentedControl({
   className?: string;
 }) {
   return (
-    <div className={`grid rounded-full border border-border/80 bg-white/70 p-1 ${className}`} style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+    <div
+      className={`grid rounded-full border border-border/80 bg-white/70 p-1 ${className}`}
+      style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}
+    >
       {options.map((option) => (
         <button
           key={option.value}
@@ -210,7 +216,9 @@ export function DarkHeroCard({
     <section className="animate-reveal overflow-hidden rounded-[1.875rem] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-[oklch(0.28_0.1_264)] p-5 text-white shadow-[0_28px_80px_-32px_rgba(0,0,0,0.55)]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/60">{eyebrow}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/60">
+            {eyebrow}
+          </p>
           <h2 className="mt-2 text-xl font-black leading-tight tracking-[-0.03em]">{title}</h2>
           <p className="mt-2 max-w-[20rem] text-sm leading-relaxed text-white/70">{description}</p>
         </div>

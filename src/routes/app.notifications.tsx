@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  Bell,
-  BriefcaseBusiness,
-  CalendarDays,
-  MessageCircle,
-  Star,
-} from "lucide-react";
+import { Bell, BriefcaseBusiness, CalendarDays, MessageCircle, Star } from "lucide-react";
 import { ElloEyebrow } from "@/components/ello/primitives";
-import { EmptyStateCard, ScreenHeader, ScreenMain, ScreenPage, ScreenTabs } from "@/components/ello/screen-layout";
+import {
+  EmptyStateCard,
+  ScreenHeader,
+  ScreenMain,
+  ScreenPage,
+  ScreenTabs,
+} from "@/components/ello/screen-layout";
 import { useAuth } from "@/lib/auth/auth-context";
 import { listMyNotifications, type NotificationItem } from "@/lib/ello-repository";
 
@@ -104,10 +104,6 @@ function NotificationRow({ notification }: { notification: NotificationItem }) {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <EmptyStateCard
-      icon={<Bell className="size-6" />}
-      title="Tudo em dia"
-      description={text}
-    />
+    <EmptyStateCard icon={<Bell className="size-6" />} title="Tudo em dia" description={text} />
   );
 }

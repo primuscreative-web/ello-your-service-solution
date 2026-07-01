@@ -206,7 +206,9 @@ function SearchScreen() {
 
 function StateMessage({ message }: { message: string }) {
   return (
-    <ElloSurface className="mt-4 p-5 text-center text-sm text-muted-foreground">{message}</ElloSurface>
+    <ElloSurface className="mt-4 p-5 text-center text-sm text-muted-foreground">
+      {message}
+    </ElloSurface>
   );
 }
 

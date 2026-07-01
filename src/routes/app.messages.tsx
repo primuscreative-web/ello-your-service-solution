@@ -164,7 +164,9 @@ function MessagesScreen() {
         )}
         {activeThread && !activeThread.professionalView && activeThread.status === "quoted" ? (
           <Link to="/app/quote/$id" params={{ id: activeThread.id }}>
-            <PrimaryButton className="ml-auto !w-fit px-5 !text-xs">Ver orçamento recebido</PrimaryButton>
+            <PrimaryButton className="ml-auto !w-fit px-5 !text-xs">
+              Ver orçamento recebido
+            </PrimaryButton>
           </Link>
         ) : null}
         {sendMutation.error ? (
@@ -217,7 +219,9 @@ function ThreadChip({
       type="button"
       onClick={onClick}
       className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition ${
-        active ? "bg-primary text-white shadow-[var(--ello-shadow-glow)]" : "bg-white/90 text-foreground border border-border/60"
+        active
+          ? "bg-primary text-white shadow-[var(--ello-shadow-glow)]"
+          : "bg-white/90 text-foreground border border-border/60"
       }`}
     >
       {thread.title}

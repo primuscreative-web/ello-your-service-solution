@@ -125,7 +125,9 @@ function QuoteRow({
   return (
     <div className="py-5">
       <dt className="text-sm font-black">{label}</dt>
-      <dd className={`mt-2 leading-relaxed ${large ? "text-xl font-black" : "text-sm text-muted-foreground"}`}>
+      <dd
+        className={`mt-2 leading-relaxed ${large ? "text-xl font-black" : "text-sm text-muted-foreground"}`}
+      >
         {value}
       </dd>
     </div>

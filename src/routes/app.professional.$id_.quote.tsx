@@ -44,7 +44,11 @@ function QuoteRequestScreen() {
 
   return (
     <ScreenPage>
-      <ScreenHeader title="Novo orçamento" subtitle="Descreva o que você precisa" backTo={`/app/professional/${id}`} />
+      <ScreenHeader
+        title="Novo orçamento"
+        subtitle="Descreva o que você precisa"
+        backTo={`/app/professional/${id}`}
+      />
 
       <ScreenMain className="space-y-6">
         <Field label="Serviço desejado">
@@ -72,7 +76,10 @@ function QuoteRequestScreen() {
                 <Icon className="size-6" />
               </span>
             ))}
-            <button type="button" className="grid size-20 place-items-center rounded-xl border border-dashed border-border bg-secondary/40">
+            <button
+              type="button"
+              className="grid size-20 place-items-center rounded-xl border border-dashed border-border bg-secondary/40"
+            >
               <Plus className="size-7 text-muted-foreground" />
             </button>
           </div>
@@ -110,7 +117,9 @@ function QuoteRequestScreen() {
 
         <PrimaryButton
           type="button"
-          disabled={description.trim().length < 10 || location.trim().length < 3 || mutation.isPending}
+          disabled={
+            description.trim().length < 10 || location.trim().length < 3 || mutation.isPending
+          }
           onClick={() => mutation.mutate()}
           className="!h-12"
         >

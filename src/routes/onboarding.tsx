@@ -140,7 +140,10 @@ function Onboarding() {
               style={trackStyle}
             >
               {SLIDES.map((item) => (
-                <article key={item.eyebrow} className="flex min-w-full flex-col justify-between py-2">
+                <article
+                  key={item.eyebrow}
+                  className="flex min-w-full flex-col justify-between py-2"
+                >
                   <div className="min-h-[12.5rem]">
                     <ElloEyebrow className="mb-3">Guia em 4 passos</ElloEyebrow>
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-primary/75">
@@ -177,7 +180,9 @@ function Onboarding() {
                   aria-label={`Ir para onboarding ${index + 1}`}
                   onClick={() => goTo(index)}
                   className={`h-2 rounded-full transition ${
-                    index === step ? "w-6 bg-primary shadow-[0_0_18px_rgba(15,111,255,0.28)]" : "w-2 bg-slate-300"
+                    index === step
+                      ? "w-6 bg-primary shadow-[0_0_18px_rgba(15,111,255,0.28)]"
+                      : "w-2 bg-slate-300"
                   }`}
                 />
               ))}
@@ -189,11 +194,7 @@ function Onboarding() {
             <div className="mb-3 rounded-[20px] border border-white/70 bg-white/70 px-4 py-3 text-center text-[11px] font-semibold text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
               Cada etapa foi pensada para deixar sua primeira experiência mais fluida.
             </div>
-            <button
-              type="button"
-              onClick={next}
-              className="ello-btn-primary btn-tactile"
-            >
+            <button type="button" onClick={next} className="ello-btn-primary btn-tactile">
               {last ? "Começar" : "Próximo"}
             </button>
 

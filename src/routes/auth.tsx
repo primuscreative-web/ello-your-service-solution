@@ -247,192 +247,199 @@ function Auth() {
   return (
     <main className="ello-mesh-bg flex min-h-dvh items-center justify-center px-4 py-6">
       <div className="glass-panel w-full max-w-[393px] rounded-[2.125rem] p-6">
-      <section className="flex flex-col items-center text-center">
-        <div className="rounded-full border border-slate-200/80 bg-white/80 p-3 shadow-[0_10px_30px_-16px_rgba(15,23,42,0.35)]">
-          <ElloLogo className="text-[1.9rem]" />
-        </div>
-        <div className="mt-4">
-          <ElloEyebrow>Acesso seguro</ElloEyebrow>
-        </div>
-        <h1 className="mt-8 text-[1.52rem] font-black tracking-[-0.035em] text-foreground">
-          Bem-vindo(a)!
-        </h1>
-        <p className="mt-3 max-w-[17rem] text-[0.98rem] leading-relaxed text-muted-foreground">
-          {mode === "sign-in"
-            ? "Acesse sua conta e continue sua operação ELLO."
-            : "Crie sua conta e transforme seu perfil em uma presença profissional completa."}
-        </p>
-      </section>
+        <section className="flex flex-col items-center text-center">
+          <div className="rounded-full border border-slate-200/80 bg-white/80 p-3 shadow-[0_10px_30px_-16px_rgba(15,23,42,0.35)]">
+            <ElloLogo className="text-[1.9rem]" />
+          </div>
+          <div className="mt-4">
+            <ElloEyebrow>Acesso seguro</ElloEyebrow>
+          </div>
+          <h1 className="mt-8 text-[1.52rem] font-black tracking-[-0.035em] text-foreground">
+            Bem-vindo(a)!
+          </h1>
+          <p className="mt-3 max-w-[17rem] text-[0.98rem] leading-relaxed text-muted-foreground">
+            {mode === "sign-in"
+              ? "Acesse sua conta e continue sua operação ELLO."
+              : "Crie sua conta e transforme seu perfil em uma presença profissional completa."}
+          </p>
+        </section>
 
-      {!configured ? (
-        <div className="mt-7 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-xs font-semibold leading-relaxed text-warning-foreground">
-          O backend de autenticação ainda não está configurado neste ambiente.
-        </div>
-      ) : null}
+        {!configured ? (
+          <div className="mt-7 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-xs font-semibold leading-relaxed text-warning-foreground">
+            O backend de autenticação ainda não está configurado neste ambiente.
+          </div>
+        ) : null}
 
-      <ElloInfoBanner
-        className="mt-7"
-        icon={<ShieldCheck className="size-5" />}
-        eyebrow="Sua conta, em poucos toques"
-        body="Entre rápido, siga com segurança e continue exatamente de onde parou."
-      />
-
-      <section className="mt-6 space-y-3">
-        <ProviderButton
-          disabled={
-            !configured || !providerStatusLoaded || !googleAvailable || submittingProvider !== null
-          }
-          icon={<GoogleMark />}
-          label={
-            submittingProvider === "google"
-              ? "Abrindo Google..."
-              : providerStatusLoaded && !googleAvailable
-                ? "Google em configuração"
-                : "Continuar com Google"
-          }
-          onClick={() => void handleOAuth("google")}
+        <ElloInfoBanner
+          className="mt-7"
+          icon={<ShieldCheck className="size-5" />}
+          eyebrow="Sua conta, em poucos toques"
+          body="Entre rápido, siga com segurança e continue exatamente de onde parou."
         />
-        <ProviderButton
-          disabled={
-            !configured || !providerStatusLoaded || !appleAvailable || submittingProvider !== null
-          }
-          icon={<Apple className="size-5 fill-black text-black" />}
-          label={
-            submittingProvider === "apple"
-              ? "Abrindo Apple..."
-              : providerStatusLoaded && !appleAvailable
-                ? "iPhone em configuração"
-                : "Continuar com iPhone"
-          }
-          onClick={() => void handleOAuth("apple")}
-        />
-        <ProviderButton
-          disabled={
-            !configured || !providerStatusLoaded || !phoneAvailable || submittingProvider !== null
-          }
-          icon={<Phone className="size-5" />}
-          label={
-            providerStatusLoaded && !phoneAvailable
-              ? "Celular em configuração"
-              : "Continuar com celular"
-          }
-          onClick={() => openMethod("phone")}
-        />
-        <ProviderButton
-          icon={<Mail className="size-5" />}
-          label="Continuar com e-mail"
-          onClick={() => openMethod("email")}
-        />
-      </section>
 
-      {providerStatusLoaded && (!googleAvailable || !appleAvailable || !phoneAvailable) ? (
-        <p className="mt-4 rounded-2xl bg-muted px-4 py-3 text-center text-xs font-semibold leading-relaxed text-muted-foreground">
-          Google, iPhone e celular serão ativados assim que os provedores forem conectados no
-          Supabase.
-        </p>
-      ) : null}
-
-      {method === "email" ? (
-        <form onSubmit={handleEmailSubmit} className="mt-5 space-y-3">
-          {mode === "sign-up" ? (
-            <AuthInput
-              value={fullName}
-              onChange={setFullName}
-              placeholder="Seu nome"
-              autoComplete="name"
-            />
-          ) : null}
-          <AuthInput
-            value={email}
-            onChange={setEmail}
-            type="email"
-            required
-            placeholder="seu@email.com"
-            autoComplete="email"
+        <section className="mt-6 space-y-3">
+          <ProviderButton
+            disabled={
+              !configured ||
+              !providerStatusLoaded ||
+              !googleAvailable ||
+              submittingProvider !== null
+            }
+            icon={<GoogleMark />}
+            label={
+              submittingProvider === "google"
+                ? "Abrindo Google..."
+                : providerStatusLoaded && !googleAvailable
+                  ? "Google em configuração"
+                  : "Continuar com Google"
+            }
+            onClick={() => void handleOAuth("google")}
           />
-          <AuthInput
-            value={password}
-            onChange={setPassword}
-            type="password"
-            required
-            placeholder="Senha"
-            autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+          <ProviderButton
+            disabled={
+              !configured || !providerStatusLoaded || !appleAvailable || submittingProvider !== null
+            }
+            icon={<Apple className="size-5 fill-black text-black" />}
+            label={
+              submittingProvider === "apple"
+                ? "Abrindo Apple..."
+                : providerStatusLoaded && !appleAvailable
+                  ? "iPhone em configuração"
+                  : "Continuar com iPhone"
+            }
+            onClick={() => void handleOAuth("apple")}
           />
-
-          <PrimaryButton disabled={submitting}>
-            {submitting ? "Aguarde..." : mode === "sign-in" ? "Entrar" : "Criar conta"}
-          </PrimaryButton>
-        </form>
-      ) : null}
-
-      {method === "phone" ? (
-        <form onSubmit={handlePhoneSubmit} className="mt-5 space-y-3">
-          {mode === "sign-up" ? (
-            <AuthInput
-              value={fullName}
-              onChange={setFullName}
-              placeholder="Seu nome"
-              autoComplete="name"
-            />
-          ) : null}
-          <AuthInput
-            value={phone}
-            onChange={(value) => {
-              setPhone(value);
-              setOtpSent(false);
-              setPhoneCode("");
-            }}
-            type="tel"
-            required
-            placeholder="(11) 99999-8888"
-            autoComplete="tel"
+          <ProviderButton
+            disabled={
+              !configured || !providerStatusLoaded || !phoneAvailable || submittingProvider !== null
+            }
+            icon={<Phone className="size-5" />}
+            label={
+              providerStatusLoaded && !phoneAvailable
+                ? "Celular em configuração"
+                : "Continuar com celular"
+            }
+            onClick={() => openMethod("phone")}
           />
-          {otpSent ? (
+          <ProviderButton
+            icon={<Mail className="size-5" />}
+            label="Continuar com e-mail"
+            onClick={() => openMethod("email")}
+          />
+        </section>
+
+        {providerStatusLoaded && (!googleAvailable || !appleAvailable || !phoneAvailable) ? (
+          <p className="mt-4 rounded-2xl bg-muted px-4 py-3 text-center text-xs font-semibold leading-relaxed text-muted-foreground">
+            Google, iPhone e celular serão ativados assim que os provedores forem conectados no
+            Supabase.
+          </p>
+        ) : null}
+
+        {method === "email" ? (
+          <form onSubmit={handleEmailSubmit} className="mt-5 space-y-3">
+            {mode === "sign-up" ? (
+              <AuthInput
+                value={fullName}
+                onChange={setFullName}
+                placeholder="Seu nome"
+                autoComplete="name"
+              />
+            ) : null}
             <AuthInput
-              value={phoneCode}
-              onChange={setPhoneCode}
-              inputMode="numeric"
+              value={email}
+              onChange={setEmail}
+              type="email"
               required
-              placeholder="Código recebido por SMS"
-              autoComplete="one-time-code"
+              placeholder="seu@email.com"
+              autoComplete="email"
             />
-          ) : null}
+            <AuthInput
+              value={password}
+              onChange={setPassword}
+              type="password"
+              required
+              placeholder="Senha"
+              autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+            />
 
-          <PrimaryButton disabled={submittingProvider === "phone"}>
-            {submittingProvider === "phone"
-              ? "Aguarde..."
-              : otpSent
-                ? "Confirmar código"
-                : "Enviar código por SMS"}
-          </PrimaryButton>
-        </form>
-      ) : null}
+            <PrimaryButton disabled={submitting}>
+              {submitting ? "Aguarde..." : mode === "sign-in" ? "Entrar" : "Criar conta"}
+            </PrimaryButton>
+          </form>
+        ) : null}
 
-      {error ? (
-        <p className="mt-4 rounded-2xl bg-destructive/10 p-3 text-xs font-semibold leading-relaxed text-destructive">
-          {error}
+        {method === "phone" ? (
+          <form onSubmit={handlePhoneSubmit} className="mt-5 space-y-3">
+            {mode === "sign-up" ? (
+              <AuthInput
+                value={fullName}
+                onChange={setFullName}
+                placeholder="Seu nome"
+                autoComplete="name"
+              />
+            ) : null}
+            <AuthInput
+              value={phone}
+              onChange={(value) => {
+                setPhone(value);
+                setOtpSent(false);
+                setPhoneCode("");
+              }}
+              type="tel"
+              required
+              placeholder="(11) 99999-8888"
+              autoComplete="tel"
+            />
+            {otpSent ? (
+              <AuthInput
+                value={phoneCode}
+                onChange={setPhoneCode}
+                inputMode="numeric"
+                required
+                placeholder="Código recebido por SMS"
+                autoComplete="one-time-code"
+              />
+            ) : null}
+
+            <PrimaryButton disabled={submittingProvider === "phone"}>
+              {submittingProvider === "phone"
+                ? "Aguarde..."
+                : otpSent
+                  ? "Confirmar código"
+                  : "Enviar código por SMS"}
+            </PrimaryButton>
+          </form>
+        ) : null}
+
+        {error ? (
+          <p className="mt-4 rounded-2xl bg-destructive/10 p-3 text-xs font-semibold leading-relaxed text-destructive">
+            {error}
+          </p>
+        ) : null}
+
+        <ElloDivider className="my-8" />
+
+        <button
+          type="button"
+          onClick={toggleMode}
+          className="text-sm font-semibold text-foreground"
+        >
+          {mode === "sign-in" ? (
+            <>
+              Ainda não tem conta? <span className="text-primary">Criar conta</span>
+            </>
+          ) : (
+            <>
+              Já tem uma conta? <span className="text-primary">Entrar</span>
+            </>
+          )}
+        </button>
+
+        <p className="mt-auto pt-9 text-center text-xs leading-relaxed text-muted-foreground">
+          Ao continuar, você concorda com os{" "}
+          <span className="font-semibold text-primary">Termos de uso</span> e{" "}
+          <span className="font-semibold text-primary">Política de privacidade</span>.
         </p>
-      ) : null}
-
-      <ElloDivider className="my-8" />
-
-      <button type="button" onClick={toggleMode} className="text-sm font-semibold text-foreground">
-        {mode === "sign-in" ? (
-          <>
-            Ainda não tem conta? <span className="text-primary">Criar conta</span>
-          </>
-        ) : (
-          <>
-            Já tem uma conta? <span className="text-primary">Entrar</span>
-          </>
-        )}
-      </button>
-
-      <p className="mt-auto pt-9 text-center text-xs leading-relaxed text-muted-foreground">
-        Ao continuar, você concorda com os{" "}
-        <span className="font-semibold text-primary">Termos de uso</span> e{" "}
-        <span className="font-semibold text-primary">Política de privacidade</span>.
-      </p>
       </div>
     </main>
   );
@@ -470,11 +477,7 @@ function AuthInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <input
-      {...props}
-      onChange={(event) => onChange(event.target.value)}
-      className="ello-input"
-    />
+    <input {...props} onChange={(event) => onChange(event.target.value)} className="ello-input" />
   );
 }
 

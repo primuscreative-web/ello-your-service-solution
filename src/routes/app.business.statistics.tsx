@@ -29,7 +29,11 @@ function ProfessionalStatisticsScreen() {
 
   return (
     <ScreenPage>
-      <ScreenHeader title="Estatísticas" subtitle="Performance do seu perfil" backTo="/app/business" />
+      <ScreenHeader
+        title="Estatísticas"
+        subtitle="Performance do seu perfil"
+        backTo="/app/business"
+      />
 
       <ScreenMain>
         {!configured || !user ? (
@@ -52,10 +56,26 @@ function ProfessionalStatisticsScreen() {
             </ElloSurface>
 
             <section className="grid grid-cols-2 gap-3">
-              <MetricTile icon={<MessageCircle className="size-4" />} label="Contatos" value={stats.contacts} />
-              <MetricTile icon={<BarChart3 className="size-4" />} label="Orçamentos" value={stats.quotes} />
-              <MetricTile icon={<TrendingUp className="size-4" />} label="Conversão" value={`${stats.conversionRate}%`} />
-              <MetricTile icon={<Star className="size-4" />} label="Avaliações" value={stats.reviewCount} />
+              <MetricTile
+                icon={<MessageCircle className="size-4" />}
+                label="Contatos"
+                value={stats.contacts}
+              />
+              <MetricTile
+                icon={<BarChart3 className="size-4" />}
+                label="Orçamentos"
+                value={stats.quotes}
+              />
+              <MetricTile
+                icon={<TrendingUp className="size-4" />}
+                label="Conversão"
+                value={`${stats.conversionRate}%`}
+              />
+              <MetricTile
+                icon={<Star className="size-4" />}
+                label="Avaliações"
+                value={stats.reviewCount}
+              />
             </section>
 
             <ElloSurface className="p-4">
@@ -107,6 +127,10 @@ function ProfessionalStatisticsScreen() {
 
 function Empty({ text }: { text: string }) {
   return (
-    <EmptyStateCard icon={<BarChart3 className="size-6" />} title="Estatísticas" description={text} />
+    <EmptyStateCard
+      icon={<BarChart3 className="size-6" />}
+      title="Estatísticas"
+      description={text}
+    />
   );
 }

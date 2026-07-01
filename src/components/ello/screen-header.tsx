@@ -17,7 +17,11 @@ export function ClientHomeHeader({
       </button>
       <div className="flex items-center gap-2">
         {action}
-        <Link to="/app/notifications" className="ello-icon-btn btn-tactile" aria-label="Notificações">
+        <Link
+          to="/app/notifications"
+          className="ello-icon-btn btn-tactile"
+          aria-label="Notificações"
+        >
           <Bell className="size-4" />
           <span className="ello-icon-btn-badge pulse-active">3</span>
         </Link>

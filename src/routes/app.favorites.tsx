@@ -3,7 +3,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import { ProfessionalListRow } from "@/components/ello/cards";
 import { ElloInfoBanner } from "@/components/ello/primitives";
-import { EmptyStateCard, ScreenHeader, ScreenMain, ScreenPage } from "@/components/ello/screen-layout";
+import {
+  EmptyStateCard,
+  ScreenHeader,
+  ScreenMain,
+  ScreenPage,
+} from "@/components/ello/screen-layout";
 import { PrimaryButton } from "@/components/ello/actions";
 import { useAuth } from "@/lib/auth/auth-context";
 import { listMyFavoriteProfessionals, setProfessionalFavorite } from "@/lib/ello-repository";

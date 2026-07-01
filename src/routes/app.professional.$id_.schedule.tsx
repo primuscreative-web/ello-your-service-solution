@@ -51,7 +51,11 @@ function ScheduleScreen() {
 
   return (
     <ScreenPage>
-      <ScreenHeader title="Agendar serviço" subtitle="Escolha data e horário" backTo={`/app/professional/${id}`} />
+      <ScreenHeader
+        title="Agendar serviço"
+        subtitle="Escolha data e horário"
+        backTo={`/app/professional/${id}`}
+      />
 
       <ScreenMain className="space-y-6">
         <section>

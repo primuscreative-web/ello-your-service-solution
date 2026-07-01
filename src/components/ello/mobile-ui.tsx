@@ -259,7 +259,9 @@ export function BottomNav() {
             key={item.to}
             to={item.to}
             className={`flex flex-col items-center gap-0.5 rounded-[16px] py-1.5 text-[10px] font-semibold transition-all duration-300 ${
-              active ? "bg-primary/10 text-primary shadow-[0_8px_20px_-12px_rgba(15,111,255,0.55)]" : "text-muted-foreground"
+              active
+                ? "bg-primary/10 text-primary shadow-[0_8px_20px_-12px_rgba(15,111,255,0.55)]"
+                : "text-muted-foreground"
             }`}
           >
             <Icon className={`size-4 ${active ? "fill-primary/15" : ""}`} />

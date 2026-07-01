@@ -61,7 +61,9 @@ export function PhotoCarousel() {
             aria-label={`Ver destaque ${slideIndex + 1}`}
             onClick={() => setIndex(slideIndex)}
             className={`h-1.75 rounded-full transition-all ${
-              slideIndex === index ? "w-8 bg-primary shadow-[0_0_18px_rgba(15,111,255,0.24)]" : "w-1.75 bg-slate-300"
+              slideIndex === index
+                ? "w-8 bg-primary shadow-[0_0_18px_rgba(15,111,255,0.24)]"
+                : "w-1.75 bg-slate-300"
             }`}
           />
         ))}

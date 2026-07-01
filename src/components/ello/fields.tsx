@@ -40,10 +40,5 @@ export function SearchField({
 }
 
 export function TextField(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className={`ello-input ${props.className ?? ""}`}
-    />
-  );
+  return <input {...props} className={`ello-input ${props.className ?? ""}`} />;
 }

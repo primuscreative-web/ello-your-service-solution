@@ -42,8 +42,10 @@ function AgendaScreen() {
     if (!configured || !user || !supabase) return;
     const channel = supabase
       .channel(`ello-agenda-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () =>
-        void queryClient.invalidateQueries({ queryKey: ["ello", "me", "agenda", user.id] }),
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointments" },
+        () => void queryClient.invalidateQueries({ queryKey: ["ello", "me", "agenda", user.id] }),
       )
       .subscribe();
     return () => {

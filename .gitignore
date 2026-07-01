@@ -48,7 +48,8 @@ ello-frontend/
 .playwright-cli/
 
 # Personal Obsidian vault (not part of the project)
-ello/
+# IMPORTANT: matches repo-root `ello/` only (NOT src/components/ello/*)
+/ello/
 
 # OS / editor scratch
 Thumbs.db
