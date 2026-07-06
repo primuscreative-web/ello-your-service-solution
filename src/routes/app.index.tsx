@@ -57,17 +57,17 @@ function HomeScreen() {
 
       <main className="space-y-7 px-5 pb-8 pt-4">
         <section className="animate-reveal">
-          <ElloSurface className="p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary/80">
+          <div className="px-1">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary/70">
               Busca por intenção
             </p>
-            <h1 className="ello-display mt-1 text-[1.4rem]">
-              {greeting}, {firstName}! 👋
+            <h1 className="ello-display mt-2 text-[1.9rem] font-extrabold text-slate-900">
+              {greeting}, <span className="text-primary">{firstName}</span>! 👋
             </h1>
-            <p className="mt-1 text-sm font-semibold text-muted-foreground">
+            <p className="mt-2 text-base font-medium text-slate-600">
               O que você precisa resolver hoje?
             </p>
-            <div className="mt-4">
+            <div className="mt-6">
               <SearchField
                 value={searchTerm}
                 onChange={setSearchTerm}
@@ -75,11 +75,11 @@ function HomeScreen() {
                 placeholder="Ex: meu chuveiro parou de funcionar..."
               />
             </div>
-          </ElloSurface>
+          </div>
         </section>
 
         <section className="animate-reveal" style={{ animationDelay: "100ms" }}>
-          <ElloSurface elevated className="p-4">
+          <ElloSurface elevated>
             <div className="flex items-center justify-between">
               <div>
                 <ElloEyebrow>Operação completa</ElloEyebrow>
@@ -109,14 +109,14 @@ function HomeScreen() {
               ].map((item) => (
                 <div
                   key={item.title}
-                  className="flex items-start gap-3 rounded-[1.125rem] border border-white/70 bg-white/80 p-3"
+                  className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm"
                 >
                   <div
                     className={`mt-0.5 size-1 shrink-0 self-stretch rounded-full bg-gradient-to-b ${item.accent}`}
                   />
                   <div>
-                    <p className="text-[11px] font-black text-foreground">{item.title}</p>
-                    <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
+                    <p className="text-xs font-bold text-slate-800">{item.title}</p>
+                    <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
                       {item.body}
                     </p>
                   </div>
@@ -132,13 +132,13 @@ function HomeScreen() {
             action="Ver todas"
             actionTo="/app/search"
           />
-          <div className="mt-4 grid grid-cols-5 gap-3">
-            {categories.slice(0, 5).map((category, index) => {
+          <div className="mt-4 grid grid-cols-4 gap-4">
+            {categories.slice(0, 4).map((category, index) => {
               const Icon = CATEGORY_ICONS[index] ?? Wrench;
               return (
                 <ServiceCategoryCard
                   key={category.slug}
-                  icon={<Icon className="size-5" />}
+                  icon={<Icon className="size-6" />}
                   label={shortCategoryName(category.name, index)}
                   to={`/app/search?category=${encodeURIComponent(category.slug)}`}
                 />

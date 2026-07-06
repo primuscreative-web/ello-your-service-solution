@@ -46,10 +46,10 @@ function Role() {
       <main className="relative flex h-full min-h-[700px] flex-col overflow-hidden ello-mesh-bg px-5 pb-8 pt-4 sm:px-7">
         <div className="absolute inset-x-8 top-0 h-36 rounded-full bg-white/70 blur-3xl" />
         <section className="relative animate-reveal">
-          <h1 className="max-w-[17rem] text-2xl font-black leading-tight tracking-[-0.04em] text-foreground">
+          <h1 className="max-w-[17rem] text-2xl font-extrabold leading-tight tracking-[-0.04em] text-slate-900">
             Como você deseja começar?
           </h1>
-          <p className="mt-2.5 max-w-[18rem] text-sm font-semibold tracking-tight text-muted-foreground">
+          <p className="mt-2.5 max-w-[18rem] text-base font-medium tracking-tight text-slate-600">
             Você poderá usar os dois modos quando quiser.
           </p>
         </section>
@@ -63,13 +63,13 @@ function Role() {
         </section>
 
         {!user ? (
-          <div className="relative mt-5 rounded-[24px] border border-primary/10 bg-white/80 p-4 text-xs font-semibold leading-relaxed text-primary shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+          <div className="relative mt-5 rounded-2xl border border-slate-100 bg-white p-4 text-xs font-semibold leading-relaxed text-slate-500 shadow-sm">
             Entre ou crie sua conta para manter sua escolha sincronizada em todos os dispositivos.
           </div>
         ) : null}
 
         {error ? (
-          <div className="relative mt-5 rounded-[24px] bg-destructive/10 p-4 text-xs font-semibold leading-relaxed text-destructive shadow-sm">
+          <div className="relative mt-5 rounded-2xl bg-destructive/10 p-4 text-xs font-semibold leading-relaxed text-destructive shadow-sm">
             {error}
           </div>
         ) : null}
@@ -133,17 +133,17 @@ function RoleCard({
 }) {
   const gradient =
     variant === "client"
-      ? "bg-[linear-gradient(145deg,#004cff,#002bd9)]"
-      : "bg-[linear-gradient(145deg,#08b85d,#04883f)]";
+      ? "bg-[linear-gradient(145deg,oklch(0.56_0.24_264),oklch(0.58_0.22_285))]"
+      : "bg-[linear-gradient(145deg,oklch(0.62_0.18_148),oklch(0.54_0.16_155))] ";
 
   return (
     <button
       disabled={disabled}
       onClick={onClick}
-      className={`${gradient} relative flex min-h-36 w-full items-center justify-between overflow-hidden rounded-[24px] border border-white/15 p-6 text-left text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] transition duration-200 active:scale-[0.99] disabled:opacity-65 before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.28),_transparent_45%)]`}
+      className={`${gradient} relative flex min-h-36 w-full items-center justify-between overflow-hidden rounded-3xl border border-white/15 p-6 text-left text-white shadow-xl transition duration-200 active:scale-[0.99] disabled:opacity-65 before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.28),_transparent_45%)]`}
     >
       <span>
-        <span className="block text-[1.35rem] font-black tracking-[-0.035em]">{title}</span>
+        <span className="block text-xl font-extrabold tracking-[-0.035em]">{title}</span>
         <span className="mt-4 block max-w-[13rem] text-sm font-medium leading-relaxed text-white/90">
           {body}
         </span>

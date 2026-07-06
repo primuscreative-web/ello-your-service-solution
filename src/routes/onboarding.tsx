@@ -132,7 +132,7 @@ function Onboarding() {
           }}
           onPointerUp={handlePointerUp}
         >
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-primary/12 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-primary/12 to-transparent opacity-0" />
 
           <div className="relative z-10 flex flex-1 overflow-hidden">
             <div
@@ -146,19 +146,18 @@ function Onboarding() {
                 >
                   <div className="min-h-[12.5rem]">
                     <ElloEyebrow className="mb-3">Guia em 4 passos</ElloEyebrow>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-primary/75">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary/75">
                       {item.eyebrow}
                     </p>
-                    <h1 className="mt-3.5 max-w-[17.8rem] text-[1.75rem] font-black leading-[1.12] tracking-[-0.04em] text-foreground">
+                    <h1 className="mt-3.5 max-w-[17.8rem] text-[1.9rem] font-extrabold leading-[1.12] tracking-[-0.04em] text-slate-900">
                       {item.title}
                     </h1>
-                    <p className="mt-3.5 max-w-[18.5rem] text-sm font-medium leading-relaxed text-slate-500">
+                    <p className="mt-3.5 max-w-[18.5rem] text-base font-medium leading-relaxed text-slate-600">
                       {item.body}
                     </p>
                   </div>
 
-                  <div className="soft-card relative mt-2 overflow-hidden rounded-[2rem] border border-white/80 bg-white/90">
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/0 to-white/12" />
+                  <div className="relative mt-2 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-md">
                     <img
                       src={item.image}
                       alt={item.alt}
@@ -172,36 +171,36 @@ function Onboarding() {
           </div>
 
           <div className="relative z-20 mt-6">
-            <div className="mb-5 flex justify-center gap-2.5">
+            <div className="mb-5 flex justify-center gap-2">
               {SLIDES.map((item, index) => (
                 <button
                   key={item.eyebrow}
                   type="button"
                   aria-label={`Ir para onboarding ${index + 1}`}
                   onClick={() => goTo(index)}
-                  className={`h-2 rounded-full transition ${
+                  className={`h-2 rounded-full transition-all duration-300 ${
                     index === step
-                      ? "w-6 bg-primary shadow-[0_0_18px_rgba(15,111,255,0.28)]"
+                      ? "w-6 bg-primary shadow-sm"
                       : "w-2 bg-slate-300"
                   }`}
                 />
               ))}
             </div>
 
-            <div className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+            <div className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
               Deslize ou toque para avançar
             </div>
-            <div className="mb-3 rounded-[20px] border border-white/70 bg-white/70 px-4 py-3 text-center text-[11px] font-semibold text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+            <div className="mb-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-center text-xs font-semibold text-slate-500 shadow-sm">
               Cada etapa foi pensada para deixar sua primeira experiência mais fluida.
             </div>
-            <button type="button" onClick={next} className="ello-btn-primary btn-tactile">
+            <PrimaryButton onClick={next}>
               {last ? "Começar" : "Próximo"}
-            </button>
+            </PrimaryButton>
 
             <button
               type="button"
               onClick={finish}
-              className="btn-tactile mt-3 h-10 w-full text-center text-sm font-bold text-slate-400 hover:text-slate-500"
+              className="mt-3 h-10 w-full text-center text-sm font-bold text-slate-500 hover:text-slate-600 transition-colors"
             >
               Pular
             </button>

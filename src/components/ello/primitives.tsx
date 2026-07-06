@@ -9,8 +9,10 @@ export function ElloEyebrow({
   className?: string;
 }) {
   return (
-    <span className={`ello-eyebrow ${className}`}>
-      <span className="ello-eyebrow-dot" aria-hidden="true" />
+    <span
+      className={`inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/5 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-primary ${className}`}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
       {children}
     </span>
   );
@@ -30,13 +32,18 @@ export function ElloSectionHeader({
   className?: string;
 }) {
   return (
-    <div className={`flex items-end justify-between gap-3 ${className}`}>
+    <div className={`flex items-center justify-between gap-4 ${className}`}>
       <div className="min-w-0">
-        <h2 className="ello-section-title">{title}</h2>
-        {subtitle ? <p className="ello-section-subtitle">{subtitle}</p> : null}
+        <h2 className="text-lg font-extrabold tracking-tight text-slate-900">{title}</h2>
+        {subtitle ? (
+          <p className="mt-0.5 text-xs font-semibold text-slate-500/80">{subtitle}</p>
+        ) : null}
       </div>
       {action && actionTo ? (
-        <Link to={actionTo} className="ello-link-action shrink-0">
+        <Link
+          to={actionTo}
+          className="rounded-full bg-slate-50 px-3 py-1.5 text-[11px] font-bold text-primary transition-colors hover:bg-slate-100 active:scale-95"
+        >
           {action}
         </Link>
       ) : null}
@@ -54,7 +61,13 @@ export function ElloSurface({
   elevated?: boolean;
 }) {
   return (
-    <div className={`${elevated ? "ello-surface-elevated" : "ello-surface"} ${className}`}>
+    <div
+      className={`${
+        elevated
+          ? "border-white/80 bg-white/95 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)]"
+          : "border-slate-100/50 bg-white/70 backdrop-blur-md"
+      } rounded-[2rem] border p-6 transition-all duration-300 ${className}`}
+    >
       {children}
     </div>
   );

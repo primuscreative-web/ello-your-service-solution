@@ -16,22 +16,22 @@ export function SearchField({
 }) {
   return (
     <form
-      className="ello-search-field"
+      className="relative flex items-center rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-300 focus-within:border-primary/30 focus-within:ring-4 focus-within:ring-primary/5"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit?.();
       }}
     >
-      <Search className="ello-search-field-icon size-5" />
+      <Search className="absolute left-4 size-5 text-slate-400" />
       <input
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
         placeholder={placeholder}
-        className={`ello-input ${showAiHint ? "pr-14" : ""}`}
+        className={`h-12 w-full rounded-2xl bg-transparent pl-12 pr-4 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 ${showAiHint ? "pr-14" : ""}`}
       />
       {showAiHint ? (
-        <span className="ello-search-ai-hint">
-          <Sparkles className="size-2.5" />
+        <span className="absolute right-4 flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">
+          <Sparkles className="size-3 text-primary" />
           IA
         </span>
       ) : null}

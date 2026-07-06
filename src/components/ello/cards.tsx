@@ -11,7 +11,7 @@ export function ProfessionalMiniCard({ professional }: { professional: Professio
     <Link
       to="/app/professional/$id"
       params={{ id: professional.id }}
-      className="btn-tactile premium-card flex w-[8.5rem] shrink-0 flex-col items-center rounded-[1.5rem] p-3.5 text-center transition-all duration-300 hover:-translate-y-0.5"
+      className="btn-tactile flex w-[8.5rem] shrink-0 flex-col items-center rounded-3xl border border-slate-100 bg-white p-4 text-center shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="relative">
         <AvatarPhoto imageUrl={professional.avatarUrl} initials={professional.initials} size={64} />
@@ -19,13 +19,13 @@ export function ProfessionalMiniCard({ professional }: { professional: Professio
           <span className="absolute bottom-0 right-0 size-3 rounded-full bg-emerald-500 ring-2 ring-white" />
         )}
       </div>
-      <h3 className="mt-3 line-clamp-1 text-xs font-black tracking-tight text-foreground">
+      <h3 className="mt-3 line-clamp-1 text-sm font-bold tracking-tight text-slate-800">
         {professional.name}
       </h3>
-      <p className="mt-0.5 line-clamp-1 text-[10px] font-semibold text-muted-foreground">
+      <p className="mt-0.5 line-clamp-1 text-xs font-medium text-slate-500">
         {professional.profession}
       </p>
-      <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-full bg-slate-50/90 px-2 py-0.5">
+      <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-full bg-slate-50 px-2 py-0.5">
         <Rating value={professional.rating} />
       </div>
     </Link>
@@ -93,11 +93,16 @@ export function ServiceCategoryCard({
   to: string;
 }) {
   return (
-    <Link to={to} className="btn-tactile flex flex-col items-center gap-2 text-center group">
-      <span className="grid size-[3.25rem] place-items-center rounded-[1.125rem] border border-white/80 bg-white text-primary shadow-[var(--ello-shadow-sm)] transition-all duration-300 group-hover:scale-105 group-hover:border-primary/25 group-hover:shadow-[var(--ello-shadow-md)]">
+    <Link
+      to={to}
+      className="btn-tactile group flex flex-col items-center gap-2 text-center"
+    >
+      <span
+        className="grid size-14 place-items-center rounded-full border border-slate-100 bg-white text-primary shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:border-primary/25 group-hover:shadow-md"
+      >
         {icon}
       </span>
-      <span className="text-[10px] font-extrabold text-foreground/75 tracking-tight group-hover:text-primary transition-colors">
+      <span className="text-xs font-semibold text-slate-600 group-hover:text-primary transition-colors">
         {label}
       </span>
     </Link>

@@ -329,7 +329,7 @@ function Auth() {
         </section>
 
         {providerStatusLoaded && (!googleAvailable || !appleAvailable || !phoneAvailable) ? (
-          <p className="mt-4 rounded-2xl bg-muted px-4 py-3 text-center text-xs font-semibold leading-relaxed text-muted-foreground">
+          <p className="mt-4 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-center text-xs font-semibold leading-relaxed text-slate-500 shadow-sm">
             Google, iPhone e celular serão ativados assim que os provedores forem conectados no
             Supabase.
           </p>
@@ -435,7 +435,7 @@ function Auth() {
           )}
         </button>
 
-        <p className="mt-auto pt-9 text-center text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-auto pt-9 text-center text-xs leading-relaxed text-slate-500">
           Ao continuar, você concorda com os{" "}
           <span className="font-semibold text-primary">Termos de uso</span> e{" "}
           <span className="font-semibold text-primary">Política de privacidade</span>.
@@ -461,7 +461,7 @@ function ProviderButton({
       type="button"
       aria-disabled={disabled}
       onClick={disabled ? undefined : onClick}
-      className="ello-btn-secondary btn-tactile flex !h-[3.25rem] items-center gap-4 !rounded-[1.25rem] px-5 text-sm aria-disabled:cursor-not-allowed aria-disabled:opacity-55"
+      className="flex h-14 items-center justify-center gap-3 rounded-2xl border border-slate-100 bg-white px-6 text-base font-bold text-slate-700 shadow-sm transition-all duration-300 hover:bg-slate-50 active:scale-95 disabled:opacity-50"
     >
       <span className="grid size-6 place-items-center">{icon}</span>
       <span className="flex-1 text-center">{label}</span>
@@ -477,7 +477,7 @@ function AuthInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <input {...props} onChange={(event) => onChange(event.target.value)} className="ello-input" />
+    <input {...props} onChange={(event) => onChange(event.target.value)} className="h-14 w-full rounded-2xl border border-slate-100 bg-white px-5 text-base font-medium text-slate-800 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-primary/30 focus:ring-4 focus:ring-primary/5 shadow-sm" />
   );
 }
 
