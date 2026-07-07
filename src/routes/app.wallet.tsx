@@ -33,14 +33,14 @@ function WalletScreen() {
           </div>
           <div className="mt-6 grid grid-cols-2 gap-3 border-t border-white/15 pt-4">
             <MiniBalance label="Pendente" value={formatWalletCurrency(wallet.pendingCents)} />
-            <MiniBalance label="Gateway" value="Desconectado" />
+            <MiniBalance label="Pagamentos" value="Em preparação" />
           </div>
         </section>
 
         <ElloInfoBanner
           icon={<CreditCard className="size-5" />}
           eyebrow="Em preparação"
-          title="Gateway ainda não conectado"
+          title="Carteira em preparação"
           body={PAYMENT_POLICY.professionalPaymentNotice}
         />
 
@@ -56,7 +56,7 @@ function WalletScreen() {
         <ElloSurface className="p-4">
           <h2 className="ello-section-title">Histórico</h2>
           <p className="mt-4 rounded-[1.25rem] bg-secondary/80 p-4 text-center text-sm text-muted-foreground">
-            Nenhuma transação será exibida até o gateway ser conectado.
+            Suas movimentações aparecerão aqui quando os pagamentos forem ativados.
           </p>
         </ElloSurface>
       </ScreenMain>

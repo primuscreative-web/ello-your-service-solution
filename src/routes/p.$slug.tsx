@@ -294,7 +294,7 @@ function PublicProfessionalPage() {
         <div className="sticky bottom-4 space-y-2 rounded-[28px] border border-border/70 bg-white/90 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.16)] backdrop-blur-xl">
           {!configured ? (
             <p className="text-center text-xs font-semibold text-muted-foreground">
-              Configure o Supabase para concluir agendamentos reais.
+              Entre na sua conta para concluir o agendamento.
             </p>
           ) : null}
           <button

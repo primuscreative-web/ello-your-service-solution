@@ -19,7 +19,7 @@ const CATEGORY_ICONS = [Home, Scissors, Gift, Store, MoreHorizontal] as const;
 
 function HomeScreen() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const categoriesQuery = useQuery({
     queryKey: ["ello", "categories"],
@@ -32,7 +32,7 @@ function HomeScreen() {
 
   const categories = categoriesQuery.data?.length ? categoriesQuery.data : CATEGORIES;
   const professionals = professionalsQuery.data ?? [];
-  const firstName = profile?.full_name?.split(" ")[0] || "Ana";
+  const firstName = profile?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "";
 
   const currentHour = new Date().getHours();
   let greeting = "Olá";
@@ -62,7 +62,15 @@ function HomeScreen() {
               Busca por intenção
             </p>
             <h1 className="ello-display mt-2 text-[1.9rem] font-extrabold text-slate-900">
-              {greeting}, <span className="text-primary">{firstName}</span>! 👋
+              {firstName ? (
+                <>
+                  {greeting}, <span className="text-primary">{firstName}</span>! 👋
+                </>
+              ) : (
+                <>
+                  {greeting}! <span className="text-primary">Como podemos ajudar?</span>
+                </>
+              )}
             </h1>
             <p className="mt-2 text-base font-medium text-slate-600">
               O que você precisa resolver hoje?
@@ -116,9 +124,7 @@ function HomeScreen() {
                   />
                   <div>
                     <p className="text-xs font-bold text-slate-800">{item.title}</p>
-                    <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
-                      {item.body}
-                    </p>
+                    <p className="mt-0.5 text-[10px] leading-4 text-slate-500">{item.body}</p>
                   </div>
                 </div>
               ))}

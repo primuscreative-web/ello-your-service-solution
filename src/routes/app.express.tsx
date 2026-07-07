@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { Car, KeyRound, ShowerHead, Siren, Wrench, Zap } from "lucide-react";
 import { PrimaryButton } from "@/components/ello/actions";
 import { ElloEyebrow, ElloSurface } from "@/components/ello/primitives";
@@ -23,6 +24,14 @@ const URGENT = [
 ];
 
 function Express() {
+  const navigate = useNavigate();
+  const [description, setDescription] = useState("");
+
+  function requestUrgentService() {
+    const query = description.trim() || "atendimento urgente";
+    void navigate({ to: "/app/search", search: { q: query } });
+  }
+
   return (
     <ScreenPage>
       <ScreenHeader title="ELLO Express" subtitle="Atendimento urgente" backTo="/app" />
@@ -58,14 +67,16 @@ function Express() {
           <h2 className="ello-section-title">Descreva sua emergência</h2>
           <textarea
             rows={4}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
             placeholder="Ex: O disjuntor caiu e preciso de atendimento hoje..."
             className="ello-textarea mt-3"
           />
-          <PrimaryButton type="button" className="mt-4 !h-12">
+          <PrimaryButton type="button" onClick={requestUrgentService} className="mt-4 !h-12">
             Solicitar atendimento urgente
           </PrimaryButton>
           <p className="mt-3 text-center text-[10px] font-medium text-muted-foreground">
-            Funcionalidade em desenvolvimento — em breve com geolocalização
+            Vamos buscar profissionais disponíveis para o seu atendimento agora.
           </p>
         </ElloSurface>
       </ScreenMain>

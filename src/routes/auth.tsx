@@ -81,12 +81,13 @@ function Auth() {
 
         const settings = (await response.json()) as {
           external?: Partial<Record<"apple" | "google" | "phone", boolean>>;
+          sms_provider?: string;
         };
 
         setProviderAvailability({
           apple: Boolean(settings.external?.apple),
           google: Boolean(settings.external?.google),
-          phone: Boolean(settings.external?.phone),
+          phone: Boolean(settings.external?.phone || settings.sms_provider),
         });
       } catch (caughtError) {
         if (!controller.signal.aborted) {
@@ -266,7 +267,7 @@ function Auth() {
 
         {!configured ? (
           <div className="mt-7 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-xs font-semibold leading-relaxed text-warning-foreground">
-            O backend de autenticação ainda não está configurado neste ambiente.
+            Não foi possível carregar o acesso seguro agora. Recarregue a página e tente novamente.
           </div>
         ) : null}
 
@@ -278,37 +279,22 @@ function Auth() {
         />
 
         <section className="mt-6 space-y-3">
-          <ProviderButton
-            disabled={
-              !configured ||
-              !providerStatusLoaded ||
-              !googleAvailable ||
-              submittingProvider !== null
-            }
-            icon={<GoogleMark />}
-            label={
-              submittingProvider === "google"
-                ? "Abrindo Google..."
-                : providerStatusLoaded && !googleAvailable
-                  ? "Google em configuração"
-                  : "Continuar com Google"
-            }
-            onClick={() => void handleOAuth("google")}
-          />
-          <ProviderButton
-            disabled={
-              !configured || !providerStatusLoaded || !appleAvailable || submittingProvider !== null
-            }
-            icon={<Apple className="size-5 fill-black text-black" />}
-            label={
-              submittingProvider === "apple"
-                ? "Abrindo Apple..."
-                : providerStatusLoaded && !appleAvailable
-                  ? "iPhone em configuração"
-                  : "Continuar com iPhone"
-            }
-            onClick={() => void handleOAuth("apple")}
-          />
+          {googleAvailable ? (
+            <ProviderButton
+              disabled={!configured || !providerStatusLoaded || submittingProvider !== null}
+              icon={<GoogleMark />}
+              label={submittingProvider === "google" ? "Abrindo Google..." : "Continuar com Google"}
+              onClick={() => void handleOAuth("google")}
+            />
+          ) : null}
+          {appleAvailable ? (
+            <ProviderButton
+              disabled={!configured || !providerStatusLoaded || submittingProvider !== null}
+              icon={<Apple className="size-5 fill-black text-black" />}
+              label={submittingProvider === "apple" ? "Abrindo Apple..." : "Continuar com iPhone"}
+              onClick={() => void handleOAuth("apple")}
+            />
+          ) : null}
           <ProviderButton
             disabled={
               !configured || !providerStatusLoaded || !phoneAvailable || submittingProvider !== null
@@ -316,7 +302,7 @@ function Auth() {
             icon={<Phone className="size-5" />}
             label={
               providerStatusLoaded && !phoneAvailable
-                ? "Celular em configuração"
+                ? "Entrar com celular"
                 : "Continuar com celular"
             }
             onClick={() => openMethod("phone")}
@@ -327,13 +313,6 @@ function Auth() {
             onClick={() => openMethod("email")}
           />
         </section>
-
-        {providerStatusLoaded && (!googleAvailable || !appleAvailable || !phoneAvailable) ? (
-          <p className="mt-4 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-center text-xs font-semibold leading-relaxed text-slate-500 shadow-sm">
-            Google, iPhone e celular serão ativados assim que os provedores forem conectados no
-            Supabase.
-          </p>
-        ) : null}
 
         {method === "email" ? (
           <form onSubmit={handleEmailSubmit} className="mt-5 space-y-3">
@@ -477,7 +456,11 @@ function AuthInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <input {...props} onChange={(event) => onChange(event.target.value)} className="h-14 w-full rounded-2xl border border-slate-100 bg-white px-5 text-base font-medium text-slate-800 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-primary/30 focus:ring-4 focus:ring-primary/5 shadow-sm" />
+    <input
+      {...props}
+      onChange={(event) => onChange(event.target.value)}
+      className="h-14 w-full rounded-2xl border border-slate-100 bg-white px-5 text-base font-medium text-slate-800 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-primary/30 focus:ring-4 focus:ring-primary/5 shadow-sm"
+    />
   );
 }
 

@@ -66,7 +66,7 @@ function Requests() {
 
       <main className="space-y-4 px-4 pb-6 pt-4">
         {!configured ? (
-          <EmptyState message="Configure o Supabase para salvar histórico real." />
+          <EmptyState message="Entre na sua conta para sincronizar seu histórico de orçamentos." />
         ) : !user ? (
           <EmptyState message="Entre na sua conta para ver suas solicitações." />
         ) : requestsQuery.isPending ? (
@@ -91,7 +91,7 @@ function Requests() {
             />
           ))
         ) : (
-          <EmptyState message="Você ainda não solicitou nenhum orçamento real." />
+          <EmptyState message="Você ainda não solicitou nenhum orçamento." />
         )}
 
         {completeMutation.error ? <ErrorText>{completeMutation.error.message}</ErrorText> : null}
