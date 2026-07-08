@@ -528,28 +528,33 @@ export async function ensureMyProfessionalProfile(input: {
 
   const { data, error } = await supabase
     .from("professional_profiles")
-    .insert({
-      user_id: input.userId,
-      public_name: input.displayName,
-      specialty: "Profissional de serviços",
-      city: input.city ?? "São Paulo, SP",
-      coverage: "São Paulo e região",
-      description:
-        "Perfil profissional criado pela ELLO. Complete seu portfólio para receber mais oportunidades.",
-      base_price: "A combinar",
-      charge_type: "por serviço",
-      verification_status: "draft",
-      profile_status: "draft",
-      headline: "Profissional de serviços",
-      bio: "Perfil profissional criado pela ELLO. Complete seu portfólio para receber mais oportunidades.",
-      experience_years: 0,
-      trust_level: "Bronze",
-      rating: 0,
-      completed_jobs: 0,
-      response_time_minutes: null,
-      is_published: false,
-      ello_link_slug: slugify(input.displayName),
-    })
+    .upsert(
+      {
+        user_id: input.userId,
+        public_name: input.displayName,
+        specialty: "Profissional de serviços",
+        city: input.city ?? "São Paulo, SP",
+        coverage: "São Paulo e região",
+        description:
+          "Perfil profissional criado pela ELLO. Complete seu portfólio para receber mais oportunidades.",
+        base_price: "A combinar",
+        charge_type: "por serviço",
+        verification_status: "draft",
+        profile_status: "draft",
+        headline: "Profissional de serviços",
+        bio: "Perfil profissional criado pela ELLO. Complete seu portfólio para receber mais oportunidades.",
+        experience_years: 0,
+        trust_level: "Bronze",
+        rating: 0,
+        completed_jobs: 0,
+        response_time_minutes: null,
+        is_published: false,
+        ello_link_slug: `${slugify(input.displayName)}-${input.userId.slice(0, 8)}`,
+      },
+      {
+        onConflict: "user_id",
+      },
+    )
     .select("*")
     .single();
 
@@ -575,11 +580,16 @@ export async function updateMyUserProfile(input: UserProfileUpdate): Promise<Pro
 
   const { data, error } = await supabase
     .from("profiles")
-    .update({
-      full_name: fullName,
-      avatar_url: avatarUrl,
-      updated_at: new Date().toISOString(),
-    })
+    .update(
+      {
+        full_name: fullName,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id",
+      },
+    )
     .eq("id", input.userId)
     .select("*")
     .single();
@@ -774,15 +784,20 @@ export async function createMyService(input: {
 
   const { data, error } = await supabase
     .from("services")
-    .insert({
-      professional_id: profile.id,
-      title,
-      category,
-      description: input.description?.trim() || null,
-      base_price: input.basePrice?.trim() || null,
-      charge_type: input.chargeType?.trim() || "por serviço",
-      active: true,
-    })
+    .upsert(
+      {
+        professional_id: profile.id,
+        title,
+        category,
+        description: input.description?.trim() || null,
+        base_price: input.basePrice?.trim() || null,
+        charge_type: input.chargeType?.trim() || "por serviço",
+        active: true,
+      },
+      {
+        onConflict: "user_id",
+      },
+    )
     .select("*")
     .single();
 
@@ -1502,7 +1517,7 @@ export async function ensureMyClientProfile(input: {
 
   const { data, error } = await supabase
     .from("client_profiles")
-    .insert({
+    .upsert({
       user_id: input.userId,
       city: input.city ?? "São Paulo, SP",
     })
