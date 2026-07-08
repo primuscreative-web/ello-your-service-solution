@@ -3,6 +3,7 @@ import type React from "react";
 import { useMemo, useRef, useState } from "react";
 
 import { ELLO_MEDIA } from "@/lib/ello-media";
+import { PrimaryButton } from "@/components/ello/actions";
 import { ElloAppShell } from "@/components/ello/app-shell";
 import { ElloEyebrow } from "@/components/ello/primitives";
 import { completeOnboarding } from "@/lib/onboarding-state";
@@ -179,9 +180,7 @@ function Onboarding() {
                   aria-label={`Ir para onboarding ${index + 1}`}
                   onClick={() => goTo(index)}
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    index === step
-                      ? "w-6 bg-primary shadow-sm"
-                      : "w-2 bg-slate-300"
+                    index === step ? "w-6 bg-primary shadow-sm" : "w-2 bg-slate-300"
                   }`}
                 />
               ))}
@@ -193,9 +192,7 @@ function Onboarding() {
             <div className="mb-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-center text-xs font-semibold text-slate-500 shadow-sm">
               Cada etapa foi pensada para deixar sua primeira experiência mais fluida.
             </div>
-            <PrimaryButton onClick={next}>
-              {last ? "Começar" : "Próximo"}
-            </PrimaryButton>
+            <PrimaryButton onClick={next}>{last ? "Começar" : "Próximo"}</PrimaryButton>
 
             <button
               type="button"
