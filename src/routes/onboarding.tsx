@@ -125,17 +125,19 @@ function Onboarding() {
       <main className="relative flex h-full min-h-[700px] flex-col justify-between ello-mesh-bg">
         <section
           className="relative flex flex-1 touch-pan-y flex-col justify-between overflow-hidden px-7 pb-8 pt-4"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
           onPointerCancel={() => {
             dragStartX.current = null;
             setDragOffset(0);
           }}
-          onPointerUp={handlePointerUp}
         >
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-primary/12 to-transparent opacity-0" />
 
-          <div className="relative z-10 flex flex-1 overflow-hidden">
+          <div
+            className="relative z-10 flex flex-1 touch-pan-y overflow-hidden"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+          >
             <div
               className="flex w-full transition-transform duration-300 ease-out"
               style={trackStyle}
@@ -192,7 +194,9 @@ function Onboarding() {
             <div className="mb-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-center text-xs font-semibold text-slate-500 shadow-sm">
               Cada etapa foi pensada para deixar sua primeira experiência mais fluida.
             </div>
-            <PrimaryButton onClick={next}>{last ? "Começar" : "Próximo"}</PrimaryButton>
+            <PrimaryButton type="button" onClick={next}>
+              {last ? "Começar" : "Próximo"}
+            </PrimaryButton>
 
             <button
               type="button"
