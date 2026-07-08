@@ -584,7 +584,7 @@
   /* ── Navigation dock ── */
   .ello-nav-dock {
     position: absolute;
-    bottom: 1.25rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
     left: 1rem;
     right: 1rem;
     z-index: 40;
@@ -760,8 +760,10 @@
   .desktop-mockup-bg {
     display: flex;
     flex-direction: column;
+    height: 100dvh;
     min-height: 100dvh;
     width: 100%;
+    overflow: hidden;
     background-color: var(--color-background);
   }
 
@@ -769,6 +771,7 @@
     position: relative;
     width: 100%;
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -777,6 +780,7 @@
   .phone-screen {
     position: relative;
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     background: var(--color-background);
@@ -797,8 +801,10 @@
     .desktop-mockup-bg {
       align-items: center;
       justify-content: center;
+      height: 100dvh;
       min-height: 100dvh;
       width: 100vw;
+      overflow: hidden;
       background-color: #0b0f19;
       background-image:
         radial-gradient(at 0% 0%, oklch(0.25 0.1 270 / 0.4) 0px, transparent 50%),
@@ -870,6 +876,7 @@
 
     .phone-screen-content-scroll {
       background: var(--ello-mesh-bg);
+      min-height: 0;
     }
 
     .phone-dynamic-island {
