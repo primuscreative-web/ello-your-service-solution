@@ -26,6 +26,7 @@ function Role() {
         await chooseMyAccountMode({
           userId: user.id,
           mode,
+          email: user.email,
           displayName: user.user_metadata.full_name ?? user.email?.split("@")[0] ?? "Usuário ELLO",
           city: "São Paulo, SP",
         });

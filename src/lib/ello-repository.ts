@@ -605,6 +605,7 @@ export async function chooseMyAccountMode(input: {
   userId: string;
   mode: ProfileRow["role"];
   displayName: string;
+  email?: string | null;
   city?: string | null;
 }): Promise<ProfileRow> {
   const supabase = getSupabaseBrowserClient();
@@ -614,11 +615,18 @@ export async function chooseMyAccountMode(input: {
 
   const { data, error } = await supabase
     .from("profiles")
-    .update({
-      role: input.mode,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.userId)
+    .upsert(
+      {
+        id: input.userId,
+        email: input.email ?? "",
+        full_name: input.displayName,
+        role: input.mode,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "id",
+      },
+    )
     .select("*")
     .single();
 

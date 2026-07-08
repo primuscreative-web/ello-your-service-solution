@@ -33,6 +33,7 @@ function SettingsScreen() {
       await chooseMyAccountMode({
         userId: user.id,
         mode,
+        email: user.email,
         displayName: profile?.full_name ?? user.email?.split("@")[0] ?? "Usuário ELLO",
         city: "São Paulo, SP",
       });
