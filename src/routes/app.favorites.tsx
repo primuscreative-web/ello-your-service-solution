@@ -91,7 +91,9 @@ function EmptyFavorites({ text }: { text: string }) {
       description={text}
       action={
         <Link to="/app/search">
-          <PrimaryButton className="!w-auto px-6">Buscar profissionais</PrimaryButton>
+          <PrimaryButton fullWidth={false} className="px-6">
+            Buscar profissionais
+          </PrimaryButton>
         </Link>
       }
     />

@@ -238,7 +238,9 @@ function EmptyMessages({ text }: { text: string }) {
         icon={<SendHorizontal className="size-6" />}
         action={
           <Link to="/app/search">
-            <PrimaryButton className="!w-auto px-6">Buscar profissionais</PrimaryButton>
+            <PrimaryButton fullWidth={false} className="px-6">
+              Buscar profissionais
+            </PrimaryButton>
           </Link>
         }
       />

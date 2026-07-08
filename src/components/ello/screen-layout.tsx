@@ -151,7 +151,7 @@ export function EmptyStateCard({
       <p className="mx-auto mt-2 max-w-[16rem] text-sm leading-relaxed text-muted-foreground">
         {description}
       </p>
-      {action ? <div className="mt-5">{action}</div> : null}
+      {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
     </section>
   );
 }
