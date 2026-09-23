@@ -87,11 +87,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "LocalHub — Seu negócio inteiro em um único link" },
+      { title: "LocalHub — Um link para mostrar o que você faz" },
       {
         name: "description",
         content:
-          "Crie sua página, organize seu catálogo e receba agendamentos online com o LocalHub.",
+          "Reúna seus serviços, formas de contato e agendamentos numa página fácil de compartilhar.",
       },
       { name: "author", content: "LocalHub" },
       { property: "og:title", content: "LocalHub" },

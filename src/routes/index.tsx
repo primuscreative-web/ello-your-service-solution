@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 import {
   ArrowRight,
   CalendarDays,
-  Check,
+  Clock3,
   Globe2,
   LayoutDashboard,
   MessageCircle,
@@ -55,65 +56,37 @@ function LandingPage() {
 
       <main>
         <section className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-10 sm:px-8 sm:pt-16 lg:grid-cols-[1.02fr_.98fr] lg:gap-8 lg:pb-28">
-          <div className="absolute -left-48 top-0 -z-0 size-[520px] rounded-full bg-indigo-200/30 blur-[130px]" />
           <div className="relative z-10">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white/80 px-3.5 py-2 text-xs font-bold text-indigo-700 shadow-sm">
-              <Sparkles size={14} /> SUA PRESENÇA DIGITAL, SEM COMPLICAÇÃO
-            </div>
             <h1 className="max-w-2xl font-display text-[44px] font-extrabold leading-[1.08] tracking-[-0.045em] sm:text-6xl lg:text-[68px]">
-              Seu negócio inteiro em <span className="text-[#4f46e5]">um único link.</span>
+              Um link para mostrar <span className="text-[#4f46e5]">o que você faz.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
-              Mostre seus serviços, receba agendamentos e mantenha tudo organizado em uma página
-              criada para o seu negócio local.
+              Reúna seus serviços, formas de contato e agendamentos numa página simples de
+              compartilhar com seus clientes.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to={startTo} className={primaryButtonClass}>
-                {business ? "Continuar no painel" : "Criar página grátis"}
+                {business ? "Continuar no painel" : "Criar minha página"}
                 <ArrowRight size={17} />
               </Link>
               <a href="#como-funciona" className={secondaryButtonClass}>
-                <Play size={15} /> Conhecer a plataforma
+                <Play size={15} /> Ver como funciona
               </a>
-            </div>
-            <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-500">
-              <span className="flex items-center gap-1.5">
-                <Check size={15} className="text-emerald-600" /> Sem cartão de crédito
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check size={15} className="text-emerald-600" /> Comece em poucos minutos
-              </span>
             </div>
           </div>
           <div className="relative z-10 mx-auto w-full max-w-[610px]">
-            <div className="absolute -right-8 -top-8 size-36 rounded-full bg-emerald-200/50 blur-3xl" />
-            <div className="overflow-hidden rounded-[28px] border border-white bg-white p-2 shadow-[0_28px_80px_-24px_rgba(61,65,130,.28)] sm:rotate-[1deg]">
-              <img
-                src="/localhub/omnilink_dashboard_do_lojista/screen.png"
-                alt="Prévia do painel de gestão LocalHub"
-                className="aspect-[1.22] w-full rounded-[21px] object-cover object-top"
-              />
+            <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_22px_70px_-42px_rgba(30,41,59,.38)]">
+              <DashboardPreview />
               <div className="flex items-center justify-between px-4 py-4">
                 <div>
-                  <div className="text-sm font-bold">Um painel para o dia a dia</div>
+                  <div className="text-sm font-bold">Seu negócio, num só lugar</div>
                   <div className="mt-1 text-xs text-slate-500">
-                    Agenda, página e serviços no mesmo lugar.
+                    Serviços, página pública e pedidos de horário.
                   </div>
                 </div>
                 <span className="grid size-10 place-items-center rounded-xl bg-indigo-50 text-indigo-700">
                   <LayoutDashboard size={19} />
                 </span>
-              </div>
-            </div>
-            <div className="absolute -bottom-5 -left-3 flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-xl sm:-left-8">
-              <span className="grid size-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
-                <CalendarDays size={19} />
-              </span>
-              <div>
-                <div className="text-xs font-bold">Novo agendamento</div>
-                <div className="mt-0.5 text-[11px] text-slate-500">
-                  Seu próximo cliente está chegando
-                </div>
               </div>
             </div>
           </div>
@@ -207,6 +180,89 @@ function LandingPage() {
       <footer className="border-t border-slate-200 bg-white px-5 py-6 text-center text-xs text-slate-400">
         LocalHub · A presença digital do seu negócio local
       </footer>
+    </div>
+  );
+}
+
+function DashboardPreview() {
+  return (
+    <div
+      role="img"
+      aria-label="Prévia nítida do painel LocalHub com resumo de serviços e agendamentos"
+      className="aspect-[1.22] bg-[#f6f7fb] p-3 sm:p-5"
+    >
+      <div className="flex h-full overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <aside className="hidden w-[150px] shrink-0 border-r border-slate-100 bg-white p-3 sm:block">
+          <div className="mb-7 flex items-center gap-2 px-1">
+            <span className="grid size-7 place-items-center rounded-lg bg-indigo-600 text-white">
+              <Store size={14} />
+            </span>
+            <span className="text-xs font-extrabold tracking-tight text-slate-800">
+              Local<span className="text-indigo-600">Hub</span>
+            </span>
+          </div>
+          <div className="space-y-1 text-[10px] font-semibold">
+            <div className="flex items-center gap-2 rounded-lg bg-indigo-50 px-2 py-2 text-indigo-700">
+              <LayoutDashboard size={13} /> Visão geral
+            </div>
+            <div className="flex items-center gap-2 px-2 py-2 text-slate-500">
+              <Package size={13} /> Catálogo
+            </div>
+            <div className="flex items-center gap-2 px-2 py-2 text-slate-500">
+              <CalendarDays size={13} /> Agendamentos
+            </div>
+          </div>
+        </aside>
+        <div className="min-w-0 flex-1 p-3 sm:p-5">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <span className="text-[10px] font-medium text-slate-400">Painel do negócio</span>
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-semibold text-emerald-700">
+              Página publicada
+            </span>
+          </div>
+          <div className="pt-4">
+            <h2 className="text-sm font-bold text-slate-800 sm:text-base">Visão geral</h2>
+            <p className="mt-1 text-[10px] text-slate-500 sm:text-xs">
+              Um resumo do que acontece no seu negócio.
+            </p>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3">
+            <PreviewStat icon={<CalendarDays size={13} />} label="Agendamentos hoje" value="—" />
+            <PreviewStat icon={<Package size={13} />} label="Serviços ativos" value="—" />
+          </div>
+          <div className="mt-3 rounded-lg border border-slate-100 p-3 sm:mt-4 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-[10px] font-bold text-slate-800 sm:text-xs">
+                  Próximos agendamentos
+                </h3>
+                <p className="mt-1 text-[9px] text-slate-400 sm:text-[10px]">
+                  Os pedidos dos clientes aparecem aqui.
+                </p>
+              </div>
+              <Clock3 size={14} className="text-indigo-500" />
+            </div>
+            <div className="mt-3 flex items-center gap-2 rounded-md bg-slate-50 px-2.5 py-2">
+              <span className="size-2 rounded-full bg-emerald-500" />
+              <span className="text-[9px] font-medium text-slate-500 sm:text-[10px]">
+                Agenda pronta para receber pedidos
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewStat({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-100 p-2.5 sm:p-3">
+      <div className="flex items-center justify-between text-slate-400">
+        <span className="text-[9px] sm:text-[10px]">{label}</span>
+        {icon}
+      </div>
+      <div className="mt-2 text-base font-bold text-slate-800 sm:text-lg">{value}</div>
     </div>
   );
 }
