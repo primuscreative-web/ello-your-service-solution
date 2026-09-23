@@ -13,6 +13,8 @@ Open the local URL printed by Vite. Create a business, add services from the stu
 
 ## Current data storage
 
-This first working version stores business details, services, and appointments in the browser's local storage. Data is limited to that browser and device. Public page URLs are previews and are not yet available to other visitors. The Supabase configuration and existing migrations remain in the repository; no remote database changes are made by the local demo.
+The current interface stores business details, services, and appointments in the browser's local storage. Data is limited to that browser and device, and public page URLs are previews rather than pages available to other visitors.
+
+The connected Supabase project has the LocalHub schema, row-level security policies, and restricted API grants. The interface has not yet moved its business and appointment data from local storage to Supabase. Previous ELLO migrations are archived under `supabase/legacy-migrations/` and must not be applied to the new project.
 
 The original Stitch screens and visual references are preserved under `public/localhub/`.

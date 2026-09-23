@@ -141,10 +141,9 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function createPublicRuntimeConfigScript() {
-  const env = typeof process !== "undefined" ? process.env : {};
   const config = {
-    supabaseUrl: env.VITE_SUPABASE_URL ?? "",
-    supabaseAnonKey: env.VITE_SUPABASE_ANON_KEY ?? "",
+    supabaseUrl: "https://fahrhrcxzcnnrhjavrfk.supabase.co",
+    supabaseAnonKey: "sb_publishable_2wUjef5P5H6bPLqRhfouWw_AFp-Mbk_",
   };
 
   return `window.__ELLO_CONFIG__=${JSON.stringify(config).replace(/</g, "\\u003c")};`;
