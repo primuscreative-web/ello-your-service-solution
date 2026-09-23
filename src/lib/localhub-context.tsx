@@ -170,7 +170,9 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     void initialize();
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setReady(false);
       window.setTimeout(() => {
         if (active) void refresh();
       }, 0);
