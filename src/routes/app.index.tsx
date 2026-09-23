@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Gift, Home, MoreHorizontal, Scissors, Sparkles, Store, Wrench } from "lucide-react";
+import { Gift, Home, MoreHorizontal, Scissors, Store, Wrench } from "lucide-react";
 import { ProfessionalMiniCard, ServiceCategoryCard } from "@/components/ello/cards";
 import { SearchField } from "@/components/ello/fields";
 import { PhotoCarousel } from "@/components/ello/media";
-import { ElloEyebrow, ElloSectionHeader, ElloSurface } from "@/components/ello/primitives";
+import { ElloSectionHeader, ElloSurface } from "@/components/ello/primitives";
 import { ClientHomeHeader } from "@/components/ello/screen-header";
 import { useAuth } from "@/lib/auth/auth-context";
 import { CATEGORIES } from "@/lib/ello-data";
@@ -59,16 +59,16 @@ function HomeScreen() {
         <section className="animate-reveal">
           <div className="px-1">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary/70">
-              Busca por intenção
+              ENCONTRE UM PROFISSIONAL
             </p>
             <h1 className="ello-display mt-2 text-[1.9rem] font-extrabold text-slate-900">
               {firstName ? (
                 <>
-                  {greeting}, <span className="text-primary">{firstName}</span>! 👋
+                  {greeting}, <span className="text-primary">{firstName}</span>
                 </>
               ) : (
                 <>
-                  {greeting}! <span className="text-primary">Como podemos ajudar?</span>
+                  {greeting}, <span className="text-primary">como podemos ajudar?</span>
                 </>
               )}
             </h1>
@@ -87,52 +87,6 @@ function HomeScreen() {
         </section>
 
         <section className="animate-reveal" style={{ animationDelay: "100ms" }}>
-          <ElloSurface elevated>
-            <div className="flex items-center justify-between">
-              <div>
-                <ElloEyebrow>Operação completa</ElloEyebrow>
-                <h2 className="ello-section-title mt-2">Seu centro de gestão</h2>
-              </div>
-              <div className="grid size-10 place-items-center rounded-2xl bg-primary/10 text-primary">
-                <Sparkles className="size-4" />
-              </div>
-            </div>
-            <div className="mt-4 grid gap-3">
-              {[
-                {
-                  title: "ELLO Link",
-                  body: "Portfólio, catálogo e agenda em um link profissional.",
-                  accent: "from-[oklch(0.56_0.24_264)] to-[oklch(0.58_0.22_285)]",
-                },
-                {
-                  title: "Agenda",
-                  body: "Agendamento, urgência e confirmação no mesmo fluxo.",
-                  accent: "from-[oklch(0.62_0.18_148)] to-[oklch(0.54_0.16_155)]",
-                },
-                {
-                  title: "ELLO IA",
-                  body: "Sugestões de melhoria e oportunidades para crescer.",
-                  accent: "from-[oklch(0.58_0.22_285)] to-[oklch(0.54_0.26_260)]",
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm"
-                >
-                  <div
-                    className={`mt-0.5 size-1 shrink-0 self-stretch rounded-full bg-gradient-to-b ${item.accent}`}
-                  />
-                  <div>
-                    <p className="text-xs font-bold text-slate-800">{item.title}</p>
-                    <p className="mt-0.5 text-[10px] leading-4 text-slate-500">{item.body}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ElloSurface>
-        </section>
-
-        <section className="animate-reveal" style={{ animationDelay: "120ms" }}>
           <ElloSectionHeader
             title="Categorias populares"
             action="Ver todas"
@@ -153,11 +107,11 @@ function HomeScreen() {
           </div>
         </section>
 
-        <div className="animate-reveal" style={{ animationDelay: "175ms" }}>
+        <div className="animate-reveal" style={{ animationDelay: "150ms" }}>
           <PhotoCarousel />
         </div>
 
-        <section className="animate-reveal" style={{ animationDelay: "250ms" }}>
+        <section className="animate-reveal" style={{ animationDelay: "200ms" }}>
           <ElloSectionHeader
             title="Profissionais em destaque"
             action="Ver todos"

@@ -12,7 +12,9 @@ export function ScreenPage({
   noPadding?: boolean;
 }) {
   return (
-    <div className={`min-h-dvh ello-mesh-bg pb-24 ${noPadding ? "" : ""} ${className}`}>
+    <div
+      className={`ello-screen-page min-h-dvh ello-mesh-bg pb-24 ${noPadding ? "" : ""} ${className}`}
+    >
       {children}
     </div>
   );
@@ -62,7 +64,7 @@ export function ScreenMain({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <main className={`space-y-5 px-4 py-4 sm:px-5 ${className}`}>{children}</main>;
+  return <main className={`ello-screen-main space-y-5 ${className}`}>{children}</main>;
 }
 
 export function ScreenTabs({

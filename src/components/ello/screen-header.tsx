@@ -23,7 +23,6 @@ export function ClientHomeHeader({
           aria-label="Notificações"
         >
           <Bell className="size-4" />
-          <span className="ello-icon-btn-badge pulse-active">3</span>
         </Link>
         <Link to="/app/profile" className="ello-icon-btn btn-tactile" aria-label="Perfil">
           <UserRound className="size-4" />

@@ -12,16 +12,20 @@ const FULL_SCREEN_ROUTES = ["/app/professional/", "/app/quote/"];
 
 function AppShell() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const mode: AppMode = profile?.role === "professional" ? "professional" : "client";
   const hideNavigation = FULL_SCREEN_ROUTES.some((prefix) => pathname.startsWith(prefix));
 
   return (
     <ElloAppShell
       footer={hideNavigation ? null : <BottomNavigation mode={mode} />}
+      mode={mode}
+      userLabel={profile?.full_name || user?.email || "Minha conta"}
       statusBarClassName="text-slate-800"
     >
-      <div className={`flex flex-1 flex-col ${hideNavigation ? "" : "pb-24"}`}>
+      <div
+        className={`ello-app-routes flex flex-1 flex-col ${hideNavigation ? "" : "pb-24 md:pb-8"}`}
+      >
         <Outlet />
       </div>
     </ElloAppShell>

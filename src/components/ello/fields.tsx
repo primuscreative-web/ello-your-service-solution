@@ -1,22 +1,20 @@
 import type React from "react";
-import { Search, Sparkles } from "lucide-react";
+import { Search } from "lucide-react";
 
 export function SearchField({
   onChange,
   onSubmit,
   placeholder = "Descreva o serviço ou problema...",
   value,
-  showAiHint = true,
 }: {
   onChange?: (value: string) => void;
   onSubmit?: () => void;
   placeholder?: string;
   value?: string;
-  showAiHint?: boolean;
 }) {
   return (
     <form
-      className="relative flex items-center rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-300 focus-within:border-primary/30 focus-within:ring-4 focus-within:ring-primary/5"
+      className="ello-search-field relative flex items-center rounded-[10px] border border-slate-200 bg-white transition focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit?.();
@@ -27,14 +25,8 @@ export function SearchField({
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
         placeholder={placeholder}
-        className={`h-12 w-full rounded-2xl bg-transparent pl-12 pr-4 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 ${showAiHint ? "pr-14" : ""}`}
+        className="h-12 w-full rounded-[10px] bg-transparent pl-12 pr-4 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400"
       />
-      {showAiHint ? (
-        <span className="absolute right-4 flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">
-          <Sparkles className="size-3 text-primary" />
-          IA
-        </span>
-      ) : null}
     </form>
   );
 }

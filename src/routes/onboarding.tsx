@@ -1,16 +1,26 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, MapPin, Scissors, Store } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  MapPin,
+  Scissors,
+  Sparkles,
+  Store,
+  UtensilsCrossed,
+  Wrench,
+} from "lucide-react";
 import { useLocalHub, createSlug } from "@/lib/localhub-context";
 import { Field, inputClass, primaryButtonClass } from "@/components/localhub/ui";
 
 export const Route = createFileRoute("/onboarding")({ component: OnboardingPage });
 
 const categories = [
-  { id: "beleza", label: "Beleza & estética", icon: "✨" },
-  { id: "barbearia", label: "Barbearia", icon: "💈" },
-  { id: "alimentacao", label: "Alimentação", icon: "🍽️" },
-  { id: "servicos", label: "Serviços locais", icon: "🛠️" },
+  { id: "beleza", label: "Beleza & estética", icon: Sparkles },
+  { id: "barbearia", label: "Barbearia", icon: Scissors },
+  { id: "alimentacao", label: "Alimentação", icon: UtensilsCrossed },
+  { id: "servicos", label: "Serviços locais", icon: Wrench },
 ];
 
 function OnboardingPage() {
@@ -113,14 +123,15 @@ function OnboardingPage() {
               </Field>
               <Field label="Tipo de negócio">
                 <div className="grid grid-cols-2 gap-2">
-                  {categories.map(({ id, label, icon }) => (
+                  {categories.map(({ id, label, icon: Icon }) => (
                     <button
                       type="button"
                       key={id}
                       onClick={() => update("category", id)}
-                      className={`flex min-h-14 items-center gap-2 rounded-xl border px-3 text-left text-xs font-bold transition sm:text-sm ${form.category === id ? "border-indigo-300 bg-indigo-50 text-indigo-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                      aria-pressed={form.category === id}
+                      className={`flex min-h-14 items-center gap-2 rounded-[10px] border px-3 text-left text-xs font-semibold transition sm:text-sm ${form.category === id ? "border-indigo-300 bg-indigo-50 text-indigo-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
                     >
-                      <span>{icon}</span>
+                      <Icon size={17} aria-hidden="true" />
                       {label}
                     </button>
                   ))}

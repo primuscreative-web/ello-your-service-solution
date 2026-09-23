@@ -551,9 +551,7 @@ export async function ensureMyProfessionalProfile(input: {
         is_published: false,
         ello_link_slug: `${slugify(input.displayName)}-${input.userId.slice(0, 8)}`,
       },
-      {
-        onConflict: "user_id",
-      },
+      { onConflict: "user_id" },
     )
     .select("*")
     .single();
@@ -580,16 +578,11 @@ export async function updateMyUserProfile(input: UserProfileUpdate): Promise<Pro
 
   const { data, error } = await supabase
     .from("profiles")
-    .update(
-      {
-        full_name: fullName,
-        avatar_url: avatarUrl,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "user_id",
-      },
-    )
+    .update({
+      full_name: fullName,
+      avatar_url: avatarUrl,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", input.userId)
     .select("*")
     .single();
@@ -2766,6 +2759,5 @@ function appointmentNotificationTitle(status: AgendaItem["status"]) {
   if (status === "confirmed") return "Agendamento confirmado";
   if (status === "completed") return "Atendimento concluído";
   if (status === "cancelled") return "Agendamento cancelado";
-  if (status === "reschedule_requested") return "Novo horário solicitado";
   return "Novo agendamento";
 }

@@ -15,7 +15,7 @@ export function ProfessionalMiniCard({ professional }: { professional: Professio
     >
       <div className="relative">
         <AvatarPhoto imageUrl={professional.avatarUrl} initials={professional.initials} size={64} />
-        {professional.available === "yes" && (
+        {(professional.available === "agora" || professional.available === "hoje") && (
           <span className="absolute bottom-0 right-0 size-3 rounded-full bg-emerald-500 ring-2 ring-white" />
         )}
       </div>
@@ -47,7 +47,7 @@ export function ProfessionalListRow({
     <div className="group -mx-3 flex items-center gap-4 rounded-[24px] border border-transparent p-3 transition-all duration-300 hover:border-white/80 hover:bg-white/80 hover:shadow-[0_16px_40px_-24px_rgba(15,23,42,0.25)]">
       <div className="relative shrink-0">
         <AvatarPhoto imageUrl={professional.avatarUrl} initials={professional.initials} size={58} />
-        {professional.available === "yes" && (
+        {(professional.available === "agora" || professional.available === "hoje") && (
           <span className="absolute bottom-0 right-0 size-3 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
         )}
       </div>
@@ -93,13 +93,8 @@ export function ServiceCategoryCard({
   to: string;
 }) {
   return (
-    <Link
-      to={to}
-      className="btn-tactile group flex flex-col items-center gap-2 text-center"
-    >
-      <span
-        className="grid size-14 place-items-center rounded-full border border-slate-100 bg-white text-primary shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:border-primary/25 group-hover:shadow-md"
-      >
+    <Link to={to} className="btn-tactile group flex flex-col items-center gap-2 text-center">
+      <span className="grid size-14 place-items-center rounded-full border border-slate-100 bg-white text-primary shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:border-primary/25 group-hover:shadow-md">
         {icon}
       </span>
       <span className="text-xs font-semibold text-slate-600 group-hover:text-primary transition-colors">

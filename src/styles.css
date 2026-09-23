@@ -55,6 +55,17 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-indigo-50: oklch(0.975 0.006 258);
+  --color-indigo-100: oklch(0.95 0.012 258);
+  --color-indigo-200: oklch(0.9 0.025 258);
+  --color-indigo-300: oklch(0.83 0.05 258);
+  --color-indigo-400: oklch(0.7 0.1 258);
+  --color-indigo-500: oklch(0.58 0.14 258);
+  --color-indigo-600: oklch(0.49 0.16 258);
+  --color-indigo-700: oklch(0.42 0.14 258);
+  --color-indigo-800: oklch(0.34 0.1 258);
+  --color-indigo-900: oklch(0.27 0.07 258);
+  --color-indigo-950: oklch(0.2 0.05 258);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -756,36 +767,46 @@
     color: transparent;
   }
 
-  /* Mobile-first by default: full bleed screen */
+  /* Responsive application workspace */
   .desktop-mockup-bg {
     display: flex;
-    flex-direction: column;
-    height: 100dvh;
     min-height: 100dvh;
     width: 100%;
-    overflow: hidden;
-    background-color: var(--color-background);
+    overflow-x: clip;
+    background: var(--background);
   }
 
   .phone-chassis {
     position: relative;
-    width: 100%;
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    min-width: 0;
   }
 
   .phone-screen {
     position: relative;
     flex: 1;
-    min-height: 0;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    background: var(--color-background);
+    background: var(--background);
     width: 100%;
-    height: 100%;
+    overflow: clip;
+  }
+
+  .phone-screen-content-scroll {
+    flex: 1;
+    min-height: 100dvh;
+    overflow-x: clip;
+    overflow-y: auto;
+    background: var(--background);
+  }
+
+  .ello-app-content {
+    min-height: 100dvh;
+    width: 100%;
   }
 
   .phone-dynamic-island {
@@ -796,130 +817,151 @@
     display: none;
   }
 
-  /* Desktop layout: wraps in iPhone mockup bezel */
+  /* On desktop the app becomes a real workspace, not a device mockup. */
   @media (min-width: 768px) {
     .desktop-mockup-bg {
-      align-items: center;
-      justify-content: center;
-      height: 100dvh;
       min-height: 100dvh;
-      width: 100vw;
-      overflow: hidden;
-      background-color: #0b0f19;
-      background-image:
-        radial-gradient(at 0% 0%, oklch(0.25 0.1 270 / 0.4) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, oklch(0.22 0.08 300 / 0.3) 0px, transparent 50%),
-        radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
-      background-size:
-        100% 100%,
-        100% 100%,
-        24px 24px;
-      padding: 2rem;
+      background: oklch(0.975 0.004 255);
     }
 
     .phone-chassis {
-      flex: none;
-      position: relative;
-      width: 402px;
-      height: 844px;
-      background: #1e2230;
-      border: 14px solid #121520;
-      border-radius: 56px;
-      box-shadow:
-        0 25px 60px -15px rgba(0, 0, 0, 0.85),
-        inset 0 4px 6px rgba(255, 255, 255, 0.15),
-        inset 0 -4px 6px rgba(0, 0, 0, 0.6),
-        0 0 0 1px rgba(255, 255, 255, 0.05),
-        0 0 40px oklch(0.55 0.25 264 / 0.15);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      transform: translate3d(0, 0, 0);
+      margin-left: 252px;
+      width: calc(100% - 252px);
+      min-height: 100dvh;
     }
 
-    /* Side Buttons simulation */
-    .phone-chassis::before,
-    .phone-chassis::after {
-      content: "";
-      position: absolute;
-      background: #121520;
-      width: 3px;
-      border-radius: 2px;
-      z-index: 10;
-    }
-    /* Volume buttons on left */
-    .phone-chassis::before {
-      top: 150px;
-      left: -17px;
-      height: 100px;
-      box-shadow: 0 20px 0 #121520; /* Creates 2 distinct volume buttons */
-    }
-    /* Power button on right */
-    .phone-chassis::after {
-      top: 180px;
-      right: -17px;
-      height: 75px;
-    }
-
-    /* Screen content */
     .phone-screen {
-      position: relative;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: var(--ello-mesh-bg);
-      border-radius: 42px;
-      overflow: hidden;
-      width: 100%;
-      height: 100%;
+      overflow: visible;
+      background: oklch(0.975 0.004 255);
     }
 
     .phone-screen-content-scroll {
-      background: var(--ello-mesh-bg);
-      min-height: 0;
+      background: transparent;
     }
 
     .phone-dynamic-island {
-      position: absolute;
-      top: 11px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 110px;
-      height: 30px;
-      background: #000;
-      border-radius: 20px;
-      z-index: 100;
-      pointer-events: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: none;
     }
 
     .phone-home-indicator {
-      position: absolute;
-      bottom: 8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 130px;
-      height: 5px;
-      background: rgba(0, 0, 0, 0.35);
-      border-radius: 3px;
-      z-index: 99;
-      pointer-events: none;
-      display: block;
+      display: none;
     }
 
-    /* Desktop app outer wrapper gets scroll bar styling */
-    .phone-screen-content-scroll::-webkit-scrollbar {
-      width: 4px;
+    .ello-app-shell-immersive .phone-chassis {
+      margin-left: 0;
+      width: 100%;
     }
-    .phone-screen-content-scroll::-webkit-scrollbar-track {
-      background: transparent;
+
+    .ello-app-routes {
+      width: min(100%, 1440px);
+      margin-inline: auto;
     }
-    .phone-screen-content-scroll::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.1);
+
+    .ello-desktop-sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 40;
+      display: flex;
+      width: 252px;
+      flex-direction: column;
+      border-right: 1px solid oklch(0.91 0.006 255);
+      background: white;
+      padding: 28px 18px 20px;
+    }
+
+    .ello-sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 10px 30px;
+    }
+
+    .ello-sidebar-brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      overflow: hidden;
+      border-radius: 12px;
+      background: oklch(0.965 0.02 255);
+      color: oklch(0.42 0.16 258);
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: -0.06em;
+    }
+
+    .ello-sidebar-brand-word {
+      color: oklch(0.22 0.035 260);
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .ello-sidebar-caption {
+      padding: 0 12px 10px;
+      color: oklch(0.56 0.018 255);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+    }
+
+    .ello-sidebar-nav {
+      display: grid;
+      gap: 4px;
+    }
+
+    .ello-sidebar-link {
+      display: flex;
+      min-height: 44px;
+      align-items: center;
+      gap: 12px;
       border-radius: 10px;
+      padding: 0 12px;
+      color: oklch(0.43 0.02 255);
+      font-size: 13px;
+      font-weight: 600;
+      transition:
+        background 160ms ease,
+        color 160ms ease;
+    }
+
+    .ello-sidebar-link:hover {
+      background: oklch(0.97 0.005 255);
+      color: oklch(0.24 0.03 255);
+    }
+
+    .ello-sidebar-link-active,
+    .ello-sidebar-link-active:hover {
+      background: oklch(0.95 0.025 255);
+      color: oklch(0.42 0.16 258);
+    }
+
+    .ello-sidebar-bottom {
+      display: grid;
+      gap: 12px;
+      margin-top: auto;
+      border-top: 1px solid oklch(0.93 0.005 255);
+      padding-top: 16px;
+    }
+
+    .ello-sidebar-account {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 8px 4px;
+    }
+
+    .ello-sidebar-avatar {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      flex: none;
+      place-items: center;
+      border-radius: 50%;
+      background: oklch(0.94 0.025 255);
+      color: oklch(0.4 0.13 258);
+      font-size: 13px;
+      font-weight: 700;
     }
   }
 
@@ -1077,6 +1119,231 @@
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+    }
+  }
+
+  :root {
+    --ello-electric: oklch(0.49 0.16 258);
+    --ello-electric-bright: oklch(0.54 0.14 252);
+    --ello-violet: oklch(0.53 0.15 280);
+    --ello-surface-glow: oklch(0.49 0.16 258 / 0.06);
+    --ello-mesh-bg: oklch(0.975 0.004 255);
+    --ello-mesh-dark: oklch(0.19 0.025 258);
+    --ello-shadow-sm: 0 2px 8px -4px oklch(0.24 0.025 255 / 0.14);
+    --ello-shadow-md: 0 8px 24px -14px oklch(0.24 0.025 255 / 0.18);
+    --ello-shadow-lg: 0 16px 40px -24px oklch(0.24 0.025 255 / 0.22);
+    --ello-shadow-glow: 0 4px 12px -6px oklch(0.49 0.16 258 / 0.25);
+    --background: oklch(0.975 0.004 255);
+    --foreground: oklch(0.22 0.025 258);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.22 0.025 258);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.22 0.025 258);
+    --primary: var(--ello-electric);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.955 0.006 255);
+    --secondary-foreground: oklch(0.29 0.025 258);
+    --muted: oklch(0.955 0.006 255);
+    --muted-foreground: oklch(0.49 0.018 255);
+    --accent: oklch(0.49 0.16 258);
+    --accent-foreground: oklch(1 0 0);
+    --border: oklch(0.9 0.008 255);
+    --input: oklch(0.9 0.008 255);
+    --ring: oklch(0.49 0.16 258 / 0.55);
+    --sidebar: oklch(1 0 0);
+    --sidebar-foreground: oklch(0.22 0.025 258);
+    --sidebar-primary: oklch(0.49 0.16 258);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.955 0.006 255);
+    --sidebar-accent-foreground: oklch(0.29 0.025 258);
+    --sidebar-border: oklch(0.9 0.008 255);
+    --sidebar-ring: oklch(0.49 0.16 258 / 0.55);
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  .ello-desktop-sidebar {
+    display: none;
+  }
+
+  .ello-app-shell-immersive .ello-app-content {
+    min-height: 100dvh;
+  }
+
+  .ello-mesh-bg,
+  .ello-screen,
+  .ello-screen-page,
+  .phone-screen-content-scroll {
+    background: var(--background);
+  }
+
+  .ello-surface,
+  .ello-surface-elevated,
+  .premium-surface,
+  .soft-card,
+  .ello-card,
+  .ello-card-premium {
+    border: 1px solid oklch(0.91 0.006 255) !important;
+    border-radius: 16px !important;
+    background: white !important;
+    box-shadow: 0 2px 10px -6px oklch(0.24 0.025 255 / 0.15) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .premium-card {
+    border-color: oklch(0.91 0.006 255);
+    border-radius: 14px;
+    background: white;
+    box-shadow: 0 2px 10px -6px oklch(0.24 0.025 255 / 0.15);
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .premium-card:hover {
+    border-color: oklch(0.84 0.025 258);
+    box-shadow: 0 8px 20px -14px oklch(0.24 0.025 255 / 0.22);
+  }
+
+  .ello-header-bar {
+    border-color: oklch(0.91 0.006 255);
+    background: oklch(1 0 0 / 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .ello-header-pill,
+  .ello-icon-btn {
+    border-color: oklch(0.9 0.008 255);
+    border-radius: 11px;
+    background: white;
+    box-shadow: none;
+  }
+
+  .ello-nav-dock {
+    position: fixed;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    left: 50%;
+    right: auto;
+    width: min(460px, calc(100vw - 24px));
+    transform: translateX(-50%);
+    border: 1px solid oklch(0.9 0.008 255);
+    border-radius: 16px;
+    background: oklch(1 0 0 / 0.98);
+    padding: 5px;
+    box-shadow: 0 8px 24px -12px oklch(0.24 0.025 255 / 0.2);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .ello-nav-item {
+    min-width: 52px;
+    min-height: 48px;
+    gap: 3px;
+    border-radius: 11px;
+    padding: 6px 10px;
+    color: oklch(0.48 0.018 255);
+    font-size: 10px;
+    font-weight: 650;
+  }
+
+  .ello-nav-item-active {
+    background: oklch(0.95 0.025 258);
+    color: oklch(0.42 0.16 258);
+    box-shadow: none;
+    transform: none;
+  }
+
+  .ello-btn-primary,
+  .ello-action {
+    border-radius: 10px;
+    background: var(--primary);
+    box-shadow: none;
+    font-weight: 700;
+  }
+
+  .ello-btn-primary:hover:not(:disabled),
+  .ello-action:hover:not(:disabled) {
+    background: oklch(0.43 0.15 258);
+    box-shadow: none;
+  }
+
+  .ello-btn-secondary {
+    border-radius: 10px;
+    border-color: var(--border);
+    box-shadow: none;
+  }
+
+  .ello-eyebrow,
+  .ello-info-banner-eyebrow {
+    letter-spacing: 0.08em;
+  }
+
+  .ello-info-banner {
+    border-color: var(--border);
+    border-radius: 14px;
+    background: white;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .ello-display {
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 750;
+    letter-spacing: -0.035em;
+  }
+
+  .ello-section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .ello-screen-page {
+    padding-bottom: 6rem;
+  }
+
+  .ello-screen-main {
+    width: 100%;
+    margin-inline: auto;
+    padding: 20px 20px 32px;
+  }
+
+  .ello-sidebar-link:focus-visible,
+  .ello-nav-item:focus-visible,
+  .ello-header-pill:focus-visible,
+  .ello-icon-btn:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  @media (min-width: 768px) {
+    .ello-app-content {
+      width: min(100%, 1440px);
+      min-height: 100dvh;
+      margin-inline: auto;
+    }
+
+    .ello-screen-page {
+      padding-bottom: 32px;
+    }
+
+    .ello-screen-main {
+      max-width: 1320px;
+      padding: 28px 40px 40px;
+    }
+
+    .ello-nav-dock {
+      display: none;
+    }
+
+    .ello-header-bar {
+      padding-right: 40px;
+      padding-left: 40px;
     }
   }
 }

@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Bell,
   BriefcaseBusiness,
+  CalendarDays,
   Camera,
   ChevronLeft,
   ClipboardList,
@@ -63,7 +64,6 @@ export function AppTopBar({
       </div>
       <Link to="/app/notifications" className="ello-icon-btn btn-tactile" aria-label="Notificações">
         <Bell className="size-4" />
-        <span className="ello-icon-btn-badge" />
       </Link>
     </header>
   );

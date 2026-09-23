@@ -62,11 +62,7 @@ export function ElloSurface({
 }) {
   return (
     <div
-      className={`${
-        elevated
-          ? "border-white/80 bg-white/95 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)]"
-          : "border-slate-100/50 bg-white/70 backdrop-blur-md"
-      } rounded-[2rem] border p-6 transition-all duration-300 ${className}`}
+      className={`ello-surface ${elevated ? "ello-surface-elevated" : ""} p-5 sm:p-6 ${className}`}
     >
       {children}
     </div>

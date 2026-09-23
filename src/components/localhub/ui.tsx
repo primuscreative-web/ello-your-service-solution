@@ -19,7 +19,7 @@ export function PageTitle({
             {eyebrow}
           </div>
         )}
-        <h1 className="font-display text-3xl font-extrabold tracking-tight text-[#172033] sm:text-[34px]">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-[#172033] sm:text-[34px]">
           {title}
         </h1>
         {description && (
@@ -50,11 +50,11 @@ export function Field({
 }
 
 export const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100";
+  "w-full rounded-[10px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
 export const primaryButtonClass =
-  "inline-flex items-center justify-center gap-2 rounded-xl bg-[#4f46e5] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 hover:bg-[#4338ca] disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[#4359a8] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#354a91] disabled:cursor-not-allowed disabled:opacity-50";
 export const secondaryButtonClass =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50";
 
 export function money(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
