@@ -79,6 +79,256 @@
   --font-mono: "JetBrains Mono", monospace;
 }
 
+@layer components {
+  .auth-wordmark {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 11px;
+    color: #f8f7f0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.065em;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .auth-mark {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: none;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 13px;
+  }
+
+  .auth-mark svg {
+    width: 27px;
+    height: 27px;
+  }
+
+  .auth-mark-light {
+    border-color: rgb(255 255 255 / 9%);
+    background: rgb(255 255 255 / 6%);
+    color: #f8f7f0;
+  }
+
+  .auth-mark-dark {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #292b25;
+    color: #f8f7f0;
+  }
+
+  .auth-mark-accent {
+    fill: #b1bd8c;
+  }
+
+  .auth-card-mark {
+    display: grid;
+    width: fit-content;
+    border-radius: 13px;
+    outline-offset: 4px;
+  }
+
+  .auth-forgot-link {
+    display: block;
+    width: fit-content;
+    margin-left: auto;
+  }
+
+  .auth-page :is(a, button):focus-visible {
+    outline: 2px solid #879364;
+    outline-offset: 3px;
+  }
+
+  .auth-card {
+    box-shadow:
+      0 28px 70px -48px rgb(35 37 28 / 35%),
+      0 8px 22px -18px rgb(35 37 28 / 20%);
+    animation: auth-card-float 8s ease-in-out infinite;
+  }
+
+  .auth-panel:focus-within .auth-card {
+    animation-play-state: paused;
+  }
+
+  .auth-artwork {
+    position: absolute;
+    right: -9%;
+    bottom: -13%;
+    width: min(64%, 560px);
+    aspect-ratio: 1.1;
+    color: #d3d8bf;
+    opacity: 0.62;
+    mask-image: linear-gradient(125deg, transparent 2%, #000 46%);
+    pointer-events: none;
+  }
+
+  .auth-artwork svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .auth-artwork-orbit {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: auth-artwork-orbit 36s linear infinite;
+  }
+
+  .auth-artwork-orbit ellipse,
+  .auth-artwork-orbit path {
+    stroke: currentColor;
+    stroke-width: 0.8;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .auth-artwork-orbit ellipse:nth-child(2) {
+    opacity: 0.48;
+  }
+
+  .auth-artwork-orbit ellipse:nth-child(3) {
+    opacity: 0.3;
+  }
+
+  .auth-artwork-orbit path {
+    stroke: #b1bd8c;
+    stroke-width: 1.15;
+    opacity: 0.68;
+  }
+
+  .auth-artwork-point {
+    fill: #b1bd8c;
+    opacity: 0.82;
+  }
+
+  .auth-artwork-point-secondary {
+    fill: currentColor;
+    opacity: 0.45;
+  }
+
+  .auth-particles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background-image: radial-gradient(rgb(116 127 76 / 8%) 0.65px, transparent 0.65px);
+    background-position: 8px 12px;
+    background-size: 22px 22px;
+    mask-image: linear-gradient(135deg, transparent 4%, #000 45%, transparent 96%);
+    pointer-events: none;
+  }
+
+  .auth-particles span {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: #7d855b;
+    opacity: 0.2;
+    animation: auth-particle-drift 17s ease-in-out infinite alternate;
+  }
+
+  .auth-particles span:nth-child(1) {
+    top: 12%;
+    left: 18%;
+    animation-delay: -3s;
+  }
+  .auth-particles span:nth-child(2) {
+    top: 20%;
+    left: 77%;
+    animation-delay: -10s;
+  }
+  .auth-particles span:nth-child(3) {
+    top: 34%;
+    left: 8%;
+    animation-delay: -6s;
+  }
+  .auth-particles span:nth-child(4) {
+    top: 39%;
+    left: 91%;
+    animation-delay: -14s;
+  }
+  .auth-particles span:nth-child(5) {
+    top: 67%;
+    left: 12%;
+    animation-delay: -8s;
+  }
+  .auth-particles span:nth-child(6) {
+    top: 73%;
+    left: 83%;
+    animation-delay: -1s;
+  }
+  .auth-particles span:nth-child(7) {
+    top: 86%;
+    left: 27%;
+    animation-delay: -12s;
+  }
+  .auth-particles span:nth-child(8) {
+    top: 91%;
+    left: 69%;
+    animation-delay: -5s;
+  }
+  .auth-particles span:nth-child(9) {
+    top: 55%;
+    left: 96%;
+    animation-delay: -16s;
+  }
+
+  @keyframes auth-artwork-orbit {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes auth-card-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
+  @keyframes auth-particle-drift {
+    from {
+      transform: translate3d(0, 0, 0);
+      opacity: 0.12;
+    }
+    to {
+      transform: translate3d(4px, -9px, 0);
+      opacity: 0.25;
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .auth-card:hover {
+      animation-play-state: paused;
+      transform: translateY(-4px);
+      box-shadow:
+        0 34px 78px -46px rgb(35 37 28 / 38%),
+        0 10px 26px -18px rgb(35 37 28 / 22%);
+    }
+  }
+
+  @media (max-width: 639px) {
+    .auth-particles span:nth-child(n + 7) {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .auth-artwork-orbit,
+    .auth-card,
+    .auth-particles span {
+      animation: none;
+    }
+  }
+}
+
 :root {
   --radius: 0.8rem;
 
@@ -1363,17 +1613,35 @@
     border-radius: 12px;
     background: #262720;
     color: #d5ec9a;
-    font-family: Georgia, serif;
-    font-size: 23px;
-    font-style: italic;
-    line-height: 1;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      0 3px 9px rgba(35, 37, 28, 0.14);
+  }
+  .ello-brand-symbol {
+    width: 25px;
+    height: 25px;
+    overflow: visible;
+  }
+  .ello-brand-symbol path {
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 2.7;
+  }
+  .ello-wordmark {
+    transition: opacity 160ms ease;
+  }
+  .ello-wordmark:hover {
+    opacity: 0.8;
   }
 
   .ello-brand-mark-small {
     width: 24px;
     height: 24px;
     border-radius: 8px;
-    font-size: 16px;
+  }
+  .ello-brand-mark-small .ello-brand-symbol {
+    width: 18px;
+    height: 18px;
   }
   .ello-nav-link {
     transition: color 160ms cubic-bezier(0.23, 1, 0.32, 1);
@@ -1443,17 +1711,24 @@
     z-index: -1;
     inset: 8% 0 0 9%;
     border-radius: 48% 48% 28px 28px;
-    background: #e6e8dc;
+    background: linear-gradient(145deg, rgba(226, 231, 215, 0.9), rgba(216, 224, 204, 0.55));
+    box-shadow: 0 30px 80px -44px rgba(44, 50, 30, 0.42);
+    transform: translate(5px, 5px);
   }
   .ello-store-card {
     position: relative;
     width: min(100%, 510px);
     overflow: hidden;
     margin: 0 auto;
-    border: 1px solid rgba(38, 39, 32, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.84);
     border-radius: 15px;
-    background: #fff;
-    box-shadow: 0 26px 80px -42px rgba(35, 37, 28, 0.32);
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow:
+      0 38px 90px -48px rgba(35, 37, 28, 0.46),
+      0 12px 28px -20px rgba(35, 37, 28, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(18px) saturate(1.16);
+    -webkit-backdrop-filter: blur(18px) saturate(1.16);
     transform: rotate(-1.4deg);
   }
   .ello-store-cover {
@@ -1621,10 +1896,15 @@
   }
   .ello-feature-card {
     min-height: 218px;
-    border: 1px solid #e6e5dd;
+    border: 1px solid rgba(255, 255, 255, 0.86);
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.48);
+    background: rgba(255, 255, 255, 0.52);
     padding: 21px;
+    box-shadow:
+      0 12px 28px -24px rgba(35, 37, 28, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(14px) saturate(1.12);
+    -webkit-backdrop-filter: blur(14px) saturate(1.12);
     transition:
       border-color 160ms ease,
       background-color 160ms ease,
@@ -1633,7 +1913,7 @@
   .ello-feature-card:hover {
     transform: translateY(-3px);
     border-color: #d4d8c8;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.82);
   }
   .ello-feature-icon {
     display: grid;
@@ -1646,6 +1926,49 @@
   }
   .ello-steps-wrap {
     background: #eeeee8;
+  }
+  .ello-ambient-art {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .ello-ambient-art svg {
+    position: absolute;
+    width: max(100%, 1100px);
+    height: 100%;
+    inset: 0;
+  }
+  .ello-ambient-art g {
+    fill: none;
+    stroke: rgba(126, 139, 87, 0.14);
+    stroke-width: 1.15;
+    vector-effect: non-scaling-stroke;
+  }
+  .ello-ambient-motion {
+    transform-box: view-box;
+    transform-origin: center;
+    animation: ello-art-drift 34s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+  }
+  .ello-ambient-motion-slow {
+    stroke: rgba(126, 139, 87, 0.09) !important;
+    animation-duration: 46s;
+    animation-direction: alternate-reverse;
+  }
+  .ello-site[data-scrolling="true"] .ello-ambient-motion {
+    animation-duration: 9s;
+  }
+  .ello-site[data-scrolling="true"] .ello-ambient-motion-slow {
+    animation-duration: 13s;
+  }
+  @keyframes ello-art-drift {
+    from {
+      transform: translate3d(-1.2%, -0.8%, 0) rotate(-2deg) scale(1);
+    }
+    to {
+      transform: translate3d(1.2%, 0.8%, 0) rotate(2deg) scale(1.025);
+    }
   }
   .ello-steps-list {
     border-top: 1px solid #d9dad1;
@@ -1676,6 +1999,13 @@
   }
 
   @media (max-width: 639px) {
+    .ello-ambient-art svg {
+      width: 150%;
+      left: -25%;
+    }
+    .ello-ambient-art g {
+      stroke-opacity: 0.75;
+    }
     .ello-showcase {
       padding: 5px 3px 36px;
     }

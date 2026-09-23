@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import {
   ArrowDownRight,
   ArrowRight,
@@ -21,11 +21,32 @@ function LandingPage() {
   const { business } = useLocalHub();
   const startTo = business ? "/studio" : "/onboarding";
 
+  useEffect(() => {
+    const site = document.querySelector<HTMLElement>(".ello-site");
+    if (!site || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let timeout: number | undefined;
+    const handleScroll = () => {
+      site.dataset.scrolling = "true";
+      window.clearTimeout(timeout);
+      timeout = window.setTimeout(() => {
+        delete site.dataset.scrolling;
+      }, 220);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.clearTimeout(timeout);
+      delete site.dataset.scrolling;
+    };
+  }, []);
+
   return (
     <div className="ello-site min-h-screen overflow-hidden bg-[#f5f4ef] text-[#20221f]">
       <header className="ello-nav mx-auto flex max-w-[1440px] items-center justify-between px-5 py-5 sm:px-10 lg:px-16">
-        <Link to="/" aria-label="ELLO, início" className="flex items-center gap-2.5">
-          <span className="ello-brand-mark">e</span>
+        <Link to="/" aria-label="ELLO, início" className="ello-wordmark flex items-center gap-2.5">
+          <BrandMark />
           <span className="text-[21px] font-semibold tracking-[-.06em]">ello</span>
         </Link>
         <nav className="hidden items-center gap-9 text-[13px] font-medium text-[#64665f] md:flex">
@@ -54,7 +75,8 @@ function LandingPage() {
       </header>
 
       <main>
-        <section className="ello-hero mx-auto grid max-w-[1440px] items-center gap-12 px-5 pb-20 pt-12 sm:px-10 sm:pb-28 sm:pt-16 min-[1180px]:grid-cols-[.92fr_1.08fr] min-[1180px]:gap-12 lg:gap-16 lg:px-16 lg:pb-32 lg:pt-20">
+        <section className="ello-hero relative isolate mx-auto grid max-w-[1440px] items-center gap-12 overflow-hidden px-5 pb-20 pt-12 sm:px-10 sm:pb-28 sm:pt-16 min-[1180px]:grid-cols-[.92fr_1.08fr] min-[1180px]:gap-12 lg:gap-16 lg:px-16 lg:pb-32 lg:pt-20">
+          <AmbientArtwork />
           <div className="relative z-10 max-w-[590px]">
             <div className="ello-kicker">
               <span className="size-1.5 rounded-full bg-[#b6d26b]" />
@@ -225,8 +247,12 @@ function LandingPage() {
           </div>
         </section>
 
-        <section id="passos" className="ello-steps-wrap px-5 py-20 sm:px-10 sm:py-28 lg:px-16">
-          <div className="mx-auto grid max-w-[1280px] gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:gap-20">
+        <section
+          id="passos"
+          className="ello-steps-wrap relative isolate overflow-hidden px-5 py-20 sm:px-10 sm:py-28 lg:px-16"
+        >
+          <AmbientArtwork />
+          <div className="relative z-10 mx-auto grid max-w-[1280px] gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:gap-20">
             <div>
               <div className="ello-section-index">02 / Sem complicação</div>
               <h2 className="mt-5 max-w-[400px] font-display text-[38px] font-medium leading-[1.04] tracking-[-.055em] sm:text-[50px]">
@@ -282,11 +308,42 @@ function LandingPage() {
 
       <footer className="ello-footer mx-auto flex max-w-[1440px] flex-col justify-between gap-4 px-5 py-7 text-[11px] text-[#85877e] sm:flex-row sm:px-10 lg:px-16">
         <Link to="/" className="flex items-center gap-2 font-semibold text-[#242620]">
-          <span className="ello-brand-mark ello-brand-mark-small">e</span> ello
+          <BrandMark small /> ello
         </Link>
         <span>Uma presença digital simples para negócios locais.</span>
         <span>© {new Date().getFullYear()} ELLO</span>
       </footer>
+    </div>
+  );
+}
+
+function BrandMark({ small = false }: { small?: boolean }) {
+  return (
+    <span className={`ello-brand-mark${small ? " ello-brand-mark-small" : ""}`} aria-hidden="true">
+      <svg viewBox="0 0 32 32" fill="none" className="ello-brand-symbol">
+        <path d="M23.5 15.8H10.1a6.1 6.1 0 0 1 11.8-1.9" />
+        <path d="M10.1 16.1a6.1 6.1 0 0 0 11.8 1.9" />
+      </svg>
+    </span>
+  );
+}
+
+function AmbientArtwork() {
+  return (
+    <div className="ello-ambient-art" aria-hidden="true">
+      <svg viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid slice">
+        <g className="ello-ambient-motion">
+          <path d="M-100 510C115 235 321 720 531 420S912 98 1300 330" />
+          <path d="M-120 558C88 286 330 752 558 462S935 146 1306 375" />
+          <path d="M-115 605C96 342 347 786 583 504S961 197 1300 420" />
+          <circle cx="930" cy="170" r="172" />
+          <circle cx="930" cy="170" r="207" />
+        </g>
+        <g className="ello-ambient-motion ello-ambient-motion-slow">
+          <path d="M-40 120C208 335 370-35 620 180s388 240 652 28" />
+          <path d="M-35 162C218 375 390 10 642 222s382 237 645 41" />
+        </g>
+      </svg>
     </div>
   );
 }
