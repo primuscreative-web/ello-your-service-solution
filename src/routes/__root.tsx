@@ -74,6 +74,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   beforeLoad: ({ location }) => {
     const allowed =
       location.pathname === "/" ||
+      location.pathname === "/auth" ||
       location.pathname === "/onboarding" ||
       location.pathname === "/studio" ||
       location.pathname.startsWith("/studio/") ||

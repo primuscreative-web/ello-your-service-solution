@@ -17,6 +17,17 @@ function CatalogPage() {
   const { services, saveService, removeService } = useLocalHub();
   const [editing, setEditing] = useState<Service | null>(null);
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
+  async function persistService(item: Omit<Service, "id"> & { id?: string }) {
+    try {
+      await saveService(item);
+      setError("");
+      return true;
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível salvar o serviço.");
+      return false;
+    }
+  }
 
   return (
     <>
@@ -41,10 +52,16 @@ function CatalogPage() {
         <ServiceEditor
           onCancel={() => setCreating(false)}
           onSave={(item) => {
-            saveService(item);
-            setCreating(false);
+            void persistService(item).then((saved) => {
+              if (saved) setCreating(false);
+            });
           }}
         />
+      )}
+      {error && (
+        <p role="alert" className="mb-4 text-sm text-red-700">
+          {error}
+        </p>
       )}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4">
         <div className="flex items-center gap-3">
@@ -67,8 +84,9 @@ function CatalogPage() {
           initial={editing}
           onCancel={() => setEditing(null)}
           onSave={(item) => {
-            saveService(item);
-            setEditing(null);
+            void persistService(item).then((saved) => {
+              if (saved) setEditing(null);
+            });
           }}
         />
       )}
@@ -125,7 +143,7 @@ function CatalogPage() {
                   </button>
                   <button
                     title={service.active ? "Ocultar serviço" : "Ativar serviço"}
-                    onClick={() => saveService({ ...service, active: !service.active })}
+                    onClick={() => void persistService({ ...service, active: !service.active })}
                     className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100"
                   >
                     <Power size={15} />
@@ -134,7 +152,15 @@ function CatalogPage() {
                     title="Excluir serviço"
                     onClick={() => {
                       if (window.confirm("Excluir " + service.name + " do catálogo?"))
-                        removeService(service.id);
+                        void removeService(service.id)
+                          .then(() => setError(""))
+                          .catch((caught: unknown) =>
+                            setError(
+                              caught instanceof Error
+                                ? caught.message
+                                : "Não foi possível excluir o serviço.",
+                            ),
+                          );
                     }}
                     className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
                   >

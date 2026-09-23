@@ -10,14 +10,24 @@ function SettingsPage() {
   const { business, saveBusiness } = useLocalHub();
   const [form, setForm] = useState({ ...business! });
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const set = (key: keyof typeof form, value: string) => {
     setSaved(false);
     setForm((current) => ({ ...current, [key]: value }));
   };
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    saveBusiness({ ...form, slug: createSlug(form.slug) });
-    setSaved(true);
+    setSaving(true);
+    setError("");
+    try {
+      await saveBusiness({ ...form, slug: createSlug(form.slug) });
+      setSaved(true);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível salvar as alterações.");
+    } finally {
+      setSaving(false);
+    }
   }
   async function copy() {
     await navigator.clipboard.writeText(window.location.origin + "/loja/" + form.slug);
@@ -32,7 +42,7 @@ function SettingsPage() {
       />
       <div className="grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
         <form
-          onSubmit={submit}
+          onSubmit={(event) => void submit(event)}
           className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6"
         >
           <h2 className="font-bold">Informações do negócio</h2>
@@ -97,13 +107,18 @@ function SettingsPage() {
           </div>
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
             <span role="status" className="text-xs font-semibold text-emerald-700">
-              {saved ? "Alterações salvas neste navegador" : ""}
+              {saved ? "Alterações salvas na nuvem" : ""}
             </span>
-            <button type="submit" className={primaryButtonClass}>
+            <button type="submit" disabled={saving} className={primaryButtonClass}>
               <Save size={15} />
-              Salvar alterações
+              {saving ? "Salvando..." : "Salvar alterações"}
             </button>
           </div>
+          {error && (
+            <p role="alert" className="mt-3 text-sm text-red-700">
+              {error}
+            </p>
+          )}
         </form>
         <div className="space-y-4">
           <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 sm:p-6">
@@ -112,7 +127,7 @@ function SettingsPage() {
               Endereço da prévia
             </div>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              A página está disponível neste navegador enquanto os dados ficam salvos localmente.
+              A página pública permanece disponível por este link e reflete os dados da nuvem.
             </p>
             <div className="mt-4 break-all rounded-xl border border-indigo-100 bg-white px-3 py-3 text-sm font-semibold text-indigo-700">
               {typeof window !== "undefined" ? window.location.origin : ""}/loja/{form.slug}
@@ -143,8 +158,7 @@ function SettingsPage() {
               Privacidade dos dados
             </div>
             <p className="mt-2 text-xs leading-5 text-amber-800/80">
-              Nesta versão inicial, as informações ficam salvas no armazenamento local deste
-              navegador e não são sincronizadas com outros dispositivos.
+              Os dados do negócio e os agendamentos são protegidos por políticas de acesso no banco.
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -18,35 +18,76 @@ export const Route = createFileRoute("/loja/$slug")({ component: PublicBusinessP
 
 function PublicBusinessPage() {
   const { slug } = Route.useParams();
-  const { business, services, addBooking, ready } = useLocalHub();
+  const { getPublicStore, addBooking } = useLocalHub();
+  const [store, setStore] = useState<Awaited<ReturnType<typeof getPublicStore>>>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [bookingError, setBookingError] = useState("");
+  const [bookingBusy, setBookingBusy] = useState(false);
   const [selected, setSelected] = useState<Service | null>(null);
   const [complete, setComplete] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    void getPublicStore(slug)
+      .then((result) => {
+        if (active) setStore(result);
+      })
+      .catch((error: unknown) => {
+        if (active)
+          setLoadError(error instanceof Error ? error.message : "Falha ao carregar a página.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [getPublicStore, slug]);
+  const business = store?.business ?? null;
+  const services = store?.services ?? [];
   const activeServices = services.filter((service) => service.active);
 
-  function book(event: FormEvent<HTMLFormElement>) {
+  async function book(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!selected) return;
-    addBooking({ serviceId: selected.id, date, time, customerName: customerName.trim(), phone });
-    setComplete(true);
+    if (!selected || !business) return;
+    setBookingBusy(true);
+    setBookingError("");
+    try {
+      await addBooking(business.id!, {
+        serviceId: selected.id,
+        date,
+        time,
+        customerName: customerName.trim(),
+        phone,
+      });
+      setComplete(true);
+    } catch (error) {
+      setBookingError(error instanceof Error ? error.message : "Não foi possível enviar o pedido.");
+    } finally {
+      setBookingBusy(false);
+    }
   }
 
-  if (!ready)
+  if (loading)
     return (
       <div className="grid min-h-screen place-items-center bg-[#faf8ff] text-sm font-semibold text-indigo-700">
         Carregando página...
       </div>
     );
-  if (!business || business.slug !== slug)
+  if (loadError || !business || business.slug !== slug)
     return (
       <div className="grid min-h-screen place-items-center bg-[#faf8ff] px-5 text-center">
         <div>
           <Store className="mx-auto text-indigo-500" size={30} />
           <h1 className="mt-4 text-2xl font-bold">Página não encontrada</h1>
-          <p className="mt-2 text-sm text-slate-500">Confira o link ou crie sua página LocalHub.</p>
+          <p className="mt-2 text-sm text-slate-500">
+            {loadError || "Confira o link ou crie sua página LocalHub."}
+          </p>
           <Link
             to="/"
             className="mt-5 inline-flex rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white"
@@ -258,7 +299,7 @@ function PublicBusinessPage() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={book} className="space-y-4">
+              <form onSubmit={(event) => void book(event)} className="space-y-4">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-bold text-slate-600">Seu nome</span>
                   <input
@@ -320,11 +361,17 @@ function PublicBusinessPage() {
                     </select>
                   </label>
                 </div>
+                {bookingError && (
+                  <p role="alert" className="text-sm text-red-600">
+                    {bookingError}
+                  </p>
+                )}
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700"
+                  disabled={bookingBusy}
+                  className="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-60"
                 >
-                  Pedir agendamento
+                  {bookingBusy ? "Enviando..." : "Pedir agendamento"}
                 </button>
                 <p className="text-center text-[10px] leading-4 text-slate-400">
                   Seu pedido fica pendente até a loja confirmar.

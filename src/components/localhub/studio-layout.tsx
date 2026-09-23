@@ -1,4 +1,4 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   CalendarDays,
   ExternalLink,
@@ -6,8 +6,10 @@ import {
   Package,
   Settings2,
   Store,
+  LogOut,
 } from "lucide-react";
 import { useLocalHub } from "@/lib/localhub-context";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const navigation = [
   { to: "/studio", label: "Visão geral", icon: LayoutDashboard, exact: true },
@@ -18,7 +20,8 @@ const navigation = [
 
 export function StudioLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const { business } = useLocalHub();
+  const { business, user } = useLocalHub();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-[#f6f7fb] text-[#172033]">
@@ -77,6 +80,9 @@ export function StudioLayout() {
           </div>
           <div className="hidden text-sm text-slate-500 lg:block">Painel do negócio</div>
           <div className="flex items-center gap-3">
+            <span className="hidden max-w-48 truncate text-xs text-slate-500 md:block">
+              {user?.email}
+            </span>
             {business && (
               <span className="hidden max-w-56 truncate text-sm font-semibold sm:block">
                 {business.name}
@@ -85,6 +91,19 @@ export function StudioLayout() {
             <span className="grid size-9 place-items-center rounded-full bg-[#e9e7ff] text-sm font-bold text-[#4338ca]">
               {business?.name?.slice(0, 1).toUpperCase() ?? "L"}
             </span>
+            <button
+              type="button"
+              aria-label="Sair da conta"
+              title="Sair da conta"
+              className="grid size-9 place-items-center rounded-xl text-slate-500 hover:bg-slate-100"
+              onClick={() =>
+                void getSupabaseBrowserClient()
+                  ?.auth.signOut()
+                  .then(() => navigate({ to: "/auth" }))
+              }
+            >
+              <LogOut size={17} />
+            </button>
           </div>
         </header>
         <nav className="flex gap-1 overflow-x-auto border-b border-[#e8eaf1] bg-white px-3 py-2 lg:hidden">

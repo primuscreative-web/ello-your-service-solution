@@ -1,477 +1,124 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import type React from "react";
-import { useEffect, useMemo, useState } from "react";
-import { z } from "zod";
-import { Apple, Mail, Phone, ShieldCheck } from "lucide-react";
-import { ElloDivider, ElloEyebrow, ElloInfoBanner } from "@/components/ello/primitives";
-import { PrimaryButton } from "@/components/ello/actions";
-import { ElloLogo } from "@/components/ello/logo";
-import { useAuth } from "@/lib/auth/auth-context";
-import { createConfirmedPasswordAccount } from "@/lib/auth/auth.functions";
-import { getSupabaseBrowserClient, getSupabasePublicConfig } from "@/lib/supabase/client";
+import { useEffect, useState, type FormEvent } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Store } from "lucide-react";
+import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { useLocalHub } from "@/lib/localhub-context";
+import { primaryButtonClass } from "@/components/localhub/ui";
 
-export const Route = createFileRoute("/auth")({
-  validateSearch: z.object({
-    redirect: z.string().optional(),
-  }),
-  component: Auth,
-});
+export const Route = createFileRoute("/auth")({ component: AuthPage });
 
-type AuthMethod = "email" | "phone" | null;
-type OAuthProvider = "google" | "apple";
-type AuthProviderAvailability = {
-  apple: boolean;
-  google: boolean;
-  phone: boolean;
-};
-
-function Auth() {
+function AuthPage() {
   const navigate = useNavigate();
-  const { redirect } = Route.useSearch();
-  const { configured, loading, user } = useAuth();
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
-  const [method, setMethod] = useState<AuthMethod>(null);
+  const { user } = useLocalHub();
+  const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [phoneCode, setPhoneCode] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [submittingProvider, setSubmittingProvider] = useState<OAuthProvider | "phone" | null>(
-    null,
-  );
-  const [providerAvailability, setProviderAvailability] = useState<AuthProviderAvailability | null>(
-    null,
-  );
-  const [error, setError] = useState<string | null>(null);
-
-  const destination = useMemo(() => {
-    return redirect?.startsWith("/p/") ? redirect : "/role";
-  }, [redirect]);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!loading && user) {
-      void navigate({ to: destination });
-    }
-  }, [destination, loading, navigate, user]);
+    if (user) void navigate({ to: "/studio" });
+  }, [navigate, user]);
 
-  useEffect(() => {
-    if (!configured) {
-      setProviderAvailability(null);
-      return;
-    }
-
-    const publicConfig = getSupabasePublicConfig();
-    if (!publicConfig) return;
-
-    const controller = new AbortController();
-
-    async function loadProviderAvailability() {
-      try {
-        const response = await fetch(`${publicConfig.url}/auth/v1/settings`, {
-          headers: {
-            apikey: publicConfig.anonKey,
-            Authorization: `Bearer ${publicConfig.anonKey}`,
-          },
-          signal: controller.signal,
-        });
-
-        if (!response.ok) throw new Error("Não foi possível consultar os provedores.");
-
-        const settings = (await response.json()) as {
-          external?: Partial<Record<"apple" | "google" | "phone", boolean>>;
-          sms_provider?: string;
-        };
-
-        setProviderAvailability({
-          apple: Boolean(settings.external?.apple),
-          google: Boolean(settings.external?.google),
-          phone: Boolean(settings.external?.phone || settings.sms_provider),
-        });
-      } catch (caughtError) {
-        if (!controller.signal.aborted) {
-          console.warn(caughtError);
-          setProviderAvailability({ apple: false, google: false, phone: false });
-        }
-      }
-    }
-
-    void loadProviderAvailability();
-
-    return () => controller.abort();
-  }, [configured]);
-
-  async function handleEmailSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-
+    setError("");
+    setMessage("");
     const supabase = getSupabaseBrowserClient();
-    if (!configured || !supabase) {
-      setError("O login ainda não está configurado neste ambiente.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Use uma senha com pelo menos 6 caracteres.");
-      return;
-    }
-
-    setSubmitting(true);
-
-    let result: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
+    if (!isSupabaseConfigured() || !supabase)
+      return setError("O acesso está indisponível no momento.");
+    setBusy(true);
     try {
-      if (mode === "sign-up") {
-        await createConfirmedPasswordAccount({
-          data: {
-            email,
-            password,
-            fullName: fullName.trim() || email.split("@")[0],
-          },
-        });
-      }
-
-      result = await supabase.auth.signInWithPassword({ email, password });
-    } catch (caughtError) {
-      setSubmitting(false);
-      setError(
-        caughtError instanceof Error ? caughtError.message : "Não foi possível criar a conta.",
-      );
-      return;
-    }
-
-    setSubmitting(false);
-
-    if (result.error) {
-      setError(result.error.message);
-      return;
-    }
-
-    await navigate({ to: destination });
-  }
-
-  async function handleOAuth(provider: OAuthProvider) {
-    setError(null);
-
-    const supabase = getSupabaseBrowserClient();
-    if (!configured || !supabase) {
-      setError("O login ainda não está configurado neste ambiente.");
-      return;
-    }
-
-    setSubmittingProvider(provider);
-    const redirectTo = new URL("/auth", window.location.origin);
-    if (redirect?.startsWith("/p/")) redirectTo.searchParams.set("redirect", redirect);
-
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: redirectTo.toString(),
-      },
-    });
-
-    setSubmittingProvider(null);
-    if (oauthError) setError(oauthError.message);
-  }
-
-  async function handlePhoneSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-
-    const supabase = getSupabaseBrowserClient();
-    if (!configured || !supabase) {
-      setError("O login por celular ainda não está configurado neste ambiente.");
-      return;
-    }
-
-    const normalizedPhone = normalizeBrazilianPhone(phone);
-    if (!normalizedPhone) {
-      setError("Informe um celular válido com DDD.");
-      return;
-    }
-
-    setSubmittingProvider("phone");
-
-    if (!otpSent) {
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        phone: normalizedPhone,
-        options: {
-          data: {
-            full_name: fullName.trim() || normalizedPhone,
-          },
-        },
-      });
-      setSubmittingProvider(null);
-      if (otpError) {
-        setError(otpError.message);
+      const emailRedirectTo = `${window.location.origin}/auth`;
+      const result =
+        mode === "signup"
+          ? await supabase.auth.signUp({
+              email: email.trim(),
+              password,
+              options: { emailRedirectTo },
+            })
+          : await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (result.error) {
+        setError(result.error.message);
         return;
       }
-      setOtpSent(true);
-      return;
-    }
-
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      phone: normalizedPhone,
-      token: phoneCode.trim(),
-      type: "sms",
-    });
-    setSubmittingProvider(null);
-
-    if (verifyError) {
-      setError(verifyError.message);
-      return;
-    }
-
-    await navigate({ to: destination });
-  }
-
-  function openMethod(nextMethod: AuthMethod) {
-    setMethod((current) => (current === nextMethod ? null : nextMethod));
-    setError(null);
-    if (nextMethod !== "phone") {
-      setOtpSent(false);
-      setPhoneCode("");
+      if (mode === "signup" && !result.data.session) {
+        setMessage("Conta criada. Confirme seu e-mail pelo link enviado para entrar.");
+        return;
+      }
+      await navigate({ to: "/studio" });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível concluir o acesso.");
+    } finally {
+      setBusy(false);
     }
   }
-
-  function toggleMode() {
-    setMode((current) => (current === "sign-in" ? "sign-up" : "sign-in"));
-    setMethod("email");
-    setError(null);
-  }
-
-  const providerStatusLoaded = providerAvailability !== null;
-  const googleAvailable = Boolean(providerAvailability?.google);
-  const appleAvailable = Boolean(providerAvailability?.apple);
-  const phoneAvailable = Boolean(providerAvailability?.phone);
 
   return (
-    <main className="ello-mesh-bg flex min-h-dvh items-center justify-center px-4 py-6">
-      <div className="glass-panel w-full max-w-[393px] rounded-[2.125rem] p-6">
-        <section className="flex flex-col items-center text-center">
-          <div className="rounded-full border border-slate-200/80 bg-white/80 p-3 shadow-[0_10px_30px_-16px_rgba(15,23,42,0.35)]">
-            <ElloLogo className="text-[1.9rem]" />
-          </div>
-          <div className="mt-4">
-            <ElloEyebrow>Acesso seguro</ElloEyebrow>
-          </div>
-          <h1 className="mt-8 text-[1.52rem] font-black tracking-[-0.035em] text-foreground">
-            Bem-vindo(a)!
-          </h1>
-          <p className="mt-3 max-w-[17rem] text-[0.98rem] leading-relaxed text-muted-foreground">
-            {mode === "sign-in"
-              ? "Acesse sua conta e continue sua operação ELLO."
-              : "Crie sua conta e transforme seu perfil em uma presença profissional completa."}
-          </p>
-        </section>
-
-        {!configured ? (
-          <div className="mt-7 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-xs font-semibold leading-relaxed text-warning-foreground">
-            Não foi possível carregar o acesso seguro agora. Recarregue a página e tente novamente.
-          </div>
-        ) : null}
-
-        <ElloInfoBanner
-          className="mt-7"
-          icon={<ShieldCheck className="size-5" />}
-          eyebrow="Sua conta, em poucos toques"
-          body="Entre rápido, siga com segurança e continue exatamente de onde parou."
-        />
-
-        <section className="mt-6 space-y-3">
-          {googleAvailable ? (
-            <ProviderButton
-              disabled={!configured || !providerStatusLoaded || submittingProvider !== null}
-              icon={<GoogleMark />}
-              label={submittingProvider === "google" ? "Abrindo Google..." : "Continuar com Google"}
-              onClick={() => void handleOAuth("google")}
-            />
-          ) : null}
-          {appleAvailable ? (
-            <ProviderButton
-              disabled={!configured || !providerStatusLoaded || submittingProvider !== null}
-              icon={<Apple className="size-5 fill-black text-black" />}
-              label={submittingProvider === "apple" ? "Abrindo Apple..." : "Continuar com iPhone"}
-              onClick={() => void handleOAuth("apple")}
-            />
-          ) : null}
-          <ProviderButton
-            disabled={
-              !configured || !providerStatusLoaded || !phoneAvailable || submittingProvider !== null
-            }
-            icon={<Phone className="size-5" />}
-            label={
-              providerStatusLoaded && !phoneAvailable
-                ? "Entrar com celular"
-                : "Continuar com celular"
-            }
-            onClick={() => openMethod("phone")}
-          />
-          <ProviderButton
-            icon={<Mail className="size-5" />}
-            label="Continuar com e-mail"
-            onClick={() => openMethod("email")}
-          />
-        </section>
-
-        {method === "email" ? (
-          <form onSubmit={handleEmailSubmit} className="mt-5 space-y-3">
-            {mode === "sign-up" ? (
-              <AuthInput
-                value={fullName}
-                onChange={setFullName}
-                placeholder="Seu nome"
-                autoComplete="name"
-              />
-            ) : null}
-            <AuthInput
-              value={email}
-              onChange={setEmail}
+    <main className="grid min-h-screen place-items-center bg-[#faf8ff] px-4 py-10 text-[#131b2e]">
+      <section className="w-full max-w-md rounded-[28px] border border-slate-100 bg-white p-7 shadow-xl sm:p-9">
+        <Link
+          to="/"
+          className="mx-auto grid size-12 place-items-center rounded-2xl bg-indigo-600 text-white"
+        >
+          <Store />
+        </Link>
+        <h1 className="mt-6 text-center text-2xl font-extrabold">
+          {mode === "login" ? "Acesse seu painel" : "Crie sua conta LocalHub"}
+        </h1>
+        <p className="mt-2 text-center text-sm leading-6 text-slate-500">
+          Seus dados serão salvos com segurança e sincronizados entre dispositivos.
+        </p>
+        <form onSubmit={(event) => void submit(event)} className="mt-7 space-y-4">
+          <label className="block text-sm font-semibold">
+            E-mail
+            <input
               type="email"
               required
-              placeholder="seu@email.com"
               autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-400"
             />
-            <AuthInput
-              value={password}
-              onChange={setPassword}
+          </label>
+          <label className="block text-sm font-semibold">
+            Senha
+            <input
               type="password"
               required
-              placeholder="Senha"
-              autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+              minLength={6}
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-400"
             />
-
-            <PrimaryButton disabled={submitting}>
-              {submitting ? "Aguarde..." : mode === "sign-in" ? "Entrar" : "Criar conta"}
-            </PrimaryButton>
-          </form>
-        ) : null}
-
-        {method === "phone" ? (
-          <form onSubmit={handlePhoneSubmit} className="mt-5 space-y-3">
-            {mode === "sign-up" ? (
-              <AuthInput
-                value={fullName}
-                onChange={setFullName}
-                placeholder="Seu nome"
-                autoComplete="name"
-              />
-            ) : null}
-            <AuthInput
-              value={phone}
-              onChange={(value) => {
-                setPhone(value);
-                setOtpSent(false);
-                setPhoneCode("");
-              }}
-              type="tel"
-              required
-              placeholder="(11) 99999-8888"
-              autoComplete="tel"
-            />
-            {otpSent ? (
-              <AuthInput
-                value={phoneCode}
-                onChange={setPhoneCode}
-                inputMode="numeric"
-                required
-                placeholder="Código recebido por SMS"
-                autoComplete="one-time-code"
-              />
-            ) : null}
-
-            <PrimaryButton disabled={submittingProvider === "phone"}>
-              {submittingProvider === "phone"
-                ? "Aguarde..."
-                : otpSent
-                  ? "Confirmar código"
-                  : "Enviar código por SMS"}
-            </PrimaryButton>
-          </form>
-        ) : null}
-
-        {error ? (
-          <p className="mt-4 rounded-2xl bg-destructive/10 p-3 text-xs font-semibold leading-relaxed text-destructive">
-            {error}
-          </p>
-        ) : null}
-
-        <ElloDivider className="my-8" />
-
-        <button
-          type="button"
-          onClick={toggleMode}
-          className="text-sm font-semibold text-foreground"
-        >
-          {mode === "sign-in" ? (
-            <>
-              Ainda não tem conta? <span className="text-primary">Criar conta</span>
-            </>
-          ) : (
-            <>
-              Já tem uma conta? <span className="text-primary">Entrar</span>
-            </>
+          </label>
+          {error && (
+            <p role="alert" className="text-sm text-red-600">
+              {error}
+            </p>
           )}
+          {message && (
+            <p role="status" className="text-sm text-emerald-700">
+              {message}
+            </p>
+          )}
+          <button disabled={busy} className={`${primaryButtonClass} w-full justify-center`}>
+            {busy ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
+          </button>
+        </form>
+        <button
+          onClick={() => {
+            setMode(mode === "login" ? "signup" : "login");
+            setError("");
+            setMessage("");
+          }}
+          className="mt-6 w-full text-sm font-semibold text-indigo-700"
+        >
+          {mode === "login" ? "Ainda não tem conta? Criar conta" : "Já tem conta? Entrar"}
         </button>
-
-        <p className="mt-auto pt-9 text-center text-xs leading-relaxed text-slate-500">
-          Ao continuar, você concorda com os{" "}
-          <span className="font-semibold text-primary">Termos de uso</span> e{" "}
-          <span className="font-semibold text-primary">Política de privacidade</span>.
-        </p>
-      </div>
+      </section>
     </main>
   );
-}
-
-function ProviderButton({
-  disabled = false,
-  icon,
-  label,
-  onClick,
-}: {
-  disabled?: boolean;
-  icon: React.ReactNode;
-  label: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-disabled={disabled}
-      onClick={disabled ? undefined : onClick}
-      className="flex h-14 items-center justify-center gap-3 rounded-2xl border border-slate-100 bg-white px-6 text-base font-bold text-slate-700 shadow-sm transition-all duration-300 hover:bg-slate-50 active:scale-95 disabled:opacity-50"
-    >
-      <span className="grid size-6 place-items-center">{icon}</span>
-      <span className="flex-1 text-center">{label}</span>
-      <span className="size-6" />
-    </button>
-  );
-}
-
-function AuthInput({
-  onChange,
-  ...props
-}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
-  onChange: (value: string) => void;
-}) {
-  return (
-    <input
-      {...props}
-      onChange={(event) => onChange(event.target.value)}
-      className="h-14 w-full rounded-2xl border border-slate-100 bg-white px-5 text-base font-medium text-slate-800 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-primary/30 focus:ring-4 focus:ring-primary/5 shadow-sm"
-    />
-  );
-}
-
-function GoogleMark() {
-  return <span className="text-[1.35rem] font-black text-[#4285f4]">G</span>;
-}
-
-function normalizeBrazilianPhone(value: string) {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length === 11) return `+55${digits}`;
-  if (digits.length === 13 && digits.startsWith("55")) return `+${digits}`;
-  if (value.trim().startsWith("+") && digits.length >= 11) return `+${digits}`;
-  return "";
 }

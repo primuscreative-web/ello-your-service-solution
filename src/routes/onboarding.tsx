@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, MapPin, Scissors, Store } from "lucide-react";
 import { useLocalHub, createSlug } from "@/lib/localhub-context";
 import { Field, inputClass, primaryButtonClass } from "@/components/localhub/ui";
@@ -14,7 +14,8 @@ const categories = [
 ];
 
 function OnboardingPage() {
-  const { createBusiness } = useLocalHub();
+  const { createBusiness, user, ready } = useLocalHub();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     name: "",
@@ -27,16 +28,27 @@ function OnboardingPage() {
   });
   const [slugEdited, setSlugEdited] = useState(false);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const update = (key: keyof typeof form, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const slug = createSlug(form.slug || form.name);
     if (!slug) return setError("Escolha um nome para o endereço da sua página.");
-    createBusiness({ ...form, slug });
-    window.location.assign("/studio");
+    setSaving(true);
+    try {
+      await createBusiness({ ...form, slug });
+      await navigate({ to: "/studio" });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível criar sua página.");
+    } finally {
+      setSaving(false);
+    }
   }
+
+  if (!ready) return <div className="grid min-h-screen place-items-center">Carregando...</div>;
+  if (!user) return <Navigate to="/auth" />;
 
   return (
     <div className="min-h-screen bg-[#faf8ff] px-4 py-8 text-[#131b2e] sm:py-12">
@@ -79,7 +91,7 @@ function OnboardingPage() {
           </div>
         </section>
         <form
-          onSubmit={submit}
+          onSubmit={(event) => void submit(event)}
           className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_24px_80px_-38px_rgba(40,44,91,.25)] sm:p-8"
         >
           {step === 1 ? (
@@ -197,14 +209,18 @@ function OnboardingPage() {
                   <ArrowLeft size={16} />
                   Voltar
                 </button>
-                <button type="submit" className={`${primaryButtonClass} flex-[2]`}>
-                  Criar minha página <ArrowRight size={16} />
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className={`${primaryButtonClass} flex-[2]`}
+                >
+                  {saving ? "Salvando..." : "Criar minha página"} <ArrowRight size={16} />
                 </button>
               </div>
             </div>
           )}
           <p className="mt-5 text-center text-[11px] leading-5 text-slate-400">
-            Suas informações ficam salvas neste navegador. Você pode editá-las a qualquer momento.
+            Suas informações ficam salvas com segurança e sincronizadas entre dispositivos.
           </p>
         </form>
       </div>
