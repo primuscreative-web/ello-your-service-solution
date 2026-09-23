@@ -43,9 +43,9 @@ function DashboardPage() {
           </Link>
         }
       />
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-white p-4 sm:px-5">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e1e3d8] bg-gradient-to-r from-[#edf0e5] to-[#fbfaf7] p-4 sm:px-5">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-xl bg-white text-indigo-700 shadow-sm">
+          <span className="grid size-10 place-items-center rounded-xl bg-white text-[#667448] shadow-sm">
             <Sparkles size={18} />
           </span>
           <div>
@@ -64,7 +64,7 @@ function DashboardPage() {
           <Link
             to="/loja/$slug"
             params={{ slug: business!.slug }}
-            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#292b25] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#414338]"
           >
             <ExternalLink size={14} />
             Abrir página
@@ -96,7 +96,7 @@ function DashboardPage() {
           <div key={label} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-slate-500">{label}</span>
-              <Icon size={18} className="text-indigo-500" />
+              <Icon size={18} className="text-[#778253]" />
             </div>
             <div className="mt-4 text-3xl font-extrabold tracking-tight">{value}</div>
             <div className="mt-1 text-xs text-slate-400">{note}</div>
@@ -112,7 +112,7 @@ function DashboardPage() {
                 Pedidos feitos pelos clientes na sua página
               </p>
             </div>
-            <Link to="/studio/agenda" className="text-xs font-bold text-indigo-600">
+            <Link to="/studio/agenda" className="text-xs font-bold text-[#667448]">
               Ver agenda <ArrowUpRight size={14} className="inline" />
             </Link>
           </div>
@@ -124,7 +124,7 @@ function DashboardPage() {
                   className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="grid size-10 place-items-center rounded-full bg-indigo-50 text-sm font-bold text-indigo-700">
+                    <div className="grid size-10 place-items-center rounded-full bg-[#edf0e5] text-sm font-bold text-[#586341]">
                       {booking.customerName.slice(0, 1).toUpperCase()}
                     </div>
                     <div>
@@ -194,7 +194,7 @@ function DashboardPage() {
               <Link
                 key={label}
                 to={to}
-                className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition hover:border-indigo-200 hover:bg-indigo-50/40"
+                className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition hover:border-[#d2d7c3] hover:bg-[#f4f5ef]"
               >
                 <span
                   className={
@@ -209,14 +209,14 @@ function DashboardPage() {
               </Link>
             ))}
           </div>
-          <div className="mt-5 rounded-xl bg-[#24205f] p-4 text-white">
+          <div className="mt-5 rounded-xl bg-[#292b25] p-4 text-white">
             <div className="text-sm font-bold">Acompanhe seu negócio</div>
-            <p className="mt-1 text-xs leading-5 text-indigo-100/70">
+            <p className="mt-1 text-xs leading-5 text-white/70">
               Confira sua página e mantenha seus serviços atualizados.
             </p>
             <Link
               to="/studio/settings"
-              className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-emerald-300"
+              className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#d5ec9a]"
             >
               Ver minha página <ArrowUpRight size={13} />
             </Link>

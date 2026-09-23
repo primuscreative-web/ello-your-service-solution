@@ -87,17 +87,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "LocalHub — Um link para mostrar o que você faz" },
+      { title: "ELLO — Seu negócio, no seu melhor lugar" },
       {
         name: "description",
         content:
-          "Reúna seus serviços, formas de contato e agendamentos numa página fácil de compartilhar.",
+          "Apresente seus serviços, receba pedidos e organize seu negócio local em um só lugar.",
       },
-      { name: "author", content: "LocalHub" },
-      { property: "og:title", content: "LocalHub" },
+      { name: "author", content: "ELLO" },
+      { property: "og:title", content: "ELLO — Seu negócio, no seu melhor lugar" },
       {
         property: "og:description",
-        content: "A presença digital completa para o seu negócio local.",
+        content:
+          "Uma página bonita e prática para mostrar serviços, receber pedidos e organizar sua rotina.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

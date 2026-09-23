@@ -9,7 +9,7 @@ function StudioGate() {
   const { business, ready, user, error } = useLocalHub();
   if (!ready)
     return (
-      <div className="grid min-h-screen place-items-center text-indigo-600">
+      <div className="grid min-h-screen place-items-center text-[#667448]">
         <LoaderCircle className="animate-spin" />
       </div>
     );

@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   Package,
   Settings2,
-  Store,
   LogOut,
 } from "lucide-react";
 import { useLocalHub } from "@/lib/localhub-context";
@@ -24,15 +23,11 @@ export function StudioLayout() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#f7f8fa] text-[#202735]">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[252px] flex-col border-r border-slate-200/80 bg-white px-5 py-7 lg:flex">
+    <div className="ello-studio min-h-screen bg-[#f5f4ef] text-[#292b25]">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[252px] flex-col border-r border-[#e6e5dd] bg-[#fbfaf7] px-5 py-7 lg:flex">
         <Link to="/" className="mb-10 flex items-center gap-3 px-2">
-          <span className="grid size-10 place-items-center rounded-xl bg-[#4359a8] text-white">
-            <Store size={20} />
-          </span>
-          <span className="text-xl font-extrabold tracking-tight">
-            Local<span className="text-[#4f46e5]">Hub</span>
-          </span>
+          <span className="ello-brand-mark">e</span>
+          <span className="text-xl font-semibold tracking-[-.06em]">ello</span>
         </Link>
         <div className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
           Seu espaço
@@ -45,7 +40,7 @@ export function StudioLayout() {
               <Link
                 key={to}
                 to={to}
-                className={`flex min-h-11 items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition ${active ? "bg-[#eef1f9] text-[#354a91]" : "text-slate-600 hover:bg-slate-50"}`}
+                className={`flex min-h-11 items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition ${active ? "bg-[#edf0e5] text-[#535d38]" : "text-[#696b64] hover:bg-[#f0f0e9] hover:text-[#292b25]"}`}
               >
                 <Icon size={18} strokeWidth={active ? 2.4 : 1.9} />
                 {label}
@@ -53,16 +48,16 @@ export function StudioLayout() {
             );
           })}
         </nav>
-        <div className="mt-auto rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <div className="text-xs font-semibold text-slate-800">Prévia da sua página</div>
-          <p className="mt-1 text-xs leading-relaxed text-slate-500">
+        <div className="mt-auto rounded-xl border border-[#e6e5dd] bg-[#f4f4ed] p-4">
+          <div className="text-xs font-semibold text-[#35372f]">Prévia da sua página</div>
+          <p className="mt-1 text-xs leading-relaxed text-[#777970]">
             Confira como sua página aparece para os clientes.
           </p>
           {business && (
             <Link
               to="/loja/$slug"
               params={{ slug: business.slug }}
-              className="mt-3 inline-flex min-h-9 items-center gap-2 text-xs font-semibold text-[#4359a8]"
+              className="mt-3 inline-flex min-h-9 items-center gap-2 text-xs font-semibold text-[#667448]"
             >
               Abrir prévia <ExternalLink size={13} />
             </Link>
@@ -71,12 +66,10 @@ export function StudioLayout() {
       </aside>
 
       <div className="lg:pl-[252px]">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/95 px-5 backdrop-blur-md sm:px-8">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[#e6e5dd] bg-[#fbfaf7]/95 px-5 backdrop-blur-md sm:px-8">
           <div className="flex items-center gap-2 lg:hidden">
-            <span className="grid size-9 place-items-center rounded-[10px] bg-[#4359a8] text-white">
-              <Store size={18} />
-            </span>
-            <b>LocalHub</b>
+            <span className="ello-brand-mark ello-brand-mark-small">e</span>
+            <b className="font-semibold tracking-[-.04em]">ello</b>
           </div>
           <div className="hidden text-sm text-slate-500 lg:block">Painel do negócio</div>
           <div className="flex items-center gap-3">
@@ -88,8 +81,8 @@ export function StudioLayout() {
                 {business.name}
               </span>
             )}
-            <span className="grid size-9 place-items-center rounded-full bg-[#eef1f9] text-sm font-semibold text-[#354a91]">
-              {business?.name?.slice(0, 1).toUpperCase() ?? "L"}
+            <span className="grid size-9 place-items-center rounded-full bg-[#e8ebdf] text-sm font-semibold text-[#586341]">
+              {business?.name?.slice(0, 1).toUpperCase() ?? "E"}
             </span>
             <button
               type="button"
@@ -108,13 +101,13 @@ export function StudioLayout() {
         </header>
         <nav
           aria-label="Navegação do painel"
-          className="flex gap-1 overflow-x-auto border-b border-slate-200/80 bg-white px-3 py-2 lg:hidden"
+          className="flex gap-1 overflow-x-auto border-b border-[#e6e5dd] bg-[#fbfaf7] px-3 py-2 lg:hidden"
         >
           {navigation.map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
               to={to}
-              className={`flex min-h-10 shrink-0 items-center gap-2 rounded-[10px] px-3 py-2 text-xs font-semibold ${pathname === to ? "bg-[#eef1f9] text-[#354a91]" : "text-slate-500"}`}
+              className={`flex min-h-10 shrink-0 items-center gap-2 rounded-[10px] px-3 py-2 text-xs font-semibold ${pathname === to ? "bg-[#edf0e5] text-[#535d38]" : "text-slate-500"}`}
             >
               <Icon size={15} />
               {label}

@@ -92,7 +92,7 @@ function SettingsPage() {
               />
             </Field>
             <Field label="Link público" hint="Use letras, números e hífens.">
-              <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 focus-within:border-indigo-400">
+              <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 focus-within:border-[#8a9668]">
                 <span className="border-r border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-400">
                   /loja/
                 </span>
@@ -121,22 +121,22 @@ function SettingsPage() {
           )}
         </form>
         <div className="space-y-4">
-          <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 sm:p-6">
+          <div className="rounded-2xl border border-[#e1e3d8] bg-gradient-to-br from-[#edf0e5] to-white p-5 sm:p-6">
             <div className="flex items-center gap-2 text-sm font-bold">
-              <Globe2 className="text-indigo-600" size={18} />
+              <Globe2 className="text-[#667448]" size={18} />
               Endereço da prévia
             </div>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               A página pública permanece disponível por este link e reflete os dados da nuvem.
             </p>
-            <div className="mt-4 break-all rounded-xl border border-indigo-100 bg-white px-3 py-3 text-sm font-semibold text-indigo-700">
+            <div className="mt-4 break-all rounded-xl border border-[#e1e3d8] bg-white px-3 py-3 text-sm font-semibold text-[#586341]">
               {typeof window !== "undefined" ? window.location.origin : ""}/loja/{form.slug}
             </div>
             <div className="mt-3 flex gap-2">
               <button
                 onClick={() => void copy()}
                 type="button"
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3 py-2.5 text-xs font-bold text-white"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#292b25] px-3 py-2.5 text-xs font-bold text-white transition hover:bg-[#414338]"
               >
                 <Copy size={14} />
                 Copiar endereço
@@ -145,7 +145,7 @@ function SettingsPage() {
                 href={"/loja/" + form.slug}
                 target="_blank"
                 rel="noreferrer"
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-100 bg-white px-3 py-2.5 text-xs font-bold text-indigo-700"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e1e3d8] bg-white px-3 py-2.5 text-xs font-bold text-[#586341]"
               >
                 <ExternalLink size={14} />
                 Abrir página

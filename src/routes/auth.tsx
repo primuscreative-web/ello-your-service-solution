@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Store } from "lucide-react";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { useLocalHub } from "@/lib/localhub-context";
 import { primaryButtonClass } from "@/components/localhub/ui";
@@ -56,13 +55,13 @@ function AuthPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f8fa] text-[#202735] lg:grid lg:grid-cols-2">
-      <section className="relative hidden min-h-screen flex-col justify-between overflow-hidden bg-[#1d2a46] p-12 text-white lg:flex xl:p-16">
+    <main className="min-h-screen bg-[#f5f4ef] text-[#292b25] lg:grid lg:grid-cols-2">
+      <section className="relative hidden min-h-screen flex-col justify-between overflow-hidden bg-[#292b25] p-12 text-white lg:flex xl:p-16">
         <Link to="/" className="flex w-fit items-center gap-3" aria-label="Voltar para o início">
           <span className="grid size-10 place-items-center rounded-xl bg-white/10 text-lg font-bold">
-            L
+            e
           </span>
-          <span className="text-lg font-semibold tracking-tight">LocalHub</span>
+          <span className="text-lg font-semibold tracking-tight">ello</span>
         </Link>
         <div className="relative z-10 max-w-lg">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/60">
@@ -75,19 +74,16 @@ function AuthPage() {
             Organize seus serviços, compartilhe sua página e acompanhe os pedidos de agendamento.
           </p>
         </div>
-        <p className="text-xs text-white/50">LocalHub · ferramentas para negócios locais</p>
+        <p className="text-xs text-white/50">ELLO · ferramentas para negócios locais</p>
         <div className="pointer-events-none absolute -bottom-48 -right-32 size-[440px] rounded-full border border-white/10" />
       </section>
       <div className="grid min-h-screen place-items-center px-4 py-10 sm:px-8">
-        <section className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-7 shadow-[0_12px_36px_-24px_rgba(23,33,54,0.24)] sm:p-9">
-          <Link
-            to="/"
-            className="mx-auto grid size-12 place-items-center rounded-2xl bg-indigo-600 text-white"
-          >
-            <Store />
+        <section className="w-full max-w-md rounded-2xl border border-[#e6e5dd] bg-[#fbfaf7] p-7 shadow-[0_20px_60px_-38px_rgba(35,37,28,.3)] sm:p-9">
+          <Link to="/" className="ello-brand-mark mx-auto">
+            e
           </Link>
           <h1 className="mt-6 text-center text-2xl font-extrabold">
-            {mode === "login" ? "Acesse seu painel" : "Crie sua conta LocalHub"}
+            {mode === "login" ? "Acesse seu espaço" : "Crie sua conta ELLO"}
           </h1>
           <p className="mt-2 text-center text-sm leading-6 text-slate-500">
             Seus dados serão salvos com segurança e sincronizados entre dispositivos.
@@ -101,7 +97,7 @@ function AuthPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-400"
+                className="mt-2 w-full rounded-xl border border-[#dedfd6] px-4 py-3 outline-none focus:border-[#8a9668] focus:ring-2 focus:ring-[#edf0e5]"
               />
             </label>
             <label className="block text-sm font-semibold">
@@ -113,7 +109,7 @@ function AuthPage() {
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-400"
+                className="mt-2 w-full rounded-xl border border-[#dedfd6] px-4 py-3 outline-none focus:border-[#8a9668] focus:ring-2 focus:ring-[#edf0e5]"
               />
             </label>
             {error && (
@@ -136,7 +132,7 @@ function AuthPage() {
               setError("");
               setMessage("");
             }}
-            className="mt-6 w-full text-sm font-semibold text-indigo-700"
+            className="mt-6 w-full text-sm font-semibold text-[#667448]"
           >
             {mode === "login" ? "Ainda não tem conta? Criar conta" : "Já tem conta? Entrar"}
           </button>

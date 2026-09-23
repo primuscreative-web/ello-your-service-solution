@@ -75,24 +75,24 @@ function PublicBusinessPage() {
 
   if (loading)
     return (
-      <div className="grid min-h-screen place-items-center bg-[#faf8ff] text-sm font-semibold text-indigo-700">
+      <div className="grid min-h-screen place-items-center bg-[#f5f4ef] text-sm font-semibold text-[#667448]">
         Carregando página...
       </div>
     );
   if (loadError || !business || business.slug !== slug)
     return (
-      <div className="grid min-h-screen place-items-center bg-[#faf8ff] px-5 text-center">
+      <div className="grid min-h-screen place-items-center bg-[#f5f4ef] px-5 text-center">
         <div>
-          <Store className="mx-auto text-indigo-500" size={30} />
+          <Store className="mx-auto text-[#778253]" size={30} />
           <h1 className="mt-4 text-2xl font-bold">Página não encontrada</h1>
           <p className="mt-2 text-sm text-slate-500">
-            {loadError || "Confira o link ou crie sua página LocalHub."}
+            {loadError || "Confira o link ou crie sua página ELLO."}
           </p>
           <Link
             to="/"
-            className="mt-5 inline-flex rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white"
+            className="mt-5 inline-flex rounded-xl bg-[#292b25] px-4 py-3 text-sm font-bold text-white"
           >
-            Ir para LocalHub
+            Ir para ELLO
           </Link>
         </div>
       </div>
@@ -103,17 +103,15 @@ function PublicBusinessPage() {
     ? "https://wa.me/" +
       waNumber +
       "?text=" +
-      encodeURIComponent("Olá! Encontrei sua página " + business.name + " no LocalHub.")
+      encodeURIComponent("Olá! Encontrei sua página " + business.name + " na ELLO.")
     : undefined;
   return (
-    <div className="min-h-screen bg-[#f7f7fb] pb-12 text-[#172033]">
+    <div className="min-h-screen bg-[#f5f4ef] pb-12 text-[#292b25]">
       <header className="border-b border-slate-100 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2 text-sm font-extrabold">
-            <span className="grid size-8 place-items-center rounded-xl bg-indigo-600 text-white">
-              <Store size={16} />
-            </span>
-            LocalHub
+            <span className="ello-brand-mark ello-brand-mark-small">e</span>
+            ello
           </Link>
           <div className="flex gap-2">
             {whatsappUrl && (
@@ -131,20 +129,20 @@ function PublicBusinessPage() {
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 sm:px-6">
-        <section className="relative mt-5 overflow-hidden rounded-[28px] bg-[#24205f] px-6 py-9 text-white sm:mt-8 sm:px-10 sm:py-12">
-          <div className="absolute -right-8 -top-20 size-64 rounded-full bg-indigo-400/30 blur-3xl" />
-          <div className="absolute -bottom-28 left-1/3 size-72 rounded-full bg-emerald-400/20 blur-3xl" />
+        <section className="relative mt-5 overflow-hidden rounded-2xl bg-[#292b25] px-6 py-9 text-white sm:mt-8 sm:px-10 sm:py-12">
+          <div className="absolute -right-8 -top-20 size-64 rounded-full bg-[#d5ec9a]/10 blur-3xl" />
+          <div className="absolute -bottom-28 left-1/3 size-72 rounded-full bg-[#d5ec9a]/10 blur-3xl" />
           <div className="relative max-w-2xl">
-            <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.15em] text-indigo-100">
+            <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.15em] text-[#e3edc8]">
               {business.category}
             </span>
-            <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+            <h1 className="mt-4 font-display text-4xl font-semibold tracking-[-.05em] sm:text-5xl">
               {business.name}
             </h1>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-indigo-100/80">
+            <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">
               {business.description || "Conheça nossos serviços e agende seu próximo horário."}
             </p>
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-indigo-100/80">
+            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/70">
               {business.city && (
                 <span className="flex items-center gap-1.5">
                   <MapPin size={14} />
@@ -162,7 +160,7 @@ function PublicBusinessPage() {
         <section className="mt-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <div className="text-xs font-bold uppercase tracking-[.14em] text-indigo-600">
+              <div className="text-xs font-bold uppercase tracking-[.14em] text-[#778253]">
                 Escolha o que combina com você
               </div>
               <h2 className="mt-2 font-display text-2xl font-extrabold tracking-tight">Serviços</h2>
@@ -177,7 +175,7 @@ function PublicBusinessPage() {
                   className="flex flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#edf0e5] text-[#667448]">
                       <Scissors size={18} />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -202,7 +200,7 @@ function PublicBusinessPage() {
                         setSelected(service);
                         setComplete(false);
                       }}
-                      className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-indigo-700"
+                      className="rounded-xl bg-[#292b25] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#414338]"
                     >
                       Agendar
                     </button>
@@ -212,7 +210,7 @@ function PublicBusinessPage() {
             </div>
           ) : (
             <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-              <Scissors className="mx-auto text-indigo-300" size={26} />
+              <Scissors className="mx-auto text-[#a5b280]" size={26} />
               <p className="mt-3 text-sm font-semibold">Estamos preparando nosso catálogo</p>
               <p className="mt-1 text-xs text-slate-400">
                 Entre em contato pelo WhatsApp para conhecer nossos serviços.
@@ -226,8 +224,8 @@ function PublicBusinessPage() {
           </span>
           <span>
             Feito com{" "}
-            <a href="/" className="font-bold text-indigo-600">
-              LocalHub
+            <a href="/" className="font-bold text-[#667448]">
+              ELLO
             </a>
           </span>
         </footer>
@@ -252,7 +250,7 @@ function PublicBusinessPage() {
           >
             <div className="mb-5 flex items-start justify-between">
               <div>
-                <div className="text-xs font-bold uppercase tracking-[.14em] text-indigo-600">
+                <div className="text-xs font-bold uppercase tracking-[.14em] text-[#778253]">
                   {complete ? "Pedido recebido" : "Agendamento"}
                 </div>
                 <h2 id="booking-title" className="mt-1 text-xl font-extrabold">
@@ -307,7 +305,7 @@ function PublicBusinessPage() {
                     autoFocus
                     value={customerName}
                     onChange={(event) => setCustomerName(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+                    className="w-full rounded-xl border border-[#dedfd6] px-3.5 py-3 text-sm outline-none focus:border-[#8a9668] focus:ring-4 focus:ring-[#edf0e5]"
                     placeholder="Como podemos te chamar?"
                   />
                 </label>
@@ -320,7 +318,7 @@ function PublicBusinessPage() {
                     type="tel"
                     value={phone}
                     onChange={(event) => setPhone(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+                    className="w-full rounded-xl border border-[#dedfd6] px-3.5 py-3 text-sm outline-none focus:border-[#8a9668] focus:ring-4 focus:ring-[#edf0e5]"
                     placeholder="(11) 99999-9999"
                   />
                 </label>
@@ -333,7 +331,7 @@ function PublicBusinessPage() {
                       min={new Date().toISOString().slice(0, 10)}
                       value={date}
                       onChange={(event) => setDate(event.target.value)}
-                      className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-indigo-400"
+                      className="w-full rounded-xl border border-[#dedfd6] px-3 py-3 text-sm outline-none focus:border-[#8a9668]"
                     />
                   </label>
                   <label className="block">
@@ -342,7 +340,7 @@ function PublicBusinessPage() {
                       required
                       value={time}
                       onChange={(event) => setTime(event.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-indigo-400"
+                      className="w-full rounded-xl border border-[#dedfd6] bg-white px-3 py-3 text-sm outline-none focus:border-[#8a9668]"
                     >
                       <option value="">Escolha</option>
                       {[
@@ -369,7 +367,7 @@ function PublicBusinessPage() {
                 <button
                   type="submit"
                   disabled={bookingBusy}
-                  className="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-60"
+                  className="w-full rounded-xl bg-[#292b25] px-4 py-3.5 text-sm font-bold text-white transition hover:bg-[#414338] disabled:opacity-60"
                 >
                   {bookingBusy ? "Enviando..." : "Pedir agendamento"}
                 </button>

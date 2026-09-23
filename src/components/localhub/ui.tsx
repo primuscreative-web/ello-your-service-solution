@@ -15,11 +15,11 @@ export function PageTitle({
     <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
       <div>
         {eyebrow && (
-          <div className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#4f46e5]">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#778253]">
             {eyebrow}
           </div>
         )}
-        <h1 className="font-display text-3xl font-bold tracking-tight text-[#172033] sm:text-[34px]">
+        <h1 className="font-display text-3xl font-semibold tracking-[-0.045em] text-[#292b25] sm:text-[36px]">
           {title}
         </h1>
         {description && (
@@ -50,11 +50,11 @@ export function Field({
 }
 
 export const inputClass =
-  "w-full rounded-[10px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-[10px] border border-[#dedfd6] bg-white px-4 py-3 text-sm text-[#292b25] outline-none transition placeholder:text-slate-400 focus:border-[#8a9668] focus:ring-2 focus:ring-[#edf0e5]";
 export const primaryButtonClass =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[#4359a8] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#354a91] disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[#292b25] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#414338] active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50";
 export const secondaryButtonClass =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[#dedfd6] bg-white px-4 py-2.5 text-sm font-semibold text-[#51534c] transition hover:border-[#c7c9bc] hover:bg-[#fafaf7] active:scale-[.98]";
 
 export function money(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);

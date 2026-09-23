@@ -1111,6 +1111,12 @@
     transform: scale(0.96);
   }
 
+  @media (min-width: 1180px) and (max-width: 1279px) {
+    .ello-hero h1 {
+      font-size: 58px;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -1344,6 +1350,366 @@
     .ello-header-bar {
       padding-right: 40px;
       padding-left: 40px;
+    }
+  }
+}
+
+@layer components {
+  .ello-brand-mark {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 12px;
+    background: #262720;
+    color: #d5ec9a;
+    font-family: Georgia, serif;
+    font-size: 23px;
+    font-style: italic;
+    line-height: 1;
+  }
+
+  .ello-brand-mark-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+  .ello-nav-link {
+    transition: color 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .ello-nav-link:hover {
+    color: #22241f;
+  }
+  .ello-cta {
+    display: inline-flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 999px;
+    padding: 0 19px;
+    font-size: 12px;
+    font-weight: 600;
+    transition:
+      transform 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+  .ello-cta:active {
+    transform: scale(0.97);
+  }
+  .ello-cta-dark {
+    background: #252720;
+    color: #fff;
+  }
+  .ello-cta-dark:hover {
+    background: #414338;
+  }
+  .ello-cta-lime {
+    background: #d5ec9a;
+    color: #242620;
+  }
+  .ello-cta-lime:hover {
+    background: #c7e481;
+  }
+  .ello-cta-quiet {
+    border: 1px solid #dfdfd7;
+    color: #41433d;
+  }
+  .ello-cta-quiet:hover {
+    background: #fff;
+  }
+  .ello-kicker,
+  .ello-section-index {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: #72756a;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .ello-heading-accent {
+    color: #7e8b57;
+  }
+  .ello-showcase {
+    isolation: isolate;
+    padding: 10px 12px 26px;
+  }
+  .ello-showcase-backdrop {
+    position: absolute;
+    z-index: -1;
+    inset: 8% 0 0 9%;
+    border-radius: 48% 48% 28px 28px;
+    background: #e6e8dc;
+  }
+  .ello-store-card {
+    position: relative;
+    width: min(100%, 510px);
+    overflow: hidden;
+    margin: 0 auto;
+    border: 1px solid rgba(38, 39, 32, 0.09);
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 26px 80px -42px rgba(35, 37, 28, 0.32);
+    transform: rotate(-1.4deg);
+  }
+  .ello-store-cover {
+    position: relative;
+    display: flex;
+    height: 205px;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    padding: 19px 21px;
+    background: #a7a992;
+    color: #fff;
+  }
+  .ello-store-cover::before {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(125deg, rgba(36, 38, 31, 0.64), transparent 74%),
+      linear-gradient(0deg, rgba(26, 28, 23, 0.36), transparent 55%);
+    content: "";
+  }
+  .ello-cover-orb {
+    position: absolute;
+    top: -86px;
+    right: -13px;
+    width: 255px;
+    height: 255px;
+    border: 1px solid rgba(255, 255, 255, 0.44);
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 18px rgba(255, 255, 255, 0.08),
+      0 0 0 38px rgba(255, 255, 255, 0.06);
+  }
+  .ello-cover-label,
+  .ello-cover-caption {
+    position: relative;
+    z-index: 1;
+  }
+  .ello-cover-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.17em;
+  }
+  .ello-cover-caption {
+    font-family: Georgia, serif;
+    font-size: 33px;
+    letter-spacing: -0.045em;
+    line-height: 0.99;
+  }
+  .ello-store-content {
+    padding: 19px 21px 20px;
+  }
+  .ello-avatar {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 50%;
+    background: #e8ebdf;
+    color: #5e6744;
+  }
+  .ello-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 999px;
+    background: #f5f5f1;
+    padding: 6px 8px;
+    color: #777c5b;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .ello-service {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid #edede7;
+    border-radius: 9px;
+    padding: 10px;
+    color: #676960;
+    font-size: 10px;
+  }
+  .ello-service b {
+    color: #292b25;
+    font-size: 11px;
+  }
+  .ello-booking {
+    display: flex;
+    min-height: 39px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 11px;
+    border-radius: 7px;
+    background: #292b25;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .ello-booking svg:last-child {
+    margin-left: auto;
+  }
+  .ello-floating-note,
+  .ello-share-note {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(35, 37, 28, 0.08);
+    background: #fff;
+    box-shadow: 0 12px 32px -20px rgba(35, 37, 28, 0.4);
+  }
+  .ello-floating-note {
+    right: 0;
+    bottom: 66px;
+    gap: 10px;
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .ello-note-icon,
+  .ello-share-icon {
+    display: grid;
+    width: 31px;
+    height: 31px;
+    flex: none;
+    place-items: center;
+    border-radius: 9px;
+    background: #f0f3e8;
+    color: #747f4c;
+  }
+  .ello-floating-note b,
+  .ello-floating-note small {
+    display: block;
+  }
+  .ello-floating-note b {
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .ello-floating-note small {
+    margin-top: 3px;
+    color: #898b83;
+    font-size: 9px;
+  }
+  .ello-note-dot {
+    width: 6px;
+    height: 6px;
+    margin-left: 7px;
+    border-radius: 50%;
+    background: #91a765;
+  }
+  .ello-share-note {
+    top: -10px;
+    left: 6px;
+    gap: 8px;
+    border-radius: 9px;
+    padding: 8px 10px;
+    color: #53564c;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .ello-share-icon {
+    width: 27px;
+    height: 27px;
+    background: #edf4e2;
+  }
+  .ello-feature-card {
+    min-height: 218px;
+    border: 1px solid #e6e5dd;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.48);
+    padding: 21px;
+    transition:
+      border-color 160ms ease,
+      background-color 160ms ease,
+      transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .ello-feature-card:hover {
+    transform: translateY(-3px);
+    border-color: #d4d8c8;
+    background: #fff;
+  }
+  .ello-feature-icon {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border: 1px solid #e4e6dc;
+    border-radius: 10px;
+    color: #727d4d;
+  }
+  .ello-steps-wrap {
+    background: #eeeee8;
+  }
+  .ello-steps-list {
+    border-top: 1px solid #d9dad1;
+  }
+  .ello-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    border-bottom: 1px solid #d9dad1;
+    padding: 22px 4px;
+  }
+  .ello-step-number {
+    padding-top: 3px;
+    color: #8c916f;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .ello-closing {
+    border-radius: 14px;
+    background: #292b25;
+    color: #f9f8f1;
+  }
+  .ello-closing .ello-section-index {
+    color: #c1c3b3;
+  }
+  .ello-footer {
+    border-top: 1px solid #e6e5dd;
+  }
+
+  @media (max-width: 639px) {
+    .ello-showcase {
+      padding: 5px 3px 36px;
+    }
+    .ello-store-cover {
+      height: 165px;
+    }
+    .ello-cover-caption {
+      font-size: 28px;
+    }
+    .ello-store-content {
+      padding: 15px;
+    }
+    .ello-floating-note {
+      right: -2px;
+      bottom: 11px;
+    }
+    .ello-share-note {
+      top: -8px;
+      bottom: auto;
+      left: -5px;
+    }
+    .ello-feature-card {
+      min-height: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ello-site *,
+    .ello-site *::before,
+    .ello-site *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
     }
   }
 }

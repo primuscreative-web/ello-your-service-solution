@@ -7,7 +7,6 @@ import {
   MapPin,
   Scissors,
   Sparkles,
-  Store,
   UtensilsCrossed,
   Wrench,
 } from "lucide-react";
@@ -61,25 +60,23 @@ function OnboardingPage() {
   if (!user) return <Navigate to="/auth" />;
 
   return (
-    <div className="min-h-screen bg-[#faf8ff] px-4 py-8 text-[#131b2e] sm:py-12">
+    <div className="min-h-screen bg-[#f5f4ef] px-4 py-8 text-[#292b25] sm:py-12">
       <header className="mx-auto flex max-w-5xl items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-extrabold">
-          <span className="grid size-9 place-items-center rounded-xl bg-indigo-600 text-white">
-            <Store size={18} />
-          </span>
-          LocalHub
+        <Link to="/" className="flex items-center gap-2 font-semibold tracking-[-.04em]">
+          <span className="ello-brand-mark ello-brand-mark-small">e</span>
+          ello
         </Link>
         <span className="text-xs font-semibold text-slate-400">PASSO {step} DE 2</span>
       </header>
       <div className="mx-auto mt-8 grid max-w-5xl gap-10 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:gap-16 lg:pt-8">
         <section>
-          <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700">
+          <div className="mb-4 flex size-12 items-center justify-center rounded-xl border border-[#e2e4d8] bg-[#edf0e5] text-[#667448]">
             {step === 1 ? <Scissors size={22} /> : <MapPin size={22} />}
           </div>
-          <div className="text-xs font-bold uppercase tracking-[.15em] text-indigo-600">
+          <div className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#778253]">
             Vamos começar
           </div>
-          <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+          <h1 className="mt-3 font-display text-4xl font-semibold tracking-[-.05em] sm:text-5xl">
             {step === 1 ? "Conte sobre seu negócio." : "Onde seus clientes encontram você?"}
           </h1>
           <p className="mt-4 max-w-md leading-7 text-slate-500">
@@ -102,7 +99,7 @@ function OnboardingPage() {
         </section>
         <form
           onSubmit={(event) => void submit(event)}
-          className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_24px_80px_-38px_rgba(40,44,91,.25)] sm:p-8"
+          className="rounded-2xl border border-[#e6e5dd] bg-[#fbfaf7] p-5 shadow-[0_24px_80px_-38px_rgba(40,44,31,.2)] sm:p-8"
         >
           {step === 1 ? (
             <div className="space-y-6">
@@ -129,7 +126,7 @@ function OnboardingPage() {
                       key={id}
                       onClick={() => update("category", id)}
                       aria-pressed={form.category === id}
-                      className={`flex min-h-14 items-center gap-2 rounded-[10px] border px-3 text-left text-xs font-semibold transition sm:text-sm ${form.category === id ? "border-indigo-300 bg-indigo-50 text-indigo-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                      className={`flex min-h-14 items-center gap-2 rounded-[10px] border px-3 text-left text-xs font-semibold transition sm:text-sm ${form.category === id ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] text-slate-600 hover:bg-[#f7f7f1]"}`}
                     >
                       <Icon size={17} aria-hidden="true" />
                       {label}
@@ -182,7 +179,7 @@ function OnboardingPage() {
                 label="Endereço da sua página"
                 hint="Escolha um endereço curto para a prévia da sua página."
               >
-                <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100">
+                <div className="flex items-center overflow-hidden rounded-xl border border-[#dedfd6] focus-within:border-[#8a9668] focus-within:ring-4 focus-within:ring-[#edf0e5]">
                   <span className="border-r border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-400">
                     /loja/
                   </span>

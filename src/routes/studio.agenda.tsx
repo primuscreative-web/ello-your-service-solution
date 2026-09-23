@@ -31,7 +31,7 @@ function AgendaPage() {
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="grid size-11 place-items-center rounded-full bg-indigo-50 font-bold text-indigo-700">
+                  <span className="grid size-11 place-items-center rounded-full bg-[#edf0e5] font-bold text-[#586341]">
                     {booking.customerName.slice(0, 1).toUpperCase()}
                   </span>
                   <div>
@@ -100,7 +100,7 @@ function AgendaPage() {
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-          <CalendarDays className="mx-auto text-indigo-300" size={28} />
+          <CalendarDays className="mx-auto text-[#a5b280]" size={28} />
           <h2 className="mt-4 font-bold">Nenhum agendamento por enquanto</h2>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
             Quando um cliente pedir um horário pela sua página, você poderá confirmar ou recusar por

@@ -63,9 +63,9 @@ function CatalogPage() {
           {error}
         </p>
       )}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e1e3d8] bg-[#edf0e5] p-4">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-xl bg-white text-indigo-600">
+          <span className="grid size-10 place-items-center rounded-xl bg-white text-[#667448]">
             <Package size={18} />
           </span>
           <div>
@@ -75,7 +75,7 @@ function CatalogPage() {
             </div>
           </div>
         </div>
-        <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-indigo-700">
+        <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#586341]">
           {services.filter((item) => item.active).length} ativos
         </span>
       </div>
@@ -104,7 +104,7 @@ function CatalogPage() {
               className="grid gap-3 border-b border-slate-100 px-5 py-4 last:border-0 sm:grid-cols-[minmax(0,1fr)_130px_110px_110px] sm:items-center sm:gap-4"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#edf0e5] text-[#667448]">
                   <Package size={17} />
                 </span>
                 <div className="min-w-0">
@@ -137,7 +137,7 @@ function CatalogPage() {
                       setCreating(false);
                       setEditing(service);
                     }}
-                    className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-indigo-50 hover:text-indigo-700"
+                    className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-[#edf0e5] hover:text-[#586341]"
                   >
                     <Pencil size={15} />
                   </button>
@@ -173,7 +173,7 @@ function CatalogPage() {
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-indigo-50 text-indigo-600">
+          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#edf0e5] text-[#667448]">
             <Package size={22} />
           </span>
           <h2 className="mt-4 font-bold">Seu catálogo começa aqui</h2>
@@ -219,7 +219,7 @@ function ServiceEditor({
   return (
     <form
       onSubmit={submit}
-      className="mb-5 rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm sm:p-6"
+      className="mb-5 rounded-2xl border border-[#e1e3d8] bg-white p-5 shadow-sm sm:p-6"
     >
       <div className="mb-5 flex items-center justify-between">
         <div>
@@ -277,7 +277,7 @@ function ServiceEditor({
           type="checkbox"
           checked={active}
           onChange={(event) => setActive(event.target.checked)}
-          className="size-4 accent-indigo-600"
+          className="size-4 accent-[#778253]"
         />
         Mostrar na página pública
       </label>
