@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "background": "#faf8ff", "primary": "#3525cd", "surface-tint": "#4d44e3", "on-tertiary-fixed-variant": "#2f2ebe", "secondary-fixed": "#6ffbbe", "on-primary": "#ffffff", "secondary-container": "#6cf8bb", "on-error-container": "#93000a", "on-background": "#131b2e", "on-secondary-fixed-variant": "#005236", "on-primary-fixed-variant": "#3323cc", "primary-fixed-dim": "#c3c0ff", "on-tertiary": "#ffffff", "on-surface": "#131b2e", "surface-container-low": "#f2f3ff", "inverse-surface": "#283044", "inverse-on-surface": "#eef0ff", "on-secondary-container": "#00714d", "surface-container-highest": "#dae2fd", "secondary": "#006c49", "surface": "#faf8ff", "on-secondary": "#ffffff", "on-error": "#ffffff", "on-tertiary-container": "#d9d8ff", "on-primary-fixed": "#0f0069", "on-primary-container": "#dad7ff", "surface-container-high": "#e2e7ff", "inverse-primary": "#c3c0ff", "primary-fixed": "#e2dfff", "surface-container-lowest": "#ffffff", "primary-container": "#4f46e5", "tertiary-container": "#4b4dd8", "surface-bright": "#faf8ff", "error-container": "#ffdad6", "tertiary-fixed": "#e1e0ff", "tertiary": "#3130c0", "on-secondary-fixed": "#002113", "on-surface-variant": "#464555", "surface-dim": "#d2d9f4", "on-tertiary-fixed": "#07006c", "outline": "#777587", "outline-variant": "#c7c4d8", "surface-variant": "#dae2fd", "error": "#ba1a1a", "surface-container": "#eaedff", "tertiary-fixed-dim": "#c0c1ff", "secondary-fixed-dim": "#4edea3" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "gutter-tablet": "1.5rem", "space-xs": "0.25rem", "margin": "1rem", "space-lg": "1.5rem", "space-md": "1rem", "gutter": "1rem", "gutter-desktop": "2rem", "margin-tablet": "2rem", "space-xl": "2.5rem", "space-sm": "0.5rem", "margin-desktop": "3rem" }, fontFamily: { "body-sm": ["Inter"], "body-md": ["Inter"], "label-md": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "display-mobile": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "label-sm": ["Inter"], "display": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"] }, fontSize: { "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "-0.006em", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "display-mobile": ["36px", { "lineHeight": "42px", "letterSpacing": "-0.025em", "fontWeight": "800" }], "headline-lg-mobile": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.011em", "fontWeight": "400" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "display": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }] } } } }</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-20 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><button aria-label="Voltar" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-colors flex-shrink-0" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Rastreamento Do Pedido</h1><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">#4829</span></div><div class="flex items-center gap-1.5 mt-0.5"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span></span><span class="font-label-sm text-label-sm text-secondary font-semibold uppercase tracking-wider">Em Rota de Entrega</span></div></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><a aria-label="Ajuda WhatsApp de Emergência" class="w-11 h-11 rounded-full bg-secondary text-on-secondary flex items-center justify-center hover:opacity-95 active:scale-[0.98] transition-all shadow-[0_4px_12px_rgba(0,108,73,0.2)]" href="https://wa.me/" rel="noopener noreferrer" target="_blank"><span class="material-symbols-outlined text-[20px]">chat</span></a><a aria-label="Ligar para Suporte" class="w-11 h-11 rounded-full bg-surface-container-low text-on-surface flex items-center justify-center hover:bg-surface-container-high active:scale-[0.98] transition-all" href="tel:"><span class="material-symbols-outlined text-[20px]">call</span></a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 ml-1"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-20 bg-surface flex-1"><div class="flex flex-col w-full relative pb-12 select-none">
+<!-- Interactive Live Vector Map Stage -->
+<div class="relative w-full h-[380px] overflow-hidden bg-surface-container-high shadow-inner">
+<!-- Map Vector Canvas (Clean Mapbox-styled city grid with styled streets) -->
+<svg class="absolute inset-0 w-full h-full object-cover" fill="none" id="city-map" viewbox="0 0 420 380" xmlns="http://www.w3.org/2000/svg">
+<!-- Urban Blocks / Land Parcels -->
+<rect fill="#E8EDFD" height="380" width="420"></rect>
+<!-- City Parcels & Green Spaces -->
+<path d="M-10 -10 H130 V90 H-10 Z" fill="#DEE6FB"></path>
+<path d="M150 -10 H310 V70 H150 Z" fill="#E2EBF8"></path>
+<path d="M330 -10 H430 V110 H330 Z" fill="#DCE5F7"></path>
+<path d="M-10 110 H120 V210 H-10 Z" fill="#DFE8FA"></path>
+<!-- Park / Praça Benedito Calixto approximation -->
+<path d="M140 90 H240 V175 H140 Z" fill="#CDECDD" rx="6"></path>
+<text fill="#00714D" font-family="Inter" font-size="8" font-weight="600" opacity="0.8" text-anchor="middle" x="190" y="136">Praça Benedito</text>
+<path d="M260 90 H430 V190 H260 Z" fill="#E1EAFB"></path>
+<path d="M-10 230 H110 V360 H-10 Z" fill="#E3ECFB"></path>
+<path d="M130 200 H280 V310 H130 Z" fill="#DFE7FA"></path>
+<path d="M300 210 H430 V350 H300 Z" fill="#DDE6F8"></path>
+<path d="M120 330 H290 V410 H120 Z" fill="#E1EAFB"></path>
+<!-- Secondary Streets Layer -->
+<path d="M0 45 L420 45" stroke="#FFFFFF" stroke-linecap="round" stroke-width="12"></path>
+<path d="M0 195 L420 195" stroke="#FFFFFF" stroke-linecap="round" stroke-width="14"></path>
+<path d="M0 320 L420 320" stroke="#FFFFFF" stroke-linecap="round" stroke-width="11"></path>
+<path d="M130 0 L130 380" stroke="#FFFFFF" stroke-linecap="round" stroke-width="14"></path>
+<path d="M250 0 L250 380" stroke="#FFFFFF" stroke-linecap="round" stroke-width="12"></path>
+<path d="M320 0 L320 380" stroke="#FFFFFF" stroke-linecap="round" stroke-width="11"></path>
+<!-- Primary Arteries & Avenidas -->
+<!-- Av. Rebouças diagonal slice -->
+<path d="M-20 340 L380 -20" stroke="#FEFEFF" stroke-linecap="square" stroke-width="22"></path>
+<path d="M-20 340 L380 -20" stroke="#F1F4FD" stroke-linecap="square" stroke-width="18"></path>
+<!-- Rua dos Pinheiros (Main Axis) -->
+<path d="M70 -10 L70 390" id="pinheiros-street" stroke="#FFFFFF" stroke-linecap="round" stroke-width="20"></path>
+<!-- Street Label Typography in Canvas -->
+<text fill="#777587" font-family="Inter" font-size="7.5" font-weight="600" letter-spacing="0.8" transform="rotate(-90 35,115)" x="35" y="115">RUA DOS PINHEIROS</text>
+<text fill="#777587" font-family="Inter" font-size="7.5" font-weight="600" letter-spacing="0.8" transform="rotate(-40 268,270)" x="268" y="270">AV. REBOUÇAS</text>
+<text fill="#777587" font-family="Inter" font-size="7" font-weight="600" x="180" y="42">RUA OSCAR FREIRE</text>
+<text fill="#777587" font-family="Inter" font-size="7" font-weight="600" x="15" y="192">AL. GABRIEL MONTEIRO DA SILVA</text>
+<text fill="#777587" font-family="Inter" font-size="7" font-weight="600" x="145" y="317">RUA FRADIQUE COUTINHO</text>
+<!-- Active Delivery Route Vector Track (Glowing Path) -->
+<!-- Passive Full Track -->
+<path d="M70 45 L70 195 L250 195 L250 280" fill="none" opacity="0.6" stroke="#C3C0FF" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"></path>
+<!-- Dynamic Live Traveled Route -->
+<path d="M70 45 L70 195 L175 195" fill="none" stroke="#3525CD" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"></path>
+<!-- Dash pulse future route -->
+<path d="M175 195 L250 195 L250 280" fill="none" opacity="0.8" stroke="#3525CD" stroke-dasharray="6 6" stroke-linecap="round" stroke-width="5"></path>
+<!-- Origin Node: Restaurant (The Burger Craft) -->
+<g transform="translate(70, 45)">
+<circle fill="#3525CD" filter="drop-shadow(0 2px 5px rgba(53,37,205,0.4))" r="12"></circle>
+<circle fill="#FFFFFF" r="5"></circle>
+</g>
+<!-- Destination Node: Customer Home -->
+<g transform="translate(250, 280)">
+<circle fill="#006C49" opacity="0.15" r="14"></circle>
+<circle fill="#006C49" filter="drop-shadow(0 2px 4px rgba(0,108,73,0.3))" r="10"></circle>
+<circle fill="#FFFFFF" r="4"></circle>
+</g>
+</svg>
+<!-- Floating Origin Label Pin -->
+<div class="absolute top-[28px] left-[78px] flex items-center gap-1.5 bg-inverse-surface/90 backdrop-blur-md px-2.5 py-1 rounded-full shadow-md z-10">
+<span class="material-symbols-outlined text-[13px] text-secondary-fixed">lunch_dining</span>
+<span class="font-label-sm text-label-sm text-inverse-on-surface whitespace-nowrap">The Burger Craft</span>
+</div>
+<!-- Animated Motoboy Live Marker with Radar Pulses -->
+<div class="absolute top-[177px] left-[157px] -translate-x-1/2 -translate-y-1/2 z-20 transition-all duration-1000 ease-out flex flex-col items-center pointer-events-none" id="courier-marker">
+<!-- Radar Pulse Ring Animation -->
+<div class="relative flex items-center justify-center">
+<span class="animate-ping absolute inline-flex h-12 w-12 rounded-full bg-primary opacity-30"></span>
+<span class="animate-pulse absolute inline-flex h-9 w-9 rounded-full bg-primary-container opacity-40"></span>
+<div class="relative w-8 h-8 rounded-full bg-primary shadow-lg flex items-center justify-center text-on-primary ring-0">
+<span class="material-symbols-outlined text-[18px]">two_wheeler</span>
+</div>
+</div>
+<!-- Micro Eta Pill -->
+<div class="mt-1 bg-surface-container-lowest px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">6 min</span>
+</div>
+</div>
+<!-- Floating Destination Home Pill -->
+<div class="absolute top-[260px] left-[266px] flex items-center gap-1.5 bg-surface-container-lowest px-2.5 py-1 rounded-full shadow-md z-10">
+<span class="material-symbols-outlined text-[14px] text-secondary">home_pin</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold whitespace-nowrap">Sua Casa (Apto 82)</span>
+</div>
+<!-- Map Floating Controls & Action Buttons (Right Rail) -->
+<div class="absolute right-3 top-3 flex flex-col gap-2 z-20">
+<!-- Recenter Target Action -->
+<button aria-label="Centralizar no motoboy" class="w-10 h-10 rounded-full bg-surface-container-lowest text-on-surface flex items-center justify-center shadow-md active:scale-95 transition-all" id="btn-recenter">
+<span class="material-symbols-outlined text-[20px]">near_me</span>
+</button>
+<!-- Zoom Controls Stack -->
+<div class="flex flex-col bg-surface-container-lowest rounded-full shadow-md overflow-hidden">
+<button aria-label="Aumentar zoom" class="w-10 h-10 flex items-center justify-center text-on-surface hover:bg-surface-container active:scale-95 transition-all" id="btn-zoom-in">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+<div class="w-full h-px bg-surface-container-high"></div>
+<button aria-label="Diminuir zoom" class="w-10 h-10 flex items-center justify-center text-on-surface hover:bg-surface-container active:scale-95 transition-all" id="btn-zoom-out">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+</div>
+<!-- Quick Share Route Button -->
+<button aria-label="Compartilhar rota no WhatsApp" class="w-10 h-10 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-lg active:scale-95 transition-all" id="btn-share-route">
+<span class="material-symbols-outlined text-[19px]">share</span>
+</button>
+</div>
+<!-- Ambient Gradient Scrim at bottom of map for smooth layout merge -->
+<div class="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-surface to-transparent pointer-events-none"></div>
+</div>
+<!-- Main Content Wrap & Bottom Panel -->
+<div class="flex flex-col px-margin gap-space-md -mt-4 relative z-30">
+<!-- Hero Status Card: ETA & Trajectory Pulse -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-space-md shadow-md flex flex-col gap-space-sm">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-secondary uppercase font-bold tracking-wider">A caminho de Pinheiros</span>
+<h2 class="font-headline-md text-headline-md text-on-surface mt-0.5">8 – 12 minutos</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Chegada estimada por volta de <span class="font-semibold text-on-surface">20:42h</span></p>
+</div>
+<div class="w-12 h-12 rounded-xl bg-secondary-container flex items-center justify-center text-on-secondary-container flex-shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[26px]">electric_moped</span>
+</div>
+</div>
+<!-- Linear Route Progress Indicator -->
+<div class="flex flex-col gap-1.5 mt-1">
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-on-surface-variant">Progresso da entrega</span>
+<span class="font-semibold text-primary">70% concluído</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-high overflow-hidden relative">
+<div class="h-full rounded-full bg-gradient-to-r from-primary to-surface-tint w-[70%] transition-all duration-700 ease-out"></div>
+</div>
+</div>
+<!-- Friendly context flash -->
+<div class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low mt-1">
+<span class="material-symbols-outlined text-[18px] text-primary flex-shrink-0">takeout_dining</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          O entregador retirou seu pedido quentinho e acabou de entrar na sua rota!
+        </p>
+</div>
+</div>
+<!-- Security Delivery PIN Card (OmniLink SafeDrop) -->
+<div class="w-full bg-surface-container rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-primary">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span class="font-label-sm text-label-sm uppercase font-bold tracking-wider">PIN Seguro de Recebimento</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Anti-fraude</span>
+</div>
+<div class="flex items-center justify-between mt-1 bg-surface-container-lowest px-4 py-3 rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Código para o entregador</span>
+<div class="flex items-center gap-2 tracking-widest font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold mt-0.5">
+<span>8</span>
+<span>4</span>
+<span>2</span>
+<span>9</span>
+</div>
+</div>
+<button class="px-3 py-1.5 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm transition-all active:scale-95" id="btn-copy-pin" onclick="navigator.clipboard.writeText('8429'); this.innerText='Copiado!'">
+          Copiar
+        </button>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant px-1 mt-0.5">
+        • Diga este código ao motoboy somente após conferir a embalagem lacrada.
+      </p>
+</div>
+<!-- Courier Partner Profile Module -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-space-md shadow-md flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant font-semibold uppercase tracking-wider">Entregador Responsável</span>
+<div class="flex items-center gap-1 bg-secondary-container px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[13px] text-on-secondary-container">verified</span>
+<span class="font-label-sm text-label-sm text-on-secondary-container font-bold">Top Express</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<!-- Courier Avatar with Photo Placeholder -->
+<div class="relative flex-shrink-0">
+<img class="w-14 h-14 rounded-full object-cover shadow-sm" data-alt="Close-up friendly portrait of a Brazilian male courier named Marcos in his 30s wearing a modern helmet and courier jacket smiling warmly with city street background in natural evening daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSuZbAc-hLFthhclLwTe6aJjC-qyo0eiujCm3yg1MZjOBU8KliMb5_sLnzwee2UNdazjDHw916USLDOJcgt1KgXwoLJTV2YV7WMH1y7l6hSx-UoVEJ-YhCVYqCS7LD6zy7SJKHeRiyStg9Sz0LYqLrG8S0GyEGEkN9uA71x0XQirbae244u8iaYYhm7v04z34HwS3cm0uA8XQeeREGSdvScmSIxqCU9pJCgLyIuFLosQFNQQdvaaqR"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-on-secondary shadow-sm">
+<span class="material-symbols-outlined text-[12px]">two_wheeler</span>
+</div>
+</div>
+<!-- Courier Info & Vehicle Specs -->
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface truncate">Marcos Vinicius</h3>
+<div class="flex items-center gap-0.5 bg-surface-container-high px-1.5 py-0.5 rounded">
+<span class="material-symbols-outlined text-[13px] text-amber-500" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm font-bold text-on-surface">4.95</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 truncate">
+            Honda CG 160 Fan Preta • <span class="font-semibold text-on-surface">ABC-4E29</span>
+</p>
+<span class="font-label-sm text-label-sm text-secondary font-medium mt-0.5">1.420+ entregas perfeitas</span>
+</div>
+</div>
+<!-- Fast Action Interaction Channels -->
+<div class="grid grid-cols-2 gap-space-sm pt-1">
+<a class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-secondary text-on-secondary font-label-md text-label-md font-semibold shadow-sm active:scale-98 transition-all" href="https://wa.me/?text=Ol%C3%A1%20Marcos!%20J%C3%A1%20estou%20na%20portaria%20aguardando%20o%20pedido%20%234829." rel="noopener noreferrer" target="_blank">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+<span>Enviar WhatsApp</span>
+</a>
+<a class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-all active:scale-98" href="tel:+5511999999999">
+<span class="material-symbols-outlined text-[18px]">call</span>
+<span>Ligar para Marcos</span>
+</a>
+</div>
+</div>
+<!-- Vertical Timeline Tracker (Real-Time Stepper) -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-space-md shadow-md flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Etapas da Entrega</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Atualizado há 1 min</span>
+</div>
+<div class="flex flex-col gap-4 relative pl-1">
+<!-- Connecting Vertical Rail -->
+<div class="absolute left-[15px] top-3 bottom-3 w-0.5 bg-surface-container-high"></div>
+<!-- Step 1: Confirmado -->
+<div class="flex items-start gap-space-md relative">
+<div class="w-6 h-6 rounded-full bg-secondary text-on-secondary flex items-center justify-center flex-shrink-0 z-10 shadow-xs">
+<span class="material-symbols-outlined text-[15px]">check</span>
+</div>
+<div class="flex items-center justify-between flex-1 min-w-0 pt-0.5">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Pedido Confirmado &amp; Pago</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">The Burger Craft aceitou o pedido</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">19:55</span>
+</div>
+</div>
+<!-- Step 2: Em Preparo -->
+<div class="flex items-start gap-space-md relative">
+<div class="w-6 h-6 rounded-full bg-secondary text-on-secondary flex items-center justify-center flex-shrink-0 z-10 shadow-xs">
+<span class="material-symbols-outlined text-[15px]">check</span>
+</div>
+<div class="flex items-center justify-between flex-1 min-w-0 pt-0.5">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Grelhando Hambúrgueres</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Montagem artesanal &amp; embalagem térmica</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">20:10</span>
+</div>
+</div>
+<!-- Step 3: Saiu para Entrega (Active / Pulse) -->
+<div class="flex items-start gap-space-md relative">
+<div class="relative flex items-center justify-center w-6 h-6 flex-shrink-0 z-10">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60"></span>
+<div class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined text-[14px]">two_wheeler</span>
+</div>
+</div>
+<div class="flex items-center justify-between flex-1 min-w-0 pt-0.5">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-primary font-bold">Saiu para Entrega</span>
+<span class="font-body-sm text-body-sm text-on-surface">Motoboy em deslocamento até Pinheiros</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-bold">20:28</span>
+</div>
+</div>
+<!-- Step 4: Entrega Prevista (Pending) -->
+<div class="flex items-start gap-space-md relative opacity-60">
+<div class="w-6 h-6 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center flex-shrink-0 z-10">
+<span class="material-symbols-outlined text-[14px]">home</span>
+</div>
+<div class="flex items-center justify-between flex-1 min-w-0 pt-0.5">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Chegada no seu endereço</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Apresente o PIN 8429 para receber</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">20:42</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Delivery Destination Card -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-space-md shadow-md flex flex-col gap-2">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-[20px] text-primary">location_on</span>
+<h3 class="font-label-md text-label-md font-bold uppercase tracking-wider">Endereço de Entrega</h3>
+</div>
+<div class="flex flex-col pl-7">
+<p class="font-body-md text-body-md text-on-surface font-semibold">Rua dos Pinheiros, 340 – Apto 82</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Edifício Villa D'Oro • Pinheiros, São Paulo - SP</p>
+<span class="font-label-sm text-label-sm text-secondary font-medium mt-1">Instrução: Deixar na portaria com interfone 82</span>
+</div>
+</div>
+<!-- Collapsible Order Bag Accordion -->
+<div class="w-full bg-surface-container-lowest rounded-xl shadow-md overflow-hidden">
+<!-- Accordion Header -->
+<button class="w-full p-space-md flex items-center justify-between text-left hover:bg-surface-container-low transition-colors" id="toggle-order-bag">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-bold">Itens do Pedido (3)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Total: R$ 74,90 • Pago via Pix</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[22px] text-on-surface-variant transition-transform duration-300" id="accordion-icon">expand_more</span>
+</button>
+<!-- Accordion Content Collapsible Drawer -->
+<div class="flex flex-col px-space-md pb-space-md gap-3 pt-1" id="order-bag-content">
+<div class="w-full h-px bg-surface-container"></div>
+<!-- Item 1: Burger -->
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-start gap-space-sm min-w-0">
+<img class="w-12 h-12 rounded-lg object-cover flex-shrink-0" data-alt="Artisanal gourmet bacon cheeseburger on glossy brioche bun with crispy thick bacon strips, melting aged cheddar and angus beef patty on dark stone plate" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUMEdT7tM2sZhdi06vYncqBc93-LhK6K_mynhWnEjIljRW2e-qkXxYmmlFODSfI-Cuxt3b1YGO3iVRHJdHmvS_XJHPbJ2YfURrC_a08e1CleNb9MF_aIvOLqdALLotGBLimCLt-_QHwwKLMiietzMziPlEtyfr04NL0F-5x5ULpNcTDJMQilrAekfz6WhUmMBdFPJDjPFMY4f0tiv_ne3XBA5EroRsXQi2dbXFEvwTx6Opivr28jY1"/>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">1x Monster Bacon Cheddar</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Blend Angus 180g, Ponto Rosado, Pão Brioche</span>
+</div>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold flex-shrink-0">R$ 44,90</span>
+</div>
+<!-- Item 2: Fries -->
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-start gap-space-sm min-w-0">
+<img class="w-12 h-12 rounded-lg object-cover flex-shrink-0" data-alt="Golden crispy rustic truffle fries sprinkled with freshly grated parmesan cheese and rosemary herbs in a craft bowl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD37_twwBJAO7-GsIvUWQXRh7WZ6HKbNzz8n0hbvODuTEYCft3EiF6O4lY6EDQXZAm_mIy70aEkOZhAsbSMNKL3xkCmOrwWlCC7PldGieU6xa2TKOQxNp8ve3mGi_6lB0AC0QnOrs1w909PpuhRJVfSi3h3wC0cwICp18z9_OcdHTVAsdQOguQuc0dCmmos2VEczf9-UJuFQ6-flPSgaMG068VB5gJtZqv_Jr-LTr8r7Lis4ISMngzT"/>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">1x Batata Trufada &amp; Parmesão</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Com maionese artesanal da casa</span>
+</div>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold flex-shrink-0">R$ 18,00</span>
+</div>
+<!-- Item 3: Craft Beer -->
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-start gap-space-sm min-w-0">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[24px]">sports_bar</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">1x Chopp IPA Artesanal 500ml</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Cervejaria Local Pinheiros</span>
+</div>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold flex-shrink-0">R$ 16,00</span>
+</div>
+<!-- Financial Breakdown -->
+<div class="mt-2 pt-2 bg-surface-container-low p-3 rounded-lg flex flex-col gap-1">
+<div class="flex justify-between items-center font-body-sm text-body-sm text-on-surface-variant">
+<span>Subtotal</span>
+<span>R$ 78,90</span>
+</div>
+<div class="flex justify-between items-center font-body-sm text-body-sm text-secondary">
+<span>Desconto Cupom Pix (CRAFTPIX)</span>
+<span>- R$ 10,00</span>
+</div>
+<div class="flex justify-between items-center font-body-sm text-body-sm text-on-surface-variant">
+<span>Taxa de Entrega Express</span>
+<span>R$ 6,00</span>
+</div>
+<div class="flex justify-between items-center font-label-md text-label-md text-on-surface font-bold pt-1">
+<span>Total Pago</span>
+<span class="text-primary font-headline-sm text-headline-sm">R$ 74,90</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Help & Support Desk Card -->
+<div class="w-full bg-surface-container-low rounded-xl p-space-md flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">support_agent</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Problemas com o pedido?</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Suporte do The Burger Craft ativo</span>
+</div>
+</div>
+<a class="px-3.5 py-2 rounded-xl bg-surface-container-lowest hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold shadow-xs transition-all active:scale-95 flex-shrink-0" href="https://wa.me/?text=Preciso%20de%20ajuda%20com%20o%20pedido%20%234829" rel="noopener noreferrer" target="_blank">
+        Ajuda
+      </a>
+</div>
+<!-- Live Status Dock Micro-Brand Pill -->
+<div class="flex items-center justify-center gap-2 py-3 text-center">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rastreamento Conectado • OmniLink Live Tracking v3.4</span>
+</div>
+</div>
+</div>
+<script>
+  (function () {
+    // Accordion Toggle Behavior
+    const toggleBtn = document.getElementById('toggle-order-bag');
+    const bagContent = document.getElementById('order-bag-content');
+    const accordionIcon = document.getElementById('accordion-icon');
+    let isOpen = true;
+
+    if (toggleBtn && bagContent && accordionIcon) {
+      toggleBtn.addEventListener('click', function () {
+        isOpen = !isOpen;
+        if (isOpen) {
+          bagContent.classList.remove('hidden');
+          accordionIcon.style.transform = 'rotate(0deg)';
+        } else {
+          bagContent.classList.add('hidden');
+          accordionIcon.style.transform = 'rotate(-90deg)';
+        }
+      });
+    }
+
+    // Interactive Courier Marker Simulation along the path
+    const marker = document.getElementById('courier-marker');
+    let currentX = 157;
+    let currentY = 177;
+    let direction = 1;
+
+    // Micro smooth drift movement to simulate GPS heartbeat
+    setInterval(() => {
+      if (!marker) return;
+      currentX += 3 * direction;
+      currentY += (Math.random() * 2 - 1) * direction;
+      if (currentX > 185) direction = -1;
+      if (currentX < 145) direction = 1;
+
+      marker.style.left = currentX + 'px';
+      marker.style.top = currentY + 'px';
+    }, 2800);
+
+    // Zoom Buttons Feedback
+    const map = document.getElementById('city-map');
+    let currentScale = 1;
+
+    document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
+      if (currentScale < 1.3) currentScale += 0.1;
+      if (map) map.style.transform = `scale(${currentScale})`;
+    });
+
+    document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
+      if (currentScale > 0.9) currentScale -= 0.1;
+      if (map) map.style.transform = `scale(${currentScale})`;
+    });
+
+    document.getElementById('btn-recenter')?.addEventListener('click', () => {
+      currentScale = 1;
+      if (map) {
+        map.style.transform = `scale(1)`;
+        map.style.transition = 'transform 0.4s ease';
+      }
+    });
+
+    // Share Route in WhatsApp
+    document.getElementById('btn-share-route')?.addEventListener('click', () => {
+      const shareUrl = encodeURIComponent(window.location.href);
+      const text = encodeURIComponent('Acompanhe a entrega do meu pedido #4829 do The Burger Craft em tempo real: ');
+      window.open(`https://wa.me/?text=${text}${shareUrl}`, '_blank');
+    });
+  })();
+</script></main></body></html>

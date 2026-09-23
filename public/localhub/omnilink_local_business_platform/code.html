@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100%;margin:0;padding:0;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "secondary-container": "#6cf8bb", "on-tertiary-fixed": "#07006c", "inverse-on-surface": "#eef0ff", "on-primary-container": "#dad7ff", "on-surface-variant": "#464555", "on-background": "#131b2e", "outline": "#777587", "on-error": "#ffffff", "surface-container-lowest": "#ffffff", "tertiary-fixed": "#e1e0ff", "inverse-surface": "#283044", "on-primary": "#ffffff", "on-error-container": "#93000a", "secondary-fixed": "#6ffbbe", "surface-container-high": "#e2e7ff", "on-surface": "#131b2e", "surface-container-low": "#f2f3ff", "secondary-fixed-dim": "#4edea3", "on-secondary-container": "#00714d", "secondary": "#006c49", "on-secondary-fixed-variant": "#005236", "background": "#faf8ff", "tertiary-container": "#4b4dd8", "primary-container": "#4f46e5", "on-secondary-fixed": "#002113", "on-secondary": "#ffffff", "surface": "#faf8ff", "tertiary": "#3130c0", "on-tertiary-fixed-variant": "#2f2ebe", "tertiary-fixed-dim": "#c0c1ff", "primary": "#3525cd", "on-primary-fixed": "#0f0069", "primary-fixed-dim": "#c3c0ff", "on-primary-fixed-variant": "#3323cc", "surface-tint": "#4d44e3", "error-container": "#ffdad6", "surface-dim": "#d2d9f4", "surface-variant": "#dae2fd", "surface-bright": "#faf8ff", "on-tertiary": "#ffffff", "inverse-primary": "#c3c0ff", "outline-variant": "#c7c4d8", "primary-fixed": "#e2dfff", "surface-container-highest": "#dae2fd", "error": "#ba1a1a", "on-tertiary-container": "#d9d8ff", "surface-container": "#eaedff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-tablet": "2rem", "gutter": "1rem", "gutter-tablet": "1.5rem", "space-lg": "1.5rem", "space-xl": "2.5rem", "space-xs": "0.25rem", "margin": "1rem", "space-md": "1rem", "space-sm": "0.5rem", "margin-desktop": "3rem", "gutter-desktop": "2rem" }, fontFamily: { "body-md": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"], "display": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "label-sm": ["Inter"], "body-sm": ["Inter"], "display-mobile": ["Plus Jakarta Sans"], "label-md": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "body-lg": ["Inter"] }, fontSize: { "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "-0.006em", "fontWeight": "400" }], "headline-lg-mobile": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "display": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "display-mobile": ["36px", { "lineHeight": "42px", "letterSpacing": "-0.025em", "fontWeight": "800" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.011em", "fontWeight": "400" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface font-body-md flex flex-col min-h-screen selection:bg-primary-fixed selection:text-on-primary-fixed"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="OmniLink SaaS Logo" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1U6kxd4Fkhp-usvPVE57D3EjnlcSgXSdVkb449rEyGx8mgngKZghGxKZ4uAsiG00on5Cy2mrvd-yDLoPtdY6wQ_FJyBet3K64ns638Cb86JA1b_HD1LT7DUhmhTrgVb0-ZtAJcUa0Er1Nv9nkCOLAUO5I9Fnu4Yrp5iAQImJF_zRcrTCyrWstsdcOCBQ-3gWs8wLPU6Cte0iXgH2GnhgjLqT_3xuqTablkNmPpsRxsOfqGZcRWWEFCsz7o"/><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight truncate">OmniLink</span><span class="hidden xs:inline-block font-label-md text-label-md text-on-surface-variant truncate">| Overview</span></div><div class="flex items-center gap-space-sm flex-shrink-0"><a class="h-10 px-3 flex items-center justify-center font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Entrar</a><a class="h-10 px-3.5 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-label-md text-label-md flex items-center justify-center active:scale-[0.98] transition-transform shadow-[0_2px_8px_rgba(79,70,229,0.25)]" href="#">Começar Grátis</a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-28 bg-surface"><div class="flex flex-col w-full">
+<!-- Top Ambient Glow -->
+<div class="relative w-full overflow-hidden px-margin pt-space-md pb-space-lg flex flex-col items-center text-center">
+<div class="absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-72 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<!-- Badge Pill -->
+<div class="relative inline-flex items-center gap-space-xs px-3 py-1 rounded-full bg-surface-container text-on-surface text-label-md font-label-md shadow-sm mb-space-md">
+<span class="text-primary material-symbols-outlined text-[16px]">spark</span>
+<span>A nova era da presença digital para negócios locais</span>
+</div>
+<!-- Main Headline -->
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface tracking-tight max-w-sm mb-space-sm">
+      Seu negócio inteiro em um único link.
+    </h1>
+<!-- Subheadline -->
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xs mb-space-lg">
+      Cardápio, serviços, portfólio, WhatsApp, agendamento, pedidos e avaliações do Google. Esqueça links dispersos e receba um verdadeiro mini-site inteligente.
+    </p>
+<!-- CTAs -->
+<div class="flex flex-col w-full max-w-xs gap-space-sm">
+<a class="w-full h-12 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline-sm text-body-lg flex items-center justify-center gap-space-xs shadow-[0_8px_20px_rgba(53,37,205,0.3)] active:scale-[0.98] transition-transform" href="#planos">
+<span>Criar minha página grátis</span>
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</a>
+<a class="w-full h-12 rounded-full bg-surface-container-lowest text-on-surface font-label-md text-body-md flex items-center justify-center gap-space-xs shadow-sm active:scale-[0.98] transition-transform" href="#como-funciona">
+<span class="material-symbols-outlined text-[18px] text-primary">play_circle</span>
+<span>Ver como funciona</span>
+</a>
+</div>
+<!-- Social Proof Micro-Bar -->
+<div class="mt-space-lg flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-lowest text-on-surface shadow-sm">
+<div class="flex text-amber-500">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface">
+<strong>4.9/5</strong> de +2.800 estabelecimentos locais em todo o Brasil
+      </span>
+</div>
+<!-- Interactive Mobile Showcase Mockup -->
+<div class="w-full max-w-xs mt-space-xl relative">
+<div class="absolute -inset-1.5 bg-gradient-to-tr from-primary/30 to-secondary-container/40 rounded-[2.5rem] blur-xl opacity-75"></div>
+<!-- Device Canvas -->
+<div class="relative bg-surface-container-lowest rounded-[2.25rem] p-3 shadow-xl overflow-hidden text-left">
+<!-- Status Bar Fake -->
+<div class="flex justify-between items-center px-3 py-1 text-on-surface-variant font-label-sm text-label-sm">
+<span>9:41</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">wifi</span>
+<span class="material-symbols-outlined text-[14px]">battery_full</span>
+</div>
+</div>
+<!-- Business Header inside Mockup -->
+<div class="bg-surface-container-low rounded-2xl p-3 mt-1">
+<div class="flex items-center gap-3">
+<img class="w-12 h-12 rounded-full object-cover shadow-sm" data-alt="Modern stylish barbershop owner smiling inside his artisan salon in São Paulo, high contrast lighting and warm ambient tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCydCTyTQgQ0LjBb0ITOY-Tg16Ml8tvbkcHrVKV5_6EyM1s_dUztVZQNF3cYctC9KA9bscwoC_byCP9_BISZgJMQMCH-EHlYAJq0xWHy4cKxf9Pg9FsIgNcehXaliayqEkWv6yuXvTFDY6y0fD8DkDoQY1Ja6dukfQQP6wZLS--OXC2dAR06glRMdCaoZVd1K49FRsLIB0fNyba6yf1yES5xK884_gBN99MfvyIXbpJcWAL_QO-MxYy"/>
+<div class="min-w-0 flex-1">
+<div class="flex items-center gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Barbearia Black</span>
+<span class="material-symbols-outlined text-primary text-[16px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Cortes, Barba &amp; Bem-estar</p>
+</div>
+</div>
+<!-- Google Rating Pill inside Phone -->
+<div class="flex items-center justify-between mt-2.5 pt-2 bg-surface-container-lowest rounded-xl px-2.5 py-1.5 shadow-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-amber-500 text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">4.9</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(142 avaliações Google)</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-bold flex items-center gap-0.5">
+              Aberto
+              <span class="w-2 h-2 rounded-full bg-secondary inline-block animate-pulse"></span>
+</span>
+</div>
+</div>
+<!-- Phone Action Hub -->
+<div class="grid grid-cols-3 gap-2 my-3">
+<button class="flex flex-col items-center justify-center p-2 rounded-xl bg-secondary text-on-secondary shadow-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+<span class="font-label-sm text-label-sm mt-1">WhatsApp</span>
+</button>
+<button class="flex flex-col items-center justify-center p-2 rounded-xl bg-primary text-on-primary shadow-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">calendar_month</span>
+<span class="font-label-sm text-label-sm mt-1">Agendar</span>
+</button>
+<button class="flex flex-col items-center justify-center p-2 rounded-xl bg-surface-container text-on-surface shadow-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">restaurant_menu</span>
+<span class="font-label-sm text-label-sm mt-1">Serviços</span>
+</button>
+</div>
+<!-- Mini Interactive Before / After Preview inside Phone -->
+<div class="bg-surface-container-low rounded-xl p-2.5">
+<div class="flex justify-between items-center mb-1.5">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Transformação Barba &amp; Cabelo</span>
+<span class="font-label-sm text-label-sm text-primary font-bold">Antes &amp; Depois</span>
+</div>
+<div class="relative rounded-lg overflow-hidden h-28 w-full">
+<img class="w-full h-full object-cover" data-alt="A clean split comparison view of a male client haircut transformation, professional barbershop atmosphere with cinematic studio light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCftA_H-qbtIU0m-y5pcxC-YCk1-GkjmB2iHkrxqWV2vYk70ua3kcbDs_e3jsqsoLGsND7mCjOBPE45BAlOjTI3328AW06vTZPgeQecEzn8SCCrgCdnie8oGg07VZwdzKUjekeQXEUcULZL42xxJFualrsN7lS4ajSRf4ramt6znuqFPWSVuagzVOl0E0VTz6q5AZdbHXhnBa6XGKD0EyxhzVfqeqVnBodgjRqEnuH6Bc7B6FUkVWfb"/>
+<div class="absolute bottom-1.5 left-2 bg-inverse-surface/80 text-inverse-on-surface px-2 py-0.5 rounded text-[10px] font-bold">
+              Deslize para ver
+            </div>
+</div>
+</div>
+<!-- Floating conversion notification inside phone -->
+<div class="mt-2 flex items-center gap-2 p-2 rounded-xl bg-secondary-container text-on-secondary-container text-label-sm font-label-sm shadow-sm">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+<span>Lucas acabou de agendar um Corte Degradê</span>
+</div>
+</div>
+</div>
+</div>
+<!-- SECTION: PROBLEM VS SOLUTION -->
+<section class="px-margin py-space-xl flex flex-col gap-space-md">
+<div class="text-center max-w-sm mx-auto">
+<span class="text-primary font-label-md text-label-md uppercase tracking-wider font-semibold">Diagnóstico Digital</span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-1">
+        O caos de gerenciar múltiplos links soltos
+      </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+        Clientes não querem abrir 4 apps diferentes só para saber o seu preço ou agendar um horário.
+      </p>
+</div>
+<!-- Comparison Cards -->
+<div class="flex flex-col gap-space-md mt-space-sm">
+<!-- O Caos -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-error text-[20px]">warning</span>
+            Antes (O Caos)
+          </span>
+<span class="px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold">
+            Baixa Conversão ❌
+          </span>
+</div>
+<ul class="flex flex-col gap-2 font-body-sm text-body-sm text-on-surface-variant">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-error text-[18px] flex-shrink-0">close</span>
+<span>Linktree genérico com botões cinzas e sem personalidade</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-error text-[18px] flex-shrink-0">close</span>
+<span>PDF pesado de cardápio que consome a franquia do cliente</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-error text-[18px] flex-shrink-0">close</span>
+<span>WhatsApp frio sem catálogo ou pré-atendimento estruturado</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-error text-[18px] flex-shrink-0">close</span>
+<span>Avaliações de 5 estrelas do Google espalhadas e esquecidas</span>
+</li>
+</ul>
+</div>
+<!-- A Solução -->
+<div class="bg-surface-container rounded-2xl p-space-md shadow-md relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-secondary text-[22px]">verified</span>
+            Com o OmniLink
+          </span>
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-bold">
+            100% Integrado ⚡
+          </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface font-medium mb-3">
+          Um ecossistema unificado onde o cliente encontra, confia, compra e agenda em menos de 30 segundos.
+        </p>
+<div class="grid grid-cols-2 gap-2">
+<div class="p-2.5 rounded-xl bg-surface-container-lowest shadow-sm">
+<span class="font-headline-sm text-headline-sm text-secondary font-bold block">+3.4x</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Mais contatos no Zap</span>
+</div>
+<div class="p-2.5 rounded-xl bg-surface-container-lowest shadow-sm">
+<span class="font-headline-sm text-headline-sm text-primary font-bold block">0%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Taxas sobre pedidos</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION: COMO FUNCIONA -->
+<section class="px-margin py-space-xl bg-surface-container-low flex flex-col gap-space-lg" id="como-funciona">
+<div class="text-center max-w-xs mx-auto">
+<span class="text-primary font-label-md text-label-md uppercase tracking-wider font-semibold">Simples &amp; Veloz</span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-1">
+        Como funciona em 4 passos intuitivos
+      </h2>
+</div>
+<div class="flex flex-col gap-space-md">
+<!-- Step 1 -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-9 h-9 rounded-xl bg-primary text-on-primary flex items-center justify-center font-headline-sm text-headline-sm flex-shrink-0">
+          1
+        </div>
+<div class="flex-1 min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Crie seu perfil em 2 minutos</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Onboarding inteligente com assistente por inteligência artificial que preenche dados essenciais e paletas de cores do seu negócio.
+          </p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-9 h-9 rounded-xl bg-primary text-on-primary flex items-center justify-center font-headline-sm text-headline-sm flex-shrink-0">
+          2
+        </div>
+<div class="flex-1 min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Adicione produtos ou serviços</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Cardápio interativo com fotos e adicionais, sistema de marcação de horários ou portfólio visual com antes &amp; depois.
+          </p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-9 h-9 rounded-xl bg-primary text-on-primary flex items-center justify-center font-headline-sm text-headline-sm flex-shrink-0">
+          3
+        </div>
+<div class="flex-1 min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Compartilhe Link &amp; QR Codes</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Cole na bio do Instagram e imprima QR codes com design premium para colar em mesas, balcões ou embalagens de entrega.
+          </p>
+</div>
+</div>
+<!-- Step 4 -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-9 h-9 rounded-xl bg-secondary text-on-secondary flex items-center justify-center font-headline-sm text-headline-sm flex-shrink-0">
+          4
+        </div>
+<div class="flex-1 min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Receba pedidos no WhatsApp</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            O pedido chega formatado com itens, endereço, troco ou horário de agendamento selecionado. Sem comissão de marketplaces.
+          </p>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION: SEGMENTOS SUPORTADOS -->
+<section class="px-margin py-space-xl flex flex-col gap-space-md">
+<div class="text-center max-w-sm mx-auto">
+<span class="text-primary font-label-md text-label-md uppercase tracking-wider font-semibold">Adaptabilidade Total</span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-1">
+        Feito sob medida para o seu nicho
+      </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+        A plataforma adapta o CTA principal, layout e formulários automaticamente à sua atividade!
+      </p>
+</div>
+<!-- Segment Interactive Filter Tabs (Vanilla JS Powered) -->
+<div class="flex gap-2 overflow-x-auto pb-1" id="segment-tabs">
+<button class="px-3.5 py-2 rounded-full font-label-md text-label-md bg-primary text-on-primary shadow-sm flex items-center gap-1.5 whitespace-nowrap transition-all" id="tab-food" onclick="switchSegment('food')">
+<span>🍔</span> Alimentação
+      </button>
+<button class="px-3.5 py-2 rounded-full font-label-md text-label-md bg-surface-container text-on-surface-variant shadow-sm flex items-center gap-1.5 whitespace-nowrap transition-all" id="tab-beauty" onclick="switchSegment('beauty')">
+<span>💈</span> Beleza &amp; Estética
+      </button>
+<button class="px-3.5 py-2 rounded-full font-label-md text-label-md bg-surface-container text-on-surface-variant shadow-sm flex items-center gap-1.5 whitespace-nowrap transition-all" id="tab-auto" onclick="switchSegment('auto')">
+<span>🚗</span> Automotivo
+      </button>
+<button class="px-3.5 py-2 rounded-full font-label-md text-label-md bg-surface-container text-on-surface-variant shadow-sm flex items-center gap-1.5 whitespace-nowrap transition-all" id="tab-services" onclick="switchSegment('services')">
+<span>🔧</span> Autônomos
+      </button>
+</div>
+<!-- Segment Display Card -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-md flex flex-col gap-space-sm transition-all duration-300" id="segment-card">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-on-surface" id="segment-title">Restaurantes &amp; Hamburguerias</span>
+<span class="px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold" id="segment-tag">Cardápio Inteligente</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant" id="segment-desc">
+        Catálogo com fotos dos lanches, combos, controle de adicionais (ex: bacon extra, ponto da carne) e fechamento do pedido direto no WhatsApp do balcão.
+      </p>
+<div class="h-44 w-full rounded-xl overflow-hidden relative mt-1">
+<img class="w-full h-full object-cover" data-alt="Delicious artisanal burger with smoked cheese and crispy bacon displayed on a slate board inside a lively modern burger joint." id="segment-img" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBt8b6DBVG7RDZbMZ0Hgqag13IPKR_ZSgVWMznkh-2FnNIkWEapKQZR-k0JxDWh0BADDYRvfaMuM24qsI37Ulfmn_l5DJugRZNw5iJn63JD6qOfZ8H-qC-DB-9szh1YQW4SaQN_qn3Q5iVYluHlEqPBdJlK02asIgL1c9ypBmr44kXoiPhQPaajGvE764hpND6R9Reofh0GLhiyNAJRKacPOGt7mAR278DdkVFGY7XlMsyNGeE4eAH9"/>
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-transparent to-transparent flex items-end p-3">
+<span class="text-inverse-on-surface font-label-md text-label-md flex items-center gap-1" id="segment-feature">
+<span class="material-symbols-outlined text-[16px] text-secondary-fixed">check_circle</span>
+            Taxa 0% de iFood ou marketplaces
+          </span>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION: RECURSOS ESSENCIAIS (Linear Style Grid) -->
+<section class="px-margin py-space-xl bg-surface-container-low flex flex-col gap-space-lg">
+<div class="text-center max-w-xs mx-auto">
+<span class="text-primary font-label-md text-label-md uppercase tracking-wider font-semibold">Poderoso &amp; Completo</span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-1">
+        Recursos desenhados para conversão máxima
+      </h2>
+</div>
+<div class="grid grid-cols-1 gap-3">
+<!-- Feature 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">menu_book</span>
+</div>
+<div class="min-w-0 flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Cardápio &amp; Catálogo Digital</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Preços, variações, adicionais personalizáveis e carrinho que monta o pedido sem atrito.</p>
+</div>
+</div>
+<!-- Feature 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">calendar_add_on</span>
+</div>
+<div class="min-w-0 flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Agendamento Online 24/7</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Seu cliente escolhe o profissional, serviço, dia e horário sem você parar o atendimento físico.</p>
+</div>
+</div>
+<!-- Feature 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">compare</span>
+</div>
+<div class="min-w-0 flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Portfólio com Antes e Depois</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Slider interativo que valoriza o resultado de reformas, tratamentos estéticos e personalizações.</p>
+</div>
+</div>
+<!-- Feature 4 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">stars</span>
+</div>
+<div class="min-w-0 flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Google Reviews Integrado</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Exiba as notas reais do seu Google Meu Negócio e estimule clientes a avaliarem com 1 clique.</p>
+</div>
+</div>
+<!-- Feature 5 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-secondary flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">send</span>
+</div>
+<div class="min-w-0 flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Mensagens Formatadas no Zap</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Chega de mensagens confusas. O texto já vem estruturado: itens, valor, pagamento e endereço.</p>
+</div>
+</div>
+<!-- Feature 6 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">qr_code_2</span>
+</div>
+<div class="min-w-0 flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">QR Codes com Rastreamento</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Descubra se seus clientes acessam mais pela mesa 4, pelo panfleto da calçada ou pela sacola.</p>
+</div>
+</div>
+<!-- Feature 7 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">insights</span>
+</div>
+<div class="min-w-0 flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Analytics &amp; Origem de Tráfego</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Métricas claras sem complicação: saiba quais botões mais convertem e a origem das visitas.</p>
+</div>
+</div>
+<!-- Feature 8 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">auto_awesome</span>
+</div>
+<div class="min-w-0 flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">IA de Auditoria &amp; Redação</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Sugestão de textos atraentes e análise que pontua o que falta na sua página para converter mais.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION: DASHBOARD & METRICS PREVIEW -->
+<section class="px-margin py-space-xl flex flex-col gap-space-md">
+<div class="text-center max-w-sm mx-auto">
+<span class="text-primary font-label-md text-label-md uppercase tracking-wider font-semibold">Painel de Controle</span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-1">
+        Tudo sob controle na ponta dos dedos
+      </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+        Acompanhe o crescimento da sua empresa em tempo real sem planilhas chatas.
+      </p>
+</div>
+<!-- Dashboard Mockup Card -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-lg flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-3 bg-surface-container-lowest">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Desempenho Geral</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Últimos 30 dias</h3>
+</div>
+<div class="px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-bold flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+          Tempo Real
+        </div>
+</div>
+<!-- Metric Grid -->
+<div class="grid grid-cols-2 gap-2.5">
+<div class="p-3 rounded-xl bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Visualizações</span>
+<div class="flex items-baseline gap-1.5 mt-1">
+<span class="font-headline-lg-mobile text-headline-sm text-on-surface font-bold">1.284</span>
+<span class="font-label-sm text-label-sm text-secondary font-bold">+24%</span>
+</div>
+</div>
+<div class="p-3 rounded-xl bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Cliques no WhatsApp</span>
+<div class="flex items-baseline gap-1.5 mt-1">
+<span class="font-headline-lg-mobile text-headline-sm text-on-surface font-bold">326</span>
+<span class="font-label-sm text-label-sm text-secondary font-bold">+18%</span>
+</div>
+</div>
+<div class="p-3 rounded-xl bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Pedidos Fechados</span>
+<div class="flex items-baseline gap-1.5 mt-1">
+<span class="font-headline-lg-mobile text-headline-sm text-on-surface font-bold">87</span>
+<span class="font-label-sm text-label-sm text-primary font-bold">Diretos</span>
+</div>
+</div>
+<div class="p-3 rounded-xl bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Faturamento Estimado</span>
+<div class="flex items-baseline gap-1.5 mt-1">
+<span class="font-headline-lg-mobile text-headline-sm text-secondary font-bold">R$ 4.380</span>
+</div>
+</div>
+</div>
+<!-- AI Completeness Audit Bar -->
+<div class="bg-surface-container-high rounded-xl p-3 flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">auto_awesome</span>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Perfil 85% Completo</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-bold">Otimizar +15%</span>
+</div>
+<!-- Progress Bar Track -->
+<div class="w-full h-2 rounded-full bg-surface-container-lowest overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 85%;"></div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+          💡 Dica da IA: Adicione 2 fotos no portfólio para dobrar a confiança dos visitantes.
+        </span>
+</div>
+</div>
+</section>
+<!-- SECTION: PLANOS TRANSPARENTES (PRICING) -->
+<section class="px-margin py-space-xl bg-surface-container-low flex flex-col gap-space-lg" id="planos">
+<div class="text-center max-w-xs mx-auto">
+<span class="text-primary font-label-md text-label-md uppercase tracking-wider font-semibold">Investimento Justo</span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-1">
+        Planos claros, sem letras miúdas
+      </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+        Comece grátis e evolua quando seu negócio crescer.
+      </p>
+</div>
+<!-- Toggle Mensal / Anual -->
+<div class="flex justify-center">
+<div class="p-1 rounded-full bg-surface-container flex items-center gap-1 shadow-inner" id="pricing-toggle">
+<button class="px-4 py-1.5 rounded-full font-label-md text-label-md bg-surface-container-lowest text-on-surface shadow-sm transition-all" id="btn-monthly" onclick="setBillingPeriod('monthly')">
+          Mensal
+        </button>
+<button class="px-4 py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1" id="btn-yearly" onclick="setBillingPeriod('yearly')">
+<span>Anual</span>
+<span class="px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-bold">2 meses grátis</span>
+</button>
+</div>
+</div>
+<!-- Cards Grid -->
+<div class="flex flex-col gap-space-md">
+<!-- Plano Grátis -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex flex-col gap-space-sm">
+<div>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Plano Grátis</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-display-mobile text-display-mobile text-on-surface font-extrabold">R$ 0</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/mês</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Perfeito para quem está começando e quer organizar o link da bio.</p>
+</div>
+<ul class="flex flex-col gap-2 font-body-sm text-body-sm text-on-surface my-2">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span>Página pública personalizada</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span>Links e botões de redes sociais</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span>Botão de WhatsApp com mensagem</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span>1 QR Code estático padrão</span>
+</li>
+</ul>
+<button class="w-full h-11 rounded-full bg-surface-container text-on-surface font-headline-sm text-body-md shadow-sm active:scale-95 transition-transform">
+          Começar Grátis
+        </button>
+</div>
+<!-- Plano Pro (Destaque) -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-xl flex flex-col gap-space-sm relative overflow-hidden">
+<!-- Recommended Ribbon -->
+<div class="absolute top-0 right-0 bg-primary text-on-primary font-label-sm text-label-sm font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">star</span>
+          Mais Popular
+        </div>
+<div>
+<span class="font-label-md text-label-md text-primary font-bold uppercase">Plano Pro</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-display-mobile text-display-mobile text-on-surface font-extrabold" id="price-pro">R$ 49</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/mês</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Para estabelecimentos que desejam vender e agendar no piloto automático.</p>
+</div>
+<ul class="flex flex-col gap-2 font-body-sm text-body-sm text-on-surface my-2">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span><strong>Catálogo e Cardápio Ilimitado</strong></span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span><strong>Agendamento online 24h</strong></span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span>Portfólio com Antes &amp; Depois</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span>Integração Google Reviews</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span>Analytics de cliques e origens</span>
+</li>
+</ul>
+<button class="w-full h-12 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline-sm text-body-lg shadow-md active:scale-95 transition-transform">
+          Experimentar 14 Dias Grátis
+        </button>
+</div>
+<!-- Plano Business -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex flex-col gap-space-sm">
+<div>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Plano Business</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-display-mobile text-display-mobile text-on-surface font-extrabold" id="price-business">R$ 99</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/mês</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Operações robustas com múltiplos funcionários e alto volume de vendas.</p>
+</div>
+<ul class="flex flex-col gap-2 font-body-sm text-body-sm text-on-surface my-2">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span>Tudo do plano Pro</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span>Multi-profissionais e comissões</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span>Mini-CRM de clientes e fidelidade</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">check</span>
+<span>IA de automação de respostas</span>
+</li>
+</ul>
+<button class="w-full h-11 rounded-full bg-surface-container text-on-surface font-headline-sm text-body-md shadow-sm active:scale-95 transition-transform">
+          Falar com Consultor
+        </button>
+</div>
+</div>
+</section>
+<!-- SECTION: DEPOIMENTOS (SOCIAL PROOF) -->
+<section class="px-margin py-space-xl flex flex-col gap-space-md">
+<div class="text-center max-w-sm mx-auto">
+<span class="text-primary font-label-md text-label-md uppercase tracking-wider font-semibold">Quem usa aprova</span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-1">
+        Histórias reais de quem transformou seu negócio
+      </h2>
+</div>
+<div class="flex flex-col gap-space-md">
+<!-- Depoimento 1 -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex flex-col gap-3">
+<div class="flex items-center gap-1 text-amber-500">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface italic">
+          "Aumentei em 40% meus pedidos diretos pelo WhatsApp sem pagar um único centavo de taxa de comissão para app de entrega. O cardápio abre instantâneo no celular do cliente."
+        </p>
+<div class="flex items-center gap-3 pt-2">
+<img class="w-11 h-11 rounded-full object-cover shadow-sm" data-alt="Portrait of a friendly Brazilian burger shop owner wearing a modern black apron in a craft burger restaurant kitchen, warm smile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYnR8r9HxkWeDLGp3SgwFaEIieWF9yWrntiLdvHxNdUKal_4LGoTJRTf_JBtm5F84-ctPbXv4vOYpfsoM3FZU65Xr62AK48cdiwR1X9wU_Fag0_-rwlzpc_7qFq4bj8Z6jwbrSLrTMgGMiPEIgXOL_CVZAi6C6tclRTi92WfQfGCmjzzFqi8U05DE9tAJCjPK4xgoM-hGl8Ns8Rgz1qDVJGIZh7YksoUgyPKvZ-Ch7aZg4O_j5jD3b"/>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Rafael Nogueira</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Sócio do Brasa &amp; Burger • Curitiba, PR</p>
+</div>
+</div>
+</div>
+<!-- Depoimento 2 -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex flex-col gap-3">
+<div class="flex items-center gap-1 text-amber-500">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface italic">
+          "Minha agenda de cortes agora enche sozinha. Não preciso mais parar o corte para atender telefone ou responder mensagem de cliente perguntando se tem horário às 18h."
+        </p>
+<div class="flex items-center gap-3 pt-2">
+<img class="w-11 h-11 rounded-full object-cover shadow-sm" data-alt="Close up portrait of a confident male barber with styled hair and tattoos in a vintage industrial barbershop setting, smiling proudly." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwhlBHrampvLhaPmCCvzNijUF5wjlCp6o6b7mNi8hVnrUNGwiBZLchdbQU7LoNuiC46ONzrm9MgRnO_rHj5mMMzYli2hcbJgim46kq9aqGu5S9Dvq9v1TAhdUdSg3QPmpMa5XK4GpyNMkvbMZ3SHWsoC0YnmQ4ZFMkLwmKB24q1xCJYrY_s47kMxiBtYnaxE5Ftcp66RSZ1LQUg9EjD4iuJQO_I6omjIul5amgCtqIcv-2wEyJeCnj"/>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Danilo Silveira</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Proprietário da Navalha 90 • São Paulo, SP</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION: FAQ (ACCORDION) -->
+<section class="px-margin py-space-xl bg-surface-container-low flex flex-col gap-space-lg">
+<div class="text-center max-w-xs mx-auto">
+<span class="text-primary font-label-md text-label-md uppercase tracking-wider font-semibold">Tira Dúvidas</span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mt-1">
+        Perguntas Frequentes
+      </h2>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- FAQ Item 1 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<button class="w-full p-space-md text-left flex justify-between items-center gap-2" onclick="toggleFaq(1)">
+<span class="font-headline-sm text-headline-sm text-on-surface">Preciso entender de tecnologia para criar?</span>
+<span class="material-symbols-outlined text-primary text-[20px] transition-transform" id="faq-icon-1">expand_more</span>
+</button>
+<div class="hidden px-space-md pb-space-md font-body-sm text-body-sm text-on-surface-variant" id="faq-answer-1">
+          Não! O OmniLink foi desenhado para ser montado diretamente no celular em menos de 5 minutos. Você só precisa preencher o nome do seu negócio, fotos e serviços. Nossa inteligência artificial cuida da organização técnica.
+        </div>
+</div>
+<!-- FAQ Item 2 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<button class="w-full p-space-md text-left flex justify-between items-center gap-2" onclick="toggleFaq(2)">
+<span class="font-headline-sm text-headline-sm text-on-surface">Posso usar meu próprio domínio ou WhatsApp?</span>
+<span class="material-symbols-outlined text-primary text-[20px] transition-transform" id="faq-icon-2">expand_more</span>
+</button>
+<div class="hidden px-space-md pb-space-md font-body-sm text-body-sm text-on-surface-variant" id="faq-answer-2">
+          Sim! Você recebe um link exclusivo (ex: omnilink.app/seunegocio) e pode apontar seu próprio domínio personalizado. Todo contato e venda cai diretamente no seu WhatsApp pessoal ou empresarial sem intermediários.
+        </div>
+</div>
+<!-- FAQ Item 3 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<button class="w-full p-space-md text-left flex justify-between items-center gap-2" onclick="toggleFaq(3)">
+<span class="font-headline-sm text-headline-sm text-on-surface">A plataforma cobra taxa sobre pedidos?</span>
+<span class="material-symbols-outlined text-primary text-[20px] transition-transform" id="faq-icon-3">expand_more</span>
+</button>
+<div class="hidden px-space-md pb-space-md font-body-sm text-body-sm text-on-surface-variant" id="faq-answer-3">
+          Absolutamente zero. Não cobramos nenhuma porcentagem sobre suas vendas ou agendamentos. Todo o lucro das suas operações fica 100% com você.
+        </div>
+</div>
+<!-- FAQ Item 4 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<button class="w-full p-space-md text-left flex justify-between items-center gap-2" onclick="toggleFaq(4)">
+<span class="font-headline-sm text-headline-sm text-on-surface">Funciona bem em qualquer celular?</span>
+<span class="material-symbols-outlined text-primary text-[20px] transition-transform" id="faq-icon-4">expand_more</span>
+</button>
+<div class="hidden px-space-md pb-space-md font-body-sm text-body-sm text-on-surface-variant" id="faq-answer-4">
+          Sim. A experiência de navegação do seu cliente carrega em menos de 1 segundo em conexões 4G ou 5G, seja em iPhones ou celulares Android, sem precisar baixar nenhum aplicativo da loja.
+        </div>
+</div>
+</div>
+</section>
+<!-- SECTION: CTA FINAL DE ALTA CONVERSÃO -->
+<section class="px-margin py-space-xl">
+<div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-inverse-surface via-[#1e2638] to-primary p-space-lg text-inverse-on-surface shadow-2xl text-center flex flex-col items-center gap-space-md">
+<!-- Glow ambient decorative dots -->
+<div class="absolute -top-10 -right-10 w-44 h-44 bg-secondary-container/20 rounded-full blur-2xl pointer-events-none"></div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest/10 backdrop-blur-md text-on-tertiary font-label-md text-label-md">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed animate-ping"></span>
+<span>Comece em 2 minutos</span>
+</div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-inverse-on-surface font-extrabold max-w-xs">
+        Crie sua presença digital profissional hoje mesmo.
+      </h2>
+<p class="font-body-md text-body-md text-inverse-on-surface/80 max-w-xs">
+        Junte-se a mais de 2.800 estabelecimentos que aumentaram contatos, agendamentos e faturamento com o OmniLink.
+      </p>
+<div class="w-full max-w-xs flex flex-col gap-space-xs mt-2">
+<a class="w-full h-13 py-3.5 rounded-full bg-secondary text-on-secondary font-headline-sm text-headline-sm flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(0,108,73,0.4)] active:scale-95 transition-transform" href="#planos">
+<span>Criar Minha Página Grátis</span>
+<span class="material-symbols-outlined text-[20px]">rocket_launch</span>
+</a>
+<span class="font-label-sm text-label-sm text-inverse-on-surface/60 mt-1">
+          Sem necessidade de cartão de crédito • 14 dias de teste Pro
+        </span>
+</div>
+</div>
+</section>
+<!-- Sticky Bottom Quick Conversion Pill -->
+<div class="sticky bottom-18 mx-margin z-40 mb-2">
+<div class="bg-surface-container-lowest/90 backdrop-blur-md p-2.5 rounded-2xl shadow-xl flex items-center justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse flex-shrink-0"></div>
+<span class="font-label-md text-label-md text-on-surface truncate">
+<strong>omnilink.app/</strong>seunegocio
+        </span>
+</div>
+<a class="px-3.5 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md flex-shrink-0 shadow-sm active:scale-95 transition-transform" href="#planos">
+        Reservar Link
+      </a>
+</div>
+</div>
+</div>
+<script>
+  // Segment Switcher Interactive logic
+  const segmentData = {
+    food: {
+      title: "Restaurantes & Hamburguerias",
+      tag: "Cardápio Inteligente",
+      desc: "Catálogo com fotos dos lanches, combos, adicionais personalizáveis e fechamento do pedido com envio formatado direto para o WhatsApp do balcão.",
+      feature: "Taxa 0% de iFood ou intermediários"
+    },
+    beauty: {
+      title: "Barbearias, Salões & Estética",
+      tag: "Agenda Automática 24h",
+      desc: "Seus clientes escolhem profissional, procedimento e horário vago sem necessidade de troca de mensagens. Reduza faltas com lembretes automáticos.",
+      feature: "Preenchimento autônomo de horários ociosos"
+    },
+    auto: {
+      title: "Estética Automotiva & Oficinas",
+      tag: "Orçamentos & Antes/Depois",
+      desc: "Demonstre a qualidade do polimento, vitrificação e higienização através de sliders interativos com envio de orçamento pronto.",
+      feature: "Valorização imediata do ticket médio de serviço"
+    },
+    services: {
+      title: "Prestadores de Serviços & Autônomos",
+      tag: "Portfólio de Alta Confiança",
+      desc: "Apresente certificados, avaliações reais de clientes atendidos e canal de agendamento de consultas ou visitas técnicas com 1 toque.",
+      feature: "Conversão ágil de orçamentos e contratos"
+    }
+  };
+
+  function switchSegment(key) {
+    const data = segmentData[key];
+    if (!data) return;
+
+    // Update texts
+    document.getElementById('segment-title').innerText = data.title;
+    document.getElementById('segment-tag').innerText = data.tag;
+    document.getElementById('segment-desc').innerText = data.desc;
+    document.getElementById('segment-feature').innerHTML = '<span class="material-symbols-outlined text-[16px] text-secondary-fixed">check_circle</span> ' + data.feature;
+
+    // Update active tab styles
+    ['food', 'beauty', 'auto', 'services'].forEach(tab => {
+      const btn = document.getElementById('tab-' + tab);
+      if (tab === key) {
+        btn.className = "px-3.5 py-2 rounded-full font-label-md text-label-md bg-primary text-on-primary shadow-sm flex items-center gap-1.5 whitespace-nowrap transition-all";
+      } else {
+        btn.className = "px-3.5 py-2 rounded-full font-label-md text-label-md bg-surface-container text-on-surface-variant shadow-sm flex items-center gap-1.5 whitespace-nowrap transition-all";
+      }
+    });
+  }
+
+  // Pricing Toggle Logic
+  function setBillingPeriod(period) {
+    const btnMonthly = document.getElementById('btn-monthly');
+    const btnYearly = document.getElementById('btn-yearly');
+    const pricePro = document.getElementById('price-pro');
+    const priceBusiness = document.getElementById('price-business');
+
+    if (period === 'yearly') {
+      btnYearly.className = "px-4 py-1.5 rounded-full font-label-md text-label-md bg-surface-container-lowest text-on-surface shadow-sm transition-all flex items-center gap-1";
+      btnMonthly.className = "px-4 py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all";
+      pricePro.innerText = "R$ 39";
+      priceBusiness.innerText = "R$ 79";
+    } else {
+      btnMonthly.className = "px-4 py-1.5 rounded-full font-label-md text-label-md bg-surface-container-lowest text-on-surface shadow-sm transition-all";
+      btnYearly.className = "px-4 py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1";
+      pricePro.innerText = "R$ 49";
+      priceBusiness.innerText = "R$ 99";
+    }
+  }
+
+  // FAQ Accordion Logic
+  function toggleFaq(index) {
+    const answer = document.getElementById('faq-answer-' + index);
+    const icon = document.getElementById('faq-icon-' + index);
+
+    if (answer.classList.contains('hidden')) {
+      answer.classList.remove('hidden');
+      icon.style.transform = 'rotate(180deg)';
+    } else {
+      answer.classList.add('hidden');
+      icon.style.transform = 'rotate(0deg)';
+    }
+  }
+</script><footer class="w-full mt-auto px-margin py-space-xl bg-surface-container-lowest shadow-[0_-1px_6px_rgba(0,0,0,0.02)] flex flex-col items-center gap-space-md"><div class="flex items-center gap-space-lg text-on-surface-variant"><a class="flex items-center justify-center w-11 h-11 text-on-surface-variant hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined text-[20px]">share</span></a><a class="flex items-center justify-center w-11 h-11 text-on-surface-variant hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined text-[20px]">chat</span></a><a class="flex items-center justify-center w-11 h-11 text-on-surface-variant hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined text-[20px]">language</span></a></div><div class="flex items-center flex-wrap justify-center gap-x-space-md gap-y-space-xs font-label-md text-label-md text-on-surface-variant"><a class="hover:text-on-surface transition-colors py-1" href="#">Termos de Uso</a><span class="text-outline-variant font-body-sm text-body-sm">•</span><a class="hover:text-on-surface transition-colors py-1" href="#">Privacidade</a><span class="text-outline-variant font-body-sm text-body-sm">•</span><a class="hover:text-on-surface transition-colors py-1" href="#">Suporte</a></div><p class="font-label-sm text-label-sm text-outline text-center">© 2025 OmniLink Inc. Todos os direitos reservados.</p></footer></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/85 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.05)]" data-active-classes="text-primary font-bold"><div class="flex justify-around items-center h-16 px-space-xs"><a aria-current="page" class="flex flex-col items-center justify-center gap-space-xs min-w-[44px] min-h-[44px] px-2 transition-colors text-primary font-bold" data-path="overview" href="#"><span class="material-symbols-outlined text-[22px]">rocket_launch</span><span class="font-label-sm text-label-sm">Início</span></a><a class="flex flex-col items-center justify-center gap-space-xs min-w-[44px] min-h-[44px] px-2 text-on-surface-variant hover:text-on-surface transition-colors" data-path="features" href="#"><span class="material-symbols-outlined text-[22px]">widgets</span><span class="font-label-sm text-label-sm">Recursos</span></a><a class="flex flex-col items-center justify-center gap-space-xs min-w-[44px] min-h-[44px] px-2 text-on-surface-variant hover:text-on-surface transition-colors" data-path="templates" href="#"><span class="material-symbols-outlined text-[22px]">grid_view</span><span class="font-label-sm text-label-sm">Modelos</span></a><a class="flex flex-col items-center justify-center gap-space-xs min-w-[44px] min-h-[44px] px-2 text-on-surface-variant hover:text-on-surface transition-colors" data-path="pricing" href="#"><span class="material-symbols-outlined text-[22px]">loyalty</span><span class="font-label-sm text-label-sm">Planos</span></a></div></nav></body></html>

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100%;margin:0;padding:0;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "secondary-container": "#6cf8bb", "on-tertiary-fixed": "#07006c", "inverse-on-surface": "#eef0ff", "on-primary-container": "#dad7ff", "on-surface-variant": "#464555", "on-background": "#131b2e", "outline": "#777587", "on-error": "#ffffff", "surface-container-lowest": "#ffffff", "tertiary-fixed": "#e1e0ff", "inverse-surface": "#283044", "on-primary": "#ffffff", "on-error-container": "#93000a", "secondary-fixed": "#6ffbbe", "surface-container-high": "#e2e7ff", "on-surface": "#131b2e", "surface-container-low": "#f2f3ff", "secondary-fixed-dim": "#4edea3", "on-secondary-container": "#00714d", "secondary": "#006c49", "on-secondary-fixed-variant": "#005236", "background": "#faf8ff", "tertiary-container": "#4b4dd8", "primary-container": "#4f46e5", "on-secondary-fixed": "#002113", "on-secondary": "#ffffff", "surface": "#faf8ff", "tertiary": "#3130c0", "on-tertiary-fixed-variant": "#2f2ebe", "tertiary-fixed-dim": "#c0c1ff", "primary": "#3525cd", "on-primary-fixed": "#0f0069", "primary-fixed-dim": "#c3c0ff", "on-primary-fixed-variant": "#3323cc", "surface-tint": "#4d44e3", "error-container": "#ffdad6", "surface-dim": "#d2d9f4", "surface-variant": "#dae2fd", "surface-bright": "#faf8ff", "on-tertiary": "#ffffff", "inverse-primary": "#c3c0ff", "outline-variant": "#c7c4d8", "primary-fixed": "#e2dfff", "surface-container-highest": "#dae2fd", "error": "#ba1a1a", "on-tertiary-container": "#d9d8ff", "surface-container": "#eaedff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-tablet": "2rem", "gutter": "1rem", "gutter-tablet": "1.5rem", "space-lg": "1.5rem", "space-xl": "2.5rem", "space-xs": "0.25rem", "margin": "1rem", "space-md": "1rem", "space-sm": "0.5rem", "margin-desktop": "3rem", "gutter-desktop": "2rem" }, fontFamily: { "body-md": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"], "display": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "label-sm": ["Inter"], "body-sm": ["Inter"], "display-mobile": ["Plus Jakarta Sans"], "label-md": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "body-lg": ["Inter"] }, fontSize: { "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "-0.006em", "fontWeight": "400" }], "headline-lg-mobile": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "display": ["56px", { "lineHeight": "64px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "display-mobile": ["36px", { "lineHeight": "42px", "letterSpacing": "-0.025em", "fontWeight": "800" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.011em", "fontWeight": "400" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style></head><body class="bg-surface text-on-surface font-body-md flex flex-col min-h-screen selection:bg-primary-fixed selection:text-on-primary-fixed"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0 flex-1"><img alt="OmniLink Logo" class="h-7 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1U6kxd4Fkhp-usvPVE57D3EjnlcSgXSdVkb449rEyGx8mgngKZghGxKZ4uAsiG00on5Cy2mrvd-yDLoPtdY6wQ_FJyBet3K64ns638Cb86JA1b_HD1LT7DUhmhTrgVb0-ZtAJcUa0Er1Nv9nkCOLAUO5I9Fnu4Yrp5iAQImJF_zRcrTCyrWstsdcOCBQ-3gWs8wLPU6Cte0iXgH2GnhgjLqT_3xuqTablkNmPpsRxsOfqGZcRWWEFCsz7o"/><div class="flex items-center gap-1.5 min-w-0 bg-surface-container-low px-2.5 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse flex-shrink-0"></span><span class="font-label-sm text-label-sm text-on-surface font-semibold truncate max-w-[130px]">Barbearia Black</span><span class="font-label-sm text-label-sm text-secondary font-medium hidden xs:inline">• Aberto</span></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><a class="h-9 px-2.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm flex items-center gap-1 hover:bg-surface-container-high transition-colors active:scale-[0.98]" href="#" target="_blank"><span>Ver Página</span><span class="material-symbols-outlined text-[15px]">north_east</span></a><button aria-label="Notificações" class="relative w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface active:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-surface"></span></button></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface"><div class="flex flex-col w-full">
+<!-- Dynamic Notification / Feedback Toast Slot -->
+<div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-inverse-surface text-inverse-on-surface px-4 py-2 rounded-full shadow-lg text-label-md font-label-md flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300" id="toast">
+<span class="material-symbols-outlined text-secondary-fixed text-[18px]">check_circle</span>
+<span id="toast-message">Link copiado com sucesso!</span>
+</div>
+<!-- 1. Top Welcome Bar & Period Section -->
+<section class="px-margin pt-4 pb-2 flex flex-col gap-3">
+<!-- Merchant Status & Greeting -->
+<div class="flex items-start justify-between gap-2">
+<div class="min-w-0">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface tracking-tight">
+          Olá, Danilo Silveira 👋
+        </h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[16px] text-primary">storefront</span>
+          Barbearia Black <span class="text-outline-variant">•</span> Unidade Jardins
+        </p>
+</div>
+<!-- Store Status Toggle Pill -->
+<button aria-label="Alterar status de funcionamento" class="flex-shrink-0 flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-full shadow-sm active:scale-95 transition-transform" id="storeStatusToggle">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75" id="statusPulse"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-secondary" id="statusDot"></span>
+</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold" id="statusLabel">Loja Aberta</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">sync_alt</span>
+</button>
+</div>
+<!-- Public Link Banner (Instant Sharing) -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[18px]">link</span>
+</div>
+<div class="min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Página Pública Ativa</span>
+<span class="font-body-sm text-body-sm text-on-surface font-semibold truncate block">omnilink.app/barbearia-black</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 self-end sm:self-auto">
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md transition-colors active:scale-95" onclick="copyPublicLink()">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>Copiar</span>
+</button>
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md transition-transform active:scale-95" onclick="sharePublicLink()">
+<span class="material-symbols-outlined text-[16px]">share</span>
+<span>Compartilhar</span>
+</button>
+</div>
+</div>
+<!-- Period Filter Pills -->
+<div class="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar">
+<button class="period-tab px-3.5 py-1.5 rounded-full font-label-md text-label-md bg-surface-container text-on-surface-variant whitespace-nowrap active:scale-95 transition-all">Hoje</button>
+<button class="period-tab px-3.5 py-1.5 rounded-full font-label-md text-label-md bg-primary text-on-primary whitespace-nowrap shadow-sm active:scale-95 transition-all">7 dias</button>
+<button class="period-tab px-3.5 py-1.5 rounded-full font-label-md text-label-md bg-surface-container text-on-surface-variant whitespace-nowrap active:scale-95 transition-all">30 dias</button>
+<button class="period-tab px-3.5 py-1.5 rounded-full font-label-md text-label-md bg-surface-container text-on-surface-variant whitespace-nowrap active:scale-95 transition-all">Mês atual</button>
+</div>
+</section>
+<!-- 2. KPI Metrics Grid -->
+<section class="px-margin py-2 grid grid-cols-2 gap-2.5">
+<!-- Metric 1: Visualizações -->
+<div class="bg-surface-container-lowest p-3.5 rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Visualizações</span>
+<div class="w-6 h-6 rounded-md bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</div>
+</div>
+<div class="mt-2">
+<span class="font-headline-md text-headline-md text-on-surface tracking-tight block">1.284</span>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="font-label-sm text-label-sm text-secondary font-semibold flex items-center">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>+24%
+          </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-[10px]">vs. anterior</span>
+</div>
+</div>
+<!-- Mini Sparkline SVG -->
+<div class="mt-2.5 h-6 w-full text-secondary">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0,20 Q20,16 35,18 T65,8 T100,2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<path d="M0,20 Q20,16 35,18 T65,8 T100,2 L100,24 L0,24 Z" fill="currentColor" opacity="0.12"></path>
+</svg>
+</div>
+</div>
+<!-- Metric 2: Cliques no WhatsApp -->
+<div class="bg-surface-container-lowest p-3.5 rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">No WhatsApp</span>
+<div class="w-6 h-6 rounded-md bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[16px]">chat</span>
+</div>
+</div>
+<div class="mt-2">
+<span class="font-headline-md text-headline-md text-on-surface tracking-tight block">326</span>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="font-label-sm text-label-sm text-secondary font-semibold flex items-center">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>+18%
+          </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-[10px]">25.3% conv.</span>
+</div>
+</div>
+<!-- Sparkline WhatsApp -->
+<div class="mt-2.5 h-6 w-full text-secondary">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0,22 Q25,12 50,15 T75,9 T100,3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<path d="M0,22 Q25,12 50,15 T75,9 T100,3 L100,24 L0,24 Z" fill="currentColor" opacity="0.12"></path>
+</svg>
+</div>
+</div>
+<!-- Metric 3: Agendamentos & Pedidos -->
+<div class="bg-surface-container-lowest p-3.5 rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Agendamentos</span>
+<div class="w-6 h-6 rounded-md bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]">event_available</span>
+</div>
+</div>
+<div class="mt-2">
+<span class="font-headline-md text-headline-md text-on-surface tracking-tight block">87</span>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="font-label-sm text-label-sm text-primary font-semibold">R$ 4.380</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-[10px]">estimado</span>
+</div>
+</div>
+<!-- Radial mini status bar -->
+<div class="mt-3 w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 78%;"></div>
+</div>
+</div>
+<!-- Metric 4: Cliques em Rotas / Maps -->
+<div class="bg-surface-container-lowest p-3.5 rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Como Chegar</span>
+<div class="w-6 h-6 rounded-md bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[16px]">directions</span>
+</div>
+</div>
+<div class="mt-2">
+<span class="font-headline-md text-headline-md text-on-surface tracking-tight block">142</span>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-amber-500" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">4.9</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-[10px]">(Google)</span>
+</div>
+</div>
+<div class="mt-3 w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 92%;"></div>
+</div>
+</div>
+</section>
+<!-- 3. AI Profile Optimization Widget -->
+<section class="px-margin py-2">
+<div class="bg-gradient-to-br from-surface-container-lowest via-surface-container-low to-primary-fixed/20 p-4 rounded-xl shadow-sm flex flex-col gap-3">
+<!-- Title & AI Status -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-lg bg-primary text-on-primary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Assistente IA de Crescimento</h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Recomendações em tempo real</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm bg-secondary-container text-on-secondary-container px-2.5 py-0.5 rounded-full font-semibold">
+          82% Pronto
+        </span>
+</div>
+<!-- Linear Progress Bar -->
+<div class="w-full bg-surface-container rounded-full h-2 overflow-hidden">
+<div class="bg-primary-container h-full rounded-full transition-all duration-500" style="width: 82%;"></div>
+</div>
+<!-- AI Action Items -->
+<div class="flex flex-col gap-2 pt-1">
+<!-- Done items -->
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary text-[18px]">check_circle</span>
+<span class="font-body-sm text-body-sm line-through opacity-75 truncate">Logo e capa em alta resolução adicionadas</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary text-[18px]">check_circle</span>
+<span class="font-body-sm text-body-sm line-through opacity-75 truncate">WhatsApp conectado com mensagem pré-configurada</span>
+</div>
+<!-- Pending actionable items -->
+<div class="bg-surface-container-lowest/80 p-3 rounded-xl flex items-center justify-between gap-3 shadow-xs">
+<div class="flex items-start gap-2 min-w-0">
+<span class="material-symbols-outlined text-primary text-[18px] mt-0.5 flex-shrink-0">bolt</span>
+<div class="min-w-0">
+<span class="font-body-sm text-body-sm text-on-surface font-medium block truncate">Adicionar fotos de Antes &amp; Depois</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold">+15% conversão estimada</span>
+</div>
+</div>
+<button class="flex-shrink-0 px-3 py-1.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-container-high transition-colors active:scale-95">
+            Adicionar
+          </button>
+</div>
+<div class="bg-surface-container-lowest/80 p-3 rounded-xl flex items-center justify-between gap-3 shadow-xs">
+<div class="flex items-start gap-2 min-w-0">
+<span class="material-symbols-outlined text-primary text-[18px] mt-0.5 flex-shrink-0">bolt</span>
+<div class="min-w-0">
+<span class="font-body-sm text-body-sm text-on-surface font-medium block truncate">Ativar respostas rápidas automáticas</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Agilidade no atendimento</span>
+</div>
+</div>
+<button class="flex-shrink-0 px-3 py-1.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-container-high transition-colors active:scale-95">
+            Configurar
+          </button>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. Quick Actions Bar -->
+<section class="px-margin py-2">
+<h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2.5 font-semibold">
+      Ações Rápidas
+    </h3>
+<div class="grid grid-cols-4 gap-2">
+<!-- Action 1 -->
+<button class="flex flex-col items-center justify-center p-2.5 rounded-xl bg-surface-container-lowest shadow-sm hover:bg-surface-container-low transition-transform active:scale-95 text-center">
+<div class="w-9 h-9 rounded-full bg-primary-fixed text-primary flex items-center justify-center mb-1.5">
+<span class="material-symbols-outlined text-[20px]">more_time</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface font-medium leading-tight">Novo Agend.</span>
+</button>
+<!-- Action 2 -->
+<button class="flex flex-col items-center justify-center p-2.5 rounded-xl bg-surface-container-lowest shadow-sm hover:bg-surface-container-low transition-transform active:scale-95 text-center">
+<div class="w-9 h-9 rounded-full bg-secondary-container/40 text-secondary flex items-center justify-center mb-1.5">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface font-medium leading-tight">Novo Serviço</span>
+</button>
+<!-- Action 3 -->
+<button class="flex flex-col items-center justify-center p-2.5 rounded-xl bg-surface-container-lowest shadow-sm hover:bg-surface-container-low transition-transform active:scale-95 text-center">
+<div class="w-9 h-9 rounded-full bg-surface-container text-on-surface flex items-center justify-center mb-1.5">
+<span class="material-symbols-outlined text-[20px]">qr_code_2</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface font-medium leading-tight">Gerar QR</span>
+</button>
+<!-- Action 4 -->
+<button class="flex flex-col items-center justify-center p-2.5 rounded-xl bg-surface-container-lowest shadow-sm hover:bg-surface-container-low transition-transform active:scale-95 text-center">
+<div class="w-9 h-9 rounded-full bg-tertiary-fixed text-tertiary flex items-center justify-center mb-1.5">
+<span class="material-symbols-outlined text-[20px]">insights</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface font-medium leading-tight">Analytics</span>
+</button>
+</div>
+</section>
+<!-- 5. Recent Activity / Orders & Schedule -->
+<section class="px-margin py-2 flex flex-col gap-3">
+<!-- Header & Sub-filters -->
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">
+          Próximos Horários &amp; Pedidos
+        </h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Hoje: 12 atendimentos programados</span>
+</div>
+<a class="font-label-md text-label-md text-primary font-semibold flex items-center hover:underline" href="#">
+        Ver agenda
+        <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+<!-- Filter chips -->
+<div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+<button class="px-3 py-1 rounded-full font-label-sm text-label-sm bg-inverse-surface text-inverse-on-surface font-medium active:scale-95">Todos (12)</button>
+<button class="px-3 py-1 rounded-full font-label-sm text-label-sm bg-surface-container text-on-surface-variant font-medium active:scale-95">Agendamentos (9)</button>
+<button class="px-3 py-1 rounded-full font-label-sm text-label-sm bg-surface-container text-on-surface-variant font-medium active:scale-95">Retiradas Balcão (3)</button>
+</div>
+<!-- Card 1: Lucas Silveira -->
+<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface font-bold text-label-md flex-shrink-0">
+            LS
+          </div>
+<div class="min-w-0">
+<span class="font-body-md text-body-md font-semibold text-on-surface block truncate">Lucas Silveira</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block truncate">Corte Degradê + Barboterapia</span>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-secondary-container text-on-secondary-container font-semibold flex-shrink-0">
+          Confirmado
+        </span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant bg-surface-container-low px-3 py-2 rounded-lg">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
+<span class="font-semibold text-on-surface">Hoje, 14:30</span>
+<span>• Barbeiro: Rafael</span>
+</div>
+<span class="font-semibold text-on-surface">R$ 75,00</span>
+</div>
+<div class="flex items-center justify-end gap-2 pt-0.5">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors active:scale-95">
+          Detalhes
+        </button>
+<a class="px-3 py-1.5 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md flex items-center gap-1 hover:opacity-95 transition-opacity active:scale-95" href="https://wa.me/5511999999999">
+<span class="material-symbols-outlined text-[16px]">chat</span>
+<span>Chamar no Zap</span>
+</a>
+</div>
+</div>
+<!-- Card 2: Matheus Henrique -->
+<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface font-bold text-label-md flex-shrink-0">
+            MH
+          </div>
+<div class="min-w-0">
+<span class="font-body-md text-body-md font-semibold text-on-surface block truncate">Matheus Henrique</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block truncate">Combo Barba Clássica</span>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed font-semibold flex-shrink-0">
+          Em Andamento
+        </span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant bg-surface-container-low px-3 py-2 rounded-lg">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
+<span class="font-semibold text-on-surface">Hoje, 15:15</span>
+<span>• Barbeiro: Rafael</span>
+</div>
+<span class="font-semibold text-on-surface">R$ 45,00</span>
+</div>
+<div class="flex items-center justify-end gap-2 pt-0.5">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors active:scale-95">
+          Detalhes
+        </button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high text-primary font-label-md text-label-md active:scale-95">
+          Finalizar
+        </button>
+</div>
+</div>
+<!-- Card 3: Felipe Duarte (Produto) -->
+<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-label-md flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</div>
+<div class="min-w-0">
+<span class="font-body-md text-body-md font-semibold text-on-surface block truncate">Felipe Duarte</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block truncate">Pomada Modeladora Matte (2x)</span>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-amber-100 text-amber-900 font-semibold flex-shrink-0">
+          Aguardando Retirada
+        </span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant bg-surface-container-low px-3 py-2 rounded-lg">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-amber-700">store</span>
+<span class="font-semibold text-on-surface">Retirada no Balcão • Prev. 16:00</span>
+</div>
+<span class="font-semibold text-on-surface">R$ 55,00</span>
+</div>
+<div class="flex items-center justify-end gap-2 pt-0.5">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors active:scale-95">
+          Detalhes
+        </button>
+<button class="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md active:scale-95">
+          Confirmar Entrega
+        </button>
+</div>
+</div>
+<!-- Card 4: Rodrigo Lima (Amanhã) -->
+<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col gap-3 opacity-95">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface font-bold text-label-md flex-shrink-0">
+            RL
+          </div>
+<div class="min-w-0">
+<span class="font-body-md text-body-md font-semibold text-on-surface block truncate">Rodrigo Lima</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block truncate">Corte Infantil</span>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-surface-container text-on-surface-variant font-semibold flex-shrink-0">
+          Amanhã
+        </span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant bg-surface-container-low px-3 py-2 rounded-lg">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">event</span>
+<span class="font-semibold text-on-surface">Amanhã, 10:00</span>
+<span>• Barbeiro: Carlos</span>
+</div>
+<span class="font-semibold text-on-surface">R$ 40,00</span>
+</div>
+</div>
+</section>
+<!-- 6. Traffic Origin & Active QR Codes -->
+<section class="px-margin py-2 flex flex-col gap-3">
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-col gap-4">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">
+          De onde seus clientes estão vindo
+        </h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Origem dos acessos nos últimos 7 dias</span>
+</div>
+<!-- Traffic Bars -->
+<div class="flex flex-col gap-3">
+<!-- Channel 1 -->
+<div>
+<div class="flex justify-between text-body-sm font-body-sm mb-1">
+<span class="text-on-surface font-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-pink-600">photo_camera</span>
+              Instagram Bio
+            </span>
+<span class="text-on-surface font-semibold">48% <span class="text-on-surface-variant font-normal">(616 visitas)</span></span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-2">
+<div class="bg-pink-600 h-2 rounded-full" style="width: 48%;"></div>
+</div>
+</div>
+<!-- Channel 2 -->
+<div>
+<div class="flex justify-between text-body-sm font-body-sm mb-1">
+<span class="text-on-surface font-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-blue-600">map</span>
+              Google Meu Negócio / Maps
+            </span>
+<span class="text-on-surface font-semibold">28% <span class="text-on-surface-variant font-normal">(360 visitas)</span></span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-2">
+<div class="bg-blue-600 h-2 rounded-full" style="width: 28%;"></div>
+</div>
+</div>
+<!-- Channel 3 -->
+<div>
+<div class="flex justify-between text-body-sm font-body-sm mb-1">
+<span class="text-on-surface font-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">qr_code</span>
+              QR Codes Balcão &amp; Mesas
+            </span>
+<span class="text-on-surface font-semibold">15% <span class="text-on-surface-variant font-normal">(192 scans)</span></span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-2">
+<div class="bg-primary h-2 rounded-full" style="width: 15%;"></div>
+</div>
+</div>
+<!-- Channel 4 -->
+<div>
+<div class="flex justify-between text-body-sm font-body-sm mb-1">
+<span class="text-on-surface font-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">share</span>
+              Indicação direta WhatsApp
+            </span>
+<span class="text-on-surface font-semibold">9% <span class="text-on-surface-variant font-normal">(116 visitas)</span></span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-2">
+<div class="bg-secondary h-2 rounded-full" style="width: 9%;"></div>
+</div>
+</div>
+</div>
+<!-- Quick QR Code Management Sub-block -->
+<div class="border-t border-surface-container pt-3 mt-1 flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">QR Codes Ativos no Salão</span>
+<a class="font-label-md text-label-md text-primary font-medium hover:underline" href="#">Ver todos</a>
+</div>
+<!-- QR Item 1 -->
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-2.5">
+<!-- Inline Mini QR visual representation -->
+<div class="w-10 h-10 bg-surface-container-lowest p-1 rounded-md flex items-center justify-center shadow-xs">
+<svg class="w-full h-full text-on-surface fill-current" viewbox="0 0 24 24">
+<path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm-2 10h8v8H2v-8zm2 2v4h4v-4H4zm10-14h8v8h-8V2zm2 2v4h4V4h-4zm3 10h3v3h-3v-3zm-3 3h3v3h-3v-3zm3 3h3v3h-3v-3zm-3-6h3v3h-3v-3z"></path>
+</svg>
+</div>
+<div>
+<span class="font-body-sm text-body-sm text-on-surface font-medium block">QR Code Mesa / Balcão 01</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold">84 leituras registradas</span>
+</div>
+</div>
+<button class="p-2 rounded-lg text-primary hover:bg-surface-container transition-colors" title="Baixar PDF/PNG">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+</div>
+<!-- QR Item 2 -->
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-2.5">
+<div class="w-10 h-10 bg-surface-container-lowest p-1 rounded-md flex items-center justify-center shadow-xs">
+<svg class="w-full h-full text-on-surface fill-current" viewbox="0 0 24 24">
+<path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm-2 10h8v8H2v-8zm2 2v4h4v-4H4zm10-14h8v8h-8V2zm2 2v4h4V4h-4zm3 10h3v3h-3v-3zm-3 3h3v3h-3v-3zm3 3h3v3h-3v-3zm-3-6h3v3h-3v-3z"></path>
+</svg>
+</div>
+<div>
+<span class="font-body-sm text-body-sm text-on-surface font-medium block">QR Code Cartão de Visitas</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold">108 leituras registradas</span>
+</div>
+</div>
+<button class="p-2 rounded-lg text-primary hover:bg-surface-container transition-colors" title="Baixar PDF/PNG">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- 7. Reputation & Google Reviews -->
+<section class="px-margin py-2 pb-6">
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<!-- Google 'G' stylized mark -->
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center font-bold text-label-sm text-primary">
+            G
+          </div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Avaliações do Google</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Perfil da Empresa Conectado</span>
+</div>
+</div>
+<div class="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg">
+<span class="material-symbols-outlined text-amber-500 text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-headline-sm text-amber-900 font-bold">4.9</span>
+<span class="font-label-sm text-label-sm text-amber-700 font-normal">/ 5</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        Baseado em <strong>142 avaliações verificadas</strong> no Google Business Profile.
+      </p>
+<!-- Recent review card -->
+<div class="bg-surface-container-low p-3 rounded-xl flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-surface-container-high text-on-surface font-semibold text-[11px] flex items-center justify-center">
+              GA
+            </div>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Guilherme Alves</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Há 2 dias</span>
+</div>
+<div class="flex items-center gap-0.5 text-amber-500">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface italic">
+          "Melhor barbearia de São Paulo. Agendei direto pelo OmniLink, cheguei e fui atendido na hora pelo Rafael. Barboterapia impecável!"
+        </p>
+<div class="flex justify-end pt-1">
+<button class="px-3 py-1 rounded-lg bg-surface-container-lowest text-primary font-label-md text-label-md flex items-center gap-1 hover:bg-surface-container transition-colors shadow-xs active:scale-95">
+<span class="material-symbols-outlined text-[16px]">reply</span>
+<span>Responder no Google</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Vanilla JS for Micro-Interactions -->
+<script>
+  function showToast(text) {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-message');
+    if (!toast || !toastMsg) return;
+    toastMsg.innerText = text;
+    toast.classList.remove('opacity-0', 'pointer-events-none');
+    toast.classList.add('opacity-100');
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'pointer-events-none');
+      toast.classList.remove('opacity-100');
+    }, 2400);
+  }
+
+  function copyPublicLink() {
+    navigator.clipboard?.writeText('https://omnilink.app/barbearia-black');
+    showToast('Link público copiado!');
+  }
+
+  function sharePublicLink() {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Barbearia Black - OmniLink',
+        text: 'Agende seu horário ou compre produtos na Barbearia Black:',
+        url: 'https://omnilink.app/barbearia-black'
+      }).catch(() => {});
+    } else {
+      copyPublicLink();
+    }
+  }
+
+  // Toggle store open/closed status
+  const toggleBtn = document.getElementById('storeStatusToggle');
+  const statusLabel = document.getElementById('statusLabel');
+  const statusDot = document.getElementById('statusDot');
+  const statusPulse = document.getElementById('statusPulse');
+  let isOpen = true;
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      isOpen = !isOpen;
+      if (isOpen) {
+        statusLabel.innerText = 'Loja Aberta';
+        statusDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-secondary';
+        statusPulse.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75';
+        showToast('Status: Barbearia aberta para agendamentos!');
+      } else {
+        statusLabel.innerText = 'Loja Pausada';
+        statusDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-outline';
+        statusPulse.className = 'hidden';
+        showToast('Status: Loja temporariamente pausada.');
+      }
+    });
+  }
+
+  // Period Tabs Switching
+  const periodTabs = document.querySelectorAll('.period-tab');
+  periodTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      periodTabs.forEach(t => {
+        t.className = 'period-tab px-3.5 py-1.5 rounded-full font-label-md text-label-md bg-surface-container text-on-surface-variant whitespace-nowrap active:scale-95 transition-all';
+      });
+      tab.className = 'period-tab px-3.5 py-1.5 rounded-full font-label-md text-label-md bg-primary text-on-primary whitespace-nowrap shadow-sm active:scale-95 transition-all';
+      showToast('Período atualizado: ' + tab.innerText);
+    });
+  });
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.05)]" data-active-classes="text-primary font-bold"><div class="grid grid-cols-4 items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="overview" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-sm text-label-sm tracking-tight">Visão Geral</span></a><a class="flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="orders-schedule" href="#"><span class="material-symbols-outlined text-[22px]">calendar_month</span><span class="font-label-sm text-label-sm tracking-tight text-center leading-3">Pedidos &amp; Agenda</span></a><a class="flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="catalog-services" href="#"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-label-sm text-label-sm tracking-tight text-center leading-3">Catálogo/Serviços</span></a><a class="flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="more-settings" href="#"><span class="material-symbols-outlined text-[22px]">tune</span><span class="font-label-sm text-label-sm tracking-tight text-center leading-3">Mais/Config</span></a></div></nav></body></html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "outline": "#777587", "primary-fixed": "#e2dfff", "surface-bright": "#faf8ff", "surface-container-high": "#e2e7ff", "inverse-primary": "#c3c0ff", "on-secondary-fixed-variant": "#005236", "on-tertiary-fixed": "#07006c", "surface-variant": "#dae2fd", "tertiary-fixed-dim": "#c0c1ff", "error-container": "#ffdad6", "on-primary-container": "#dad7ff", "primary-fixed-dim": "#c3c0ff", "surface-tint": "#4d44e3", "surface": "#faf8ff", "outline-variant": "#c7c4d8", "on-surface": "#131b2e", "on-primary-fixed": "#0f0069", "primary-container": "#4f46e5", "secondary-container": "#6cf8bb", "secondary": "#006c49", "on-tertiary": "#ffffff", "on-surface-variant": "#464555", "on-error": "#ffffff", "surface-dim": "#d2d9f4", "on-error-container": "#93000a", "inverse-on-surface": "#eef0ff", "inverse-surface": "#283044", "on-tertiary-fixed-variant": "#2f2ebe", "on-background": "#131b2e", "tertiary-fixed": "#e1e0ff", "primary": "#3525cd", "secondary-fixed-dim": "#4edea3", "on-secondary-fixed": "#002113", "on-tertiary-container": "#d9d8ff", "surface-container-lowest": "#ffffff", "surface-container-highest": "#dae2fd", "on-primary-fixed-variant": "#3323cc", "error": "#ba1a1a", "on-secondary-container": "#00714d", "surface-container-low": "#f2f3ff", "surface-container": "#eaedff", "secondary-fixed": "#6ffbbe", "on-secondary": "#ffffff", "tertiary-container": "#4b4dd8", "on-primary": "#ffffff", "tertiary": "#3130c0", "background": "#faf8ff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-sm": "0.5rem", "margin-tablet": "2rem", "space-lg": "1.5rem", "gutter": "1rem", "space-md": "1rem", "margin-desktop": "3rem", "gutter-desktop": "2rem", "space-xl": "2.5rem", "space-xs": "0.25rem", "margin": "1rem", "gutter-tablet": "1.5rem" }, fontFamily: { "body-lg": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-sm": ["Inter"], "body-sm": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"], "body-md": ["Inter"], "display": ["Plus Jakarta Sans"], "display-mobile": ["Plus Jakarta Sans"], "label-md": ["Inter"] }, fontSize: { "body-lg": ["16px", { lineHeight: "24px", letterSpacing: "-0.011em", fontWeight: "400" }], "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.015em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "600" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }], "body-sm": ["13px", { lineHeight: "18px", letterSpacing: "0em", fontWeight: "400" }], "headline-lg-mobile": ["26px", { lineHeight: "32px", letterSpacing: "-0.015em", fontWeight: "700" }], "body-md": ["14px", { lineHeight: "20px", letterSpacing: "-0.006em", fontWeight: "400" }], "display": ["56px", { lineHeight: "64px", letterSpacing: "-0.03em", fontWeight: "800" }], "display-mobile": ["36px", { lineHeight: "42px", letterSpacing: "-0.025em", fontWeight: "800" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#faf8ff;color:#131b2e;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style></head><body class="bg-surface font-body-md text-body-md flex flex-col min-h-screen text-on-surface"><header class="fixed top-0 inset-x-0 z-50 bg-surface/80 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-gutter flex items-center justify-between"><div class="flex items-center gap-space-sm"><button aria-label="Voltar ou Fechar" class="w-11 h-11 -ml-space-xs rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-colors active:scale-95" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">close</span></button><img alt="Barbearia Black logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Vh6-Sv44K-oRqYsyqnsxhsC5AnIj7WtoLbUeSOiCYfe-j0ANq7FI-t2kjdU88ux6H2BbwBQMVW2jK29IqzfOWsgx4ZvF22lmjPxLtu0D_qKMBTKaLRSJo7NjmBjs2HUzauOnIz4JGCBWx47tcEFhWR3k3ORYPgfIQVYBvpr70yb38FTGGT0uSYvQxkXFuPRfBl-oMe7RfFBL5yXY64xf3itdDussJ5RrVndfBdnsAtxvHiuv408oDa5MM"/><div class="flex flex-col ml-space-xs"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Barbearia Black</span><h1 class="font-headline-sm text-headline-sm text-on-surface leading-tight">Agendar Horário</h1></div></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="flex flex-col relative w-full px-gutter pt-16 pb-28 bg-surface min-h-screen"><div class="flex flex-col w-full pb-6 space-y-6">
+<!-- Interactive Step Progress Indicator -->
+<div class="w-full bg-surface-container-low rounded-2xl p-4 shadow-sm">
+<div class="flex items-center justify-between relative">
+<div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-surface-container-high rounded-full -z-0"></div>
+<div class="absolute left-6 w-1/2 top-1/2 -translate-y-1/2 h-1 bg-primary-container rounded-full -z-0"></div>
+<!-- Step 1 Complete -->
+<div class="flex flex-col items-center gap-1.5 z-10">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="font-label-sm text-label-sm font-semibold text-primary">Serviço</span>
+</div>
+<!-- Step 2 Active -->
+<div class="flex flex-col items-center gap-1.5 z-10">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary ring-4 ring-primary-fixed flex items-center justify-center shadow-md">
+<span class="font-label-sm text-label-sm font-bold">2</span>
+</div>
+<span class="font-label-sm text-label-sm font-bold text-on-surface">Horário</span>
+</div>
+<!-- Step 3 Inactive -->
+<div class="flex flex-col items-center gap-1.5 z-10">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center">
+<span class="font-label-sm text-label-sm font-semibold">3</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Confirmação</span>
+</div>
+</div>
+</div>
+<!-- Visual Transformation Proof Card -->
+<div class="relative w-full rounded-2xl overflow-hidden bg-surface-container-lowest shadow-sm">
+<div class="relative h-44 w-full">
+<img class="w-full h-full object-cover" data-alt="High-end modern barbershop interior with vintage leather chair, illuminated vanity mirrors, and male grooming transformation aesthetic with cool moody daylight and warm tungsten reflections" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0wvKn-apvFCOrP-wzPBvERxo5QryYNIBGnyQzhK1VWydOaHX9483TVguEjPFK2xT-7KygJ_Mfr4Rk2qanOm_FINhR1pLLhgnua5pDzSj6xl6uy7ZODMRGOGCiLLlMr9zzFT1dTKFTjYr691IBTZhCwiMQB9QUCLZKZXYbASxFmjRInrFckKi5rxWa_HhiVkxarQiAc0qTWBYYgK2WYg9pw9c3WoNFlPNA3_4aDaQshAv5XtsSOEMz"/>
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface via-inverse-surface/30 to-transparent"></div>
+<div class="absolute top-3 left-3 bg-inverse-surface/80 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-surface-bright tracking-wide uppercase font-semibold">Experiência Black Club</span>
+</div>
+<div class="absolute bottom-3 inset-x-3 flex items-end justify-between">
+<div class="text-surface-bright">
+<p class="font-headline-sm text-headline-sm text-surface-bright leading-snug font-bold">Corte Degradê + Barboterapia</p>
+<div class="flex items-center gap-2 mt-0.5 text-surface-variant">
+<span class="flex items-center gap-1 font-body-sm text-body-sm text-surface-variant">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 50 min
+            </span>
+<span class="text-surface-variant">•</span>
+<span class="flex items-center gap-1 font-body-sm text-body-sm text-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-secondary-fixed">verified</span> Toalha quente inclusa
+            </span>
+</div>
+</div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm text-surface-variant line-through block">R$ 90</span>
+<span class="font-headline-sm text-headline-sm text-surface-bright font-extrabold">R$ 75<span class="text-[12px] font-normal">,00</span></span>
+</div>
+</div>
+</div>
+<!-- Extra Upsell Drawer / Pill Trigger -->
+<div class="p-3 bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded-lg bg-primary-fixed text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Adicionar Design de Sobrancelha</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">+ 10 min • R$ 15,00</span>
+</div>
+</div>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-primary text-label-sm font-label-sm font-semibold shadow-sm hover:bg-primary-fixed transition-colors active:scale-95">
+        Adicionar
+      </button>
+</div>
+</div>
+<!-- Section 2: Barbeiro / Especialista -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">content_cut</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Escolha o Especialista</h2>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-medium">Todos com horário</span>
+</div>
+<div class="grid grid-cols-1 gap-2.5">
+<!-- Option 1: First Available -->
+<label class="relative flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest shadow-sm cursor-pointer active:scale-[0.99] transition-transform">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-primary font-bold">
+<span class="material-symbols-outlined text-[24px]">electric_bolt</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-semibold">Sem preferência</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Primeiro profissional livre no horário</span>
+</div>
+</div>
+<input class="w-5 h-5 accent-primary-container" name="barber" type="radio" value="any"/>
+</label>
+<!-- Option 2: Rafael Silveira (Selected) -->
+<label class="relative flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest shadow-md cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="Portrait of an artisanal professional male barber with styled hair, neat beard, denim shirt, warm studio lighting inside a modern urban barbershop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA60TFtfwqSgBU03r7YsyhGaO8A6WKdkKn-CMnP8r6pmNS6eqi7f4dlHRpFoTLx3E1yqwBRyrQaK-2AUoxTRHiReOoWb3wAez7Myxq5lpQmtIN6PBal6l38EkBM8n7mJ7C_qrSBp4-WNYaNAcgCElIz33raDF0QmUt57wwVX3HzXxzHbbwT3lK3lULw3cvXttWKWAim3cnhtue709_4DrGt4r52SoBEhC4acqTu26_fOR6Ww6yOeJpm"/>
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-secondary rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary text-[10px]">check</span>
+</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-body-md text-body-md text-on-surface font-bold">Rafael Silveira</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-primary-fixed-variant font-label-sm text-label-sm font-semibold">Destaque</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-amber-500 text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm font-bold text-on-surface">4.9</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">• Mestre em Degradê &amp; Fade</span>
+</div>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+</label>
+<!-- Option 3: Carlos Mendes -->
+<label class="relative flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest shadow-sm cursor-pointer opacity-90 active:scale-[0.99] transition-transform">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="Close up portrait of a skilled classic barber with trimmed mustache and vintage leather apron in an upscale gentlemen barbershop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzHejX7TkcNiZtATZARl-b39L9foX2MboDi1wPYfi57Mzf4s57qs8KNpADA3iXzD9ZGzKeqtSZn-D_oyCrllaZ-I8TXblz7kMM73bujXgiOCsfFJFaaJrxknOMtyZQOV6voHpCgvD0mxzdwQH0Xe2xeuyuEamnk8pmb-3d_4h2MKf2eXNGU-n5hw_6PovZWMypeyUexjOJhi4aQ5aJpFIOAvaNqX5NxTXeOk83Bgwa9aA7FPuc2S5C"/>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-body-md text-body-md text-on-surface font-semibold">Carlos Mendes</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-amber-500 text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm font-bold text-on-surface">5.0</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">• Especialista em Barba Terapia</span>
+</div>
+</div>
+</div>
+<input class="w-5 h-5 accent-primary-container" name="barber" type="radio" value="carlos"/>
+</label>
+</div>
+</div>
+<!-- Section 3: Data Carousel -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">calendar_month</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Data do Atendimento</h2>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-semibold">Outubro 2024</span>
+</div>
+<!-- Horizontal Scrollable Date Strip -->
+<div class="flex gap-2.5 overflow-x-auto pb-1 -mx-gutter px-gutter">
+<!-- Item 1: Hoje -->
+<button class="flex-shrink-0 w-20 py-3 rounded-2xl bg-surface-container-low flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Qui</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">24</span>
+<span class="font-label-sm text-label-sm text-on-secondary-container bg-secondary-container px-1.5 py-0.5 rounded-full">2 vagas</span>
+</button>
+<!-- Item 2: Amanha (Selected) -->
+<button class="flex-shrink-0 w-20 py-3 rounded-2xl bg-primary text-on-primary flex flex-col items-center justify-center gap-1 shadow-md scale-[1.02] transition-transform">
+<span class="font-label-sm text-label-sm text-on-primary-container uppercase font-semibold">Sex</span>
+<span class="font-headline-sm text-headline-sm text-on-primary font-extrabold">25</span>
+<span class="font-label-sm text-label-sm text-on-secondary-fixed bg-secondary-fixed px-1.5 py-0.5 rounded-full font-bold">Livre</span>
+</button>
+<!-- Item 3: Sabado -->
+<button class="flex-shrink-0 w-20 py-3 rounded-2xl bg-surface-container-low flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Sáb</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">26</span>
+<span class="font-label-sm text-label-sm text-error bg-error-container px-1.5 py-0.5 rounded-full font-medium">Esgotando</span>
+</button>
+<!-- Item 4: Segunda -->
+<button class="flex-shrink-0 w-20 py-3 rounded-2xl bg-surface-container-low flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Seg</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">28</span>
+<span class="font-label-sm text-label-sm text-on-secondary-container bg-secondary-container px-1.5 py-0.5 rounded-full">8 vagas</span>
+</button>
+<!-- Item 5: Terca -->
+<button class="flex-shrink-0 w-20 py-3 rounded-2xl bg-surface-container-low flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Ter</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">29</span>
+<span class="font-label-sm text-label-sm text-on-secondary-container bg-secondary-container px-1.5 py-0.5 rounded-full">Livre</span>
+</button>
+</div>
+</div>
+<!-- Section 4: Horários Disponíveis -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">alarm</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Horários para Sexta (25)</h2>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-medium flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Tempo real
+      </span>
+</div>
+<!-- Period Tabs / Chips -->
+<div class="space-y-2.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold tracking-wider">Período da Tarde</span>
+<div class="grid grid-cols-3 gap-2">
+<button class="py-2.5 px-3 rounded-xl bg-surface-container-lowest text-on-surface font-body-md text-body-md font-semibold text-center shadow-sm active:scale-95 transition-all">
+          14:00
+        </button>
+<!-- Selected Time -->
+<button class="py-2.5 px-3 rounded-xl bg-primary text-on-primary font-body-md text-body-md font-bold text-center shadow-md flex items-center justify-center gap-1">
+<span>14:30</span>
+<span class="material-symbols-outlined text-[14px]">check</span>
+</button>
+<button class="py-2.5 px-3 rounded-xl bg-surface-container-lowest text-on-surface font-body-md text-body-md font-semibold text-center shadow-sm active:scale-95 transition-all">
+          15:15
+        </button>
+<button class="py-2.5 px-3 rounded-xl bg-surface-container-lowest text-on-surface font-body-md text-body-md font-semibold text-center shadow-sm active:scale-95 transition-all">
+          16:00
+        </button>
+<button class="py-2.5 px-3 rounded-xl bg-surface-container-lowest text-on-surface font-body-md text-body-md font-semibold text-center shadow-sm active:scale-95 transition-all">
+          17:30
+        </button>
+<button class="py-2.5 px-3 rounded-xl bg-surface-container-lowest text-on-surface font-body-md text-body-md font-semibold text-center shadow-sm active:scale-95 transition-all">
+          18:15
+        </button>
+</div>
+</div>
+<div class="pt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold tracking-wider">Período da Noite</span>
+<div class="grid grid-cols-3 gap-2 mt-2">
+<button class="py-2.5 px-3 rounded-xl bg-surface-container-lowest text-on-surface font-body-md text-body-md font-semibold text-center shadow-sm active:scale-95 transition-all">
+          19:00
+        </button>
+<button class="py-2.5 px-3 rounded-xl bg-surface-container-lowest text-on-surface font-body-md text-body-md font-semibold text-center shadow-sm active:scale-95 transition-all">
+          19:45
+        </button>
+<button class="py-2.5 px-3 rounded-xl bg-surface-container-high text-outline font-body-md text-body-md font-normal text-center cursor-not-allowed opacity-60 line-through">
+          20:30
+        </button>
+</div>
+</div>
+</div>
+<!-- Section 5: Dados do Cliente -->
+<div class="space-y-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">badge</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Seus Dados de Contato</h2>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm space-y-3.5">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant font-medium mb-1">Nome Completo</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low text-on-surface font-body-md text-body-md rounded-xl px-3.5 py-2.5 focus:outline-none focus:bg-surface-container-lowest shadow-inner transition-colors" type="text" value="Guilherme Alves"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-secondary text-[18px]">verified</span>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant font-medium mb-1">WhatsApp para Notificações</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low text-on-surface font-body-md text-body-md rounded-xl px-3.5 py-2.5 focus:outline-none focus:bg-surface-container-lowest shadow-inner transition-colors" type="tel" value="(11) 98765-4321"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-secondary text-[18px]">chat</span>
+</div>
+<p class="mt-1 font-label-sm text-label-sm text-on-surface-variant">Enviaremos a confirmação instantânea e o link de rota por aqui.</p>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant font-medium mb-1">Observações ou Preferências (Opcional)</label>
+<textarea class="w-full bg-surface-container-low text-on-surface font-body-md text-body-md rounded-xl px-3.5 py-2 focus:outline-none focus:bg-surface-container-lowest transition-colors" placeholder="Ex: Barba bem desenhada, café expresso antes do corte..." rows="2">Gostaria de barba bem desenhada e toalha quente extra.</textarea>
+</div>
+</div>
+</div>
+<!-- Section 6: Local & Resumo VIP -->
+<div class="bg-surface-container-high/60 backdrop-blur-sm rounded-2xl p-4 space-y-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center flex-shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[20px]">store</span>
+</div>
+<div class="min-w-0 flex-1">
+<h3 class="font-body-md text-body-md font-bold text-on-surface truncate">Barbearia Black - Unidade Jardins</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">Rua Oscar Freire, 1042 • São Paulo, SP</p>
+</div>
+<button class="px-2.5 py-1 rounded-lg bg-surface-container-lowest text-primary font-label-sm text-label-sm font-semibold shadow-sm">
+        Ver Rota
+      </button>
+</div>
+<!-- Guarantees list -->
+<div class="pt-2 space-y-1.5">
+<div class="flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="font-label-md text-label-md text-on-surface">Sem cobrança antecipada obrigatória (Pague no local via Pix/Cartão)</span>
+</div>
+<div class="flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="font-label-md text-label-md text-on-surface">Lembrete automático inteligente enviado 2h antes no seu WhatsApp</span>
+</div>
+<div class="flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="font-label-md text-label-md text-on-surface">Wi-Fi ultra-rápido, cerveja artesanal e café cortesia</span>
+</div>
+</div>
+</div>
+<!-- Direct Conversion WhatsApp Action Banner -->
+<div class="w-full bg-gradient-to-r from-secondary to-on-secondary-container text-on-secondary rounded-2xl p-4 shadow-lg flex items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-bright text-secondary flex items-center justify-center flex-shrink-0 shadow">
+<span class="material-symbols-outlined text-[22px]">send</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-body-lg font-bold text-surface-bright leading-tight">Confirmar via WhatsApp</span>
+<span class="font-label-sm text-label-sm text-surface-bright/80">Disparo automático em 1 clique</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-surface-bright text-[24px]">chevron_right</span>
+</div>
+</div>
+<script>
+  // Simple micro-interaction for schedule time slots
+  document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (this.innerText.includes(':') && !this.classList.contains('line-through')) {
+        const siblings = this.parentElement.querySelectorAll('button');
+        siblings.forEach(s => {
+          s.classList.remove('bg-primary', 'text-on-primary', 'font-bold', 'shadow-md');
+          s.classList.add('bg-surface-container-lowest', 'text-on-surface', 'font-semibold', 'shadow-sm');
+          const chk = s.querySelector('.material-symbols-outlined');
+          if (chk) chk.remove();
+        });
+        this.classList.remove('bg-surface-container-lowest', 'text-on-surface', 'font-semibold', 'shadow-sm');
+        this.classList.add('bg-primary', 'text-on-primary', 'font-bold', 'shadow-md');
+      }
+    });
+  });
+</script></main><footer class="fixed bottom-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.04)]"><div class="h-20 px-gutter flex items-center justify-between gap-space-md"><div class="flex flex-col"><span class="font-label-sm text-label-sm text-on-surface-variant">Total Selecionado</span><div class="flex items-baseline gap-space-xs"><span class="font-headline-sm text-headline-sm text-on-surface font-bold">R$ 85,00</span><span class="font-label-sm text-label-sm text-secondary font-medium">• 1 serviço</span></div></div><button class="flex-1 max-w-[210px] h-12 bg-primary-container hover:bg-primary text-on-primary rounded-xl font-headline-sm text-body-md flex items-center justify-center gap-space-xs shadow-[0_4px_12px_rgba(79,70,229,0.25)] active:scale-[0.98] transition-all"><span class="font-semibold">Avançar</span><span class="material-symbols-outlined text-[20px]">arrow_forward</span></button></div></footer></body></html>

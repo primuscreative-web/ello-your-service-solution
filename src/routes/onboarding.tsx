@@ -1,213 +1,213 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import type React from "react";
-import { useMemo, useRef, useState } from "react";
+import { useState, type FormEvent } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, Check, MapPin, Scissors, Store } from "lucide-react";
+import { useLocalHub, createSlug } from "@/lib/localhub-context";
+import { Field, inputClass, primaryButtonClass } from "@/components/localhub/ui";
 
-import { ELLO_MEDIA } from "@/lib/ello-media";
-import { PrimaryButton } from "@/components/ello/actions";
-import { ElloAppShell } from "@/components/ello/app-shell";
-import { ElloEyebrow } from "@/components/ello/primitives";
-import { completeOnboarding } from "@/lib/onboarding-state";
+export const Route = createFileRoute("/onboarding")({ component: OnboardingPage });
 
-export const Route = createFileRoute("/onboarding")({
-  component: Onboarding,
-});
+const categories = [
+  { id: "beleza", label: "Beleza & estética", icon: "✨" },
+  { id: "barbearia", label: "Barbearia", icon: "💈" },
+  { id: "alimentacao", label: "Alimentação", icon: "🍽️" },
+  { id: "servicos", label: "Serviços locais", icon: "🛠️" },
+];
 
-const SLIDES = [
-  {
-    eyebrow: "Para clientes",
-    title: (
-      <>
-        Encontre soluções com <span className="text-primary">rapidez e confiança.</span>
-      </>
-    ),
-    body: "Busque por intenção, veja profissionais qualificados e contrate sem perder tempo.",
-    image: ELLO_MEDIA.onboardingClient.src,
-    alt: "Cliente usando a ELLO pelo celular",
-  },
-  {
-    eyebrow: "Para profissionais",
-    title: (
-      <>
-        Transforme seu perfil em uma <span className="text-primary">operação completa.</span>
-      </>
-    ),
-    body: "Organize agenda, portfólio, clientes e orçamentos em um ambiente pensado para crescer.",
-    image: ELLO_MEDIA.onboardingProfessional.src,
-    alt: "Profissional usando a ELLO para divulgar seus serviços",
-  },
-  {
-    eyebrow: "ELLO Link",
-    title: (
-      <>
-        Seu próprio <span className="text-primary">espaço digital.</span>
-      </>
-    ),
-    body: "Cada profissional ganha um link com catálogo, avaliações, agenda e presença online.",
-    image: ELLO_MEDIA.onboardingAgenda.src,
-    alt: "Agenda e ferramentas profissionais da ELLO",
-  },
-  {
-    eyebrow: "ELLO IA",
-    title: (
-      <>
-        A IA acompanha o seu <span className="text-primary">crescimento.</span>
-      </>
-    ),
-    body: "Sugestões de melhoria, oportunidades e comunicação mais inteligente em cada etapa.",
-    image: ELLO_MEDIA.onboardingAssistant.src,
-    alt: "Assistente inteligente da ELLO",
-  },
-] as const;
+function OnboardingPage() {
+  const { createBusiness } = useLocalHub();
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    name: "",
+    category: "beleza",
+    city: "",
+    phone: "",
+    slug: "",
+    description: "",
+    address: "",
+  });
+  const [slugEdited, setSlugEdited] = useState(false);
+  const [error, setError] = useState("");
+  const update = (key: keyof typeof form, value: string) =>
+    setForm((current) => ({ ...current, [key]: value }));
 
-const SWIPE_THRESHOLD = 42;
-
-function Onboarding() {
-  const navigate = useNavigate();
-  const [step, setStep] = useState(0);
-  const [dragOffset, setDragOffset] = useState(0);
-  const dragStartX = useRef<number | null>(null);
-  const slide = SLIDES[step];
-  const last = step === SLIDES.length - 1;
-
-  const trackStyle = useMemo(
-    () => ({
-      transform: `translateX(calc(${-step * 100}% + ${dragOffset}px))`,
-    }),
-    [dragOffset, step],
-  );
-
-  function finish() {
-    completeOnboarding();
-    void navigate({ to: "/auth" });
-  }
-
-  function goTo(nextStep: number) {
-    setStep(Math.min(Math.max(nextStep, 0), SLIDES.length - 1));
-  }
-
-  function next() {
-    if (last) {
-      finish();
-      return;
-    }
-    goTo(step + 1);
-  }
-
-  function handlePointerDown(event: React.PointerEvent<HTMLElement>) {
-    dragStartX.current = event.clientX;
-    setDragOffset(0);
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  function handlePointerMove(event: React.PointerEvent<HTMLElement>) {
-    if (dragStartX.current === null) return;
-    const nextOffset = event.clientX - dragStartX.current;
-    setDragOffset(Math.max(Math.min(nextOffset, 86), -86));
-  }
-
-  function handlePointerUp(event: React.PointerEvent<HTMLElement>) {
-    if (dragStartX.current === null) return;
-    const distance = event.clientX - dragStartX.current;
-    dragStartX.current = null;
-    setDragOffset(0);
-
-    if (distance < -SWIPE_THRESHOLD && step < SLIDES.length - 1) {
-      goTo(step + 1);
-      return;
-    }
-    if (distance > SWIPE_THRESHOLD && step > 0) {
-      goTo(step - 1);
-    }
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const slug = createSlug(form.slug || form.name);
+    if (!slug) return setError("Escolha um nome para o endereço da sua página.");
+    createBusiness({ ...form, slug });
+    window.location.assign("/studio");
   }
 
   return (
-    <ElloAppShell statusBarClassName="text-slate-800">
-      <main className="relative flex h-full min-h-[700px] flex-col justify-between ello-mesh-bg">
-        <section
-          className="relative flex flex-1 touch-pan-y flex-col justify-between overflow-hidden px-7 pb-8 pt-4"
-          onPointerCancel={() => {
-            dragStartX.current = null;
-            setDragOffset(0);
-          }}
-        >
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-primary/12 to-transparent opacity-0" />
-
-          <div
-            className="relative z-10 flex flex-1 touch-pan-y overflow-hidden"
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-          >
-            <div
-              className="flex w-full transition-transform duration-300 ease-out"
-              style={trackStyle}
-            >
-              {SLIDES.map((item) => (
-                <article
-                  key={item.eyebrow}
-                  className="flex min-w-full flex-col justify-between py-2"
-                >
-                  <div className="min-h-[12.5rem]">
-                    <ElloEyebrow className="mb-3">Guia em 4 passos</ElloEyebrow>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary/75">
-                      {item.eyebrow}
-                    </p>
-                    <h1 className="mt-3.5 max-w-[17.8rem] text-[1.9rem] font-extrabold leading-[1.12] tracking-[-0.04em] text-slate-900">
-                      {item.title}
-                    </h1>
-                    <p className="mt-3.5 max-w-[18.5rem] text-base font-medium leading-relaxed text-slate-600">
-                      {item.body}
-                    </p>
-                  </div>
-
-                  <div className="relative mt-2 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-md">
-                    <img
-                      src={item.image}
-                      alt={item.alt}
-                      draggable={false}
-                      className="h-[15.5rem] w-full select-none object-cover"
-                    />
-                  </div>
-                </article>
-              ))}
-            </div>
+    <div className="min-h-screen bg-[#faf8ff] px-4 py-8 text-[#131b2e] sm:py-12">
+      <header className="mx-auto flex max-w-5xl items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 font-extrabold">
+          <span className="grid size-9 place-items-center rounded-xl bg-indigo-600 text-white">
+            <Store size={18} />
+          </span>
+          LocalHub
+        </Link>
+        <span className="text-xs font-semibold text-slate-400">PASSO {step} DE 2</span>
+      </header>
+      <div className="mx-auto mt-8 grid max-w-5xl gap-10 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:gap-16 lg:pt-8">
+        <section>
+          <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700">
+            {step === 1 ? <Scissors size={22} /> : <MapPin size={22} />}
           </div>
-
-          <div className="relative z-20 mt-6">
-            <div className="mb-5 flex justify-center gap-2">
-              {SLIDES.map((item, index) => (
-                <button
-                  key={item.eyebrow}
-                  type="button"
-                  aria-label={`Ir para onboarding ${index + 1}`}
-                  onClick={() => goTo(index)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    index === step ? "w-6 bg-primary shadow-sm" : "w-2 bg-slate-300"
-                  }`}
-                />
-              ))}
-            </div>
-
-            <div className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-              Deslize ou toque para avançar
-            </div>
-            <div className="mb-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-center text-xs font-semibold text-slate-500 shadow-sm">
-              Cada etapa foi pensada para deixar sua primeira experiência mais fluida.
-            </div>
-            <PrimaryButton type="button" onClick={next}>
-              {last ? "Começar" : "Próximo"}
-            </PrimaryButton>
-
-            <button
-              type="button"
-              onClick={finish}
-              className="mt-3 h-10 w-full text-center text-sm font-bold text-slate-500 hover:text-slate-600 transition-colors"
-            >
-              Pular
-            </button>
+          <div className="text-xs font-bold uppercase tracking-[.15em] text-indigo-600">
+            Vamos começar
+          </div>
+          <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+            {step === 1 ? "Conte sobre seu negócio." : "Onde seus clientes encontram você?"}
+          </h1>
+          <p className="mt-4 max-w-md leading-7 text-slate-500">
+            {step === 1
+              ? "Vamos preparar sua página para apresentar seus produtos e serviços."
+              : "Adicione localização e contato. Você pode mudar essas informações depois."}
+          </p>
+          <div className="mt-7 hidden space-y-3 lg:block">
+            {[
+              "Uma página feita para seu negócio",
+              "Catálogo que você controla",
+              "Agendamentos num só lugar",
+            ].map((line) => (
+              <div key={line} className="flex items-center gap-2 text-sm text-slate-600">
+                <Check size={16} className="text-emerald-600" />
+                {line}
+              </div>
+            ))}
           </div>
         </section>
-      </main>
-    </ElloAppShell>
+        <form
+          onSubmit={submit}
+          className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-[0_24px_80px_-38px_rgba(40,44,91,.25)] sm:p-8"
+        >
+          {step === 1 ? (
+            <div className="space-y-6">
+              <Field label="Nome do negócio">
+                <input
+                  autoFocus
+                  required
+                  maxLength={60}
+                  value={form.name}
+                  onChange={(event) => {
+                    const name = event.target.value;
+                    update("name", name);
+                    if (!slugEdited) update("slug", createSlug(name));
+                  }}
+                  placeholder="Ex.: Studio Bella"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Tipo de negócio">
+                <div className="grid grid-cols-2 gap-2">
+                  {categories.map(({ id, label, icon }) => (
+                    <button
+                      type="button"
+                      key={id}
+                      onClick={() => update("category", id)}
+                      className={`flex min-h-14 items-center gap-2 rounded-xl border px-3 text-left text-xs font-bold transition sm:text-sm ${form.category === id ? "border-indigo-300 bg-indigo-50 text-indigo-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                    >
+                      <span>{icon}</span>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              <Field label="Uma frase sobre seu negócio">
+                <textarea
+                  value={form.description}
+                  onChange={(event) => update("description", event.target.value)}
+                  rows={3}
+                  maxLength={220}
+                  placeholder="Conte o que seus clientes encontram por aqui..."
+                  className={`${inputClass} resize-none`}
+                />
+              </Field>
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                disabled={!form.name.trim()}
+                className={`${primaryButtonClass} w-full`}
+              >
+                Continuar <ArrowRight size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <Field label="Cidade">
+                <input
+                  autoFocus
+                  required
+                  value={form.city}
+                  onChange={(event) => update("city", event.target.value)}
+                  placeholder="Ex.: São Paulo, SP"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="WhatsApp">
+                <input
+                  required
+                  type="tel"
+                  value={form.phone}
+                  onChange={(event) => update("phone", event.target.value)}
+                  placeholder="(11) 99999-9999"
+                  className={inputClass}
+                />
+              </Field>
+              <Field
+                label="Endereço da sua página"
+                hint="Escolha um endereço curto para a prévia da sua página."
+              >
+                <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100">
+                  <span className="border-r border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-400">
+                    /loja/
+                  </span>
+                  <input
+                    required
+                    value={form.slug}
+                    onChange={(event) => {
+                      setSlugEdited(true);
+                      update("slug", createSlug(event.target.value));
+                    }}
+                    placeholder="meu-negocio"
+                    className="min-w-0 flex-1 px-3 py-3 text-sm outline-none"
+                  />
+                </div>
+              </Field>
+              <Field label="Endereço (opcional)">
+                <input
+                  value={form.address}
+                  onChange={(event) => update("address", event.target.value)}
+                  placeholder="Rua, número e bairro"
+                  className={inputClass}
+                />
+              </Field>
+              {error && (
+                <p role="alert" className="text-sm font-semibold text-red-600">
+                  {error}
+                </p>
+              )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600"
+                >
+                  <ArrowLeft size={16} />
+                  Voltar
+                </button>
+                <button type="submit" className={`${primaryButtonClass} flex-[2]`}>
+                  Criar minha página <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+          <p className="mt-5 text-center text-[11px] leading-5 text-slate-400">
+            Suas informações ficam salvas neste navegador. Você pode editá-las a qualquer momento.
+          </p>
+        </form>
+      </div>
+    </div>
   );
 }

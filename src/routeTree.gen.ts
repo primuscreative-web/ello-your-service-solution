@@ -9,13 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StudioRouteImport } from './routes/studio'
 import { Route as RoleRouteImport } from './routes/role'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudioIndexRouteImport } from './routes/studio.index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as StudioSettingsRouteImport } from './routes/studio.settings'
+import { Route as StudioCatalogRouteImport } from './routes/studio.catalog'
+import { Route as StudioAgendaRouteImport } from './routes/studio.agenda'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
 import { Route as AppWalletRouteImport } from './routes/app.wallet'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSearchRouteImport } from './routes/app.search'
@@ -38,6 +44,11 @@ import { Route as AppBusinessClientsRouteImport } from './routes/app.business.cl
 import { Route as AppProfessionalIdScheduleRouteImport } from './routes/app.professional.$id_.schedule'
 import { Route as AppProfessionalIdQuoteRouteImport } from './routes/app.professional.$id_.quote'
 
+const StudioRoute = StudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RoleRoute = RoleRouteImport.update({
   id: '/role',
   path: '/role',
@@ -63,14 +74,39 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudioIndexRoute = StudioIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StudioRoute,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const StudioSettingsRoute = StudioSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioCatalogRoute = StudioCatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioAgendaRoute = StudioAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => StudioRoute,
+} as any)
 const PSlugRoute = PSlugRouteImport.update({
   id: '/p/$slug',
   path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LojaSlugRoute = LojaSlugRouteImport.update({
+  id: '/loja/$slug',
+  path: '/loja/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppWalletRoute = AppWalletRouteImport.update({
@@ -186,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
+  '/studio': typeof StudioRouteWithChildren
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRouteWithChildren
@@ -199,8 +236,13 @@ export interface FileRoutesByFullPath {
   '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/wallet': typeof AppWalletRoute
+  '/loja/$slug': typeof LojaSlugRoute
   '/p/$slug': typeof PSlugRoute
+  '/studio/agenda': typeof StudioAgendaRoute
+  '/studio/catalog': typeof StudioCatalogRoute
+  '/studio/settings': typeof StudioSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/studio/': typeof StudioIndexRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/business/reviews': typeof AppBusinessReviewsRoute
@@ -228,8 +270,13 @@ export interface FileRoutesByTo {
   '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/wallet': typeof AppWalletRoute
+  '/loja/$slug': typeof LojaSlugRoute
   '/p/$slug': typeof PSlugRoute
+  '/studio/agenda': typeof StudioAgendaRoute
+  '/studio/catalog': typeof StudioCatalogRoute
+  '/studio/settings': typeof StudioSettingsRoute
   '/app': typeof AppIndexRoute
+  '/studio': typeof StudioIndexRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/business/reviews': typeof AppBusinessReviewsRoute
@@ -246,6 +293,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
+  '/studio': typeof StudioRouteWithChildren
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/business': typeof AppBusinessRouteWithChildren
@@ -259,8 +307,13 @@ export interface FileRoutesById {
   '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/wallet': typeof AppWalletRoute
+  '/loja/$slug': typeof LojaSlugRoute
   '/p/$slug': typeof PSlugRoute
+  '/studio/agenda': typeof StudioAgendaRoute
+  '/studio/catalog': typeof StudioCatalogRoute
+  '/studio/settings': typeof StudioSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/studio/': typeof StudioIndexRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/business/reviews': typeof AppBusinessReviewsRoute
@@ -278,6 +331,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/role'
+    | '/studio'
     | '/app/admin'
     | '/app/agenda'
     | '/app/business'
@@ -291,8 +345,13 @@ export interface FileRouteTypes {
     | '/app/search'
     | '/app/settings'
     | '/app/wallet'
+    | '/loja/$slug'
     | '/p/$slug'
+    | '/studio/agenda'
+    | '/studio/catalog'
+    | '/studio/settings'
     | '/app/'
+    | '/studio/'
     | '/app/business/clients'
     | '/app/business/quotes'
     | '/app/business/reviews'
@@ -320,8 +379,13 @@ export interface FileRouteTypes {
     | '/app/search'
     | '/app/settings'
     | '/app/wallet'
+    | '/loja/$slug'
     | '/p/$slug'
+    | '/studio/agenda'
+    | '/studio/catalog'
+    | '/studio/settings'
     | '/app'
+    | '/studio'
     | '/app/business/clients'
     | '/app/business/quotes'
     | '/app/business/reviews'
@@ -337,6 +401,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/role'
+    | '/studio'
     | '/app/admin'
     | '/app/agenda'
     | '/app/business'
@@ -350,8 +415,13 @@ export interface FileRouteTypes {
     | '/app/search'
     | '/app/settings'
     | '/app/wallet'
+    | '/loja/$slug'
     | '/p/$slug'
+    | '/studio/agenda'
+    | '/studio/catalog'
+    | '/studio/settings'
     | '/app/'
+    | '/studio/'
     | '/app/business/clients'
     | '/app/business/quotes'
     | '/app/business/reviews'
@@ -368,11 +438,20 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
   RoleRoute: typeof RoleRoute
+  StudioRoute: typeof StudioRouteWithChildren
+  LojaSlugRoute: typeof LojaSlugRoute
   PSlugRoute: typeof PSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/studio': {
+      id: '/studio'
+      path: '/studio'
+      fullPath: '/studio'
+      preLoaderRoute: typeof StudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/role': {
       id: '/role'
       path: '/role'
@@ -408,6 +487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/studio/': {
+      id: '/studio/'
+      path: '/'
+      fullPath: '/studio/'
+      preLoaderRoute: typeof StudioIndexRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/app/': {
       id: '/app/'
       path: '/'
@@ -415,11 +501,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/studio/settings': {
+      id: '/studio/settings'
+      path: '/settings'
+      fullPath: '/studio/settings'
+      preLoaderRoute: typeof StudioSettingsRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/catalog': {
+      id: '/studio/catalog'
+      path: '/catalog'
+      fullPath: '/studio/catalog'
+      preLoaderRoute: typeof StudioCatalogRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/agenda': {
+      id: '/studio/agenda'
+      path: '/agenda'
+      fullPath: '/studio/agenda'
+      preLoaderRoute: typeof StudioAgendaRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/p/$slug': {
       id: '/p/$slug'
       path: '/p/$slug'
       fullPath: '/p/$slug'
       preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loja/$slug': {
+      id: '/loja/$slug'
+      path: '/loja/$slug'
+      fullPath: '/loja/$slug'
+      preLoaderRoute: typeof LojaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/wallet': {
@@ -634,12 +748,31 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface StudioRouteChildren {
+  StudioAgendaRoute: typeof StudioAgendaRoute
+  StudioCatalogRoute: typeof StudioCatalogRoute
+  StudioSettingsRoute: typeof StudioSettingsRoute
+  StudioIndexRoute: typeof StudioIndexRoute
+}
+
+const StudioRouteChildren: StudioRouteChildren = {
+  StudioAgendaRoute: StudioAgendaRoute,
+  StudioCatalogRoute: StudioCatalogRoute,
+  StudioSettingsRoute: StudioSettingsRoute,
+  StudioIndexRoute: StudioIndexRoute,
+}
+
+const StudioRouteWithChildren =
+  StudioRoute._addFileChildren(StudioRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
   RoleRoute: RoleRoute,
+  StudioRoute: StudioRouteWithChildren,
+  LojaSlugRoute: LojaSlugRoute,
   PSlugRoute: PSlugRoute,
 }
 export const routeTree = rootRouteImport

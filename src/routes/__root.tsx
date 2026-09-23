@@ -5,12 +5,13 @@ import {
   createRootRouteWithContext,
   useRouter,
   HeadContent,
+  redirect,
   Scripts,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { AuthProvider } from "@/lib/auth/auth-context";
+import { LocalHubProvider } from "@/lib/localhub-context";
 
 function NotFoundComponent() {
   return (
@@ -70,21 +71,32 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  beforeLoad: ({ location }) => {
+    const allowed =
+      location.pathname === "/" ||
+      location.pathname === "/onboarding" ||
+      location.pathname === "/studio" ||
+      location.pathname.startsWith("/studio/") ||
+      location.pathname.startsWith("/loja/");
+    if (!allowed) {
+      throw redirect({ href: "/" });
+    }
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ELLO — Serviços profissionais, agenda e gestão em um só lugar" },
+      { title: "LocalHub — Seu negócio inteiro em um único link" },
       {
         name: "description",
         content:
-          "ELLO conecta clientes e profissionais autônomos. Contrate, organize e cresça em um só lugar.",
+          "Crie sua página, organize seu catálogo e receba agendamentos online com o LocalHub.",
       },
-      { name: "author", content: "ELLO" },
-      { property: "og:title", content: "ELLO" },
+      { name: "author", content: "LocalHub" },
+      { property: "og:title", content: "LocalHub" },
       {
         property: "og:description",
-        content: "A plataforma inteligente para contratar, organizar e crescer.",
+        content: "A presença digital completa para o seu negócio local.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -143,10 +155,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <LocalHubProvider>
         <Outlet />
-      </AuthProvider>
+      </LocalHubProvider>
     </QueryClientProvider>
   );
 }
