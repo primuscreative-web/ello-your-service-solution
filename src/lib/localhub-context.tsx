@@ -2,6 +2,11 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
+export type BusinessOnboardingDetails = {
+  specialties: string[];
+  serviceModes: string[];
+};
+
 export type Business = {
   id?: string;
   name: string;
@@ -11,6 +16,7 @@ export type Business = {
   phone: string;
   description: string;
   address: string;
+  onboardingDetails?: BusinessOnboardingDetails;
 };
 
 export type Service = {
@@ -32,7 +38,11 @@ export type Booking = {
   status: "pending" | "confirmed" | "cancelled";
 };
 
-type BusinessRow = Business & { id: string; owner_id?: string };
+type BusinessRow = Omit<Business, "onboardingDetails"> & {
+  id: string;
+  owner_id?: string;
+  onboarding_details?: BusinessOnboardingDetails;
+};
 type ServiceRow = {
   id: string;
   business_id: string;
@@ -51,6 +61,13 @@ type BookingRow = {
   phone: string;
   status: Booking["status"];
 };
+const emptyOnboardingDetails: BusinessOnboardingDetails = { specialties: [], serviceModes: [] };
+
+const businessFromRow = (row: BusinessRow): Business => {
+  const { onboarding_details, ...business } = row;
+  return { ...business, onboardingDetails: onboarding_details ?? emptyOnboardingDetails };
+};
+
 type LocalHubContextValue = {
   business: Business | null;
   services: Service[];
@@ -114,7 +131,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     }
     const { data: row, error: businessError } = await supabase
       .from("localhub_businesses")
-      .select("id,name,slug,category,city,phone,description,address")
+      .select("id,name,slug,category,city,phone,description,address,onboarding_details")
       .eq("owner_id", auth.user.id)
       .maybeSingle();
     if (businessError) {
@@ -123,7 +140,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       return;
     }
     const nextBusiness = row as BusinessRow | null;
-    setBusiness(nextBusiness);
+    setBusiness(nextBusiness ? businessFromRow(nextBusiness) : null);
     if (!nextBusiness) {
       setServices([]);
       setBookings([]);
@@ -194,7 +211,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       .maybeSingle();
     if (queryError) throw queryError;
     if (!data) return null;
-    const store = data as BusinessRow;
+    const store = businessFromRow(data as BusinessRow);
     const { data: serviceRows, error: serviceError } = await supabase
       .from("localhub_services")
       .select("*")
@@ -226,6 +243,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       phone: item.phone.trim(),
       description: item.description.trim(),
       address: item.address.trim(),
+      onboarding_details: item.onboardingDetails ?? emptyOnboardingDetails,
     });
     if (writeError) throw writeError;
     await refresh();
@@ -242,6 +260,8 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         phone: item.phone.trim(),
         description: item.description.trim(),
         address: item.address.trim(),
+        onboarding_details:
+          item.onboardingDetails ?? business.onboardingDetails ?? emptyOnboardingDetails,
       })
       .eq("id", business.id);
     if (writeError) throw writeError;
