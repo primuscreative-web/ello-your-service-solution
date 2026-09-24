@@ -26,16 +26,13 @@ const categories = [
   { id: "beleza", label: "Beleza & estética", icon: Sparkles },
   { id: "barbearia", label: "Barbearia", icon: Scissors },
   { id: "alimentacao", label: "Alimentação", icon: UtensilsCrossed },
-  { id: "servicos", label: "Serviços locais", icon: Wrench },
-];
-
-const serviceCategories = [
   { id: "saude", label: "Saúde e bem-estar", icon: HeartPulse },
   { id: "automotivo", label: "Automotivo", icon: CarFront },
   { id: "casa", label: "Casa e manutenção", icon: House },
   { id: "educacao", label: "Educação", icon: GraduationCap },
   { id: "pet", label: "Pet", icon: PawPrint },
   { id: "outros-servicos", label: "Outros serviços", icon: Wrench },
+  { id: "servicos-domesticos", label: "Serviços domésticos", icon: House },
 ];
 
 const categoryBackgrounds: Record<string, string> = {
@@ -218,6 +215,26 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "hospedagem", label: "Hospedagem" },
     ],
   },
+  "servicos-domesticos": {
+    specialtyTitle: "Quais serviços domésticos você oferece?",
+    specialtyDescription: "Selecione as tarefas que seus clientes podem contratar.",
+    specialties: [
+      { id: "limpeza-residencial", label: "Limpeza residencial" },
+      { id: "passadoria", label: "Passadoria de roupas" },
+      { id: "organizacao", label: "Organização da casa" },
+      { id: "cozinha-domestica", label: "Preparo de refeições" },
+      { id: "lavanderia", label: "Lavanderia" },
+      { id: "cuidados-domesticos", label: "Apoio à rotina da casa" },
+    ],
+    serviceModeTitle: "Como você atende?",
+    serviceModeDescription: "Escolha os formatos de atendimento que oferece.",
+    serviceModes: [
+      { id: "na-casa-cliente", label: "Na casa do cliente" },
+      { id: "recorrente", label: "Atendimento recorrente" },
+      { id: "servico-avulso", label: "Serviço avulso" },
+      { id: "materiais-inclusos", label: "Levo os materiais" },
+    ],
+  },
   "outros-servicos": {
     specialtyTitle: "Que tipo de serviço você oferece?",
     specialtyDescription: "Escolha as áreas que melhor descrevem seu trabalho.",
@@ -247,7 +264,6 @@ function OnboardingPage() {
   const { createBusiness, user, ready } = useLocalHub();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [servicesExpanded, setServicesExpanded] = useState(false);
   const [onboardingDetails, setOnboardingDetails] = useState<BusinessOnboardingDetails>({
     specialties: [],
     serviceModes: [],
@@ -264,11 +280,9 @@ function OnboardingPage() {
   const [slugEdited, setSlugEdited] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const isServiceCategory = serviceCategories.some(({ id }) => id === form.category);
   const categoryBackground = categoryBackgrounds[form.category];
   const setupProfile = setupProfiles[form.category] ?? setupProfiles["outros-servicos"];
-  const CategoryIcon =
-    [...categories, ...serviceCategories].find(({ id }) => id === form.category)?.icon ?? Wrench;
+  const CategoryIcon = categories.find(({ id }) => id === form.category)?.icon ?? Wrench;
   const update = (key: keyof typeof form, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
   const toggleOnboardingChoice = (key: keyof BusinessOnboardingDetails, choice: string) =>
@@ -406,7 +420,7 @@ function OnboardingPage() {
                 />
               </Field>
               <Field label="Tipo de negócio">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {categories.map(({ id, label, icon: Icon }) => (
                     <button
                       type="button"
@@ -416,46 +430,15 @@ function OnboardingPage() {
                           setOnboardingDetails({ specialties: [], serviceModes: [] });
                         }
                         update("category", id);
-                        setServicesExpanded(id === "servicos");
                       }}
-                      aria-pressed={
-                        id === "servicos"
-                          ? isServiceCategory || servicesExpanded
-                          : form.category === id
-                      }
-                      aria-expanded={id === "servicos" ? servicesExpanded : undefined}
-                      aria-controls={id === "servicos" ? "service-category-options" : undefined}
-                      className={`flex min-h-14 items-center gap-2 rounded-[10px] border px-3 text-left text-xs font-semibold transition sm:text-sm ${(id === "servicos" ? isServiceCategory || servicesExpanded : form.category === id) ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] text-slate-600 hover:bg-[#f7f7f1]"}`}
+                      aria-pressed={form.category === id}
+                      className={`flex min-h-14 items-center gap-2 rounded-[10px] border px-3 text-left text-xs font-semibold transition sm:text-sm ${form.category === id ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] text-slate-600 hover:bg-[#f7f7f1]"}`}
                     >
                       <Icon size={17} aria-hidden="true" />
                       {label}
                     </button>
                   ))}
                 </div>
-                {servicesExpanded && (
-                  <div
-                    id="service-category-options"
-                    className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3"
-                  >
-                    {serviceCategories.map(({ id, label, icon: Icon }) => (
-                      <button
-                        type="button"
-                        key={id}
-                        onClick={() => {
-                          if (form.category !== id) {
-                            setOnboardingDetails({ specialties: [], serviceModes: [] });
-                          }
-                          update("category", id);
-                        }}
-                        aria-pressed={form.category === id}
-                        className={`flex min-h-12 items-center gap-2 rounded-[10px] border px-3 text-left text-xs font-semibold transition ${form.category === id ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] bg-white/70 text-slate-600 hover:bg-white"}`}
-                      >
-                        <Icon size={16} aria-hidden="true" />
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </Field>
               <Field label="Uma frase sobre seu negócio">
                 <textarea

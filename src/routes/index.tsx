@@ -84,16 +84,16 @@ function LandingPage() {
           <div className="relative z-10 max-w-[590px]">
             <div className="ello-kicker">
               <span className="size-1.5 rounded-full bg-[#b6d26b]" />
-              Seu negócio merece ser encontrado
+              Página, contato e agenda em um link
             </div>
             <h1 className="mt-7 font-display text-[50px] font-medium leading-[.99] tracking-[-.065em] sm:text-[68px] lg:text-[76px]">
-              O seu trabalho.
+              Mostre o que você faz.
               <br />
-              Um lugar <span className="ello-heading-accent">à altura.</span>
+              <span className="ello-heading-accent">Facilite o contato.</span>
             </h1>
             <p className="mt-6 max-w-[420px] text-[15px] leading-[1.65] text-[#696b64] sm:text-[18px] sm:leading-[1.75]">
-              Uma página bonita e prática para apresentar seus serviços, receber pedidos e manter
-              tudo organizado — sem precisar entender de tecnologia.
+              Reúna serviços, preços e contato em uma página fácil de compartilhar. Receba pedidos
+              de horário e acompanhe tudo no painel da ELLO.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link to={startTo} className="ello-cta ello-cta-lime">
@@ -101,7 +101,7 @@ function LandingPage() {
                 <ArrowRight size={16} />
               </Link>
               <a href="#passos" className="ello-cta ello-cta-quiet">
-                Conheça a ELLO
+                Ver como funciona
                 <ArrowDownRight size={15} />
               </a>
             </div>
