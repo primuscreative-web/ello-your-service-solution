@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowDownRight,
   ArrowRight,
@@ -16,6 +17,8 @@ import {
 import { useLocalHub } from "@/lib/localhub-context";
 
 export const Route = createFileRoute("/")({ component: LandingPage });
+
+const SCROLL_VIDEO_URL = "/videos/ello-scroll-background.mp4";
 
 function LandingPage() {
   const { business } = useLocalHub();
@@ -43,7 +46,8 @@ function LandingPage() {
   }, []);
 
   return (
-    <div className="ello-site min-h-screen overflow-hidden bg-[#f5f4ef] text-[#20221f]">
+    <div className="ello-site min-h-screen overflow-hidden text-[#20221f]">
+      <ScrollVideoBackground />
       <header className="ello-nav mx-auto flex max-w-[1440px] items-center justify-between px-5 py-5 sm:px-10 lg:px-16">
         <Link to="/" aria-label="ELLO, início" className="ello-wordmark flex items-center gap-2.5">
           <BrandMark />
@@ -188,7 +192,7 @@ function LandingPage() {
         </section>
 
         <section className="ello-proof border-y border-[#e6e5dd] px-5 py-7 sm:px-10 lg:px-16">
-          <div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-5 sm:flex-row">
+          <div className="ello-proof-card mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-5 sm:flex-row">
             <p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#92948b]">
               Tudo que seu negócio precisa, em um só lugar
             </p>
@@ -314,6 +318,106 @@ function LandingPage() {
         <span>© {new Date().getFullYear()} ELLO</span>
       </footer>
     </div>
+  );
+}
+
+function ScrollVideoBackground() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reducedMotion.matches) return;
+
+    const basePlaybackRate = 0.8;
+    const maxPlaybackRate = 2.4;
+    let targetPlaybackRate = basePlaybackRate;
+    let previousScrollY = window.scrollY;
+    let previousScrollTime = performance.now();
+    let animationFrame = 0;
+    let lastScrollTime = 0;
+
+    const startLoop = () => {
+      if (reducedMotion.matches) return;
+      video.playbackRate = basePlaybackRate;
+      void video.play().catch(() => {});
+    };
+
+    const handleScroll = () => {
+      const now = performance.now();
+      const elapsed = Math.max((now - previousScrollTime) / 1000, 0.016);
+      const distance = Math.abs(window.scrollY - previousScrollY);
+      const scrollVelocity = distance / elapsed;
+      targetPlaybackRate = Math.min(maxPlaybackRate, basePlaybackRate + scrollVelocity / 900);
+      previousScrollY = window.scrollY;
+      previousScrollTime = now;
+      lastScrollTime = now;
+      if (!animationFrame) animationFrame = window.requestAnimationFrame(updatePlaybackRate);
+    };
+
+    const updatePlaybackRate = (timestamp: number) => {
+      animationFrame = 0;
+      if (reducedMotion.matches || video.paused) return;
+      if (timestamp - lastScrollTime > 180) targetPlaybackRate = basePlaybackRate;
+      const difference = targetPlaybackRate - video.playbackRate;
+      video.playbackRate += difference * 0.14;
+      if (Math.abs(difference) > 0.015 || targetPlaybackRate !== basePlaybackRate) {
+        animationFrame = window.requestAnimationFrame(updatePlaybackRate);
+      }
+    };
+
+    const markVideoReady = () => {
+      document
+        .querySelector<HTMLElement>(".ello-site")
+        ?.setAttribute("data-scroll-video-ready", "true");
+      startLoop();
+    };
+
+    const markVideoUnavailable = () => {
+      document.querySelector<HTMLElement>(".ello-site")?.removeAttribute("data-scroll-video-ready");
+    };
+
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) markVideoReady();
+    video.addEventListener("loadedmetadata", markVideoReady);
+    video.addEventListener("error", markVideoUnavailable);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      video.removeEventListener("loadedmetadata", markVideoReady);
+      video.removeEventListener("error", markVideoUnavailable);
+      window.removeEventListener("scroll", handleScroll);
+      window.cancelAnimationFrame(animationFrame);
+      document.querySelector<HTMLElement>(".ello-site")?.removeAttribute("data-scroll-video-ready");
+    };
+  }, [portalTarget]);
+
+  if (!portalTarget) return null;
+
+  return createPortal(
+    <>
+      <video
+        ref={videoRef}
+        className="ello-scroll-video"
+        muted
+        playsInline
+        loop
+        preload="auto"
+        tabIndex={-1}
+        aria-hidden="true"
+      >
+        {/* Troque este caminho pela URL do seu vídeo ou adicione o MP4 em public/videos/. */}
+        <source src={SCROLL_VIDEO_URL} type="video/mp4" />
+      </video>
+      <div className="ello-scroll-video-overlay" aria-hidden="true" />
+    </>,
+    portalTarget,
   );
 }
 

@@ -1,10 +1,32 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Eye, EyeOff } from "lucide-react";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { useLocalHub } from "@/lib/localhub-context";
 import { primaryButtonClass } from "@/components/localhub/ui";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
+
+function getAuthErrorMessage(message: string, code?: string) {
+  const errorCode = (code || message).toLowerCase();
+
+  if (errorCode.includes("redirect_to_not_allowed"))
+    return "O endereço de confirmação não está liberado no Supabase Auth. Confira Authentication → URL Configuration.";
+  if (errorCode.includes("user_already_exists") || errorCode.includes("already registered"))
+    return "Este e-mail já possui uma conta. Entre ou use “Esqueci minha senha”.";
+  if (errorCode.includes("weak_password") || errorCode.includes("password should"))
+    return "A senha não atende aos requisitos. Use pelo menos 6 caracteres e tente outra combinação.";
+  if (errorCode.includes("email_address_invalid") || errorCode.includes("invalid email"))
+    return "Digite um endereço de e-mail válido.";
+  if (errorCode.includes("signup_disabled"))
+    return "O cadastro está desabilitado no momento. Tente novamente mais tarde.";
+  if (errorCode.includes("rate_limit") || errorCode.includes("too many requests"))
+    return "Muitas tentativas em sequência. Aguarde um pouco antes de tentar novamente.";
+  if (errorCode.includes("invalid_credentials"))
+    return "E-mail ou senha incorretos. Confira seus dados ou recupere sua senha.";
+
+  return "Não foi possível concluir a solicitação. Confira os dados e tente novamente em instantes.";
+}
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -13,6 +35,8 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -56,14 +80,15 @@ function AuthPage() {
       return setError("O acesso está indisponível no momento.");
     setBusy(true);
     try {
-      const redirectTo = `${window.location.origin}/auth`;
+      const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+      const redirectTo = `${isLocalhost ? "https://ello.app.br" : window.location.origin}/auth`;
 
       if (mode === "forgot") {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
           redirectTo,
         });
         if (resetError) {
-          setError(resetError.message);
+          setError(getAuthErrorMessage(resetError.message, resetError.code));
           return;
         }
         setMessage(
@@ -84,7 +109,7 @@ function AuthPage() {
           setError(
             message.includes("session") || message.includes("token")
               ? "Este link expirou ou já foi utilizado. Solicite um novo link de recuperação."
-              : updateError.message,
+              : getAuthErrorMessage(updateError.message, updateError.code),
           );
           return;
         }
@@ -103,7 +128,7 @@ function AuthPage() {
             })
           : await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (result.error) {
-        setError(result.error.message);
+        setError(getAuthErrorMessage(result.error.message, result.error.code));
         return;
       }
       if (mode === "signup" && !result.data.session) {
@@ -112,7 +137,11 @@ function AuthPage() {
       }
       await navigate({ to: "/studio" });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível concluir o acesso.");
+      setError(
+        caught instanceof Error && caught.message.toLowerCase().includes("fetch")
+          ? "Não foi possível conectar ao serviço de autenticação. Verifique sua conexão e tente novamente."
+          : "Não foi possível concluir o acesso agora. Tente novamente em instantes.",
+      );
     } finally {
       setBusy(false);
     }
@@ -121,6 +150,18 @@ function AuthPage() {
   return (
     <main className="auth-page min-h-screen bg-[#f5f4ef] text-[#292b25] lg:grid lg:grid-cols-2">
       <section className="auth-story relative hidden min-h-screen flex-col justify-between overflow-hidden bg-[#292b25] p-12 text-white lg:flex xl:p-16">
+        <video
+          className="auth-story-video"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          <source src="/videos/auth-background.mp4" type="video/mp4" />
+        </video>
         <Link
           to="/"
           className="auth-wordmark relative z-10"
@@ -140,12 +181,11 @@ function AuthPage() {
             Organize seus serviços, compartilhe sua página e acompanhe os pedidos de agendamento.
           </p>
         </div>
-        <p className="text-xs text-white/50">ELLO · ferramentas para negócios locais</p>
-        <AuthArtwork />
+        <p className="relative z-10 text-xs text-white/50">ELLO · ferramentas para negócios locais</p>
       </section>
-      <div className="auth-panel relative isolate grid min-h-screen place-items-center overflow-hidden px-4 py-10 sm:px-8">
+      <div className="auth-panel relative isolate grid min-h-screen place-items-center overflow-hidden px-4 py-10 text-white sm:px-8">
         <AuthParticles />
-        <section className="auth-card relative z-10 w-full max-w-md rounded-2xl border border-[#e6e5dd] bg-[#fbfaf7] p-7 sm:p-9">
+        <section className="auth-card relative z-10 w-full max-w-md rounded-2xl border border-[#e6e5dd] bg-[#fbfaf7] p-7 text-[#292b25] sm:p-9">
           <Link to="/" className="auth-card-mark mx-auto" aria-label="Voltar para o início">
             <AuthMark tone="dark" />
           </Link>
@@ -179,18 +219,32 @@ function AuthPage() {
             )}
             {mode !== "forgot" && (
               <>
-                <label className="block text-sm font-semibold">
-                  {mode === "recovery" ? "Nova senha" : "Senha"}
-                  <input
-                    type="password"
-                    required
-                    minLength={6}
-                    autoComplete={mode === "login" ? "current-password" : "new-password"}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="mt-2 w-full rounded-xl border border-[#dedfd6] px-4 py-3 outline-none focus:border-[#8a9668] focus:ring-2 focus:ring-[#edf0e5]"
-                  />
-                </label>
+                <div className="block text-sm font-semibold">
+                  <label htmlFor="auth-password">
+                    {mode === "recovery" ? "Nova senha" : "Senha"}
+                  </label>
+                  <div className="relative mt-2">
+                    <input
+                      id="auth-password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      minLength={6}
+                      autoComplete={mode === "login" ? "current-password" : "new-password"}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="w-full rounded-xl border border-[#dedfd6] px-4 py-3 pr-12 outline-none focus:border-[#8a9668] focus:ring-2 focus:ring-[#edf0e5]"
+                    />
+                    <button
+                      type="button"
+                      className="auth-password-toggle absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 hover:text-[#292b25]"
+                      aria-label={showPassword ? "Ocultar senha" : "Ver senha"}
+                      aria-pressed={showPassword}
+                      onClick={() => setShowPassword((visible) => !visible)}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
                 {mode === "login" && (
                   <button
                     type="button"
@@ -205,18 +259,30 @@ function AuthPage() {
                   </button>
                 )}
                 {mode === "recovery" && (
-                  <label className="block text-sm font-semibold">
-                    Confirme a nova senha
-                    <input
-                      type="password"
-                      required
-                      minLength={6}
-                      autoComplete="new-password"
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                      className="mt-2 w-full rounded-xl border border-[#dedfd6] px-4 py-3 outline-none focus:border-[#8a9668] focus:ring-2 focus:ring-[#edf0e5]"
-                    />
-                  </label>
+                  <div className="block text-sm font-semibold">
+                    <label htmlFor="auth-confirm-password">Confirme a nova senha</label>
+                    <div className="relative mt-2">
+                      <input
+                        id="auth-confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        className="w-full rounded-xl border border-[#dedfd6] px-4 py-3 pr-12 outline-none focus:border-[#8a9668] focus:ring-2 focus:ring-[#edf0e5]"
+                      />
+                      <button
+                        type="button"
+                        className="auth-password-toggle absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 hover:text-[#292b25]"
+                        aria-label={showConfirmPassword ? "Ocultar senha" : "Ver senha"}
+                        aria-pressed={showConfirmPassword}
+                        onClick={() => setShowConfirmPassword((visible) => !visible)}
+                      >
+                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
                 )}
               </>
             )}
@@ -295,28 +361,6 @@ function AuthMark({ tone }: { tone: "dark" | "light" }) {
         <circle cx="27.2" cy="20.3" r="1.6" className="auth-mark-accent" />
       </svg>
     </span>
-  );
-}
-
-function AuthArtwork() {
-  return (
-    <div className="auth-artwork" aria-hidden="true">
-      <svg viewBox="0 0 620 560" fill="none">
-        <g className="auth-artwork-orbit">
-          <ellipse cx="312" cy="283" rx="230" ry="126" transform="rotate(-31 312 283)" />
-          <ellipse cx="312" cy="283" rx="184" ry="95" transform="rotate(34 312 283)" />
-          <ellipse cx="312" cy="283" rx="130" ry="210" transform="rotate(72 312 283)" />
-          <path d="M60 345c84-20 124-114 206-146 87-34 151 40 234 11 31-11 55-33 77-58" />
-        </g>
-        <circle className="auth-artwork-point" cx="153" cy="184" r="4" />
-        <circle
-          className="auth-artwork-point auth-artwork-point-secondary"
-          cx="490"
-          cy="333"
-          r="2.5"
-        />
-      </svg>
-    </div>
   );
 }
 
