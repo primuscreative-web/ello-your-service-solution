@@ -18,8 +18,16 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as StudioIndexRouteImport } from './routes/studio.index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as StudioSettingsRouteImport } from './routes/studio.settings'
+import { Route as StudioPrecificacaoRouteImport } from './routes/studio.precificacao'
+import { Route as StudioPedidosRouteImport } from './routes/studio.pedidos'
+import { Route as StudioMetricasRouteImport } from './routes/studio.metricas'
+import { Route as StudioFinanceiroRouteImport } from './routes/studio.financeiro'
+import { Route as StudioEntregasRouteImport } from './routes/studio.entregas'
+import { Route as StudioCrmRouteImport } from './routes/studio.crm'
 import { Route as StudioCatalogRouteImport } from './routes/studio.catalog'
+import { Route as StudioCaixaRouteImport } from './routes/studio.caixa'
 import { Route as StudioAgendaRouteImport } from './routes/studio.agenda'
+import { Route as PedidoTokenRouteImport } from './routes/pedido.$token'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
 import { Route as AppWalletRouteImport } from './routes/app.wallet'
@@ -35,14 +43,21 @@ import { Route as AppElloLinkRouteImport } from './routes/app.ello-link'
 import { Route as AppBusinessRouteImport } from './routes/app.business'
 import { Route as AppAgendaRouteImport } from './routes/app.agenda'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
+import { Route as CBusinessSlugCampaignSlugRouteImport } from './routes/c.$businessSlug.$campaignSlug'
 import { Route as AppQuoteIdRouteImport } from './routes/app.quote.$id'
 import { Route as AppProfessionalIdRouteImport } from './routes/app.professional.$id'
 import { Route as AppBusinessStatisticsRouteImport } from './routes/app.business.statistics'
 import { Route as AppBusinessReviewsRouteImport } from './routes/app.business.reviews'
 import { Route as AppBusinessQuotesRouteImport } from './routes/app.business.quotes'
 import { Route as AppBusinessClientsRouteImport } from './routes/app.business.clients'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
+import { Route as ApiStripeCheckoutRouteImport } from './routes/api.stripe.checkout'
+import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas.webhook'
+import { Route as ApiAsaasChargeRouteImport } from './routes/api.asaas.charge'
 import { Route as AppProfessionalIdScheduleRouteImport } from './routes/app.professional.$id_.schedule'
 import { Route as AppProfessionalIdQuoteRouteImport } from './routes/app.professional.$id_.quote'
+import { Route as ApiV1OrdersExternalRouteImport } from './routes/api.v1.orders.external'
+import { Route as ApiStripeConnectOnboardingRouteImport } from './routes/api.stripe.connect.onboarding'
 
 const StudioRoute = StudioRouteImport.update({
   id: '/studio',
@@ -89,15 +104,55 @@ const StudioSettingsRoute = StudioSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => StudioRoute,
 } as any)
+const StudioPrecificacaoRoute = StudioPrecificacaoRouteImport.update({
+  id: '/precificacao',
+  path: '/precificacao',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioPedidosRoute = StudioPedidosRouteImport.update({
+  id: '/pedidos',
+  path: '/pedidos',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioMetricasRoute = StudioMetricasRouteImport.update({
+  id: '/metricas',
+  path: '/metricas',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioFinanceiroRoute = StudioFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioEntregasRoute = StudioEntregasRouteImport.update({
+  id: '/entregas',
+  path: '/entregas',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioCrmRoute = StudioCrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
+  getParentRoute: () => StudioRoute,
+} as any)
 const StudioCatalogRoute = StudioCatalogRouteImport.update({
   id: '/catalog',
   path: '/catalog',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioCaixaRoute = StudioCaixaRouteImport.update({
+  id: '/caixa',
+  path: '/caixa',
   getParentRoute: () => StudioRoute,
 } as any)
 const StudioAgendaRoute = StudioAgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
   getParentRoute: () => StudioRoute,
+} as any)
+const PedidoTokenRoute = PedidoTokenRouteImport.update({
+  id: '/pedido/$token',
+  path: '/pedido/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PSlugRoute = PSlugRouteImport.update({
   id: '/p/$slug',
@@ -174,6 +229,12 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const CBusinessSlugCampaignSlugRoute =
+  CBusinessSlugCampaignSlugRouteImport.update({
+    id: '/c/$businessSlug/$campaignSlug',
+    path: '/c/$businessSlug/$campaignSlug',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppQuoteIdRoute = AppQuoteIdRouteImport.update({
   id: '/quote/$id',
   path: '/quote/$id',
@@ -204,6 +265,26 @@ const AppBusinessClientsRoute = AppBusinessClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AppBusinessRoute,
 } as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStripeCheckoutRoute = ApiStripeCheckoutRouteImport.update({
+  id: '/api/stripe/checkout',
+  path: '/api/stripe/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAsaasWebhookRoute = ApiAsaasWebhookRouteImport.update({
+  id: '/api/asaas/webhook',
+  path: '/api/asaas/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAsaasChargeRoute = ApiAsaasChargeRouteImport.update({
+  id: '/api/asaas/charge',
+  path: '/api/asaas/charge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppProfessionalIdScheduleRoute =
   AppProfessionalIdScheduleRouteImport.update({
     id: '/professional/$id_/schedule',
@@ -215,6 +296,17 @@ const AppProfessionalIdQuoteRoute = AppProfessionalIdQuoteRouteImport.update({
   path: '/professional/$id/quote',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiV1OrdersExternalRoute = ApiV1OrdersExternalRouteImport.update({
+  id: '/api/v1/orders/external',
+  path: '/api/v1/orders/external',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStripeConnectOnboardingRoute =
+  ApiStripeConnectOnboardingRouteImport.update({
+    id: '/api/stripe/connect/onboarding',
+    path: '/api/stripe/connect/onboarding',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -238,17 +330,32 @@ export interface FileRoutesByFullPath {
   '/app/wallet': typeof AppWalletRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/p/$slug': typeof PSlugRoute
+  '/pedido/$token': typeof PedidoTokenRoute
   '/studio/agenda': typeof StudioAgendaRoute
+  '/studio/caixa': typeof StudioCaixaRoute
   '/studio/catalog': typeof StudioCatalogRoute
+  '/studio/crm': typeof StudioCrmRoute
+  '/studio/entregas': typeof StudioEntregasRoute
+  '/studio/financeiro': typeof StudioFinanceiroRoute
+  '/studio/metricas': typeof StudioMetricasRoute
+  '/studio/pedidos': typeof StudioPedidosRoute
+  '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/settings': typeof StudioSettingsRoute
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
+  '/api/asaas/charge': typeof ApiAsaasChargeRoute
+  '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
+  '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/business/reviews': typeof AppBusinessReviewsRoute
   '/app/business/statistics': typeof AppBusinessStatisticsRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
   '/app/quote/$id': typeof AppQuoteIdRoute
+  '/c/$businessSlug/$campaignSlug': typeof CBusinessSlugCampaignSlugRoute
+  '/api/stripe/connect/onboarding': typeof ApiStripeConnectOnboardingRoute
+  '/api/v1/orders/external': typeof ApiV1OrdersExternalRoute
   '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
   '/app/professional/$id/schedule': typeof AppProfessionalIdScheduleRoute
 }
@@ -272,17 +379,32 @@ export interface FileRoutesByTo {
   '/app/wallet': typeof AppWalletRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/p/$slug': typeof PSlugRoute
+  '/pedido/$token': typeof PedidoTokenRoute
   '/studio/agenda': typeof StudioAgendaRoute
+  '/studio/caixa': typeof StudioCaixaRoute
   '/studio/catalog': typeof StudioCatalogRoute
+  '/studio/crm': typeof StudioCrmRoute
+  '/studio/entregas': typeof StudioEntregasRoute
+  '/studio/financeiro': typeof StudioFinanceiroRoute
+  '/studio/metricas': typeof StudioMetricasRoute
+  '/studio/pedidos': typeof StudioPedidosRoute
+  '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/settings': typeof StudioSettingsRoute
   '/app': typeof AppIndexRoute
   '/studio': typeof StudioIndexRoute
+  '/api/asaas/charge': typeof ApiAsaasChargeRoute
+  '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
+  '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/business/reviews': typeof AppBusinessReviewsRoute
   '/app/business/statistics': typeof AppBusinessStatisticsRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
   '/app/quote/$id': typeof AppQuoteIdRoute
+  '/c/$businessSlug/$campaignSlug': typeof CBusinessSlugCampaignSlugRoute
+  '/api/stripe/connect/onboarding': typeof ApiStripeConnectOnboardingRoute
+  '/api/v1/orders/external': typeof ApiV1OrdersExternalRoute
   '/app/professional/$id/quote': typeof AppProfessionalIdQuoteRoute
   '/app/professional/$id/schedule': typeof AppProfessionalIdScheduleRoute
 }
@@ -309,17 +431,32 @@ export interface FileRoutesById {
   '/app/wallet': typeof AppWalletRoute
   '/loja/$slug': typeof LojaSlugRoute
   '/p/$slug': typeof PSlugRoute
+  '/pedido/$token': typeof PedidoTokenRoute
   '/studio/agenda': typeof StudioAgendaRoute
+  '/studio/caixa': typeof StudioCaixaRoute
   '/studio/catalog': typeof StudioCatalogRoute
+  '/studio/crm': typeof StudioCrmRoute
+  '/studio/entregas': typeof StudioEntregasRoute
+  '/studio/financeiro': typeof StudioFinanceiroRoute
+  '/studio/metricas': typeof StudioMetricasRoute
+  '/studio/pedidos': typeof StudioPedidosRoute
+  '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/settings': typeof StudioSettingsRoute
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
+  '/api/asaas/charge': typeof ApiAsaasChargeRoute
+  '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
+  '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/business/reviews': typeof AppBusinessReviewsRoute
   '/app/business/statistics': typeof AppBusinessStatisticsRoute
   '/app/professional/$id': typeof AppProfessionalIdRoute
   '/app/quote/$id': typeof AppQuoteIdRoute
+  '/c/$businessSlug/$campaignSlug': typeof CBusinessSlugCampaignSlugRoute
+  '/api/stripe/connect/onboarding': typeof ApiStripeConnectOnboardingRoute
+  '/api/v1/orders/external': typeof ApiV1OrdersExternalRoute
   '/app/professional/$id_/quote': typeof AppProfessionalIdQuoteRoute
   '/app/professional/$id_/schedule': typeof AppProfessionalIdScheduleRoute
 }
@@ -347,17 +484,32 @@ export interface FileRouteTypes {
     | '/app/wallet'
     | '/loja/$slug'
     | '/p/$slug'
+    | '/pedido/$token'
     | '/studio/agenda'
+    | '/studio/caixa'
     | '/studio/catalog'
+    | '/studio/crm'
+    | '/studio/entregas'
+    | '/studio/financeiro'
+    | '/studio/metricas'
+    | '/studio/pedidos'
+    | '/studio/precificacao'
     | '/studio/settings'
     | '/app/'
     | '/studio/'
+    | '/api/asaas/charge'
+    | '/api/asaas/webhook'
+    | '/api/stripe/checkout'
+    | '/api/stripe/webhook'
     | '/app/business/clients'
     | '/app/business/quotes'
     | '/app/business/reviews'
     | '/app/business/statistics'
     | '/app/professional/$id'
     | '/app/quote/$id'
+    | '/c/$businessSlug/$campaignSlug'
+    | '/api/stripe/connect/onboarding'
+    | '/api/v1/orders/external'
     | '/app/professional/$id/quote'
     | '/app/professional/$id/schedule'
   fileRoutesByTo: FileRoutesByTo
@@ -381,17 +533,32 @@ export interface FileRouteTypes {
     | '/app/wallet'
     | '/loja/$slug'
     | '/p/$slug'
+    | '/pedido/$token'
     | '/studio/agenda'
+    | '/studio/caixa'
     | '/studio/catalog'
+    | '/studio/crm'
+    | '/studio/entregas'
+    | '/studio/financeiro'
+    | '/studio/metricas'
+    | '/studio/pedidos'
+    | '/studio/precificacao'
     | '/studio/settings'
     | '/app'
     | '/studio'
+    | '/api/asaas/charge'
+    | '/api/asaas/webhook'
+    | '/api/stripe/checkout'
+    | '/api/stripe/webhook'
     | '/app/business/clients'
     | '/app/business/quotes'
     | '/app/business/reviews'
     | '/app/business/statistics'
     | '/app/professional/$id'
     | '/app/quote/$id'
+    | '/c/$businessSlug/$campaignSlug'
+    | '/api/stripe/connect/onboarding'
+    | '/api/v1/orders/external'
     | '/app/professional/$id/quote'
     | '/app/professional/$id/schedule'
   id:
@@ -417,17 +584,32 @@ export interface FileRouteTypes {
     | '/app/wallet'
     | '/loja/$slug'
     | '/p/$slug'
+    | '/pedido/$token'
     | '/studio/agenda'
+    | '/studio/caixa'
     | '/studio/catalog'
+    | '/studio/crm'
+    | '/studio/entregas'
+    | '/studio/financeiro'
+    | '/studio/metricas'
+    | '/studio/pedidos'
+    | '/studio/precificacao'
     | '/studio/settings'
     | '/app/'
     | '/studio/'
+    | '/api/asaas/charge'
+    | '/api/asaas/webhook'
+    | '/api/stripe/checkout'
+    | '/api/stripe/webhook'
     | '/app/business/clients'
     | '/app/business/quotes'
     | '/app/business/reviews'
     | '/app/business/statistics'
     | '/app/professional/$id'
     | '/app/quote/$id'
+    | '/c/$businessSlug/$campaignSlug'
+    | '/api/stripe/connect/onboarding'
+    | '/api/v1/orders/external'
     | '/app/professional/$id_/quote'
     | '/app/professional/$id_/schedule'
   fileRoutesById: FileRoutesById
@@ -441,6 +623,14 @@ export interface RootRouteChildren {
   StudioRoute: typeof StudioRouteWithChildren
   LojaSlugRoute: typeof LojaSlugRoute
   PSlugRoute: typeof PSlugRoute
+  PedidoTokenRoute: typeof PedidoTokenRoute
+  ApiAsaasChargeRoute: typeof ApiAsaasChargeRoute
+  ApiAsaasWebhookRoute: typeof ApiAsaasWebhookRoute
+  ApiStripeCheckoutRoute: typeof ApiStripeCheckoutRoute
+  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  CBusinessSlugCampaignSlugRoute: typeof CBusinessSlugCampaignSlugRoute
+  ApiStripeConnectOnboardingRoute: typeof ApiStripeConnectOnboardingRoute
+  ApiV1OrdersExternalRoute: typeof ApiV1OrdersExternalRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -508,11 +698,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioSettingsRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/studio/precificacao': {
+      id: '/studio/precificacao'
+      path: '/precificacao'
+      fullPath: '/studio/precificacao'
+      preLoaderRoute: typeof StudioPrecificacaoRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/pedidos': {
+      id: '/studio/pedidos'
+      path: '/pedidos'
+      fullPath: '/studio/pedidos'
+      preLoaderRoute: typeof StudioPedidosRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/metricas': {
+      id: '/studio/metricas'
+      path: '/metricas'
+      fullPath: '/studio/metricas'
+      preLoaderRoute: typeof StudioMetricasRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/financeiro': {
+      id: '/studio/financeiro'
+      path: '/financeiro'
+      fullPath: '/studio/financeiro'
+      preLoaderRoute: typeof StudioFinanceiroRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/entregas': {
+      id: '/studio/entregas'
+      path: '/entregas'
+      fullPath: '/studio/entregas'
+      preLoaderRoute: typeof StudioEntregasRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/crm': {
+      id: '/studio/crm'
+      path: '/crm'
+      fullPath: '/studio/crm'
+      preLoaderRoute: typeof StudioCrmRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/studio/catalog': {
       id: '/studio/catalog'
       path: '/catalog'
       fullPath: '/studio/catalog'
       preLoaderRoute: typeof StudioCatalogRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/caixa': {
+      id: '/studio/caixa'
+      path: '/caixa'
+      fullPath: '/studio/caixa'
+      preLoaderRoute: typeof StudioCaixaRouteImport
       parentRoute: typeof StudioRoute
     }
     '/studio/agenda': {
@@ -521,6 +760,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/studio/agenda'
       preLoaderRoute: typeof StudioAgendaRouteImport
       parentRoute: typeof StudioRoute
+    }
+    '/pedido/$token': {
+      id: '/pedido/$token'
+      path: '/pedido/$token'
+      fullPath: '/pedido/$token'
+      preLoaderRoute: typeof PedidoTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/p/$slug': {
       id: '/p/$slug'
@@ -627,6 +873,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/c/$businessSlug/$campaignSlug': {
+      id: '/c/$businessSlug/$campaignSlug'
+      path: '/c/$businessSlug/$campaignSlug'
+      fullPath: '/c/$businessSlug/$campaignSlug'
+      preLoaderRoute: typeof CBusinessSlugCampaignSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/quote/$id': {
       id: '/app/quote/$id'
       path: '/quote/$id'
@@ -669,6 +922,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBusinessClientsRouteImport
       parentRoute: typeof AppBusinessRoute
     }
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stripe/checkout': {
+      id: '/api/stripe/checkout'
+      path: '/api/stripe/checkout'
+      fullPath: '/api/stripe/checkout'
+      preLoaderRoute: typeof ApiStripeCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/asaas/webhook': {
+      id: '/api/asaas/webhook'
+      path: '/api/asaas/webhook'
+      fullPath: '/api/asaas/webhook'
+      preLoaderRoute: typeof ApiAsaasWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/asaas/charge': {
+      id: '/api/asaas/charge'
+      path: '/api/asaas/charge'
+      fullPath: '/api/asaas/charge'
+      preLoaderRoute: typeof ApiAsaasChargeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/professional/$id_/schedule': {
       id: '/app/professional/$id_/schedule'
       path: '/professional/$id/schedule'
@@ -682,6 +963,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/professional/$id/quote'
       preLoaderRoute: typeof AppProfessionalIdQuoteRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/v1/orders/external': {
+      id: '/api/v1/orders/external'
+      path: '/api/v1/orders/external'
+      fullPath: '/api/v1/orders/external'
+      preLoaderRoute: typeof ApiV1OrdersExternalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stripe/connect/onboarding': {
+      id: '/api/stripe/connect/onboarding'
+      path: '/api/stripe/connect/onboarding'
+      fullPath: '/api/stripe/connect/onboarding'
+      preLoaderRoute: typeof ApiStripeConnectOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -750,14 +1045,28 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface StudioRouteChildren {
   StudioAgendaRoute: typeof StudioAgendaRoute
+  StudioCaixaRoute: typeof StudioCaixaRoute
   StudioCatalogRoute: typeof StudioCatalogRoute
+  StudioCrmRoute: typeof StudioCrmRoute
+  StudioEntregasRoute: typeof StudioEntregasRoute
+  StudioFinanceiroRoute: typeof StudioFinanceiroRoute
+  StudioMetricasRoute: typeof StudioMetricasRoute
+  StudioPedidosRoute: typeof StudioPedidosRoute
+  StudioPrecificacaoRoute: typeof StudioPrecificacaoRoute
   StudioSettingsRoute: typeof StudioSettingsRoute
   StudioIndexRoute: typeof StudioIndexRoute
 }
 
 const StudioRouteChildren: StudioRouteChildren = {
   StudioAgendaRoute: StudioAgendaRoute,
+  StudioCaixaRoute: StudioCaixaRoute,
   StudioCatalogRoute: StudioCatalogRoute,
+  StudioCrmRoute: StudioCrmRoute,
+  StudioEntregasRoute: StudioEntregasRoute,
+  StudioFinanceiroRoute: StudioFinanceiroRoute,
+  StudioMetricasRoute: StudioMetricasRoute,
+  StudioPedidosRoute: StudioPedidosRoute,
+  StudioPrecificacaoRoute: StudioPrecificacaoRoute,
   StudioSettingsRoute: StudioSettingsRoute,
   StudioIndexRoute: StudioIndexRoute,
 }
@@ -774,6 +1083,14 @@ const rootRouteChildren: RootRouteChildren = {
   StudioRoute: StudioRouteWithChildren,
   LojaSlugRoute: LojaSlugRoute,
   PSlugRoute: PSlugRoute,
+  PedidoTokenRoute: PedidoTokenRoute,
+  ApiAsaasChargeRoute: ApiAsaasChargeRoute,
+  ApiAsaasWebhookRoute: ApiAsaasWebhookRoute,
+  ApiStripeCheckoutRoute: ApiStripeCheckoutRoute,
+  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  CBusinessSlugCampaignSlugRoute: CBusinessSlugCampaignSlugRoute,
+  ApiStripeConnectOnboardingRoute: ApiStripeConnectOnboardingRoute,
+  ApiV1OrdersExternalRoute: ApiV1OrdersExternalRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

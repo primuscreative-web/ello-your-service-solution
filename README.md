@@ -1,20 +1,49 @@
-# LocalHub
+# ELLO (LocalHub)
 
-LocalHub gives local businesses one place to present services and receive appointment requests.
+ELLO é uma plataforma de gestão operacional e presença digital para negócios locais (alimentação, beleza, saúde, barbearia, pet, educação e serviços locais).
 
-## Run locally
+Permite que os negócios apresentem seus serviços e cardápios com link próprio (`/loja/$slug`), recebam pedidos e agendamentos com taxa zero de comissão, controlem caixa (PDV físico), motoboys, equipe, promoções e métricas em um só painel (`/studio`).
+
+## Stack Tecnológica
+
+- **Frontend & SSR**: React 19, TanStack Start, TanStack Router, TanStack React Query, Nitro, Vite 8
+- **Estilização**: Tailwind CSS v4, Radix UI Primitives, Lucide Icons, Recharts
+- **Banco de Dados & Autenticação**: Supabase (PostgreSQL com 100% RLS nas tabelas `localhub_*`, Auth e Storage)
+- **Infraestrutura**: Vercel (`ello-app`), Supabase Cloud (`ELLO1` — ref: `fahrhrcxzcnnrhjavrfk`)
+- **Produção**: `https://ello.app.br`
+
+## Execução Local
 
 ```sh
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. Create a business, add services from the studio catalog, then open its page preview and submit an appointment request. Requests appear in the studio agenda, where they can be confirmed or declined.
+Abra a URL indicada pelo Vite no terminal.
 
-## Current data storage
+## Testes e Validação
 
-The current interface stores business details, services, and appointments in the browser's local storage. Data is limited to that browser and device, and public page URLs are previews rather than pages available to other visitors.
+```sh
+# Executar todos os testes unitários (agendamentos, cupons, navegação e carteira)
+npm test
 
-The connected Supabase project has the LocalHub schema, row-level security policies, and restricted API grants. The interface has not yet moved its business and appointment data from local storage to Supabase. Previous ELLO migrations are archived under `supabase/legacy-migrations/` and must not be applied to the new project.
+# Verificar integridade e correspondência com o alvo de produção
+npm run verify:production-target
 
-The original Stitch screens and visual references are preserved under `public/localhub/`.
+# Compilação e tipagem TypeScript
+npx tsc --noEmit
+```
+
+## Deploy em Produção
+
+```sh
+npm run deploy:prod
+```
+
+Este comando executa a verificação prévia (`scripts/verify-production-target.mjs`) que confere o projeto Vercel, o vínculo do Supabase CLI e as variáveis de ambiente antes de disparar o deploy oficial.
+
+## Segurança e Arquitetura
+
+- **Row Level Security (RLS)**: Todas as tabelas operacionais utilizam RLS no schema `public`.
+- **Integridade Server-Side**: Operações financeiras, cupons e transições de pedidos são auditadas e calculadas no banco de dados via RPCs atômicas com `SECURITY DEFINER`.
+- **Credenciais Sensíveis**: Tokens de ingestão (`FOOD_ORDER_INGESTION_TOKEN`), chaves de serviço do Supabase e segredos de webhook (Stripe/Asaas) ficam restritos ao servidor e nunca são expostos em variáveis públicas `VITE_`.

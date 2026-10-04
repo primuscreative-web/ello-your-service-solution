@@ -1,46 +1,109 @@
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 import {
   CalendarDays,
+  Bike,
   ExternalLink,
   LayoutDashboard,
   Package,
   Settings2,
   LogOut,
+  ClipboardList,
+  BarChart3,
+  Calculator,
+  UsersRound,
+  HeartHandshake,
+  WalletCards,
 } from "lucide-react";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-
-const navigation = [
-  { to: "/studio", label: "Visão geral", icon: LayoutDashboard, exact: true },
-  { to: "/studio/catalog", label: "Catálogo", icon: Package },
-  { to: "/studio/agenda", label: "Agendamentos", icon: CalendarDays },
-  { to: "/studio/settings", label: "Minha página", icon: Settings2 },
-] as const;
+import { getBusinessCopy } from "@/lib/localhub-business";
 
 export function StudioLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const { business, user } = useLocalHub();
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const { business, user, isStaffAccount } = useLocalHub();
+  const businessCopy = getBusinessCopy(business?.category);
+  const isFoodBusiness = business?.category === "alimentacao";
   const navigate = useNavigate();
+  const ownerNavigation = [
+    { to: "/studio", label: "Visão geral", icon: LayoutDashboard, exact: true },
+    { to: "/studio/catalog", label: businessCopy.offerTitle, icon: Package },
+    {
+      to: isFoodBusiness ? "/studio/pedidos" : "/studio/agenda",
+      label: isFoodBusiness ? "Pedidos" : "Agendamentos",
+      icon: isFoodBusiness ? ClipboardList : CalendarDays,
+    },
+    ...(isFoodBusiness ? [{ to: "/studio/entregas" as const, label: "Motoboys", icon: Bike }] : []),
+    ...(isFoodBusiness
+      ? [{ to: "/studio/metricas" as const, label: "Métricas", icon: BarChart3 }]
+      : []),
+    ...(isFoodBusiness
+      ? [{ to: "/studio/precificacao" as const, label: "Custos e preços", icon: Calculator }]
+      : []),
+    ...(isFoodBusiness
+      ? [
+          { to: "/studio/crm" as const, label: "Clientes e promoções", icon: HeartHandshake },
+          { to: "/studio/caixa" as const, label: "Frente de caixa", icon: WalletCards },
+        ]
+      : []),
+    { to: "/studio/financeiro" as const, label: "Financeiro e carteira", icon: WalletCards },
+    ...(!isFoodBusiness
+      ? [
+          {
+            to: "/studio/settings" as const,
+            hash: "profissionais",
+            label: "Profissionais",
+            icon: UsersRound,
+          },
+        ]
+      : []),
+    { to: "/studio/settings", label: "Minha página", icon: Settings2 },
+  ] as const;
+  const navigation = isStaffAccount
+    ? [{ to: "/studio/agenda" as const, label: "Minha agenda", icon: CalendarDays }]
+    : ownerNavigation;
+
+  useEffect(() => {
+    if (isStaffAccount && pathname !== "/studio/agenda") {
+      void navigate({ to: "/studio/agenda", replace: true });
+    }
+  }, [isStaffAccount, navigate, pathname]);
+
+  if (isStaffAccount && pathname !== "/studio/agenda") {
+    return (
+      <div className="grid min-h-screen place-items-center text-sm text-slate-500">
+        Abrindo sua agenda…
+      </div>
+    );
+  }
 
   return (
-    <div className="ello-studio min-h-screen bg-[#f5f4ef] text-[#292b25]">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[252px] flex-col border-r border-[#e6e5dd] bg-[#fbfaf7] px-5 py-7 lg:flex">
+    <div className="ello-studio min-h-screen bg-[#f8f7f4] text-[#292b25]">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[252px] flex-col border-r border-[#34352f] bg-[#292b25] px-5 py-7 text-[#f7f6ef] lg:flex">
         <Link to="/" className="mb-10 flex items-center gap-3 px-2">
           <span className="ello-brand-mark">e</span>
           <span className="text-xl font-semibold tracking-[-.06em]">ello</span>
         </Link>
-        <div className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+        <div className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#b7b9ac]">
           Seu espaço
         </div>
         <nav className="space-y-1">
           {navigation.map(({ to, label, icon: Icon, ...options }) => {
-            const active =
-              "exact" in options && options.exact ? pathname === to : pathname.startsWith(to);
+            const targetHash = "hash" in options ? options.hash : undefined;
+            const active = targetHash
+              ? pathname === to && hash.includes(targetHash)
+              : to === "/studio/settings"
+                ? pathname === to && !hash.includes("profissionais")
+                : "exact" in options && options.exact
+                  ? pathname === to
+                  : pathname.startsWith(to);
             return (
               <Link
-                key={to}
+                key={to + (targetHash ? `#${targetHash}` : "")}
                 to={to}
-                className={`flex min-h-11 items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition ${active ? "bg-[#edf0e5] text-[#535d38]" : "text-[#696b64] hover:bg-[#f0f0e9] hover:text-[#292b25]"}`}
+                hash={targetHash}
+                className={`flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${active ? "bg-[#d0f25a] text-[#292b25] shadow-sm" : "text-[#dedfd8] hover:bg-[#3a3c34] hover:text-white"}`}
               >
                 <Icon size={18} strokeWidth={active ? 2.4 : 1.9} />
                 {label}
@@ -48,16 +111,16 @@ export function StudioLayout() {
             );
           })}
         </nav>
-        <div className="mt-auto rounded-xl border border-[#e6e5dd] bg-[#f4f4ed] p-4">
-          <div className="text-xs font-semibold text-[#35372f]">Prévia da sua página</div>
-          <p className="mt-1 text-xs leading-relaxed text-[#777970]">
+        <div className="mt-auto rounded-2xl border border-[#484a40] bg-[#32342d] p-4">
+          <div className="text-xs font-semibold text-[#f4f3ea]">Prévia da sua página</div>
+          <p className="mt-1 text-xs leading-relaxed text-[#c9cbc1]">
             Confira como sua página aparece para os clientes.
           </p>
           {business && (
             <Link
               to="/loja/$slug"
               params={{ slug: business.slug }}
-              className="mt-3 inline-flex min-h-9 items-center gap-2 text-xs font-semibold text-[#667448]"
+              className="mt-3 inline-flex min-h-9 items-center gap-2 text-xs font-semibold text-[#d0f25a]"
             >
               Abrir prévia <ExternalLink size={13} />
             </Link>
@@ -66,7 +129,7 @@ export function StudioLayout() {
       </aside>
 
       <div className="lg:pl-[252px]">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[#e6e5dd] bg-[#fbfaf7]/95 px-5 backdrop-blur-md sm:px-8">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[#e8e6df] bg-[#fbfaf7]/95 px-5 backdrop-blur-md sm:px-8">
           <div className="flex items-center gap-2 lg:hidden">
             <span className="ello-brand-mark ello-brand-mark-small">e</span>
             <b className="font-semibold tracking-[-.04em]">ello</b>
@@ -101,18 +164,27 @@ export function StudioLayout() {
         </header>
         <nav
           aria-label="Navegação do painel"
-          className="flex gap-1 overflow-x-auto border-b border-[#e6e5dd] bg-[#fbfaf7] px-3 py-2 lg:hidden"
+          className="flex gap-1 overflow-x-auto border-b border-[#34352f] bg-[#292b25] px-3 py-2 lg:hidden"
         >
-          {navigation.map(({ to, label, icon: Icon }) => (
-            <Link
-              key={to}
-              to={to}
-              className={`flex min-h-10 shrink-0 items-center gap-2 rounded-[10px] px-3 py-2 text-xs font-semibold ${pathname === to ? "bg-[#edf0e5] text-[#535d38]" : "text-slate-500"}`}
-            >
-              <Icon size={15} />
-              {label}
-            </Link>
-          ))}
+          {navigation.map(({ to, label, icon: Icon, ...options }) => {
+            const targetHash = "hash" in options ? options.hash : undefined;
+            const active =
+              pathname === to &&
+              (targetHash
+                ? hash.includes(targetHash)
+                : !(to === "/studio/settings" && hash.includes("profissionais")));
+            return (
+              <Link
+                key={to + (targetHash ? `#${targetHash}` : "")}
+                to={to}
+                hash={targetHash}
+                className={`flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold ${active ? "bg-[#d0f25a] text-[#292b25]" : "text-[#dedfd8]"}`}
+              >
+                <Icon size={15} />
+                {label}
+              </Link>
+            );
+          })}
         </nav>
         <main className="mx-auto max-w-[1440px] p-5 sm:p-8 lg:p-10">
           <Outlet />

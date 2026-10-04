@@ -13,11 +13,15 @@ import {
 } from "lucide-react";
 import { PageTitle, primaryButtonClass } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
+import { getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
 
 export const Route = createFileRoute("/studio/")({ component: DashboardPage });
 
 function DashboardPage() {
-  const { business, services, bookings } = useLocalHub();
+  const { business, services, bookings, orders } = useLocalHub();
+  const copy = getBusinessCopy(business?.category);
+  const hasAppointments = supportsAppointments(business?.category);
+  const isFoodBusiness = business?.category === "alimentacao";
   const today = new Date().toISOString().slice(0, 10);
   const todayBookings = bookings.filter(
     (booking) => booking.date === today && booking.status !== "cancelled",
@@ -39,7 +43,7 @@ function DashboardPage() {
         action={
           <Link to="/studio/catalog" className={primaryButtonClass}>
             <Plus size={16} />
-            Adicionar serviço
+            {copy.addOffer}
           </Link>
         }
       />
@@ -74,20 +78,30 @@ function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
-            label: "Agendamentos hoje",
-            value: todayBookings.length,
+            label: isFoodBusiness
+              ? "Pedidos recebidos"
+              : hasAppointments
+                ? `${capitalize(copy.bookings)} hoje`
+                : "Agendamentos hoje",
+            value: isFoodBusiness
+              ? orders.filter(
+                  (order) => new Date(order.createdAt).toDateString() === new Date().toDateString(),
+                ).length
+              : todayBookings.length,
             icon: CalendarDays,
             note: "Pedidos recebidos",
           },
           {
-            label: "Serviços ativos",
+            label: `${capitalize(copy.offers)} ativos`,
             value: services.filter((item) => item.active).length,
             icon: Package,
             note: "Visíveis na página",
           },
           {
-            label: "Pedidos aguardando",
-            value: bookings.filter((item) => item.status === "pending").length,
+            label: isFoodBusiness ? "Pedidos em andamento" : "Pedidos aguardando",
+            value: isFoodBusiness
+              ? orders.filter((order) => !["completed", "cancelled"].includes(order.status)).length
+              : bookings.filter((item) => item.status === "pending").length,
             icon: Clock3,
             note: "Precisam da sua atenção",
           },
@@ -107,16 +121,60 @@ function DashboardPage() {
         <section className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-bold">Próximos agendamentos</h2>
+              <h2 className="font-bold">
+                {isFoodBusiness
+                  ? "Pedidos recentes"
+                  : hasAppointments
+                    ? `${["consulta", "aula"].includes(copy.booking) ? "Próximas" : "Próximos"} ${copy.bookings}`
+                    : "Próximos agendamentos"}
+              </h2>
               <p className="mt-1 text-xs text-slate-400">
-                Pedidos feitos pelos clientes na sua página
+                {isFoodBusiness
+                  ? "Acompanhe preparo, retirada e entregas."
+                  : "Pedidos feitos pelos clientes na sua página"}
               </p>
             </div>
-            <Link to="/studio/agenda" className="text-xs font-bold text-[#667448]">
-              Ver agenda <ArrowUpRight size={14} className="inline" />
+            <Link
+              to={isFoodBusiness ? "/studio/pedidos" : "/studio/agenda"}
+              className="text-xs font-bold text-[#667448]"
+            >
+              {isFoodBusiness ? "Ver pedidos" : "Ver agenda"}{" "}
+              <ArrowUpRight size={14} className="inline" />
             </Link>
           </div>
-          {upcoming.length ? (
+          {isFoodBusiness ? (
+            orders.slice(0, 4).length ? (
+              <div className="mt-5 divide-y divide-slate-100">
+                {orders.slice(0, 4).map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between gap-3 py-4 first:pt-0"
+                  >
+                    <div>
+                      <div className="text-sm font-bold">
+                        #{order.number} · {order.customerName}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        {order.items.length} itens ·{" "}
+                        {new Date(order.createdAt).toLocaleTimeString("pt-BR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-[#667448]">{order.status}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-5 rounded-xl bg-slate-50 px-5 py-8 text-center">
+                <Package className="mx-auto text-slate-300" size={26} />
+                <p className="mt-3 text-sm font-semibold text-slate-600">
+                  Aguardando seu primeiro pedido
+                </p>
+              </div>
+            )
+          ) : upcoming.length ? (
             <div className="mt-5 divide-y divide-slate-100">
               {upcoming.map((booking) => (
                 <div
@@ -178,17 +236,19 @@ function DashboardPage() {
           <div className="mt-5 space-y-3">
             {[
               {
-                label: "Adicione seus serviços",
+                label: `Adicione ${copy.offers}`,
                 to: "/studio/catalog",
                 icon: Package,
                 done: services.length > 0,
               },
               { label: "Confira sua página", to: "/studio/settings", icon: Eye, done: false },
               {
-                label: "Receba seu primeiro horário",
-                to: "/studio/agenda",
+                label: hasAppointments
+                  ? "Receba seu primeiro horário"
+                  : "Receba seu primeiro pedido",
+                to: isFoodBusiness ? "/studio/pedidos" : "/studio/agenda",
                 icon: TrendingUp,
-                done: bookings.length > 0,
+                done: isFoodBusiness ? orders.length > 0 : bookings.length > 0,
               },
             ].map(({ label, to, icon: Icon, done }) => (
               <Link
@@ -225,4 +285,8 @@ function DashboardPage() {
       </div>
     </>
   );
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

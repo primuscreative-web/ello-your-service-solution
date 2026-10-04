@@ -78,7 +78,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       location.pathname === "/onboarding" ||
       location.pathname === "/studio" ||
       location.pathname.startsWith("/studio/") ||
-      location.pathname.startsWith("/loja/");
+      location.pathname.startsWith("/loja/") ||
+      location.pathname.startsWith("/pedido/") ||
+      location.pathname.startsWith("/c/");
     if (!allowed) {
       throw redirect({ href: "/" });
     }
@@ -87,6 +89,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
       { title: "ELLO — Seu negócio, no seu melhor lugar" },
       {
         name: "description",

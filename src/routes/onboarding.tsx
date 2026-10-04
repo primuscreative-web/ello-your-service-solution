@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   ArrowRight,
+  BadgeCheck,
   Clock3,
   Check,
   CarFront,
@@ -23,9 +24,9 @@ import { Field, inputClass, primaryButtonClass } from "@/components/localhub/ui"
 export const Route = createFileRoute("/onboarding")({ component: OnboardingPage });
 
 const categories = [
+  { id: "alimentacao", label: "Restaurantes/lanchonetes", icon: UtensilsCrossed },
   { id: "beleza", label: "Beleza & estética", icon: Sparkles },
   { id: "barbearia", label: "Barbearia", icon: Scissors },
-  { id: "alimentacao", label: "Alimentação", icon: UtensilsCrossed },
   { id: "saude", label: "Saúde e bem-estar", icon: HeartPulse },
   { id: "automotivo", label: "Automotivo", icon: CarFront },
   { id: "casa", label: "Casa e manutenção", icon: House },
@@ -40,8 +41,14 @@ const categoryBackgrounds: Record<string, string> = {
     "/localhub/luxury_aesthetic_nail_salon_and_beauty_spa_interior_elegant_aesthetic_with_pink/screen.png",
   barbearia:
     "/localhub/close_up_modern_clean_barbershop_showcase_before_and_after_grooming_comparison/screen.png",
-  alimentacao:
-    "/localhub/artisanal_gourmet_burger_restaurant_cozy_interior_and_rustic_ambiance_warm/screen.png",
+  alimentacao: "/images/showcase/hamburgueria.jpg",
+  saude: "/images/showcase/nutricionista.jpg",
+  pet: "/images/showcase/pet-sitter.jpg",
+  automotivo: "/images/ello/home-services-2-v2.webp",
+  casa: "/images/ello/home-services-3.webp",
+  educacao: "/images/ello/onboarding-agenda.webp",
+  "outros-servicos": "/images/ello/onboarding-client.webp",
+  "servicos-domesticos": "/images/ello/home-services-2.webp",
 };
 
 type SetupChoice = { id: string; label: string };
@@ -123,6 +130,7 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "odontologia", label: "Odontologia" },
       { id: "fisioterapia", label: "Fisioterapia" },
       { id: "psicologia", label: "Psicologia" },
+      { id: "psicanalista", label: "Psicanalista" },
       { id: "nutricao", label: "Nutrição" },
       { id: "terapias", label: "Terapias e bem-estar" },
     ],
@@ -260,9 +268,24 @@ const setupProfiles: Record<string, SetupProfile> = {
 const stepNavigationButtonClass =
   "flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50";
 
+function formatBrazilianPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (!digits) return "";
+  if (digits.length <= 2) return `(${digits}`;
+
+  const areaCode = digits.slice(0, 2);
+  const subscriber = digits.slice(2);
+  const prefixLength = digits.length > 10 ? 5 : 4;
+  const formattedSubscriber =
+    subscriber.length > prefixLength
+      ? `${subscriber.slice(0, prefixLength)}-${subscriber.slice(prefixLength)}`
+      : subscriber;
+
+  return `(${areaCode}) ${formattedSubscriber}`;
+}
+
 function OnboardingPage() {
   const { createBusiness, user, ready } = useLocalHub();
-  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [onboardingDetails, setOnboardingDetails] = useState<BusinessOnboardingDetails>({
     specialties: [],
@@ -280,6 +303,8 @@ function OnboardingPage() {
   const [slugEdited, setSlugEdited] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [creationCompleted, setCreationCompleted] = useState(false);
+  const pageSlug = createSlug(form.slug || form.name);
   const categoryBackground = categoryBackgrounds[form.category];
   const setupProfile = setupProfiles[form.category] ?? setupProfiles["outros-servicos"];
   const CategoryIcon = categories.find(({ id }) => id === form.category)?.icon ?? Wrench;
@@ -295,13 +320,18 @@ function OnboardingPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (step !== 5) return;
-    const slug = createSlug(form.slug || form.name);
+    if (step !== 5 || saving) return;
+    const slug = pageSlug;
     if (!slug) return setError("Escolha um nome para o endereço da sua página.");
+    if (![10, 11].includes(form.phone.replace(/\D/g, "").length)) {
+      setError("Informe um WhatsApp válido com DDD antes de continuar.");
+      setStep(3);
+      return;
+    }
     setSaving(true);
     try {
       await createBusiness({ ...form, slug, onboardingDetails });
-      await navigate({ to: "/studio" });
+      setCreationCompleted(true);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível criar sua página.");
     } finally {
@@ -312,8 +342,9 @@ function OnboardingPage() {
   if (!ready) return <div className="grid min-h-screen place-items-center">Carregando...</div>;
   if (!user) return <Navigate to="/auth" />;
 
-  const heading =
-    step === 1
+  const heading = creationCompleted
+    ? "Sua página está pronta."
+    : step === 1
       ? "Conte sobre seu negócio."
       : step === 2
         ? "Onde seu negócio atende?"
@@ -322,8 +353,9 @@ function OnboardingPage() {
           : step === 4
             ? setupProfile.specialtyTitle
             : setupProfile.serviceModeTitle;
-  const introduction =
-    step === 1
+  const introduction = creationCompleted
+    ? "Confira como seus clientes vão encontrar seu negócio ou siga para o painel para personalizar os detalhes."
+    : step === 1
       ? "Vamos preparar sua página para apresentar seus produtos e serviços."
       : step === 2
         ? "Informe a cidade e, se quiser, o endereço onde seu negócio funciona."
@@ -340,7 +372,7 @@ function OnboardingPage() {
         className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center transition-opacity duration-500"
         style={{
           backgroundImage: categoryBackground
-            ? `linear-gradient(115deg, rgba(245,244,239,.78), rgba(245,244,239,.88)), url("${categoryBackground}")`
+            ? `linear-gradient(115deg, rgba(245,244,239,.56), rgba(245,244,239,.68)), url("${categoryBackground}")`
             : "linear-gradient(115deg, #f5f4ef, #edf0e5)",
         }}
       />
@@ -350,23 +382,29 @@ function OnboardingPage() {
           ello
         </Link>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-semibold text-slate-400">PASSO {step} DE 5</span>
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            disabled={step === 1}
-            aria-label="Voltar para o passo 1"
-            title="Voltar para o passo 1"
-            className="flex size-8 items-center justify-center rounded-lg border border-[#e2e4d8] text-[#667448] transition hover:bg-[#edf0e5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a9668] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ArrowLeft size={15} aria-hidden="true" />
-          </button>
+          <span className="text-xs font-semibold text-slate-400">
+            {creationCompleted ? "PÁGINA CRIADA" : `PASSO ${step} DE 5`}
+          </span>
+          {!creationCompleted && (
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              disabled={step === 1}
+              aria-label="Voltar para o passo 1"
+              title="Voltar para o passo 1"
+              className="flex size-8 items-center justify-center rounded-lg border border-[#e2e4d8] text-[#667448] transition hover:bg-[#edf0e5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a9668] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ArrowLeft size={15} aria-hidden="true" />
+            </button>
+          )}
         </div>
       </header>
       <div className="relative mx-auto mt-8 grid max-w-5xl gap-10 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:gap-16 lg:pt-8">
         <section>
           <div className="mb-4 flex size-12 items-center justify-center rounded-xl border border-[#e2e4d8] bg-[#edf0e5] text-[#667448]">
-            {step === 1 ? (
+            {creationCompleted ? (
+              <BadgeCheck size={22} />
+            ) : step === 1 ? (
               <CategoryIcon size={22} />
             ) : step === 2 ? (
               <MapPin size={22} />
@@ -402,7 +440,47 @@ function OnboardingPage() {
           onSubmit={(event) => void submit(event)}
           className="rounded-2xl border border-white/70 bg-[#fbfaf7]/90 p-5 shadow-[0_24px_80px_-38px_rgba(40,44,31,.24)] backdrop-blur-xl sm:p-8"
         >
-          {step === 1 ? (
+          {creationCompleted ? (
+            <div className="space-y-6" role="status">
+              <div className="flex items-start gap-3 rounded-xl border border-[#dce4c8] bg-[#f1f4e9] p-4">
+                <BadgeCheck
+                  className="mt-0.5 shrink-0 text-[#687847]"
+                  size={22}
+                  aria-hidden="true"
+                />
+                <div>
+                  <p className="font-semibold text-[#34392b]">
+                    {form.name} já tem um espaço na ELLO
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    As informações do cadastro foram salvas. Você pode revisar serviços, fotos e
+                    horários no painel.
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-xl border border-[#e2e4d8] bg-white/70 p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-[#778253]">
+                  Link da sua página
+                </p>
+                <p className="mt-2 break-all text-sm font-semibold text-[#292b25]">
+                  ello.app.br/loja/{pageSlug}
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <a
+                  href={`/loja/${pageSlug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={stepNavigationButtonClass}
+                >
+                  Ver página pública <ArrowRight size={16} aria-hidden="true" />
+                </a>
+                <Link to="/studio" className={`${primaryButtonClass} w-full`}>
+                  Ir para meu painel <ArrowRight size={16} aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+          ) : step === 1 ? (
             <div className="space-y-6">
               <Field label="Nome do negócio">
                 <input
@@ -419,8 +497,11 @@ function OnboardingPage() {
                   className={inputClass}
                 />
               </Field>
-              <Field label="Tipo de negócio">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <fieldset className="min-w-0">
+                <legend className="mb-2 text-sm font-semibold text-slate-700">
+                  Tipo de negócio
+                </legend>
+                <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
                   {categories.map(({ id, label, icon: Icon }) => (
                     <button
                       type="button"
@@ -432,14 +513,14 @@ function OnboardingPage() {
                         update("category", id);
                       }}
                       aria-pressed={form.category === id}
-                      className={`flex min-h-14 items-center gap-2 rounded-[10px] border px-3 text-left text-xs font-semibold transition sm:text-sm ${form.category === id ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] text-slate-600 hover:bg-[#f7f7f1]"}`}
+                      className={`flex min-h-14 min-w-0 items-center gap-2 rounded-[10px] border px-3 text-left text-xs font-semibold leading-tight transition sm:text-sm ${form.category === id ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] text-slate-600 hover:bg-[#f7f7f1]"}`}
                     >
-                      <Icon size={17} aria-hidden="true" />
-                      {label}
+                      <Icon className="shrink-0" size={17} aria-hidden="true" />
+                      <span className="min-w-0 break-words">{label}</span>
                     </button>
                   ))}
                 </div>
-              </Field>
+              </fieldset>
               <Field label="Uma frase sobre seu negócio">
                 <textarea
                   value={form.description}
@@ -499,20 +580,29 @@ function OnboardingPage() {
             </div>
           ) : step === 3 ? (
             <div className="space-y-5">
-              <Field label="WhatsApp">
+              <Field
+                label="WhatsApp para contato"
+                hint="Digite o número com DDD, sem o código do país. Ele será usado nos botões de WhatsApp da sua página."
+              >
                 <input
                   autoFocus
                   required
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  maxLength={15}
                   value={form.phone}
-                  onChange={(event) => update("phone", event.target.value)}
+                  onChange={(event) => {
+                    setError("");
+                    update("phone", formatBrazilianPhone(event.target.value));
+                  }}
                   placeholder="(11) 99999-9999"
                   className={inputClass}
                 />
               </Field>
               <Field
-                label="Endereço da sua página"
-                hint="Escolha um endereço curto para compartilhar."
+                label="Link público da sua página"
+                hint="Escolha um endereço curto e fácil de lembrar. Você poderá compartilhá-lo com seus clientes."
               >
                 <div className="flex items-center overflow-hidden rounded-xl border border-[#dedfd6] focus-within:border-[#8a9668] focus-within:ring-4 focus-within:ring-[#edf0e5]">
                   <span className="border-r border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-400">
@@ -530,6 +620,12 @@ function OnboardingPage() {
                   />
                 </div>
               </Field>
+              <p className="-mt-3 rounded-lg bg-[#f1f2eb] px-3 py-2 text-xs text-slate-500">
+                Seu link:{" "}
+                <span className="font-semibold text-[#4c5832]">
+                  ello.app.br/loja/{pageSlug || "seu-negocio"}
+                </span>
+              </p>
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -541,16 +637,24 @@ function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => setStep(4)}
-                  disabled={!form.phone.trim() || !createSlug(form.slug || form.name)}
+                  disabled={![10, 11].includes(form.phone.replace(/\D/g, "").length) || !pageSlug}
                   className={`${primaryButtonClass} flex-[2]`}
                 >
                   Continuar <ArrowRight size={16} />
                 </button>
               </div>
+              {error && step === 3 && (
+                <p role="alert" className="text-sm font-semibold text-red-600">
+                  {error}
+                </p>
+              )}
             </div>
           ) : step === 4 ? (
             <div className="space-y-6">
-              <Field label={setupProfile.specialtyTitle} hint={setupProfile.specialtyDescription}>
+              <fieldset className="min-w-0">
+                <legend className="mb-2 text-sm font-semibold text-slate-700">
+                  {setupProfile.specialtyTitle}
+                </legend>
                 <div
                   role="group"
                   aria-label={setupProfile.specialtyTitle}
@@ -564,7 +668,8 @@ function OnboardingPage() {
                         key={id}
                         onClick={() => toggleOnboardingChoice("specialties", id)}
                         aria-pressed={selected}
-                        className={`flex min-h-14 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition ${selected ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] bg-white/65 text-slate-600 hover:bg-white"}`}
+                        data-selected={selected}
+                        className={`flex min-h-14 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#89966a] ${selected ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] bg-white/65 text-slate-600 hover:bg-white"}`}
                       >
                         {label}
                         {selected && <Check size={16} aria-hidden="true" />}
@@ -572,7 +677,8 @@ function OnboardingPage() {
                     );
                   })}
                 </div>
-              </Field>
+                <p className="mt-2 text-xs text-slate-400">{setupProfile.specialtyDescription}</p>
+              </fieldset>
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -599,10 +705,10 @@ function OnboardingPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              <Field
-                label={setupProfile.serviceModeTitle}
-                hint={setupProfile.serviceModeDescription}
-              >
+              <fieldset className="min-w-0">
+                <legend className="mb-2 text-sm font-semibold text-slate-700">
+                  {setupProfile.serviceModeTitle}
+                </legend>
                 <div
                   role="group"
                   aria-label={setupProfile.serviceModeTitle}
@@ -616,7 +722,8 @@ function OnboardingPage() {
                         key={id}
                         onClick={() => toggleOnboardingChoice("serviceModes", id)}
                         aria-pressed={selected}
-                        className={`flex min-h-14 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition ${selected ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] bg-white/65 text-slate-600 hover:bg-white"}`}
+                        data-selected={selected}
+                        className={`flex min-h-14 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#89966a] ${selected ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] bg-white/65 text-slate-600 hover:bg-white"}`}
                       >
                         {label}
                         {selected && <Check size={16} aria-hidden="true" />}
@@ -624,7 +731,15 @@ function OnboardingPage() {
                     );
                   })}
                 </div>
-              </Field>
+                <p className="mt-2 text-xs text-slate-400">
+                  {setupProfile.serviceModeDescription} Você pode selecionar mais de uma opção.
+                </p>
+                <p className="mt-2 min-h-5 text-xs font-medium text-[#667448]" aria-live="polite">
+                  {onboardingDetails.serviceModes.length > 0
+                    ? `${onboardingDetails.serviceModes.length} opção(ões) selecionada(s)`
+                    : "Nenhuma opção selecionada"}
+                </p>
+              </fieldset>
               <div className="flex gap-3">
                 <button
                   type="button"

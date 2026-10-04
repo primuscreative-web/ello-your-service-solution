@@ -19,8 +19,36 @@ import process from "node:process";
 export function getServerConfig() {
   return {
     nodeEnv: process.env.NODE_ENV,
-    // Add server-only values here, e.g.:
-    //   databaseUrl: process.env.DATABASE_URL,
-    //   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+    supabaseUrl: process.env.VITE_SUPABASE_URL,
+    supabaseServiceRoleKey:
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY,
+    foodOrderIngestionToken: process.env.FOOD_ORDER_INGESTION_TOKEN,
+  };
+}
+
+export function getAsaasServerConfig() {
+  return {
+    apiKey: process.env.ASAAS_API_KEY,
+    apiBaseUrl: process.env.ASAAS_API_BASE_URL ?? "https://api-sandbox.asaas.com/v3",
+    webhookToken: process.env.ASAAS_WEBHOOK_TOKEN,
+  };
+}
+
+export function getStripeServerConfig() {
+  const stripeMode = process.env.STRIPE_MODE ?? "test";
+  return {
+    stripeMode,
+    secretKey: process.env.STRIPE_SECRET_KEY,
+    connectWebhookSecret:
+      stripeMode === "live"
+        ? process.env.STRIPE_LIVE_CONNECT_WEBHOOK_SECRET
+        : process.env.STRIPE_TEST_CONNECT_WEBHOOK_SECRET,
+    appBaseUrl:
+      process.env.APP_BASE_URL ??
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : process.env.NODE_ENV === "production"
+          ? "https://ello.app.br"
+          : "http://localhost:3000"),
   };
 }
