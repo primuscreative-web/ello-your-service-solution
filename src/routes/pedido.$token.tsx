@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Check, Clock3, Copy, MapPin, Package, QrCode, Store, XCircle } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, Clock3, Copy, MapPin, Package, QrCode, RefreshCw, Store, XCircle } from "lucide-react";
 import { money } from "@/components/localhub/ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -36,55 +36,104 @@ const labels: Record<string, string> = {
   cancelled: "Cancelado",
 };
 
+function playPaymentSuccessChime() {
+  try {
+    const AudioCtx =
+      window.AudioContext ||
+      (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    const now = ctx.currentTime;
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, now); // D5
+    osc.frequency.setValueAtTime(880, now + 0.12); // A5
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    osc.start(now);
+    osc.stop(now + 0.42);
+    osc.onended = () => void ctx.close();
+  } catch {
+    // Web Audio blocked or unsupported
+  }
+}
+
 function PublicOrderTrackingPage() {
   const { token } = Route.useParams();
   const [tracking, setTracking] = useState<Tracking | null>(null);
   const [pixPayment, setPixPayment] = useState<PixPayment | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
+  const prevPaymentStatus = useRef<string | null>(null);
+
+  const loadData = useCallback(async () => {
+    const client = getSupabaseBrowserClient();
+    if (!client) {
+      setError("Acompanhar pedidos está temporariamente indisponível.");
+      setLoading(false);
+      return;
+    }
+
+    const [trackingRes, pixRes] = await Promise.all([
+      client.rpc("localhub_public_order_tracking", { p_tracking_token: token }),
+      client.rpc("localhub_get_order_pix_payment", { p_tracking_token: token }),
+    ]);
+
+    const trackingRow = Array.isArray(trackingRes.data) ? trackingRes.data[0] : null;
+    if (trackingRes.error || !trackingRow) {
+      setError("Não encontramos esse pedido. Confira o link recebido.");
+    } else {
+      setTracking(trackingRow as Tracking);
+      setError("");
+    }
+
+    const pixRow = Array.isArray(pixRes.data) ? pixRes.data[0] : null;
+    if (pixRow) {
+      const paymentData = pixRow as PixPayment;
+      if (
+        prevPaymentStatus.current &&
+        prevPaymentStatus.current !== "paid" &&
+        paymentData.payment_status === "paid"
+      ) {
+        playPaymentSuccessChime();
+      }
+      prevPaymentStatus.current = paymentData.payment_status;
+      setPixPayment(paymentData);
+    }
+
+    setLoading(false);
+  }, [token]);
 
   useEffect(() => {
     let active = true;
-    const client = getSupabaseBrowserClient();
+    void loadData();
 
-    const load = async () => {
-      if (!client) {
-        setError("Acompanhar pedidos está temporariamente indisponível.");
-        setLoading(false);
-        return;
-      }
+    // Polling adaptativo: 4 segundos enquanto aguarda Pix, 12 segundos após confirmação
+    const isUnpaid = pixPayment?.pix_payload && pixPayment.payment_status !== "paid";
+    const intervalMs = isUnpaid ? 4_000 : 12_000;
 
-      const [trackingRes, pixRes] = await Promise.all([
-        client.rpc("localhub_public_order_tracking", { p_tracking_token: token }),
-        client.rpc("localhub_get_order_pix_payment", { p_tracking_token: token }),
-      ]);
+    const interval = window.setInterval(() => {
+      if (active) void loadData();
+    }, intervalMs);
 
-      if (!active) return;
-
-      const trackingRow = Array.isArray(trackingRes.data) ? trackingRes.data[0] : null;
-      if (trackingRes.error || !trackingRow) {
-        setError("Não encontramos esse pedido. Confira o link recebido.");
-      } else {
-        setTracking(trackingRow as Tracking);
-        setError("");
-      }
-
-      const pixRow = Array.isArray(pixRes.data) ? pixRes.data[0] : null;
-      if (pixRow) {
-        setPixPayment(pixRow as PixPayment);
-      }
-
-      setLoading(false);
-    };
-
-    void load();
-    const interval = window.setInterval(() => void load(), 12_000);
     return () => {
       active = false;
       window.clearInterval(interval);
     };
-  }, [token]);
+  }, [loadData, pixPayment?.pix_payload, pixPayment?.payment_status]);
+
+  async function handleManualCheck() {
+    setChecking(true);
+    await loadData();
+    setTimeout(() => setChecking(false), 600);
+  }
+
   const currentStep = tracking ? steps.indexOf(tracking.status) : -1;
   return (
     <main className="min-h-screen bg-[#f8f7f4] px-4 py-8 text-[#292b25] sm:py-16">
@@ -209,6 +258,19 @@ function PublicOrderTrackingPage() {
                     <p className="mt-3 text-center text-xs text-slate-500 leading-relaxed">
                       Abra o app do seu banco, escolha <b>Pagar com Pix</b> e use o QR Code ou cole o código acima. A confirmação é imediata!
                     </p>
+
+                    <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-slate-400">Verificação automática a cada 4s</span>
+                      <button
+                        type="button"
+                        onClick={() => void handleManualCheck()}
+                        disabled={checking}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        <RefreshCw size={12} className={checking ? "animate-spin text-slate-500" : "text-slate-400"} />
+                        {checking ? "Verificando…" : "Já paguei"}
+                      </button>
+                    </div>
                   </div>
                 )
               )}
