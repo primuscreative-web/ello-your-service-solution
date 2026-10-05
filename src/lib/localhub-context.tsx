@@ -137,6 +137,8 @@ export type FoodOrder = {
     | "cancelled";
   driverId: string | null;
   createdAt: string;
+  publicTrackingToken?: string;
+  paymentStatus?: string;
   items: FoodOrderItem[];
 };
 export type DeliveryDriver = { id: string; name: string; phone: string; active: boolean };
@@ -232,6 +234,8 @@ type OrderRow = {
   status: FoodOrder["status"];
   driver_id: string | null;
   created_at: string;
+  public_tracking_token?: string | null;
+  payment_status?: string | null;
   localhub_order_items?: OrderItemRow[];
 };
 type DriverRow = { id: string; name: string; phone: string; is_active: boolean };
@@ -704,6 +708,8 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
           status: row.status,
           driverId: row.driver_id,
           createdAt: row.created_at,
+          publicTrackingToken: row.public_tracking_token ?? "",
+          paymentStatus: row.payment_status ?? "pending",
           items: (row.localhub_order_items ?? []).map((item: OrderItemRow) => ({
             serviceId: item.service_id,
             quantity: item.quantity,

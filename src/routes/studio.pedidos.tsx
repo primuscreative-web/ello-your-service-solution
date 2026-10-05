@@ -4,11 +4,15 @@ import {
   Check,
   Clock3,
   MapPin,
+  MessageSquare,
+  Moon,
   Phone,
-  Search,
-  UtensilsCrossed,
   Printer,
+  Search,
+  Sun,
+  UtensilsCrossed,
   Volume2,
+  Zap,
 } from "lucide-react";
 import { PageTitle, primaryButtonClass } from "@/components/localhub/ui";
 import { money } from "@/components/localhub/ui";
@@ -50,6 +54,7 @@ function OrdersPage() {
   const [filter, setFilter] = useState<OrderFilter>("active");
   const [query, setQuery] = useState("");
   const [receiptWidth, setReceiptWidth] = useState<"58mm" | "80mm">("80mm");
+  const [kdsMode, setKdsMode] = useState(false);
   const knownOrderIds = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -133,6 +138,31 @@ function OrdersPage() {
     knownOrderIds.current = currentIds;
   }, [orders]);
 
+  function getCustomerWhatsAppLink(order: FoodOrder) {
+    const cleanPhone = order.phone.replace(/\D/g, "");
+    const formattedPhone =
+      cleanPhone.length === 10 || cleanPhone.length === 11 ? `55${cleanPhone}` : cleanPhone;
+    const storeName = business?.name ?? "o estabelecimento";
+    const trackingUrl = order.publicTrackingToken
+      ? `https://ello.app.br/pedido/${order.publicTrackingToken}`
+      : `https://ello.app.br/loja/${business?.slug ?? ""}`;
+
+    let message = "";
+    if (order.status === "out_for_delivery") {
+      message = `Olá, ${order.customerName}! 🛵💨 Seu Pedido #${order.number} no ${storeName} acabou de sair para entrega! Acompanhe em tempo real por aqui: ${trackingUrl}`;
+    } else if (order.status === "ready") {
+      message = `Olá, ${order.customerName}! 🛍️ Seu Pedido #${order.number} no ${storeName} já está prontinho para retirada no balcão!`;
+    } else if (order.status === "accepted" || order.status === "preparing") {
+      message = `Olá, ${order.customerName}! 👨‍🍳 Recebemos seu Pedido #${order.number} no ${storeName} e já estamos preparando com todo carinho! Acompanhe por aqui: ${trackingUrl}`;
+    } else if (order.status === "completed") {
+      message = `Olá, ${order.customerName}! Seu Pedido #${order.number} no ${storeName} foi concluído! Muito obrigado pela preferência! ❤️`;
+    } else {
+      message = `Olá, ${order.customerName}! Sobre seu Pedido #${order.number} no ${storeName}: veja os detalhes por aqui: ${trackingUrl}`;
+    }
+
+    return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+  }
+
   function printOrder(order: FoodOrder) {
     const receipt = window.open("", "_blank", "popup,width=420,height=720");
     if (!receipt) {
@@ -148,11 +178,20 @@ function OrdersPage() {
     const lines = order.items
       .map(
         (item) =>
-          `<div class="row"><span>${item.quantity}× ${escape(item.name)}</span><b>${money(item.price * item.quantity)}</b></div>`,
+          `<div class="row"><span><b>${item.quantity}×</b> ${escape(item.name)}</span><b>${money(item.price * item.quantity)}</b></div>`,
       )
       .join("");
+    const isPaid = order.paymentStatus === "paid" || order.paymentMethod === "online_pix";
+    const paymentLabel = isPaid
+      ? "PAGO VIA PIX ONLINE"
+      : order.paymentMethod === "pix"
+        ? "PIX NA ENTREGA/RETIRADA"
+        : order.paymentMethod === "card"
+          ? "CARTÃO NA ENTREGA/RETIRADA"
+          : "DINHEIRO";
+
     receipt.document.write(
-      `<!doctype html><html><head><title>Comanda ${order.number}</title><style>@page{size:${receiptWidth} auto;margin:3mm}*{box-sizing:border-box}body{font:12px/1.4 ui-monospace,monospace;width:100%;margin:0;color:#111}.center{text-align:center}.row{display:flex;justify-content:space-between;gap:8px;margin:5px 0}.rule{border-top:1px dashed #333;margin:8px 0}h1{font-size:16px}.small{font-size:10px}@media print{button{display:none}}</style></head><body><div class="center"><h1>${escape(business?.name ?? "ELLO")}</h1><b>COMANDA · PEDIDO #${order.number}</b><p class="small">${new Date(order.createdAt).toLocaleString("pt-BR")}</p></div><div class="rule"></div><p><b>${escape(order.customerName)}</b><br>${escape(order.fulfillment === "delivery" ? order.address : order.fulfillment === "pickup" ? "Retirada" : "Consumo no local")}</p>${lines}<div class="rule"></div><div class="row"><b>TOTAL</b><b>${money(order.total)}</b></div>${order.notes ? `<p>Obs.: ${escape(order.notes)}</p>` : ""}<script>window.onload=()=>window.print()</script></body></html>`,
+      `<!doctype html><html><head><title>Comanda ${order.number}</title><style>@page{size:${receiptWidth} auto;margin:3mm}*{box-sizing:border-box}body{font:12px/1.4 ui-monospace,monospace;width:100%;margin:0;color:#111}.center{text-align:center}.row{display:flex;justify-content:space-between;gap:8px;margin:5px 0}.rule{border-top:1px dashed #333;margin:8px 0}h1{font-size:16px;margin:0 0 4px}.small{font-size:10px}.badge{display:block;padding:4px 6px;font-weight:bold;border:1px solid #111;margin:6px 0;text-align:center}@media print{button{display:none}}</style></head><body><div class="center"><h1>${escape(business?.name ?? "ELLO")}</h1><b>COMANDA · PEDIDO #${order.number}</b><p class="small">${new Date(order.createdAt).toLocaleString("pt-BR")}</p><div class="badge">${isPaid ? "✓ JÁ PAGO ONLINE (NÃO COBRAR)" : "⚠️ COBRAR DO CLIENTE: " + money(order.total)}</div></div><div class="rule"></div><p><b>Cliente:</b> ${escape(order.customerName)}<br><b>Tel:</b> ${escape(order.phone)}<br><b>Tipo:</b> ${escape(order.fulfillment === "delivery" ? "ENTREGA em " + order.address : order.fulfillment === "pickup" ? "RETIRADA NO BALCÃO" : "CONSUMO NO LOCAL")}</p><div class="rule"></div>${lines}<div class="rule"></div><div class="row"><span>Subtotal:</span><span>${money(order.subtotal)}</span></div>${order.deliveryFee > 0 ? `<div class="row"><span>Taxa de entrega:</span><span>${money(order.deliveryFee)}</span></div>` : ""}${order.discountAmount > 0 ? `<div class="row"><span>Desconto:</span><span>-${money(order.discountAmount)}</span></div>` : ""}<div class="row" style="font-size:14px"><b>TOTAL</b><b>${money(order.total)}</b></div><div class="row"><span>Pagamento:</span><b>${paymentLabel}</b></div>${order.notes ? `<div class="rule"></div><p><b>Obs.:</b> ${escape(order.notes)}</p>` : ""}<script>window.onload=()=>window.print()</script></body></html>`,
     );
     receipt.document.close();
   }
@@ -173,13 +212,31 @@ function OrdersPage() {
     return nextStatus[order.status];
   }
   return (
-    <>
+    <div
+      className={
+        kdsMode
+          ? "-m-4 sm:-m-6 rounded-3xl bg-[#121410] p-4 sm:p-6 text-[#f2f4ec] transition-colors duration-300"
+          : ""
+      }
+    >
       <PageTitle
         eyebrow="Operação do restaurante"
         title="Pedidos"
         description="Receba, prepare e acompanhe cada pedido feito pelo seu cardápio ELLO."
         action={
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setKdsMode((prev) => !prev)}
+              className={`inline-flex min-h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
+                kdsMode
+                  ? "border-[#d5ec9a]/30 bg-[#292b25] text-[#d5ec9a]"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              {kdsMode ? <Sun size={14} /> : <Moon size={14} />}
+              {kdsMode ? "KDS Cozinha Ativo" : "Modo Cozinha (KDS)"}
+            </button>
             <label className="inline-flex items-center gap-1 text-xs text-slate-500">
               <Printer size={14} />
               <select
@@ -279,7 +336,11 @@ function OrdersPage() {
           {visibleOrders.map((order) => (
             <article
               key={order.id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+              className={`rounded-2xl border p-5 shadow-sm transition-colors ${
+                kdsMode
+                  ? "border-[#2d3323] bg-[#1a1d15] text-[#f2f4ec]"
+                  : "border-slate-200 bg-white"
+              }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -296,9 +357,20 @@ function OrdersPage() {
                     <Phone size={13} /> {order.phone}
                   </a>
                 </div>
-                <span className="rounded-full bg-[#edf0e5] px-3 py-1.5 text-xs font-bold text-[#586341]">
-                  {statusLabel[order.status]}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {order.paymentStatus === "paid" || order.paymentMethod === "online_pix" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">
+                      <Zap size={12} /> Pago Pix Online
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                      Cobrar na entrega
+                    </span>
+                  )}
+                  <span className="rounded-full bg-[#edf0e5] px-3 py-1.5 text-xs font-bold text-[#586341]">
+                    {statusLabel[order.status]}
+                  </span>
+                </div>
               </div>
               <div className="mt-4 space-y-2 border-y border-slate-100 py-4">
                 {order.items.map((item, index) => (
@@ -363,6 +435,14 @@ function OrdersPage() {
                   >
                     <Printer size={14} /> Comanda
                   </button>
+                  <a
+                    href={getCustomerWhatsAppLink(order)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+                  >
+                    <MessageSquare size={14} /> Avisar cliente
+                  </a>
                   {order.fulfillment === "delivery" && (
                     <>
                       <select
@@ -460,6 +540,6 @@ function OrdersPage() {
             ))}
         </div>
       </section>
-    </>
+    </div>
   );
 }

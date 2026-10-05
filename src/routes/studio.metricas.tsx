@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { PageTitle, money } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 export const Route = createFileRoute("/studio/metricas")({ component: MetricsPage });
 
@@ -54,13 +55,15 @@ function MetricsPage() {
       }),
     [completedOrders, range, since],
   );
-  const maxSales = Math.max(...salesByDay.map((item) => item.sales), 1);
-  const chartPoints = salesByDay
-    .map(
-      (item, index) =>
-        `${salesByDay.length === 1 ? 50 : (index / (salesByDay.length - 1)) * 640},${168 - (item.sales / maxSales) * 148}`,
-    )
-    .join(" ");
+  const chartData = useMemo(
+    () =>
+      salesByDay.map((item) => ({
+        label: dayLabel(item.date),
+        fullDate: item.date.toLocaleDateString("pt-BR"),
+        vendas: item.sales,
+      })),
+    [salesByDay],
+  );
 
   const topProducts = useMemo(() => {
     const totals = new Map<string, { quantity: number; sales: number }>();
@@ -362,43 +365,49 @@ function MetricsPage() {
           </div>
         </div>
         {completedOrders.length ? (
-          <div className="mt-5 overflow-x-auto">
-            <svg
-              viewBox="0 0 640 190"
-              role="img"
-              aria-label={`Gráfico de vendas dos últimos ${range} dias`}
-              className="h-48 min-w-[600px] w-full"
-            >
-              <line x1="0" y1="168" x2="640" y2="168" stroke="#e8e9e2" />
-              <line x1="0" y1="94" x2="640" y2="94" stroke="#f0f1ec" />
-              <line x1="0" y1="20" x2="640" y2="20" stroke="#f0f1ec" />
-              <polyline
-                points={chartPoints}
-                fill="none"
-                stroke="#778253"
-                strokeWidth="3"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-              {salesByDay.map(
-                (item, index) =>
-                  item.sales > 0 && (
-                    <circle
-                      key={item.date.toISOString()}
-                      cx={salesByDay.length === 1 ? 50 : (index / (salesByDay.length - 1)) * 640}
-                      cy={168 - (item.sales / maxSales) * 148}
-                      r="4"
-                      fill="#778253"
-                    />
-                  ),
-              )}
-              <text x="0" y="186" fontSize="10" fill="#9b9d95">
-                {dayLabel(salesByDay[0].date)}
-              </text>
-              <text x="600" y="186" fontSize="10" fill="#9b9d95">
-                {dayLabel(salesByDay.at(-1)!.date)}
-              </text>
-            </svg>
+          <div className="mt-5 h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#778253" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#778253" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="label"
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  interval="preserveStartEnd"
+                />
+                <Tooltip
+                  formatter={((val: any) => [
+                    money(typeof val === "number" ? val : Number(val ?? 0)),
+                    "Vendas",
+                  ]) as any}
+                  labelFormatter={(_, payload) => (payload?.[0]?.payload as { fullDate?: string } | undefined)?.fullDate ?? ""}
+                  contentStyle={{
+                    backgroundColor: "#292b25",
+                    borderColor: "#3f4236",
+                    borderRadius: "12px",
+                    color: "#fff",
+                    fontSize: "12px",
+                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2)",
+                  }}
+                  itemStyle={{ color: "#d5ec9a", fontWeight: "bold" }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="vendas"
+                  stroke="#778253"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#salesGrad)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         ) : (
           <div className="mt-5 rounded-xl bg-slate-50 px-4 py-9 text-center text-sm text-slate-500">

@@ -3,16 +3,20 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   CalendarDays,
   Check,
+  ChevronRight,
   Clock3,
   MapPin,
   MessageCircle,
   Minus,
   Package,
-  Store,
-  ShoppingBag,
-  UtensilsCrossed,
   Plus,
+  Share2,
+  ShoppingBag,
+  Sparkles,
+  Store,
+  UtensilsCrossed,
   X,
+  Zap,
 } from "lucide-react";
 import { z } from "zod";
 import { money } from "@/components/localhub/ui";
@@ -109,6 +113,7 @@ function PublicBusinessPage() {
   const attemptedCampaignCoupon = useRef("");
   const [recoveryConsent, setRecoveryConsent] = useState(false);
   const [recoverySaveError, setRecoverySaveError] = useState("");
+  const [shareCopied, setShareCopied] = useState(false);
   const savedRecoveryPhone = useRef("");
   const [deliveryAreaId, setDeliveryAreaId] = useState("");
   const [orderNotes, setOrderNotes] = useState("");
@@ -156,6 +161,11 @@ function PublicBusinessPage() {
   const galleryUrls = business?.galleryUrls ?? [];
   const activeServices = useMemo(() => services.filter((service) => service.active), [services]);
   const isFoodBusiness = business?.category === "alimentacao";
+  const otherSuggestions = useMemo(() => {
+    if (!isFoodBusiness) return [];
+    const inCartIds = new Set(cart.map((line) => line.service.id));
+    return activeServices.filter((s) => !inCartIds.has(s.id));
+  }, [activeServices, cart, isFoodBusiness]);
   const businessCopy = getBusinessCopy(business?.category);
   const hasAppointments = supportsAppointments(business?.category);
   const isHealthBusiness = business?.category === "saude";
@@ -627,8 +637,34 @@ function PublicBusinessPage() {
 
   if (loading)
     return (
-      <div className="grid min-h-screen place-items-center bg-[#f5f4ef] text-sm font-semibold text-[#667448]">
-        Carregando página...
+      <div className="min-h-screen bg-[#f5f4ef] px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-5xl animate-pulse space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="h-8 w-24 rounded-xl bg-slate-200" />
+            <div className="h-9 w-28 rounded-xl bg-slate-200" />
+          </div>
+          <div className="h-56 w-full rounded-3xl bg-slate-200/80" />
+          <div className="flex gap-3 overflow-hidden">
+            <div className="h-10 w-28 rounded-xl bg-slate-200" />
+            <div className="h-10 w-32 rounded-xl bg-slate-200" />
+            <div className="h-10 w-24 rounded-xl bg-slate-200" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="flex h-32 gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs"
+              >
+                <div className="flex-1 space-y-2 py-1">
+                  <div className="h-4 w-3/4 rounded bg-slate-200" />
+                  <div className="h-3 w-5/6 rounded bg-slate-100" />
+                  <div className="mt-3 h-4 w-1/3 rounded bg-slate-200" />
+                </div>
+                <div className="size-24 rounded-xl bg-slate-200/70" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   if (loadError || !business || business.slug !== slug)
@@ -665,13 +701,37 @@ function PublicBusinessPage() {
             <span className="ello-brand-mark ello-brand-mark-small">e</span>
             ello
           </Link>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                if (navigator.share) {
+                  try {
+                    await navigator.share({
+                      title: business.name,
+                      text: business.description || `Conheça ${business.name} na ELLO`,
+                      url: window.location.href,
+                    });
+                  } catch {
+                    // Ignora cancelamento pelo usuário
+                  }
+                } else {
+                  void navigator.clipboard.writeText(window.location.href);
+                  setShareCopied(true);
+                  setTimeout(() => setShareCopied(false), 2500);
+                }
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+            >
+              <Share2 size={14} />
+              {shareCopied ? "Link copiado!" : "Compartilhar"}
+            </button>
             {whatsappUrl && (
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100/70"
               >
                 <MessageCircle size={15} />
                 WhatsApp
@@ -705,7 +765,25 @@ function PublicBusinessPage() {
                     ? "Confira nosso cardápio e faça seu pedido online."
                     : "Conheça nossos serviços e fale diretamente com o estabelecimento.")}
             </p>
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/70">
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300">
+                <span className="size-2 animate-pulse rounded-full bg-emerald-400" />
+                Aberto agora
+              </span>
+              {isFoodBusiness && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
+                  <Clock3 size={13} />
+                  35 – 50 min
+                </span>
+              )}
+              {business.onlinePaymentEnabled && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
+                  <Zap size={13} className="text-amber-300" />
+                  Pix Online imediato
+                </span>
+              )}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/70">
               {business.city && (
                 <span className="flex items-center gap-1.5">
                   <MapPin size={14} />
@@ -1070,13 +1148,23 @@ function PublicBusinessPage() {
             setOrderError("");
             setCartOpen(true);
           }}
-          className="fixed inset-x-4 bottom-4 z-40 mx-auto flex min-h-14 max-w-2xl items-center justify-between rounded-2xl bg-[#292b25] px-5 text-white shadow-xl shadow-black/20"
+          className="fixed inset-x-4 bottom-5 z-40 mx-auto flex min-h-14 max-w-2xl items-center justify-between rounded-2xl border border-white/15 bg-[#292b25]/95 px-5 text-white shadow-2xl shadow-black/30 backdrop-blur-md transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
         >
-          <span className="inline-flex items-center gap-2 text-sm font-bold">
-            <ShoppingBag size={18} /> Ver pedido{" "}
-            <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">{cartCount}</span>
-          </span>
-          <span className="text-sm font-extrabold">{money(cartSubtotal + deliveryFee)}</span>
+          <div className="flex items-center gap-2.5">
+            <span className="grid size-8 place-items-center rounded-xl bg-white/15 text-white">
+              <ShoppingBag size={17} />
+            </span>
+            <div className="text-left">
+              <span className="block text-xs font-bold uppercase tracking-wider text-[#d5ec9a]">
+                Sacola · {cartCount} {cartCount === 1 ? "item" : "itens"}
+              </span>
+              <span className="text-xs text-white/70">Toque para finalizar</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-base font-extrabold">{money(cartSubtotal + deliveryFee)}</span>
+            <ChevronRight size={18} className="text-white/60" />
+          </div>
         </button>
       )}
 
@@ -1363,6 +1451,55 @@ function PublicBusinessPage() {
                     );
                   })}
                 </div>
+
+                {otherSuggestions.length > 0 && (
+                  <div className="mt-4 border-t border-slate-100 pt-3">
+                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+                      <Sparkles size={13} className="text-amber-500" />
+                      <span>Peça também</span>
+                    </div>
+                    <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                      {otherSuggestions.slice(0, 4).map((suggested) => (
+                        <button
+                          key={suggested.id}
+                          type="button"
+                          onClick={() => {
+                            if (suggested.productVariants?.length || suggested.optionGroups?.length) {
+                              setConfiguringProduct(suggested);
+                            } else {
+                              addFoodCartItem(suggested, null, []);
+                            }
+                          }}
+                          className="flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 text-left transition hover:border-[#778253] hover:bg-slate-50"
+                        >
+                          {suggested.imageUrl ? (
+                            <img
+                              src={suggested.imageUrl}
+                              alt=""
+                              className="size-9 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="grid size-9 place-items-center rounded-lg bg-slate-100 text-slate-400">
+                              <UtensilsCrossed size={14} />
+                            </div>
+                          )}
+                          <div className="max-w-[120px]">
+                            <p className="truncate text-xs font-bold text-slate-800">
+                              {suggested.name}
+                            </p>
+                            <p className="text-[11px] font-semibold text-[#778253]">
+                              +{money(suggested.price)}
+                            </p>
+                          </div>
+                          <span className="grid size-6 place-items-center rounded-full bg-[#edf0e5] text-xs font-bold text-[#586341]">
+                            +
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <form onSubmit={(event) => void placeFoodOrder(event)} className="mt-5 space-y-4">
                   <fieldset>
                     <legend className="mb-2 text-sm font-semibold">Como receber?</legend>
