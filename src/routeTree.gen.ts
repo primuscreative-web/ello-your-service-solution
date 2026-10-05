@@ -9,74 +9,59 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as StudioRouteImport } from './routes/studio'
-import { Route as RoleRouteImport } from './routes/role'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as StudioIndexRouteImport } from './routes/studio.index'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as RoleRouteImport } from './routes/role'
+import { Route as StudioRouteImport } from './routes/studio'
 import { Route as AppIndexRouteImport } from './routes/app.index'
-import { Route as StudioSettingsRouteImport } from './routes/studio.settings'
-import { Route as StudioPrecificacaoRouteImport } from './routes/studio.precificacao'
-import { Route as StudioPedidosRouteImport } from './routes/studio.pedidos'
-import { Route as StudioMetricasRouteImport } from './routes/studio.metricas'
-import { Route as StudioFinanceiroRouteImport } from './routes/studio.financeiro'
-import { Route as StudioEntregasRouteImport } from './routes/studio.entregas'
-import { Route as StudioCrmRouteImport } from './routes/studio.crm'
-import { Route as StudioCatalogRouteImport } from './routes/studio.catalog'
-import { Route as StudioCaixaRouteImport } from './routes/studio.caixa'
-import { Route as StudioAgendaRouteImport } from './routes/studio.agenda'
-import { Route as PedidoTokenRouteImport } from './routes/pedido.$token'
-import { Route as PSlugRouteImport } from './routes/p.$slug'
-import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
-import { Route as AppWalletRouteImport } from './routes/app.wallet'
-import { Route as AppSettingsRouteImport } from './routes/app.settings'
-import { Route as AppSearchRouteImport } from './routes/app.search'
-import { Route as AppRequestsRouteImport } from './routes/app.requests'
-import { Route as AppProfileRouteImport } from './routes/app.profile'
-import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
-import { Route as AppMessagesRouteImport } from './routes/app.messages'
-import { Route as AppFavoritesRouteImport } from './routes/app.favorites'
-import { Route as AppExpressRouteImport } from './routes/app.express'
-import { Route as AppElloLinkRouteImport } from './routes/app.ello-link'
-import { Route as AppBusinessRouteImport } from './routes/app.business'
-import { Route as AppAgendaRouteImport } from './routes/app.agenda'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
-import { Route as CBusinessSlugCampaignSlugRouteImport } from './routes/c.$businessSlug.$campaignSlug'
-import { Route as AppQuoteIdRouteImport } from './routes/app.quote.$id'
-import { Route as AppProfessionalIdRouteImport } from './routes/app.professional.$id'
-import { Route as AppBusinessStatisticsRouteImport } from './routes/app.business.statistics'
-import { Route as AppBusinessReviewsRouteImport } from './routes/app.business.reviews'
-import { Route as AppBusinessQuotesRouteImport } from './routes/app.business.quotes'
-import { Route as AppBusinessClientsRouteImport } from './routes/app.business.clients'
-import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
-import { Route as ApiStripeCheckoutRouteImport } from './routes/api.stripe.checkout'
-import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas.webhook'
+import { Route as AppAgendaRouteImport } from './routes/app.agenda'
+import { Route as AppBusinessRouteImport } from './routes/app.business'
+import { Route as AppElloLinkRouteImport } from './routes/app.ello-link'
+import { Route as AppExpressRouteImport } from './routes/app.express'
+import { Route as AppFavoritesRouteImport } from './routes/app.favorites'
+import { Route as AppMessagesRouteImport } from './routes/app.messages'
+import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
+import { Route as AppProfileRouteImport } from './routes/app.profile'
+import { Route as AppRequestsRouteImport } from './routes/app.requests'
+import { Route as AppSearchRouteImport } from './routes/app.search'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppWalletRouteImport } from './routes/app.wallet'
+import { Route as LojaSlugRouteImport } from './routes/loja.$slug'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as PedidoTokenRouteImport } from './routes/pedido.$token'
+import { Route as StudioIndexRouteImport } from './routes/studio.index'
+import { Route as StudioAgendaRouteImport } from './routes/studio.agenda'
+import { Route as StudioCaixaRouteImport } from './routes/studio.caixa'
+import { Route as StudioCatalogRouteImport } from './routes/studio.catalog'
+import { Route as StudioCrmRouteImport } from './routes/studio.crm'
+import { Route as StudioEntregasRouteImport } from './routes/studio.entregas'
+import { Route as StudioFinanceiroRouteImport } from './routes/studio.financeiro'
+import { Route as StudioMetricasRouteImport } from './routes/studio.metricas'
+import { Route as StudioPedidosRouteImport } from './routes/studio.pedidos'
+import { Route as StudioPrecificacaoRouteImport } from './routes/studio.precificacao'
+import { Route as StudioSettingsRouteImport } from './routes/studio.settings'
 import { Route as ApiAsaasChargeRouteImport } from './routes/api.asaas.charge'
-import { Route as AppProfessionalIdScheduleRouteImport } from './routes/app.professional.$id_.schedule'
-import { Route as AppProfessionalIdQuoteRouteImport } from './routes/app.professional.$id_.quote'
-import { Route as ApiV1OrdersExternalRouteImport } from './routes/api.v1.orders.external'
+import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas.webhook'
+import { Route as ApiStripeCheckoutRouteImport } from './routes/api.stripe.checkout'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
+import { Route as AppBusinessClientsRouteImport } from './routes/app.business.clients'
+import { Route as AppBusinessQuotesRouteImport } from './routes/app.business.quotes'
+import { Route as AppBusinessReviewsRouteImport } from './routes/app.business.reviews'
+import { Route as AppBusinessStatisticsRouteImport } from './routes/app.business.statistics'
+import { Route as AppProfessionalIdRouteImport } from './routes/app.professional.$id'
+import { Route as AppQuoteIdRouteImport } from './routes/app.quote.$id'
+import { Route as CBusinessSlugCampaignSlugRouteImport } from './routes/c.$businessSlug.$campaignSlug'
 import { Route as ApiStripeConnectOnboardingRouteImport } from './routes/api.stripe.connect.onboarding'
+import { Route as ApiV1OrdersExternalRouteImport } from './routes/api.v1.orders.external'
+import { Route as AppProfessionalIdQuoteRouteImport } from './routes/app.professional.$id_.quote'
+import { Route as AppProfessionalIdScheduleRouteImport } from './routes/app.professional.$id_.schedule'
 
-const StudioRoute = StudioRouteImport.update({
-  id: '/studio',
-  path: '/studio',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RoleRoute = RoleRouteImport.update({
-  id: '/role',
-  path: '/role',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -84,139 +69,34 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StudioIndexRoute = StudioIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => StudioRoute,
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoleRoute = RoleRouteImport.update({
+  id: '/role',
+  path: '/role',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioRoute = StudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const StudioSettingsRoute = StudioSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => StudioRoute,
-} as any)
-const StudioPrecificacaoRoute = StudioPrecificacaoRouteImport.update({
-  id: '/precificacao',
-  path: '/precificacao',
-  getParentRoute: () => StudioRoute,
-} as any)
-const StudioPedidosRoute = StudioPedidosRouteImport.update({
-  id: '/pedidos',
-  path: '/pedidos',
-  getParentRoute: () => StudioRoute,
-} as any)
-const StudioMetricasRoute = StudioMetricasRouteImport.update({
-  id: '/metricas',
-  path: '/metricas',
-  getParentRoute: () => StudioRoute,
-} as any)
-const StudioFinanceiroRoute = StudioFinanceiroRouteImport.update({
-  id: '/financeiro',
-  path: '/financeiro',
-  getParentRoute: () => StudioRoute,
-} as any)
-const StudioEntregasRoute = StudioEntregasRouteImport.update({
-  id: '/entregas',
-  path: '/entregas',
-  getParentRoute: () => StudioRoute,
-} as any)
-const StudioCrmRoute = StudioCrmRouteImport.update({
-  id: '/crm',
-  path: '/crm',
-  getParentRoute: () => StudioRoute,
-} as any)
-const StudioCatalogRoute = StudioCatalogRouteImport.update({
-  id: '/catalog',
-  path: '/catalog',
-  getParentRoute: () => StudioRoute,
-} as any)
-const StudioCaixaRoute = StudioCaixaRouteImport.update({
-  id: '/caixa',
-  path: '/caixa',
-  getParentRoute: () => StudioRoute,
-} as any)
-const StudioAgendaRoute = StudioAgendaRouteImport.update({
-  id: '/agenda',
-  path: '/agenda',
-  getParentRoute: () => StudioRoute,
-} as any)
-const PedidoTokenRoute = PedidoTokenRouteImport.update({
-  id: '/pedido/$token',
-  path: '/pedido/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PSlugRoute = PSlugRouteImport.update({
-  id: '/p/$slug',
-  path: '/p/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LojaSlugRoute = LojaSlugRouteImport.update({
-  id: '/loja/$slug',
-  path: '/loja/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppWalletRoute = AppWalletRouteImport.update({
-  id: '/wallet',
-  path: '/wallet',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSearchRoute = AppSearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRequestsRoute = AppRequestsRouteImport.update({
-  id: '/requests',
-  path: '/requests',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppProfileRoute = AppProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppNotificationsRoute = AppNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMessagesRoute = AppMessagesRouteImport.update({
-  id: '/messages',
-  path: '/messages',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppFavoritesRoute = AppFavoritesRouteImport.update({
-  id: '/favorites',
-  path: '/favorites',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppExpressRoute = AppExpressRouteImport.update({
-  id: '/express',
-  path: '/express',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppElloLinkRoute = AppElloLinkRouteImport.update({
-  id: '/ello-link',
-  path: '/ello-link',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppBusinessRoute = AppBusinessRouteImport.update({
-  id: '/business',
-  path: '/business',
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAgendaRoute = AppAgendaRouteImport.update({
@@ -224,9 +104,179 @@ const AppAgendaRoute = AppAgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminRoute = AppAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AppBusinessRoute = AppBusinessRouteImport.update({
+  id: '/business',
+  path: '/business',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppElloLinkRoute = AppElloLinkRouteImport.update({
+  id: '/ello-link',
+  path: '/ello-link',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppExpressRoute = AppExpressRouteImport.update({
+  id: '/express',
+  path: '/express',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFavoritesRoute = AppFavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMessagesRoute = AppMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRequestsRoute = AppRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSearchRoute = AppSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWalletRoute = AppWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AppRoute,
+} as any)
+const LojaSlugRoute = LojaSlugRouteImport.update({
+  id: '/loja/$slug',
+  path: '/loja/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PedidoTokenRoute = PedidoTokenRouteImport.update({
+  id: '/pedido/$token',
+  path: '/pedido/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioIndexRoute = StudioIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioAgendaRoute = StudioAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioCaixaRoute = StudioCaixaRouteImport.update({
+  id: '/caixa',
+  path: '/caixa',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioCatalogRoute = StudioCatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioCrmRoute = StudioCrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioEntregasRoute = StudioEntregasRouteImport.update({
+  id: '/entregas',
+  path: '/entregas',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioFinanceiroRoute = StudioFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioMetricasRoute = StudioMetricasRouteImport.update({
+  id: '/metricas',
+  path: '/metricas',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioPedidosRoute = StudioPedidosRouteImport.update({
+  id: '/pedidos',
+  path: '/pedidos',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioPrecificacaoRoute = StudioPrecificacaoRouteImport.update({
+  id: '/precificacao',
+  path: '/precificacao',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioSettingsRoute = StudioSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => StudioRoute,
+} as any)
+const ApiAsaasChargeRoute = ApiAsaasChargeRouteImport.update({
+  id: '/api/asaas/charge',
+  path: '/api/asaas/charge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAsaasWebhookRoute = ApiAsaasWebhookRouteImport.update({
+  id: '/api/asaas/webhook',
+  path: '/api/asaas/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStripeCheckoutRoute = ApiStripeCheckoutRouteImport.update({
+  id: '/api/stripe/checkout',
+  path: '/api/stripe/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppBusinessClientsRoute = AppBusinessClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
+const AppBusinessQuotesRoute = AppBusinessQuotesRouteImport.update({
+  id: '/quotes',
+  path: '/quotes',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
+const AppBusinessReviewsRoute = AppBusinessReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
+const AppBusinessStatisticsRoute = AppBusinessStatisticsRouteImport.update({
+  id: '/statistics',
+  path: '/statistics',
+  getParentRoute: () => AppBusinessRoute,
+} as any)
+const AppProfessionalIdRoute = AppProfessionalIdRouteImport.update({
+  id: '/professional/$id',
+  path: '/professional/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQuoteIdRoute = AppQuoteIdRouteImport.update({
+  id: '/quote/$id',
+  path: '/quote/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const CBusinessSlugCampaignSlugRoute =
@@ -235,77 +285,27 @@ const CBusinessSlugCampaignSlugRoute =
     path: '/c/$businessSlug/$campaignSlug',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AppQuoteIdRoute = AppQuoteIdRouteImport.update({
-  id: '/quote/$id',
-  path: '/quote/$id',
+const ApiStripeConnectOnboardingRoute =
+  ApiStripeConnectOnboardingRouteImport.update({
+    id: '/api/stripe/connect/onboarding',
+    path: '/api/stripe/connect/onboarding',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1OrdersExternalRoute = ApiV1OrdersExternalRouteImport.update({
+  id: '/api/v1/orders/external',
+  path: '/api/v1/orders/external',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppProfessionalIdQuoteRoute = AppProfessionalIdQuoteRouteImport.update({
+  id: '/professional/$id_/quote',
+  path: '/professional/$id/quote',
   getParentRoute: () => AppRoute,
-} as any)
-const AppProfessionalIdRoute = AppProfessionalIdRouteImport.update({
-  id: '/professional/$id',
-  path: '/professional/$id',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppBusinessStatisticsRoute = AppBusinessStatisticsRouteImport.update({
-  id: '/statistics',
-  path: '/statistics',
-  getParentRoute: () => AppBusinessRoute,
-} as any)
-const AppBusinessReviewsRoute = AppBusinessReviewsRouteImport.update({
-  id: '/reviews',
-  path: '/reviews',
-  getParentRoute: () => AppBusinessRoute,
-} as any)
-const AppBusinessQuotesRoute = AppBusinessQuotesRouteImport.update({
-  id: '/quotes',
-  path: '/quotes',
-  getParentRoute: () => AppBusinessRoute,
-} as any)
-const AppBusinessClientsRoute = AppBusinessClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
-  getParentRoute: () => AppBusinessRoute,
-} as any)
-const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
-  id: '/api/stripe/webhook',
-  path: '/api/stripe/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiStripeCheckoutRoute = ApiStripeCheckoutRouteImport.update({
-  id: '/api/stripe/checkout',
-  path: '/api/stripe/checkout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAsaasWebhookRoute = ApiAsaasWebhookRouteImport.update({
-  id: '/api/asaas/webhook',
-  path: '/api/asaas/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAsaasChargeRoute = ApiAsaasChargeRouteImport.update({
-  id: '/api/asaas/charge',
-  path: '/api/asaas/charge',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const AppProfessionalIdScheduleRoute =
   AppProfessionalIdScheduleRouteImport.update({
     id: '/professional/$id_/schedule',
     path: '/professional/$id/schedule',
     getParentRoute: () => AppRoute,
-  } as any)
-const AppProfessionalIdQuoteRoute = AppProfessionalIdQuoteRouteImport.update({
-  id: '/professional/$id_/quote',
-  path: '/professional/$id/quote',
-  getParentRoute: () => AppRoute,
-} as any)
-const ApiV1OrdersExternalRoute = ApiV1OrdersExternalRouteImport.update({
-  id: '/api/v1/orders/external',
-  path: '/api/v1/orders/external',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiStripeConnectOnboardingRoute =
-  ApiStripeConnectOnboardingRouteImport.update({
-    id: '/api/stripe/connect/onboarding',
-    path: '/api/stripe/connect/onboarding',
-    getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -635,32 +635,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/studio': {
-      id: '/studio'
-      path: '/studio'
-      fullPath: '/studio'
-      preLoaderRoute: typeof StudioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/role': {
-      id: '/role'
-      path: '/role'
-      fullPath: '/role'
-      preLoaderRoute: typeof RoleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -670,200 +649,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/studio/': {
-      id: '/studio/'
-      path: '/'
-      fullPath: '/studio/'
-      preLoaderRoute: typeof StudioIndexRouteImport
-      parentRoute: typeof StudioRoute
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/role': {
+      id: '/role'
+      path: '/role'
+      fullPath: '/role'
+      preLoaderRoute: typeof RoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studio': {
+      id: '/studio'
+      path: '/studio'
+      fullPath: '/studio'
+      preLoaderRoute: typeof StudioRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/': {
       id: '/app/'
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/studio/settings': {
-      id: '/studio/settings'
-      path: '/settings'
-      fullPath: '/studio/settings'
-      preLoaderRoute: typeof StudioSettingsRouteImport
-      parentRoute: typeof StudioRoute
-    }
-    '/studio/precificacao': {
-      id: '/studio/precificacao'
-      path: '/precificacao'
-      fullPath: '/studio/precificacao'
-      preLoaderRoute: typeof StudioPrecificacaoRouteImport
-      parentRoute: typeof StudioRoute
-    }
-    '/studio/pedidos': {
-      id: '/studio/pedidos'
-      path: '/pedidos'
-      fullPath: '/studio/pedidos'
-      preLoaderRoute: typeof StudioPedidosRouteImport
-      parentRoute: typeof StudioRoute
-    }
-    '/studio/metricas': {
-      id: '/studio/metricas'
-      path: '/metricas'
-      fullPath: '/studio/metricas'
-      preLoaderRoute: typeof StudioMetricasRouteImport
-      parentRoute: typeof StudioRoute
-    }
-    '/studio/financeiro': {
-      id: '/studio/financeiro'
-      path: '/financeiro'
-      fullPath: '/studio/financeiro'
-      preLoaderRoute: typeof StudioFinanceiroRouteImport
-      parentRoute: typeof StudioRoute
-    }
-    '/studio/entregas': {
-      id: '/studio/entregas'
-      path: '/entregas'
-      fullPath: '/studio/entregas'
-      preLoaderRoute: typeof StudioEntregasRouteImport
-      parentRoute: typeof StudioRoute
-    }
-    '/studio/crm': {
-      id: '/studio/crm'
-      path: '/crm'
-      fullPath: '/studio/crm'
-      preLoaderRoute: typeof StudioCrmRouteImport
-      parentRoute: typeof StudioRoute
-    }
-    '/studio/catalog': {
-      id: '/studio/catalog'
-      path: '/catalog'
-      fullPath: '/studio/catalog'
-      preLoaderRoute: typeof StudioCatalogRouteImport
-      parentRoute: typeof StudioRoute
-    }
-    '/studio/caixa': {
-      id: '/studio/caixa'
-      path: '/caixa'
-      fullPath: '/studio/caixa'
-      preLoaderRoute: typeof StudioCaixaRouteImport
-      parentRoute: typeof StudioRoute
-    }
-    '/studio/agenda': {
-      id: '/studio/agenda'
-      path: '/agenda'
-      fullPath: '/studio/agenda'
-      preLoaderRoute: typeof StudioAgendaRouteImport
-      parentRoute: typeof StudioRoute
-    }
-    '/pedido/$token': {
-      id: '/pedido/$token'
-      path: '/pedido/$token'
-      fullPath: '/pedido/$token'
-      preLoaderRoute: typeof PedidoTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/p/$slug': {
-      id: '/p/$slug'
-      path: '/p/$slug'
-      fullPath: '/p/$slug'
-      preLoaderRoute: typeof PSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/loja/$slug': {
-      id: '/loja/$slug'
-      path: '/loja/$slug'
-      fullPath: '/loja/$slug'
-      preLoaderRoute: typeof LojaSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app/wallet': {
-      id: '/app/wallet'
-      path: '/wallet'
-      fullPath: '/app/wallet'
-      preLoaderRoute: typeof AppWalletRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/settings': {
-      id: '/app/settings'
-      path: '/settings'
-      fullPath: '/app/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/search': {
-      id: '/app/search'
-      path: '/search'
-      fullPath: '/app/search'
-      preLoaderRoute: typeof AppSearchRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/requests': {
-      id: '/app/requests'
-      path: '/requests'
-      fullPath: '/app/requests'
-      preLoaderRoute: typeof AppRequestsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/profile': {
-      id: '/app/profile'
-      path: '/profile'
-      fullPath: '/app/profile'
-      preLoaderRoute: typeof AppProfileRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/notifications': {
-      id: '/app/notifications'
-      path: '/notifications'
-      fullPath: '/app/notifications'
-      preLoaderRoute: typeof AppNotificationsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/messages': {
-      id: '/app/messages'
-      path: '/messages'
-      fullPath: '/app/messages'
-      preLoaderRoute: typeof AppMessagesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/favorites': {
-      id: '/app/favorites'
-      path: '/favorites'
-      fullPath: '/app/favorites'
-      preLoaderRoute: typeof AppFavoritesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/express': {
-      id: '/app/express'
-      path: '/express'
-      fullPath: '/app/express'
-      preLoaderRoute: typeof AppExpressRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/ello-link': {
-      id: '/app/ello-link'
-      path: '/ello-link'
-      fullPath: '/app/ello-link'
-      preLoaderRoute: typeof AppElloLinkRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/business': {
-      id: '/app/business'
-      path: '/business'
-      fullPath: '/app/business'
-      preLoaderRoute: typeof AppBusinessRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/agenda': {
-      id: '/app/agenda'
-      path: '/agenda'
-      fullPath: '/app/agenda'
-      preLoaderRoute: typeof AppAgendaRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/admin': {
@@ -873,67 +691,193 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
-    '/c/$businessSlug/$campaignSlug': {
-      id: '/c/$businessSlug/$campaignSlug'
-      path: '/c/$businessSlug/$campaignSlug'
-      fullPath: '/c/$businessSlug/$campaignSlug'
-      preLoaderRoute: typeof CBusinessSlugCampaignSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app/quote/$id': {
-      id: '/app/quote/$id'
-      path: '/quote/$id'
-      fullPath: '/app/quote/$id'
-      preLoaderRoute: typeof AppQuoteIdRouteImport
+    '/app/agenda': {
+      id: '/app/agenda'
+      path: '/agenda'
+      fullPath: '/app/agenda'
+      preLoaderRoute: typeof AppAgendaRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/professional/$id': {
-      id: '/app/professional/$id'
-      path: '/professional/$id'
-      fullPath: '/app/professional/$id'
-      preLoaderRoute: typeof AppProfessionalIdRouteImport
+    '/app/business': {
+      id: '/app/business'
+      path: '/business'
+      fullPath: '/app/business'
+      preLoaderRoute: typeof AppBusinessRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/business/statistics': {
-      id: '/app/business/statistics'
-      path: '/statistics'
-      fullPath: '/app/business/statistics'
-      preLoaderRoute: typeof AppBusinessStatisticsRouteImport
-      parentRoute: typeof AppBusinessRoute
+    '/app/ello-link': {
+      id: '/app/ello-link'
+      path: '/ello-link'
+      fullPath: '/app/ello-link'
+      preLoaderRoute: typeof AppElloLinkRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/app/business/reviews': {
-      id: '/app/business/reviews'
-      path: '/reviews'
-      fullPath: '/app/business/reviews'
-      preLoaderRoute: typeof AppBusinessReviewsRouteImport
-      parentRoute: typeof AppBusinessRoute
+    '/app/express': {
+      id: '/app/express'
+      path: '/express'
+      fullPath: '/app/express'
+      preLoaderRoute: typeof AppExpressRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/app/business/quotes': {
-      id: '/app/business/quotes'
-      path: '/quotes'
-      fullPath: '/app/business/quotes'
-      preLoaderRoute: typeof AppBusinessQuotesRouteImport
-      parentRoute: typeof AppBusinessRoute
+    '/app/favorites': {
+      id: '/app/favorites'
+      path: '/favorites'
+      fullPath: '/app/favorites'
+      preLoaderRoute: typeof AppFavoritesRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/app/business/clients': {
-      id: '/app/business/clients'
-      path: '/clients'
-      fullPath: '/app/business/clients'
-      preLoaderRoute: typeof AppBusinessClientsRouteImport
-      parentRoute: typeof AppBusinessRoute
+    '/app/messages': {
+      id: '/app/messages'
+      path: '/messages'
+      fullPath: '/app/messages'
+      preLoaderRoute: typeof AppMessagesRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/api/stripe/webhook': {
-      id: '/api/stripe/webhook'
-      path: '/api/stripe/webhook'
-      fullPath: '/api/stripe/webhook'
-      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+    '/app/notifications': {
+      id: '/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/requests': {
+      id: '/app/requests'
+      path: '/requests'
+      fullPath: '/app/requests'
+      preLoaderRoute: typeof AppRequestsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/search': {
+      id: '/app/search'
+      path: '/search'
+      fullPath: '/app/search'
+      preLoaderRoute: typeof AppSearchRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/wallet': {
+      id: '/app/wallet'
+      path: '/wallet'
+      fullPath: '/app/wallet'
+      preLoaderRoute: typeof AppWalletRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/loja/$slug': {
+      id: '/loja/$slug'
+      path: '/loja/$slug'
+      fullPath: '/loja/$slug'
+      preLoaderRoute: typeof LojaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/stripe/checkout': {
-      id: '/api/stripe/checkout'
-      path: '/api/stripe/checkout'
-      fullPath: '/api/stripe/checkout'
-      preLoaderRoute: typeof ApiStripeCheckoutRouteImport
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pedido/$token': {
+      id: '/pedido/$token'
+      path: '/pedido/$token'
+      fullPath: '/pedido/$token'
+      preLoaderRoute: typeof PedidoTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studio/': {
+      id: '/studio/'
+      path: '/'
+      fullPath: '/studio/'
+      preLoaderRoute: typeof StudioIndexRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/agenda': {
+      id: '/studio/agenda'
+      path: '/agenda'
+      fullPath: '/studio/agenda'
+      preLoaderRoute: typeof StudioAgendaRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/caixa': {
+      id: '/studio/caixa'
+      path: '/caixa'
+      fullPath: '/studio/caixa'
+      preLoaderRoute: typeof StudioCaixaRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/catalog': {
+      id: '/studio/catalog'
+      path: '/catalog'
+      fullPath: '/studio/catalog'
+      preLoaderRoute: typeof StudioCatalogRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/crm': {
+      id: '/studio/crm'
+      path: '/crm'
+      fullPath: '/studio/crm'
+      preLoaderRoute: typeof StudioCrmRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/entregas': {
+      id: '/studio/entregas'
+      path: '/entregas'
+      fullPath: '/studio/entregas'
+      preLoaderRoute: typeof StudioEntregasRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/financeiro': {
+      id: '/studio/financeiro'
+      path: '/financeiro'
+      fullPath: '/studio/financeiro'
+      preLoaderRoute: typeof StudioFinanceiroRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/metricas': {
+      id: '/studio/metricas'
+      path: '/metricas'
+      fullPath: '/studio/metricas'
+      preLoaderRoute: typeof StudioMetricasRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/pedidos': {
+      id: '/studio/pedidos'
+      path: '/pedidos'
+      fullPath: '/studio/pedidos'
+      preLoaderRoute: typeof StudioPedidosRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/precificacao': {
+      id: '/studio/precificacao'
+      path: '/precificacao'
+      fullPath: '/studio/precificacao'
+      preLoaderRoute: typeof StudioPrecificacaoRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/settings': {
+      id: '/studio/settings'
+      path: '/settings'
+      fullPath: '/studio/settings'
+      preLoaderRoute: typeof StudioSettingsRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/api/asaas/charge': {
+      id: '/api/asaas/charge'
+      path: '/api/asaas/charge'
+      fullPath: '/api/asaas/charge'
+      preLoaderRoute: typeof ApiAsaasChargeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/asaas/webhook': {
@@ -943,32 +887,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAsaasWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/asaas/charge': {
-      id: '/api/asaas/charge'
-      path: '/api/asaas/charge'
-      fullPath: '/api/asaas/charge'
-      preLoaderRoute: typeof ApiAsaasChargeRouteImport
+    '/api/stripe/checkout': {
+      id: '/api/stripe/checkout'
+      path: '/api/stripe/checkout'
+      fullPath: '/api/stripe/checkout'
+      preLoaderRoute: typeof ApiStripeCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/professional/$id_/schedule': {
-      id: '/app/professional/$id_/schedule'
-      path: '/professional/$id/schedule'
-      fullPath: '/app/professional/$id/schedule'
-      preLoaderRoute: typeof AppProfessionalIdScheduleRouteImport
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/business/clients': {
+      id: '/app/business/clients'
+      path: '/clients'
+      fullPath: '/app/business/clients'
+      preLoaderRoute: typeof AppBusinessClientsRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
+    '/app/business/quotes': {
+      id: '/app/business/quotes'
+      path: '/quotes'
+      fullPath: '/app/business/quotes'
+      preLoaderRoute: typeof AppBusinessQuotesRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
+    '/app/business/reviews': {
+      id: '/app/business/reviews'
+      path: '/reviews'
+      fullPath: '/app/business/reviews'
+      preLoaderRoute: typeof AppBusinessReviewsRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
+    '/app/business/statistics': {
+      id: '/app/business/statistics'
+      path: '/statistics'
+      fullPath: '/app/business/statistics'
+      preLoaderRoute: typeof AppBusinessStatisticsRouteImport
+      parentRoute: typeof AppBusinessRoute
+    }
+    '/app/professional/$id': {
+      id: '/app/professional/$id'
+      path: '/professional/$id'
+      fullPath: '/app/professional/$id'
+      preLoaderRoute: typeof AppProfessionalIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/professional/$id_/quote': {
-      id: '/app/professional/$id_/quote'
-      path: '/professional/$id/quote'
-      fullPath: '/app/professional/$id/quote'
-      preLoaderRoute: typeof AppProfessionalIdQuoteRouteImport
+    '/app/quote/$id': {
+      id: '/app/quote/$id'
+      path: '/quote/$id'
+      fullPath: '/app/quote/$id'
+      preLoaderRoute: typeof AppQuoteIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/api/v1/orders/external': {
-      id: '/api/v1/orders/external'
-      path: '/api/v1/orders/external'
-      fullPath: '/api/v1/orders/external'
-      preLoaderRoute: typeof ApiV1OrdersExternalRouteImport
+    '/c/$businessSlug/$campaignSlug': {
+      id: '/c/$businessSlug/$campaignSlug'
+      path: '/c/$businessSlug/$campaignSlug'
+      fullPath: '/c/$businessSlug/$campaignSlug'
+      preLoaderRoute: typeof CBusinessSlugCampaignSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/stripe/connect/onboarding': {
@@ -977,6 +956,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/stripe/connect/onboarding'
       preLoaderRoute: typeof ApiStripeConnectOnboardingRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/orders/external': {
+      id: '/api/v1/orders/external'
+      path: '/api/v1/orders/external'
+      fullPath: '/api/v1/orders/external'
+      preLoaderRoute: typeof ApiV1OrdersExternalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/professional/$id_/quote': {
+      id: '/app/professional/$id_/quote'
+      path: '/professional/$id/quote'
+      fullPath: '/app/professional/$id/quote'
+      preLoaderRoute: typeof AppProfessionalIdQuoteRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/professional/$id_/schedule': {
+      id: '/app/professional/$id_/schedule'
+      path: '/professional/$id/schedule'
+      fullPath: '/app/professional/$id/schedule'
+      preLoaderRoute: typeof AppProfessionalIdScheduleRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
