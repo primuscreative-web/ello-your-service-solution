@@ -540,15 +540,23 @@ function OnboardingPage() {
                   ))}
                 </div>
               </fieldset>
-              <Field label="Uma frase sobre seu negócio">
-                <textarea
-                  value={form.description}
-                  onChange={(event) => update("description", event.target.value)}
-                  rows={3}
-                  maxLength={220}
-                  placeholder="Conte o que seus clientes encontram por aqui..."
-                  className={`${inputClass} resize-none`}
-                />
+              <Field
+                label="Uma frase sobre seu negócio"
+                hint="Descreva o que seus clientes encontram, diferenciais ou especialidades."
+              >
+                <div className="relative">
+                  <textarea
+                    value={form.description}
+                    onChange={(event) => update("description", event.target.value)}
+                    rows={4}
+                    maxLength={1000}
+                    placeholder="Conte o que seus clientes encontram por aqui..."
+                    className={`${inputClass} resize-none pb-6`}
+                  />
+                  <span className="pointer-events-none absolute bottom-2 right-3 text-[11px] font-medium text-slate-400">
+                    {form.description.length}/1000
+                  </span>
+                </div>
               </Field>
               <button
                 type="button"
