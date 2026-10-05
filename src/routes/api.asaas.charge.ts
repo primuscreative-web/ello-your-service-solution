@@ -1,17 +1,38 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import {
-  createAsaasPixCharge,
+  createAsaasUnifiedCharge,
   findOrCreateAsaasCustomer,
   getAsaasAdminSupabase,
   getAsaasPixQrCode,
   isAsaasConfigured,
 } from "@/lib/asaas.server";
 
+const creditCardSchema = z.object({
+  holderName: z.string().min(2),
+  number: z.string().min(13),
+  expiryMonth: z.string().length(2),
+  expiryYear: z.string().length(4),
+  ccv: z.string().min(3),
+});
+
 const chargeSchema = z.object({
   orderId: z.string().uuid(),
   trackingToken: z.string().uuid(),
   customerCpfCnpj: z.string().optional(),
+  billingType: z.enum(["PIX", "CREDIT_CARD", "BOLETO"]).default("PIX"),
+  creditCard: creditCardSchema.optional(),
+  creditCardHolderInfo: z
+    .object({
+      name: z.string(),
+      email: z.string().email(),
+      cpfCnpj: z.string(),
+      postalCode: z.string(),
+      addressNumber: z.string(),
+      phone: z.string(),
+    })
+    .optional(),
+  installmentCount: z.number().int().min(1).max(12).optional(),
 });
 
 export const Route = createFileRoute("/api/asaas/charge")({
@@ -22,8 +43,11 @@ export const Route = createFileRoute("/api/asaas/charge")({
         try {
           const body = await request.json();
           input = chargeSchema.parse(body);
-        } catch {
-          return Response.json({ error: "Dados inválidos para geração do Pix." }, { status: 400 });
+        } catch (err) {
+          return Response.json(
+            { error: "Dados inválidos para geração da cobrança Asaas.", details: err },
+            { status: 400 },
+          );
         }
 
         if (!isAsaasConfigured()) {
@@ -61,108 +85,164 @@ export const Route = createFileRoute("/api/asaas/charge")({
             return Response.json({ error: "Valor de pedido inválido." }, { status: 422 });
           }
 
-          // 2. Busca pagamento Asaas já existente para este pedido (idempotência)
+          // 2. Busca subconta Asaas do estabelecimento
+          const { data: paymentAccount } = await supabase
+            .from("localhub_payment_accounts")
+            .select("subaccount_api_key, wallet_id, sales_enabled, onboarding_status")
+            .eq("business_id", order.business_id)
+            .maybeSingle();
+
+          const subaccountApiKey = paymentAccount?.subaccount_api_key ?? undefined;
+
+          // 3. Busca pagamento Asaas já existente para este pedido (idempotência)
           const { data: existingPayment } = await supabase
             .from("localhub_asaas_order_payments")
-            .select("asaas_payment_id, status, pix_qr_code_payload, pix_qr_code_image, pix_expiration_date, invoice_url")
+            .select("asaas_payment_id, status, billing_type, pix_qr_code_payload, pix_qr_code_image, pix_expiration_date, invoice_url")
             .eq("order_id", order.id)
             .maybeSingle();
 
           if (
-            existingPayment?.pix_qr_code_payload &&
+            existingPayment &&
             existingPayment.status === "pending" &&
-            existingPayment.pix_expiration_date &&
-            new Date(existingPayment.pix_expiration_date) > new Date()
+            existingPayment.billing_type === input.billingType
           ) {
-            return Response.json({
-              success: true,
-              pixPayload: existingPayment.pix_qr_code_payload,
-              pixImage: existingPayment.pix_qr_code_image,
-              expirationDate: existingPayment.pix_expiration_date,
-              invoiceUrl: existingPayment.invoice_url,
-            });
+            if (
+              input.billingType === "PIX" &&
+              existingPayment.pix_qr_code_payload &&
+              existingPayment.pix_expiration_date &&
+              new Date(existingPayment.pix_expiration_date) > new Date()
+            ) {
+              return Response.json({
+                success: true,
+                billingType: "PIX",
+                pixPayload: existingPayment.pix_qr_code_payload,
+                pixImage: existingPayment.pix_qr_code_image,
+                expirationDate: existingPayment.pix_expiration_date,
+                invoiceUrl: existingPayment.invoice_url,
+              });
+            }
+
+            if (input.billingType === "CREDIT_CARD" && existingPayment.invoice_url) {
+              return Response.json({
+                success: true,
+                billingType: "CREDIT_CARD",
+                invoiceUrl: existingPayment.invoice_url,
+              });
+            }
           }
 
-          // 3. Localiza dados do negócio
+          // 4. Localiza dados do negócio
           const { data: business } = await supabase
             .from("localhub_businesses")
             .select("id, name, slug")
             .eq("id", order.business_id)
             .single();
 
-          // 4. Cria ou localiza o cliente no Asaas
-          const asaasCustomerId = await findOrCreateAsaasCustomer({
-            name: order.customer_name || "Cliente ELLO",
-            phone: order.customer_phone,
-            cpfCnpj: input.customerCpfCnpj,
-          });
+          // 5. Cria ou localiza o cliente no Asaas
+          const asaasCustomerId = await findOrCreateAsaasCustomer(
+            {
+              name: order.customer_name || "Cliente ELLO",
+              phone: order.customer_phone,
+              cpfCnpj: input.customerCpfCnpj,
+            },
+            subaccountApiKey,
+          );
 
-          // 5. Gera a cobrança Pix no Asaas
-          const payment = await createAsaasPixCharge({
-            customerId: asaasCustomerId,
-            value: orderTotal,
-            description: `Pedido #${order.order_number} - ${business?.name ?? "ELLO"}`,
-            externalReference: order.id,
-          });
+          // 6. Gera a cobrança (Pix ou Cartão) no Asaas
+          const payment = await createAsaasUnifiedCharge(
+            {
+              customerId: asaasCustomerId,
+              value: orderTotal,
+              description: `Pedido #${order.order_number} - ${business?.name ?? "ELLO"}`,
+              externalReference: order.id,
+              billingType: input.billingType,
+              creditCard: input.creditCard,
+              creditCardHolderInfo: input.creditCardHolderInfo,
+              installmentCount: input.installmentCount,
+            },
+            subaccountApiKey,
+          );
 
-          // 6. Obtém o QR Code e o Copia-e-Cola
-          const pixData = await getAsaasPixQrCode(payment.id);
+          let pixPayload: string | null = null;
+          let pixImage: string | null = null;
+          let expirationDate: string | null = null;
 
-          // 7. Persiste o registro de pagamento atrelado ao pedido
+          if (input.billingType === "PIX") {
+            try {
+              const pixData = await getAsaasPixQrCode(payment.id, subaccountApiKey);
+              pixPayload = pixData.payload;
+              pixImage = pixData.encodedImage;
+              expirationDate = pixData.expirationDate;
+            } catch (qrErr) {
+              console.warn("Falha ao gerar QR Code Pix direto:", qrErr);
+            }
+          }
+
           const amountCents = Math.round(orderTotal * 100);
+          const isImmediateSuccess =
+            payment.status === "CONFIRMED" || payment.status === "RECEIVED";
+
+          // 7. Persiste o registro de pagamento
           await supabase.from("localhub_asaas_order_payments").upsert({
             order_id: order.id,
             business_id: order.business_id,
             asaas_payment_id: payment.id,
             asaas_customer_id: asaasCustomerId,
-            billing_type: "PIX",
-            status: "pending",
-            pix_qr_code_payload: pixData.payload,
-            pix_qr_code_image: pixData.encodedImage,
-            pix_expiration_date: pixData.expirationDate,
+            billing_type: input.billingType,
+            status: isImmediateSuccess ? "confirmed" : "pending",
+            pix_qr_code_payload: pixPayload,
+            pix_qr_code_image: pixImage,
+            pix_expiration_date: expirationDate,
             amount_cents: amountCents,
             invoice_url: payment.invoiceUrl ?? null,
+            credit_card_brand: payment.creditCard?.creditCardBrand ?? null,
+            credit_card_last4: payment.creditCard?.creditCardNumber
+              ? payment.creditCard.creditCardNumber.slice(-4)
+              : null,
+            installments: input.installmentCount ?? 1,
             updated_at: new Date().toISOString(),
           });
 
-          // 8. Registra no ledger financeiro da carteira como transação pendente
+          // 8. Registra no ledger financeiro da carteira
           await supabase.from("localhub_wallet_transactions").upsert(
             {
               business_id: order.business_id,
               provider_transaction_id: payment.id,
               transaction_type: "sale",
-              status: "pending",
+              status: isImmediateSuccess ? "available" : "pending",
               amount_cents: amountCents,
-              description: `Venda Pix - Pedido #${order.order_number}`,
+              description: `Venda ${input.billingType === "PIX" ? "Pix" : "Cartão"} - Pedido #${order.order_number}`,
             },
             { onConflict: "provider_transaction_id" },
           );
 
-          // 9. Atualiza o pedido para status pendente de pagamento
+          // 9. Atualiza o pedido
           await supabase
             .from("localhub_orders")
             .update({
-              payment_status: "pending",
-              payment_method: "online_pix",
+              payment_status: isImmediateSuccess ? "paid" : "pending",
+              payment_method: input.billingType === "PIX" ? "online_pix" : "online_card",
               payment_timing: "online",
             })
             .eq("id", order.id);
 
           return Response.json({
             success: true,
-            pixPayload: pixData.payload,
-            pixImage: pixData.encodedImage,
-            expirationDate: pixData.expirationDate,
+            billingType: input.billingType,
+            pixPayload,
+            pixImage,
+            expirationDate,
             invoiceUrl: payment.invoiceUrl,
+            paid: isImmediateSuccess,
           });
         } catch (error) {
-          console.error("Asaas charge generation failed", error instanceof Error ? error.message : error);
+          console.error("Asaas charge generation failed:", error instanceof Error ? error.message : error);
           return Response.json(
             {
               error:
                 error instanceof Error
                   ? error.message
-                  : "Não foi possível gerar a chave Pix no momento.",
+                  : "Não foi possível gerar a cobrança no momento.",
             },
             { status: 502 },
           );

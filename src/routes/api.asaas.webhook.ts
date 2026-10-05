@@ -10,8 +10,15 @@ type AsaasWebhookPayload = {
     | "PAYMENT_OVERDUE"
     | "PAYMENT_REFUNDED"
     | "PAYMENT_REVERSED"
-    | "PAYMENT_DELETED";
-  payment: {
+    | "PAYMENT_DELETED"
+    | "TRANSFER_CREATED"
+    | "TRANSFER_PENDING"
+    | "TRANSFER_IN_BANK_PROCESSING"
+    | "TRANSFER_BLOCKED"
+    | "TRANSFER_DONE"
+    | "TRANSFER_FAILED"
+    | "TRANSFER_CANCELLED";
+  payment?: {
     id: string;
     customer: string;
     value: number;
@@ -21,6 +28,15 @@ type AsaasWebhookPayload = {
     externalReference?: string;
     confirmedDate?: string;
     paymentDate?: string;
+  };
+  transfer?: {
+    id: string;
+    value: number;
+    netValue?: number;
+    status: string;
+    transferFee?: number;
+    effectiveDate?: string;
+    failReason?: string;
   };
 };
 
@@ -40,18 +56,19 @@ export const Route = createFileRoute("/api/asaas/webhook")({
           return Response.json({ error: "Payload inválido." }, { status: 400 });
         }
 
-        if (!body.event || !body.payment?.id) {
-          return Response.json({ error: "Formato de evento inválido." }, { status: 400 });
+        if (!body.event) {
+          return Response.json({ error: "Evento não especificado." }, { status: 400 });
         }
 
         const supabase = getAsaasAdminSupabase();
-        const eventId = `${body.event}_${body.payment.id}_${body.payment.status}`;
+        const entityId = body.payment?.id || body.transfer?.id || "unknown";
+        const eventId = `${body.event}_${entityId}_${Date.now()}`;
 
         // 1. Checagem de idempotência
         const { data: existingEvent } = await supabase
           .from("localhub_asaas_webhook_events")
           .select("event_id")
-          .eq("event_id", eventId)
+          .eq("event_id", `${body.event}_${entityId}`)
           .maybeSingle();
 
         if (existingEvent) {
@@ -59,106 +76,137 @@ export const Route = createFileRoute("/api/asaas/webhook")({
         }
 
         try {
-          const paymentId = body.payment.id;
-          const orderId = body.payment.externalReference;
-
-          // 2. Localiza o registro de pagamento
-          let orderPaymentQuery = supabase
-            .from("localhub_asaas_order_payments")
-            .select("order_id, business_id, status, amount_cents")
-            .eq("asaas_payment_id", paymentId);
-
-          let { data: orderPayment } = await orderPaymentQuery.maybeSingle();
-
-          if (!orderPayment && orderId) {
-            const fallbackQuery = await supabase
-              .from("localhub_asaas_order_payments")
-              .select("order_id, business_id, status, amount_cents")
-              .eq("order_id", orderId)
-              .maybeSingle();
-            orderPayment = fallbackQuery.data;
-          }
-
-          if (orderPayment) {
-            const targetOrderId = orderPayment.order_id;
-            const businessId = orderPayment.business_id;
-
-            // 3. Processa eventos de confirmação / recebimento do Pix
-            if (body.event === "PAYMENT_RECEIVED" || body.event === "PAYMENT_CONFIRMED") {
-              // Atualiza pagamento local
+          // Trata eventos de transferência / saque
+          if (body.transfer?.id) {
+            const transferId = body.transfer.id;
+            if (body.event === "TRANSFER_DONE") {
               await supabase
-                .from("localhub_asaas_order_payments")
+                .from("localhub_wallet_withdrawals")
                 .update({
-                  status: "confirmed",
-                  updated_at: new Date().toISOString(),
+                  status: "completed",
+                  completed_at: new Date().toISOString(),
                 })
-                .eq("order_id", targetOrderId);
+                .eq("provider_transfer_id", transferId);
 
-              // Atualiza pedido para 'paid'
-              await supabase
-                .from("localhub_orders")
-                .update({
-                  payment_status: "paid",
-                  updated_at: new Date().toISOString(),
-                })
-                .eq("id", targetOrderId);
-
-              // Libera transação na carteira
               await supabase
                 .from("localhub_wallet_transactions")
+                .update({ status: "completed" })
+                .eq("provider_transaction_id", transferId);
+            } else if (body.event === "TRANSFER_FAILED" || body.event === "TRANSFER_CANCELLED") {
+              await supabase
+                .from("localhub_wallet_withdrawals")
                 .update({
-                  status: "available",
-                  available_at: new Date().toISOString(),
+                  status: "failed",
+                  failure_reason: body.transfer.failReason || "Falha na transferência bancária.",
                 })
-                .eq("provider_transaction_id", paymentId);
-            }
-
-            // 4. Processa estorno / cancelamento
-            if (body.event === "PAYMENT_REFUNDED" || body.event === "PAYMENT_REVERSED") {
-              await supabase
-                .from("localhub_asaas_order_payments")
-                .update({ status: "refunded", updated_at: new Date().toISOString() })
-                .eq("order_id", targetOrderId);
+                .eq("provider_transfer_id", transferId);
 
               await supabase
-                .from("localhub_orders")
-                .update({ payment_status: "refunded", updated_at: new Date().toISOString() })
-                .eq("id", targetOrderId);
-
-              await supabase.from("localhub_wallet_transactions").upsert({
-                business_id: businessId,
-                provider_transaction_id: `${paymentId}_refund`,
-                transaction_type: "refund",
-                status: "completed",
-                amount_cents: -Math.abs(orderPayment.amount_cents),
-                description: `Estorno Pix - Pedido #${targetOrderId.slice(0, 8)}`,
-              });
-            }
-
-            // 5. Processa expiração
-            if (body.event === "PAYMENT_OVERDUE") {
-              await supabase
-                .from("localhub_asaas_order_payments")
-                .update({ status: "overdue", updated_at: new Date().toISOString() })
-                .eq("order_id", targetOrderId);
-
-              await supabase
-                .from("localhub_orders")
-                .update({ payment_status: "failed", updated_at: new Date().toISOString() })
-                .eq("id", targetOrderId)
-                .eq("payment_status", "pending");
+                .from("localhub_wallet_transactions")
+                .update({ status: "failed" })
+                .eq("provider_transaction_id", transferId);
             }
           }
 
-          // 6. Registra evento na tabela de deduplicação
+          // Trata eventos de pagamento
+          if (body.payment?.id) {
+            const paymentId = body.payment.id;
+            const orderId = body.payment.externalReference;
+
+            let orderPaymentQuery = supabase
+              .from("localhub_asaas_order_payments")
+              .select("order_id, business_id, status, amount_cents")
+              .eq("asaas_payment_id", paymentId);
+
+            let { data: orderPayment } = await orderPaymentQuery.maybeSingle();
+
+            if (!orderPayment && orderId) {
+              const fallbackQuery = await supabase
+                .from("localhub_asaas_order_payments")
+                .select("order_id, business_id, status, amount_cents")
+                .eq("order_id", orderId)
+                .maybeSingle();
+              orderPayment = fallbackQuery.data;
+            }
+
+            if (orderPayment) {
+              const targetOrderId = orderPayment.order_id;
+              const businessId = orderPayment.business_id;
+
+              // Confirmação de pagamento (Pix ou Cartão)
+              if (body.event === "PAYMENT_RECEIVED" || body.event === "PAYMENT_CONFIRMED") {
+                await supabase
+                  .from("localhub_asaas_order_payments")
+                  .update({
+                    status: "confirmed",
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("order_id", targetOrderId);
+
+                await supabase
+                  .from("localhub_orders")
+                  .update({
+                    payment_status: "paid",
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("id", targetOrderId);
+
+                await supabase
+                  .from("localhub_wallet_transactions")
+                  .update({
+                    status: "available",
+                    available_at: new Date().toISOString(),
+                  })
+                  .eq("provider_transaction_id", paymentId);
+              }
+
+              // Estorno / Devolução
+              if (body.event === "PAYMENT_REFUNDED" || body.event === "PAYMENT_REVERSED") {
+                await supabase
+                  .from("localhub_asaas_order_payments")
+                  .update({ status: "refunded", updated_at: new Date().toISOString() })
+                  .eq("order_id", targetOrderId);
+
+                await supabase
+                  .from("localhub_orders")
+                  .update({ payment_status: "refunded", updated_at: new Date().toISOString() })
+                  .eq("id", targetOrderId);
+
+                await supabase.from("localhub_wallet_transactions").upsert({
+                  business_id: businessId,
+                  provider_transaction_id: `${paymentId}_refund`,
+                  transaction_type: "refund",
+                  status: "completed",
+                  amount_cents: -Math.abs(orderPayment.amount_cents),
+                  description: `Estorno Asaas - Pedido #${targetOrderId.slice(0, 8)}`,
+                });
+              }
+
+              // Expiração
+              if (body.event === "PAYMENT_OVERDUE") {
+                await supabase
+                  .from("localhub_asaas_order_payments")
+                  .update({ status: "overdue", updated_at: new Date().toISOString() })
+                  .eq("order_id", targetOrderId);
+
+                await supabase
+                  .from("localhub_orders")
+                  .update({ payment_status: "failed", updated_at: new Date().toISOString() })
+                  .eq("id", targetOrderId)
+                  .eq("payment_status", "pending");
+              }
+            }
+          }
+
+          // Registra na deduplicação
           await supabase.from("localhub_asaas_webhook_events").insert({
-            event_id: eventId,
+            event_id: `${body.event}_${entityId}`,
             event_type: body.event,
           });
 
           return Response.json({ received: true });
         } catch (error) {
-          console.error("Asaas webhook processing error", error);
+          console.error("Asaas webhook processing error:", error);
           return Response.json({ error: "Erro ao processar evento." }, { status: 500 });
         }
       },

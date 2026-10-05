@@ -185,9 +185,9 @@ function ProfileScreen() {
 
         <ElloInfoBanner
           icon={<WalletCards className="size-5" />}
-          eyebrow="Em breve"
-          title="Pagamentos"
-          body="A Carteira ELLO será ativada quando o gateway de pagamentos for conectado."
+          eyebrow="Pagamentos"
+          title="Carteira & Pix Asaas"
+          body="Pagamentos online com confirmação imediata e taxa zero de intermediação."
         />
 
         {profile?.role === "admin" ? (

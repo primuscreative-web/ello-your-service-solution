@@ -1,46 +1,44 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  AlertCircle,
   ArrowDownToLine,
+  ArrowUpRight,
   Banknote,
   CheckCircle2,
-  CircleCheck,
   Clock3,
-  ExternalLink,
+  Copy,
+  Landmark,
+  QrCode,
+  RefreshCw,
   ShieldCheck,
+  Store,
   WalletCards,
-  AlertCircle,
+  XCircle,
 } from "lucide-react";
-import { ElloInfoBanner } from "@/components/ello/primitives";
 import { money } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-type WalletProfile = {
-  sales_enabled: boolean;
-  onboarding_status:
-    | "not_started"
-    | "requested"
-    | "under_review"
-    | "active"
-    | "rejected"
-    | "suspended";
-  wallet_id: string | null;
+type AsaasAccountData = {
+  salesEnabled: boolean;
+  onboardingStatus: string;
+  providerAccountId?: string | null;
+  walletId?: string | null;
+  accountNumber?: string | null;
+  agency?: string | null;
+  pixKey?: string | null;
+  pixKeyType?: string | null;
+  legalName?: string | null;
+  cpfCnpj?: string | null;
+  email?: string | null;
+  phone?: string | null;
 };
 
-type StripeConnectProfile = {
-  stripe_account_id: string;
-  charges_enabled: boolean;
-  payouts_enabled: boolean;
-  details_submitted: boolean;
-  updated_at: string;
-};
-
-type StripePaymentItem = {
-  order_id: string;
-  status: string;
-  amount_cents: number;
-  created_at: string;
+type BalanceData = {
+  balance: number;
+  totalPending: number;
+  transferableBalance: number;
 };
 
 type WalletTransaction = {
@@ -52,491 +50,797 @@ type WalletTransaction = {
   created_at: string;
 };
 
+type AsaasPaymentItem = {
+  order_id: string;
+  billing_type: string;
+  status: string;
+  amount_cents: number;
+  invoice_url?: string | null;
+  created_at: string;
+};
+
 export const Route = createFileRoute("/studio/financeiro")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    stripe: typeof search.stripe === "string" ? search.stripe : undefined,
-  }),
   component: BusinessFinancePage,
 });
 
 function BusinessFinancePage() {
   const { business, saveBusiness } = useLocalHub();
-  const search = Route.useSearch();
-  const [profile, setProfile] = useState<WalletProfile | null>(null);
-  const [stripeAccount, setStripeAccount] = useState<StripeConnectProfile | null>(null);
-  const [recentPayments, setRecentPayments] = useState<StripePaymentItem[]>([]);
+  const [account, setAccount] = useState<AsaasAccountData | null>(null);
+  const [balance, setBalance] = useState<BalanceData>({
+    balance: 0,
+    totalPending: 0,
+    transferableBalance: 0,
+  });
   const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([]);
+  const [recentPayments, setRecentPayments] = useState<AsaasPaymentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [connectingStripe, setConnectingStripe] = useState(false);
-  const [togglingOnline, setTogglingOnline] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [savingAccount, setSavingAccount] = useState(false);
+  const [togglingSales, setTogglingSales] = useState(false);
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [error, setError] = useState("");
-  const [stripeNotice, setStripeNotice] = useState("");
-  const stripeEnabled = import.meta.env.VITE_STRIPE_ONLINE_PAYMENTS_ENABLED === "true";
 
-  const loadProfile = useCallback(async () => {
+  // Dados do formulário de subconta
+  const [formData, setFormData] = useState({
+    name: business?.name || "",
+    email: "",
+    cpfCnpj: "",
+    phone: business?.phone || "",
+    postalCode: "",
+    address: "",
+    addressNumber: "",
+    complement: "",
+    province: "",
+    city: "",
+    state: "",
+    pixKey: "",
+    pixKeyType: "CPF" as "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP",
+  });
+
+  const loadFinancialData = useCallback(async () => {
     if (!business?.id) return;
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("A conexão segura está indisponível.");
+      setError("A conexão segura com o banco de dados está indisponível.");
       setLoading(false);
       return;
     }
-    const [asaasResult, stripeResult, paymentsResult, walletResult] = await Promise.all([
-      supabase
-        .from("localhub_payment_accounts")
-        .select("sales_enabled,onboarding_status,wallet_id")
-        .eq("business_id", business.id)
-        .maybeSingle(),
-      supabase
-        .from("localhub_stripe_connect_accounts")
-        .select("stripe_account_id, charges_enabled, payouts_enabled, details_submitted, updated_at")
-        .eq("business_id", business.id)
-        .maybeSingle(),
-      supabase
-        .from("localhub_stripe_order_payments")
-        .select("order_id, status, amount_cents, created_at")
-        .eq("business_id", business.id)
-        .order("created_at", { ascending: false })
-        .limit(5),
-      supabase
-        .from("localhub_wallet_transactions")
-        .select("id, transaction_type, status, amount_cents, description, created_at")
-        .eq("business_id", business.id)
-        .order("created_at", { ascending: false })
-        .limit(10),
-    ]);
 
-    if (asaasResult.error) setError("Não foi possível carregar a configuração Asaas.");
-    setProfile((asaasResult.data as WalletProfile | null) ?? null);
-    setStripeAccount((stripeResult.data as StripeConnectProfile | null) ?? null);
-    setRecentPayments((paymentsResult.data as StripePaymentItem[] | null) ?? []);
-    setWalletTransactions((walletResult.data as WalletTransaction[] | null) ?? []);
-    setLoading(false);
-  }, [business?.id]);
-
-  useEffect(() => {
-    void loadProfile();
-  }, [loadProfile]);
-
-  useEffect(() => {
-    if (search.stripe === "return") {
-      setStripeNotice("Retorno do cadastro Stripe detectado. Atualizando o status da sua conta…");
-      void loadProfile();
-    } else if (search.stripe === "refresh") {
-      setStripeNotice("Sessão da Stripe atualizada. Caso precise, clique novamente para continuar.");
-      void loadProfile();
-    }
-  }, [search.stripe, loadProfile]);
-
-  async function setSalesEnabled(enabled: boolean) {
-    if (!business?.id) return;
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-    setSaving(true);
-    setError("");
-    const { error: requestError } = await supabase.rpc("localhub_set_wallet_sales_enabled", {
-      p_business_id: business.id,
-      p_enabled: enabled,
-    });
-    if (requestError) {
-      setError(
-        "Não foi possível salvar sua opção. Confirme se a atualização do ELLO já foi instalada.",
-      );
-    } else {
-      await loadProfile();
-    }
-    setSaving(false);
-  }
-
-  async function connectStripeAccount() {
-    if (!business?.id) return;
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) {
-      setError("A conexão segura está indisponível.");
-      return;
-    }
-    setConnectingStripe(true);
-    setError("");
     try {
-      const { data } = await supabase.auth.getSession();
-      const accessToken = data.session?.access_token;
-      if (!accessToken) throw new Error("Entre novamente para conectar sua conta.");
-      const response = await fetch("/api/stripe/connect/onboarding", {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${accessToken}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({ businessId: business.id }),
-      });
-      const result = (await response.json()) as { url?: string; error?: string };
-      if (!response.ok || !result.url)
-        throw new Error(result.error ?? "Não foi possível iniciar o cadastro Stripe.");
-      window.location.assign(result.url);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      // 1. Busca dados da subconta e saldo real do Asaas via API
+      let apiAccount: AsaasAccountData | null = null;
+      let apiBalance: BalanceData = { balance: 0, totalPending: 0, transferableBalance: 0 };
+
+      if (token) {
+        try {
+          const res = await fetch(`/api/asaas/subaccount?businessId=${business.id}`, {
+            headers: { authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success) {
+              apiAccount = data.account;
+              apiBalance = data.balance;
+            }
+          }
+        } catch (fetchErr) {
+          console.warn("Não foi possível sincronizar saldo da API Asaas:", fetchErr);
+        }
+      }
+
+      // 2. Busca pagamentos e transações locais no Supabase
+      const [paymentsRes, transactionsRes] = await Promise.all([
+        supabase
+          .from("localhub_asaas_order_payments")
+          .select("order_id, billing_type, status, amount_cents, invoice_url, created_at")
+          .eq("business_id", business.id)
+          .order("created_at", { ascending: false })
+          .limit(8),
+        supabase
+          .from("localhub_wallet_transactions")
+          .select("id, transaction_type, status, amount_cents, description, created_at")
+          .eq("business_id", business.id)
+          .order("created_at", { ascending: false })
+          .limit(10),
+      ]);
+
+      setAccount(apiAccount);
+      setBalance(apiBalance);
+      setRecentPayments((paymentsRes.data as AsaasPaymentItem[]) || []);
+      setWalletTransactions((transactionsRes.data as WalletTransaction[]) || []);
+
+      if (apiAccount) {
+        setFormData((prev) => ({
+          ...prev,
+          name: apiAccount.legalName || prev.name,
+          email: apiAccount.email || prev.email,
+          cpfCnpj: apiAccount.cpfCnpj || prev.cpfCnpj,
+          phone: apiAccount.phone || prev.phone,
+          pixKey: apiAccount.pixKey || prev.pixKey,
+          pixKeyType: (apiAccount.pixKeyType as any) || prev.pixKeyType,
+        }));
+      }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível conectar ao Stripe.");
-      setConnectingStripe(false);
+      console.error("Erro ao carregar financeiro:", caught);
+      setError("Não foi possível carregar as informações financeiras.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  }
+  }, [business?.id, business?.name, business?.phone]);
 
-  const optedIn = profile?.sales_enabled ?? false;
-  const statusLabel = {
-    not_started: "Ainda não solicitada",
-    requested: "Solicitação registrada",
-    under_review: "Em análise pelo Asaas",
-    active: "Carteira ativa",
-    rejected: "Cadastro precisa de ajustes",
-    suspended: "Ativação temporariamente suspensa",
-  }[profile?.onboarding_status ?? "not_started"];
+  useEffect(() => {
+    void loadFinancialData();
+  }, [loadFinancialData]);
 
-  async function toggleOnlinePayment() {
-    if (!business) return;
-    setTogglingOnline(true);
-    setError("");
+  async function handleToggleSales() {
+    if (!business?.id) return;
+    setTogglingSales(true);
+    setFeedbackMessage(null);
     try {
+      const nextState = !business.onlinePaymentEnabled;
       await saveBusiness({
         ...business,
-        onlinePaymentEnabled: !business.onlinePaymentEnabled,
+        onlinePaymentEnabled: nextState,
+      });
+
+      const supabase = getSupabaseBrowserClient();
+      if (supabase) {
+        await supabase
+          .from("localhub_payment_accounts")
+          .update({ sales_enabled: nextState })
+          .eq("business_id", business.id);
+      }
+
+      setAccount((prev) => (prev ? { ...prev, salesEnabled: nextState } : null));
+      setFeedbackMessage({
+        type: "success",
+        text: nextState
+          ? "Vendas online (Pix e Cartão Asaas) ativadas com sucesso!"
+          : "Vendas online pausadas temporariamente.",
       });
     } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "Não foi possível atualizar pagamentos online.",
-      );
+      setFeedbackMessage({
+        type: "error",
+        text: caught instanceof Error ? caught.message : "Erro ao atualizar vendas online.",
+      });
     } finally {
-      setTogglingOnline(false);
+      setTogglingSales(false);
     }
   }
 
-  const availableBalance =
-    walletTransactions
-      .filter((t) => t.status === "available" || t.status === "completed")
-      .reduce(
-        (sum, t) =>
-          sum + (t.transaction_type === "refund" ? -Math.abs(t.amount_cents) : t.amount_cents),
-        0,
-      ) / 100;
+  async function handleSaveSubaccount(e: React.FormEvent) {
+    e.preventDefault();
+    if (!business?.id) return;
+    setSavingAccount(true);
+    setFeedbackMessage(null);
 
-  const pendingBalance =
-    walletTransactions
-      .filter((t) => t.status === "pending")
-      .reduce((sum, t) => sum + t.amount_cents, 0) / 100;
+    const supabase = getSupabaseBrowserClient();
+    const token = (await supabase?.auth.getSession())?.data.session?.access_token;
+    if (!token) {
+      setFeedbackMessage({ type: "error", text: "Sessão expirada. Faça login novamente." });
+      setSavingAccount(false);
+      return;
+    }
 
-  const isStripeActive = Boolean(stripeAccount?.charges_enabled);
+    try {
+      const response = await fetch("/api/asaas/subaccount", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          businessId: business.id,
+          ...formData,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Não foi possível criar a subconta Asaas.");
+      }
+
+      setFeedbackMessage({
+        type: "success",
+        text: "Subconta Asaas configurada e ativada com sucesso!",
+      });
+      setShowSetupModal(false);
+      await loadFinancialData();
+    } catch (caught) {
+      setFeedbackMessage({
+        type: "error",
+        text: caught instanceof Error ? caught.message : "Erro ao salvar dados da subconta.",
+      });
+    } finally {
+      setSavingAccount(false);
+    }
+  }
+
+  async function handleRequestWithdraw(e: React.FormEvent) {
+    e.preventDefault();
+    if (!business?.id) return;
+    const valueNum = parseFloat(withdrawAmount.replace(",", "."));
+    if (isNaN(valueNum) || valueNum <= 0) {
+      setFeedbackMessage({ type: "error", text: "Digite um valor de saque válido." });
+      return;
+    }
+
+    setWithdrawing(true);
+    setFeedbackMessage(null);
+
+    const supabase = getSupabaseBrowserClient();
+    const token = (await supabase?.auth.getSession())?.data.session?.access_token;
+    if (!token) {
+      setFeedbackMessage({ type: "error", text: "Sessão expirada." });
+      setWithdrawing(false);
+      return;
+    }
+
+    try {
+      const amountCents = Math.round(valueNum * 100);
+      const res = await fetch("/api/asaas/withdraw", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          businessId: business.id,
+          amountCents,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Erro ao processar saque.");
+      }
+
+      setFeedbackMessage({
+        type: "success",
+        text: `Saque Pix de ${money(valueNum)} solicitado com sucesso!`,
+      });
+      setShowWithdrawModal(false);
+      setWithdrawAmount("");
+      await loadFinancialData();
+    } catch (caught) {
+      setFeedbackMessage({
+        type: "error",
+        text: caught instanceof Error ? caught.message : "Falha ao solicitar saque.",
+      });
+    } finally {
+      setWithdrawing(false);
+    }
+  }
+
+  const isSubaccountActive = account?.onboardingStatus === "active";
+  const displayedAvailable = balance.transferableBalance || balance.balance;
+  const displayedPending = balance.totalPending;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <header>
-        <p className="text-xs font-bold uppercase tracking-[.14em] text-[#778253]">
-          Recebimentos do negócio
-        </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">Financeiro e carteira</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-          Gerencie o recebimento direto por Stripe Connect (Pix e Cartão) e a adesão à carteira Asaas
-          do seu negócio.
-        </p>
+    <div className="mx-auto max-w-4xl space-y-6 pb-12">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[.14em] text-[#778253]">
+            Operação e Recebimentos
+          </p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight">Financeiro & Asaas</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Receba com Pix e Cartão de Crédito na sua subconta Asaas com repasse automático e taxa zero ELLO.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setRefreshing(true);
+            void loadFinancialData();
+          }}
+          disabled={loading || refreshing}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 disabled:opacity-50"
+        >
+          <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
+          Atualizar saldos
+        </button>
       </header>
 
-      {stripeNotice && (
-        <div className="flex items-center gap-2 rounded-xl bg-blue-50 p-4 text-sm text-blue-900 border border-blue-200">
-          <AlertCircle size={18} className="shrink-0 text-blue-700" />
-          <span>{stripeNotice}</span>
+      {feedbackMessage && (
+        <div
+          className={`flex items-center gap-3 rounded-2xl border p-4 text-sm ${
+            feedbackMessage.type === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-950"
+              : "border-red-200 bg-red-50 text-red-900"
+          }`}
+        >
+          {feedbackMessage.type === "success" ? (
+            <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
+          ) : (
+            <AlertCircle size={18} className="shrink-0 text-red-600" />
+          )}
+          <span>{feedbackMessage.text}</span>
         </div>
       )}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="text-xs font-bold uppercase tracking-[.14em] text-[#778253]">
-                Pagamentos online · Stripe Connect
+      {/* Cartões de Saldo da Subconta */}
+      <section className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 to-white p-5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+              Saldo Disponível
+            </span>
+            <span className="rounded-full bg-emerald-100 p-1.5 text-emerald-700">
+              <Landmark size={15} />
+            </span>
+          </div>
+          <p className="mt-3 text-3xl font-extrabold text-emerald-950">
+            {money(displayedAvailable)}
+          </p>
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-[11px] text-emerald-700">Liberado para saque Pix</span>
+            <button
+              type="button"
+              disabled={!isSubaccountActive || displayedAvailable <= 0}
+              onClick={() => setShowWithdrawModal(true)}
+              className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ArrowDownToLine size={13} />
+              Sacar
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/80 to-white p-5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
+              A Receber / Pendente
+            </span>
+            <span className="rounded-full bg-amber-100 p-1.5 text-amber-700">
+              <Clock3 size={15} />
+            </span>
+          </div>
+          <p className="mt-3 text-3xl font-extrabold text-amber-950">
+            {money(displayedPending)}
+          </p>
+          <p className="mt-4 text-[11px] text-amber-700">
+            Compensações de cartão / aguardando liquidação
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Vendas Online
+            </span>
+            <span className="rounded-full bg-slate-100 p-1.5 text-slate-700">
+              <QrCode size={15} />
+            </span>
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <div>
+              <p className="text-lg font-bold text-slate-900">
+                {business?.onlinePaymentEnabled ? "Ativadas" : "Desativadas"}
               </p>
-              {stripeAccount ? (
-                isStripeActive ? (
+              <p className="text-[11px] text-slate-400">Pix e Cartão na loja</p>
+            </div>
+            <button
+              type="button"
+              disabled={togglingSales || !isSubaccountActive}
+              onClick={() => void handleToggleSales()}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
+                business?.onlinePaymentEnabled
+                  ? "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                  : "bg-[#292b25] text-white hover:bg-[#3d3f37]"
+              }`}
+            >
+              {togglingSales ? "…" : business?.onlinePaymentEnabled ? "Pausar" : "Ativar"}
+            </button>
+          </div>
+          {!isSubaccountActive && (
+            <p className="mt-2 text-[10px] text-amber-600">
+              Crie a subconta abaixo para liberar vendas online.
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* Status da Subconta Asaas */}
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#edf0e5] text-[#667448]">
+              <WalletCards size={24} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold">Subconta Asaas do Estabelecimento</h2>
+                {isSubaccountActive ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
-                    <CheckCircle2 size={12} /> Conta conectada e ativa
+                    <CheckCircle2 size={12} /> Ativa e verificada
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
-                    <Clock3 size={12} /> Cadastro em análise
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+                    Não configurada
                   </span>
-                )
-              ) : (
-                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-                  Não conectado
-                </span>
-              )}
+                )}
+              </div>
+              <p className="mt-1 text-sm text-slate-500 max-w-xl">
+                {isSubaccountActive
+                  ? "Seus recebíveis por Pix e Cartão de Crédito são creditados diretamente nesta subconta sem intermediação manual."
+                  : "Cadastre os dados do seu negócio para criar sua subconta Asaas oficial e receber suas vendas com Pix imediato e cartão."}
+              </p>
             </div>
-            <h2 className="mt-2 text-lg font-bold">Recebimento direto na sua conta</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              Conecte sua conta Stripe para receber pagamentos de clientes por Pix e Cartão de crédito
-              diretamente no seu negócio, com conciliação automática do pedido.
-            </p>
           </div>
+
           <button
             type="button"
-            disabled={!stripeEnabled || connectingStripe || !business?.id}
-            onClick={() => void connectStripeAccount()}
-            className="min-h-11 rounded-xl bg-[#292b25] px-4 text-sm font-bold text-white transition hover:bg-[#34352f] disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={() => setShowSetupModal(true)}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-800 shadow-xs transition hover:bg-slate-50"
           >
-            {connectingStripe
-              ? "Abrindo cadastro…"
-              : stripeAccount
-                ? "Revisar dados na Stripe"
-                : "Conectar conta Stripe"}
+            {isSubaccountActive ? "Editar dados da subconta" : "Criar subconta Asaas"}
           </button>
         </div>
 
-        {stripeAccount && (
-          <div className="mt-5 rounded-xl border border-slate-100 bg-[#fbfbf9] p-4 text-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs text-slate-500 font-mono">
-                ID da conta: {stripeAccount.stripe_account_id}
-              </span>
-              <div className="flex flex-wrap gap-2">
-                <span
-                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${
-                    stripeAccount.charges_enabled
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                      : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  Cobranças: {stripeAccount.charges_enabled ? "Habilitadas" : "Bloqueadas"}
-                </span>
-                <span
-                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${
-                    stripeAccount.payouts_enabled
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                      : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  Repasses: {stripeAccount.payouts_enabled ? "Habilitados" : "Bloqueados"}
-                </span>
-              </div>
+        {isSubaccountActive && account && (
+          <div className="mt-6 grid gap-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-xs sm:grid-cols-3">
+            <div>
+              <span className="text-slate-400">Titular</span>
+              <p className="mt-0.5 font-bold text-slate-800">{account.legalName || "—"}</p>
             </div>
-
-            {isStripeActive && (
-              <div className="mt-4 flex flex-col gap-2 border-t border-slate-200/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-semibold text-slate-900">
-                    Oferecer pagamento online na vitrine da loja
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Permite que seus clientes paguem por Pix online e Cartão direto no cardápio ELLO.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  disabled={togglingOnline}
-                  onClick={() => void toggleOnlinePayment()}
-                  className={`min-h-10 rounded-xl px-4 text-xs font-bold transition disabled:opacity-50 ${
-                    business?.onlinePaymentEnabled
-                      ? "bg-emerald-700 text-white hover:bg-emerald-800"
-                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  {togglingOnline
-                    ? "Salvando…"
-                    : business?.onlinePaymentEnabled
-                      ? "✓ Pagamento online ativado"
-                      : "Ativar pagamento na loja"}
-                </button>
+            <div>
+              <span className="text-slate-400">CPF / CNPJ</span>
+              <p className="mt-0.5 font-bold text-slate-800">{account.cpfCnpj || "—"}</p>
+            </div>
+            <div>
+              <span className="text-slate-400">Chave Pix de Saque</span>
+              <p className="mt-0.5 font-mono font-bold text-slate-800">
+                {account.pixKey} ({account.pixKeyType})
+              </p>
+            </div>
+            {account.accountNumber && (
+              <div>
+                <span className="text-slate-400">Conta Asaas</span>
+                <p className="mt-0.5 font-mono font-bold text-slate-800">
+                  Ag. {account.agency} / Cc. {account.accountNumber}
+                </p>
+              </div>
+            )}
+            {account.providerAccountId && (
+              <div>
+                <span className="text-slate-400">ID Asaas</span>
+                <p className="mt-0.5 font-mono text-slate-600 truncate">{account.providerAccountId}</p>
+              </div>
+            )}
+            {account.walletId && (
+              <div>
+                <span className="text-slate-400">Wallet ID</span>
+                <p className="mt-0.5 font-mono text-slate-600 truncate">{account.walletId}</p>
               </div>
             )}
           </div>
         )}
+      </section>
 
-        {recentPayments.length > 0 && (
-          <div className="mt-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Pagamentos online recentes
-            </h3>
-            <div className="divide-y divide-slate-100 rounded-xl border border-slate-100 bg-white">
-              {recentPayments.map((payment) => (
-                <div key={payment.order_id} className="flex items-center justify-between p-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 font-mono text-xs">
-                      Pedido #{payment.order_id.slice(0, 8)}
+      {/* Histórico Recente de Pagamentos Asaas e Transações */}
+      <section className="grid gap-6 md:grid-cols-2">
+        {/* Pagamentos de Pedidos */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="text-sm font-bold text-slate-900">Vendas Online Asaas</h3>
+            <span className="text-xs text-slate-400">{recentPayments.length} recentes</span>
+          </div>
+          {recentPayments.length === 0 ? (
+            <p className="py-8 text-center text-xs text-slate-400">Nenhuma venda online registrada ainda.</p>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {recentPayments.map((p) => (
+                <div key={p.order_id} className="flex items-center justify-between py-3 text-xs">
+                  <div>
+                    <p className="font-semibold text-slate-800">
+                      Pedido #{p.order_id.slice(0, 8)} · {p.billing_type === "PIX" ? "Pix" : "Cartão"}
                     </p>
-                    <p className="text-xs text-slate-400">
-                      {new Date(payment.created_at).toLocaleString("pt-BR")}
+                    <p className="text-[11px] text-slate-400">
+                      {new Date(p.created_at).toLocaleString("pt-BR")}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold text-slate-900">
-                      {money(payment.amount_cents / 100)}
-                    </span>
+                    <p className="font-bold text-slate-900">{money(p.amount_cents / 100)}</p>
                     <span
-                      className={`ml-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                        payment.status === "paid"
+                      className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        p.status === "confirmed" || p.status === "paid"
                           ? "bg-emerald-100 text-emerald-800"
-                          : "bg-slate-100 text-slate-600"
+                          : p.status === "pending"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-slate-100 text-slate-600"
                       }`}
                     >
-                      {payment.status === "paid" ? "Pago" : payment.status}
+                      {p.status === "confirmed" || p.status === "paid"
+                        ? "Aprovado"
+                        : p.status === "pending"
+                          ? "Aguardando"
+                          : p.status}
                     </span>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        <p className="mt-4 text-xs text-slate-500">
-          {stripeEnabled
-            ? "A Stripe realiza a liquidação e o repasse diretamente para a sua conta bancária."
-            : "Pagamentos online desativados nas configurações do servidor (VITE_STRIPE_ONLINE_PAYMENTS_ENABLED)."}
-        </p>
-      </section>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-        <div className="flex items-start gap-4">
-          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#edf0e5] text-[#667448]">
-            <WalletCards size={23} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-bold">Carteira de {business?.name ?? "seu negócio"}</h2>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                {loading ? "Carregando" : statusLabel}
-              </span>
-            </div>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              Ao solicitar, você manifesta interesse em ativar vendas online e saques pela ELLO. A
-              conta e a carteira só serão criadas após concluirmos a integração e o Asaas validar o
-              cadastro do titular.
-            </p>
-          </div>
+          )}
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <FinanceStep
-            icon={CircleCheck}
-            title="Você escolhe"
-            detail="A adesão é opcional por negócio."
-          />
-          <FinanceStep
-            icon={Banknote}
-            title="Conta do titular"
-            detail="Uma carteira por negócio, não por participação."
-          />
-          <FinanceStep
-            icon={ArrowDownToLine}
-            title="Saque controlado"
-            detail="Somente após saldo liberado e provedor ativo."
-          />
-        </div>
-
-        <div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-bold">Vendas online pela carteira ELLO</p>
-            <p className="mt-1 text-xs text-slate-500">
-              {optedIn
-                ? "Seu negócio pediu para iniciar a ativação."
-                : "Seu negócio continua sem carteira e sem mudanças nos recebimentos atuais."}
-            </p>
+        {/* Extrato da Carteira / Saques */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="text-sm font-bold text-slate-900">Movimentações & Saques</h3>
+            <span className="text-xs text-slate-400">{walletTransactions.length} lançamentos</span>
           </div>
-          <button
-            type="button"
-            disabled={loading || saving}
-            onClick={() => void setSalesEnabled(!optedIn)}
-            className={`min-h-11 rounded-xl px-4 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${optedIn ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "bg-[#292b25] text-white hover:bg-[#414338]"}`}
-          >
-            {saving
-              ? "Salvando…"
-              : optedIn
-                ? profile?.onboarding_status === "active"
-                  ? "Pausar novas vendas"
-                  : "Cancelar solicitação"
-                : "Quero ativar vendas e carteira"}
-          </button>
-        </div>
-
-        {walletTransactions.length > 0 && (
-          <div className="mt-6 border-t border-slate-100 pt-5">
-            <div className="mb-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-emerald-200/70 bg-emerald-50/60 p-4">
-                <span className="text-xs font-semibold text-emerald-800">Saldo disponível para saque</span>
-                <p className="mt-1 text-2xl font-bold text-emerald-950">{money(availableBalance)}</p>
-              </div>
-              <div className="rounded-xl border border-amber-200/70 bg-amber-50/60 p-4">
-                <span className="text-xs font-semibold text-amber-800">A compensar / pendente</span>
-                <p className="mt-1 text-2xl font-bold text-amber-950">{money(pendingBalance)}</p>
-              </div>
-            </div>
-
-            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-              Extrato recente da carteira Asaas
-            </h3>
-            <div className="divide-y divide-slate-100 rounded-xl border border-slate-100 bg-white">
+          {walletTransactions.length === 0 ? (
+            <p className="py-8 text-center text-xs text-slate-400">Nenhuma movimentação no extrato.</p>
+          ) : (
+            <div className="divide-y divide-slate-100">
               {walletTransactions.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between p-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-800">{tx.description || "Transação Pix"}</p>
+                <div key={tx.id} className="flex items-center justify-between py-3 text-xs">
+                  <div>
+                    <p className="font-semibold text-slate-800">{tx.description || "Lançamento financeiro"}</p>
                     <p className="text-[11px] text-slate-400">
                       {new Date(tx.created_at).toLocaleString("pt-BR")}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span
-                      className={`font-bold ${tx.amount_cents < 0 ? "text-red-600" : "text-slate-900"}`}
+                    <p
+                      className={`font-bold ${
+                        tx.amount_cents < 0 ? "text-red-600" : "text-emerald-700"
+                      }`}
                     >
                       {tx.amount_cents < 0 ? "−" : "+"}
                       {money(Math.abs(tx.amount_cents) / 100)}
-                    </span>
+                    </p>
                     <span
-                      className={`ml-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                      className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                         tx.status === "available" || tx.status === "completed"
                           ? "bg-emerald-100 text-emerald-800"
-                          : tx.status === "pending"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-slate-100 text-slate-600"
+                          : "bg-amber-100 text-amber-800"
                       }`}
                     >
                       {tx.status === "available"
-                        ? "Liberado"
-                        : tx.status === "pending"
-                          ? "Pendente"
-                          : tx.status}
+                        ? "Disponível"
+                        : tx.status === "completed"
+                          ? "Concluído"
+                          : "Pendente"}
                     </span>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {error && (
-          <p role="alert" className="mt-4 text-sm text-red-700">
-            {error}
-          </p>
-        )}
+          )}
+        </div>
       </section>
 
-      <ElloInfoBanner
-        icon={<Clock3 size={19} />}
-        eyebrow="Integração em preparação"
-        title="Ainda não movimentamos dinheiro"
-        body="Saldo, pagamentos online e saques só serão exibidos ou habilitados quando a conta Asaas da ELLO estiver aprovada, a carteira deste negócio for criada e webhooks e controles de segurança estiverem ativos. Não há saldo fictício nem cobrança real nesta etapa."
-      />
-    </div>
-  );
-}
+      {/* Modal / Diálogo de Configuração de Subconta */}
+      {showSetupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-lg font-bold">Dados da Subconta Asaas</h2>
+              <button
+                type="button"
+                onClick={() => setShowSetupModal(false)}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <XCircle size={20} />
+              </button>
+            </div>
 
-function FinanceStep({
-  icon: Icon,
-  title,
-  detail,
-}: {
-  icon: typeof CircleCheck;
-  title: string;
-  detail: string;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-100 bg-[#fbfbf9] p-4">
-      <Icon size={18} className="text-[#778253]" />
-      <h3 className="mt-3 text-sm font-bold">{title}</h3>
-      <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
+            <form onSubmit={handleSaveSubaccount} className="mt-4 space-y-3 text-xs">
+              <div>
+                <label className="font-semibold text-slate-700">Razão Social ou Nome do Titular *</label>
+                <input
+                  required
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-800"
+                  placeholder="Nome completo ou Razão Social"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold text-slate-700">CPF ou CNPJ *</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.cpfCnpj}
+                    onChange={(e) => setFormData({ ...formData, cpfCnpj: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-800"
+                    placeholder="000.000.000-00"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold text-slate-700">Telefone / WhatsApp *</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-800"
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700">E-mail para notificações Asaas *</label>
+                <input
+                  required
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-800"
+                  placeholder="contato@seunegocio.com.br"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="font-semibold text-slate-700">CEP *</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.postalCode}
+                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-800"
+                    placeholder="00000-000"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="font-semibold text-slate-700">Endereço (Rua/Av) *</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-800"
+                    placeholder="Logradouro"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold text-slate-700">Número *</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.addressNumber}
+                    onChange={(e) => setFormData({ ...formData, addressNumber: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-800"
+                    placeholder="123"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold text-slate-700">Bairro *</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.province}
+                    onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-800"
+                    placeholder="Centro"
+                  />
+                </div>
+              </div>
+
+              {/* Chave Pix para Saques */}
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 mt-2">
+                <label className="block font-bold text-emerald-950">Chave Pix para Saque *</label>
+                <p className="text-[11px] text-emerald-700 mb-2">Para onde você deseja transferir o seu saldo disponível.</p>
+                <div className="flex gap-2">
+                  <select
+                    value={formData.pixKeyType}
+                    onChange={(e) => setFormData({ ...formData, pixKeyType: e.target.value as any })}
+                    className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-semibold"
+                  >
+                    <option value="CPF">CPF</option>
+                    <option value="CNPJ">CNPJ</option>
+                    <option value="EMAIL">E-mail</option>
+                    <option value="PHONE">Telefone</option>
+                    <option value="EVP">Chave Aleatória</option>
+                  </select>
+                  <input
+                    required
+                    type="text"
+                    value={formData.pixKey}
+                    onChange={(e) => setFormData({ ...formData, pixKey: e.target.value })}
+                    className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-800"
+                    placeholder="Informe sua chave Pix"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowSetupModal(false)}
+                  className="rounded-xl px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingAccount}
+                  className="rounded-xl bg-[#292b25] px-5 py-2 text-xs font-bold text-white transition hover:bg-[#3f4137] disabled:opacity-50"
+                >
+                  {savingAccount ? "Salvando na Asaas…" : "Conectar Subconta"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Saque Pix */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-base font-bold">Solicitar Saque via Pix</h2>
+              <button
+                type="button"
+                onClick={() => setShowWithdrawModal(false)}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <XCircle size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleRequestWithdraw} className="mt-4 space-y-4 text-xs">
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                <span className="text-slate-400">Saldo disponível:</span>
+                <p className="text-lg font-extrabold text-slate-900">{money(displayedAvailable)}</p>
+                <span className="text-slate-400 mt-2 block">Chave Pix cadastrada:</span>
+                <p className="font-mono font-bold text-emerald-800">{account?.pixKey}</p>
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700">Valor do saque (R$)</label>
+                <input
+                  required
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  max={displayedAvailable}
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  placeholder="0,00"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-base font-bold text-slate-900 outline-none focus:border-slate-800"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowWithdrawModal(false)}
+                  className="rounded-xl px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={withdrawing || !withdrawAmount || parseFloat(withdrawAmount) <= 0}
+                  className="rounded-xl bg-emerald-700 px-5 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:opacity-50"
+                >
+                  {withdrawing ? "Processando…" : "Confirmar Saque Pix"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

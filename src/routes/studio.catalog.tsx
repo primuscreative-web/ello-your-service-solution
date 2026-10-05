@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Clock3,
@@ -41,6 +41,70 @@ const manicureServiceSuggestions = [
   { name: "Manutenção de alongamento", duration: 120 },
 ];
 
+/** Supabase errors are plain objects (not Error instances), so read `message` explicitly. */
+function describeError(caught: unknown, fallback: string) {
+  if (caught instanceof Error && caught.message) return caught.message;
+  if (caught && typeof caught === "object") {
+    const { message, details, hint, code } = caught as Record<string, unknown>;
+    const parts = [message, details, hint].filter(
+      (part): part is string => typeof part === "string" && part.length > 0,
+    );
+    if (parts.length) return `${fallback} (${parts.join(" — ")}${code ? ` [${code}]` : ""})`;
+  }
+  return fallback;
+}
+
+/**
+ * Money/decimal input that keeps its own text, so the field can be empty and never shows a
+ * leading zero (typing "100" over a default "0" used to produce "0100").
+ */
+function DecimalInput({
+  value,
+  onValueChange,
+  allowNegative = false,
+  className,
+  ...props
+}: {
+  value: number;
+  onValueChange: (value: number) => void;
+  allowNegative?: boolean;
+  className?: string;
+  "aria-label"?: string;
+  placeholder?: string;
+}) {
+  const [text, setText] = useState(value ? String(value) : "");
+  useEffect(() => {
+    const parsed = Number(text.replace(",", "."));
+    if ((Number.isFinite(parsed) ? parsed : 0) !== value) setText(value ? String(value) : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  return (
+    <input
+      {...props}
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      value={text}
+      placeholder={props.placeholder ?? "0,00"}
+      onChange={(event) => {
+        let next = event.target.value.replace(",", ".");
+        next = next.replace(allowNegative ? /[^\d.-]/g : /[^\d.]/g, "");
+        if (allowNegative) next = next.replace(/(?!^)-/g, "");
+        const firstDot = next.indexOf(".");
+        if (firstDot !== -1) {
+          next = next.slice(0, firstDot + 1) + next.slice(firstDot + 1).replace(/\./g, "");
+          next = next.slice(0, firstDot + 3);
+        }
+        next = next.replace(/^(-?)0+(?=\d)/, "$1");
+        setText(next);
+        const parsed = Number(next);
+        onValueChange(Number.isFinite(parsed) ? parsed : 0);
+      }}
+      className={className}
+    />
+  );
+}
+
 function CatalogPage() {
   const { business, services, saveService, removeService, user } = useLocalHub();
   const copy = getBusinessCopy(business?.category);
@@ -58,7 +122,7 @@ function CatalogPage() {
       setError("");
       return true;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível salvar o serviço.");
+      setError(describeError(caught, "Não foi possível salvar o item."));
       return false;
     }
   }
@@ -204,11 +268,7 @@ function CatalogPage() {
                         void removeService(service.id)
                           .then(() => setError(""))
                           .catch((caught: unknown) =>
-                            setError(
-                              caught instanceof Error
-                                ? caught.message
-                                : "Não foi possível excluir o serviço.",
-                            ),
+                            setError(describeError(caught, "Não foi possível excluir o item.")),
                           );
                     }}
                     className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
@@ -417,13 +477,9 @@ function ServiceEditor({
           </Field>
         )}
         <Field label="Preço (R$)">
-          <input
-            required
-            type="number"
-            min="0"
-            step="0.01"
+          <DecimalInput
             value={price}
-            onChange={(event) => setPrice(Number(event.target.value))}
+            onValueChange={setPrice}
             className={inputClass}
           />
         </Field>
@@ -574,13 +630,10 @@ function ServiceEditor({
               onChange={(event) => setAddonDuration(Number(event.target.value))}
               className={inputClass}
             />
-            <input
+            <DecimalInput
               aria-label="Preço do adicional em reais"
-              type="number"
-              min="0"
-              step="0.01"
               value={addonPrice}
-              onChange={(event) => setAddonPrice(Number(event.target.value))}
+              onValueChange={setAddonPrice}
               className={inputClass}
             />
             <button
@@ -651,12 +704,11 @@ function ServiceEditor({
                 maxLength={80}
                 className={inputClass}
               />
-              <input
+              <DecimalInput
                 aria-label="Valor adicional da variação"
-                type="number"
-                step="0.01"
+                allowNegative
                 value={variantDelta}
-                onChange={(event) => setVariantDelta(Number(event.target.value))}
+                onValueChange={setVariantDelta}
                 className={inputClass}
               />
               <button
@@ -882,13 +934,10 @@ function ProductOptionGroupEditor({
           maxLength={80}
           className={inputClass}
         />
-        <input
+        <DecimalInput
           aria-label="Preço adicional"
-          type="number"
-          min="0"
-          step="0.01"
           value={optionPrice}
-          onChange={(event) => setOptionPrice(Number(event.target.value))}
+          onValueChange={setOptionPrice}
           className={inputClass}
         />
         <button

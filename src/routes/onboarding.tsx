@@ -109,7 +109,8 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "pizzas", label: "Pizzas" },
       { id: "lanches", label: "Lanches e hambúrgueres" },
       { id: "refeicoes", label: "Refeições" },
-      { id: "cafes-bebidas", label: "Cafés e bebidas" },
+      { id: "cafes", label: "Cafés" },
+      { id: "bebidas", label: "Bebidas" },
       { id: "sobremesas", label: "Sobremesas" },
       { id: "mercado", label: "Produtos e mercearia" },
     ],
@@ -264,6 +265,24 @@ const setupProfiles: Record<string, SetupProfile> = {
     ],
   },
 };
+
+const cityPresets = [
+  "São Paulo, SP",
+  "Rio de Janeiro, RJ",
+  "Belo Horizonte, MG",
+  "Brasília, DF",
+  "Salvador, BA",
+  "Fortaleza, CE",
+  "Curitiba, PR",
+  "Recife, PE",
+  "Porto Alegre, RS",
+  "Manaus, AM",
+  "Belém, PA",
+  "Goiânia, GO",
+  "Campinas, SP",
+  "Florianópolis, SC",
+  "Vitória, ES",
+];
 
 const stepNavigationButtonClass =
   "flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50";
@@ -481,7 +500,7 @@ function OnboardingPage() {
               </div>
             </div>
           ) : step === 1 ? (
-            <div className="space-y-6">
+            <div key="step-1" className="space-y-6">
               <Field label="Nome do negócio">
                 <input
                   autoFocus
@@ -541,17 +560,39 @@ function OnboardingPage() {
               </button>
             </div>
           ) : step === 2 ? (
-            <div className="space-y-5">
+            <div key="step-2" className="space-y-5">
               <Field label="Cidade">
                 <input
                   autoFocus
                   required
+                  list="city-presets"
                   value={form.city}
                   onChange={(event) => update("city", event.target.value)}
                   placeholder="Ex.: São Paulo, SP"
                   className={inputClass}
                 />
+                <datalist id="city-presets">
+                  {cityPresets.map((city) => (
+                    <option key={city} value={city} />
+                  ))}
+                </datalist>
               </Field>
+              <div role="group" aria-label="Cidades sugeridas" className="flex flex-wrap gap-2">
+                {cityPresets.map((city) => {
+                  const selected = form.city === city;
+                  return (
+                    <button
+                      type="button"
+                      key={city}
+                      onClick={() => update("city", city)}
+                      aria-pressed={selected}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${selected ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] bg-white/65 text-slate-600 hover:bg-white"}`}
+                    >
+                      {city}
+                    </button>
+                  );
+                })}
+              </div>
               <Field label="Endereço (opcional)" hint="Você pode adicionar rua, número e bairro.">
                 <input
                   value={form.address}
@@ -579,7 +620,7 @@ function OnboardingPage() {
               </div>
             </div>
           ) : step === 3 ? (
-            <div className="space-y-5">
+            <div key="step-3" className="space-y-5">
               <Field
                 label="WhatsApp para contato"
                 hint="Digite o número com DDD, sem o código do país. Ele será usado nos botões de WhatsApp da sua página."
@@ -650,7 +691,7 @@ function OnboardingPage() {
               )}
             </div>
           ) : step === 4 ? (
-            <div className="space-y-6">
+            <div key="step-4" className="space-y-6">
               <fieldset className="min-w-0">
                 <legend className="mb-2 text-sm font-semibold text-slate-700">
                   {setupProfile.specialtyTitle}
@@ -704,7 +745,7 @@ function OnboardingPage() {
               </button>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div key="step-5" className="space-y-6">
               <fieldset className="min-w-0">
                 <legend className="mb-2 text-sm font-semibold text-slate-700">
                   {setupProfile.serviceModeTitle}

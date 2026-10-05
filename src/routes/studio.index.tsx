@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowUpRight,
@@ -11,7 +12,7 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
-import { PageTitle, primaryButtonClass } from "@/components/localhub/ui";
+import { PageTitle, money, primaryButtonClass } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
 
@@ -26,6 +27,16 @@ function DashboardPage() {
   const todayBookings = bookings.filter(
     (booking) => booking.date === today && booking.status !== "cancelled",
   );
+  const serviceMap = useMemo(() => new Map(services.map((s) => [s.id, s.price])), [services]);
+  const todayRevenue = isFoodBusiness
+    ? orders
+        .filter(
+          (order) =>
+            new Date(order.createdAt).toDateString() === new Date().toDateString() &&
+            order.status !== "cancelled",
+        )
+        .reduce((sum, order) => sum + order.total, 0)
+    : todayBookings.reduce((sum, b) => sum + (serviceMap.get(b.serviceId) || 0), 0);
   const upcoming = [...bookings]
     .filter((booking) => booking.status !== "cancelled")
     .sort((a, b) => (a.date + " " + a.time).localeCompare(b.date + " " + b.time))
@@ -105,7 +116,12 @@ function DashboardPage() {
             icon: Clock3,
             note: "Precisam da sua atenção",
           },
-          { label: "Visitas na página", value: "—", icon: Eye, note: "Métrica em breve" },
+          {
+            label: "Faturamento hoje",
+            value: money(todayRevenue),
+            icon: TrendingUp,
+            note: "Total de vendas e atendimentos",
+          },
         ].map(({ label, value, icon: Icon, note }) => (
           <div key={label} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">

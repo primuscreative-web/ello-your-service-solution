@@ -121,7 +121,6 @@ function PublicBusinessPage() {
   const [paymentMethod, setPaymentMethod] = useState<
     "cash" | "pix" | "card" | "online_pix" | "online_card"
   >("cash");
-  const stripeCheckoutEnabled = import.meta.env.VITE_STRIPE_ONLINE_PAYMENTS_ENABLED === "true";
   const [orderBusy, setOrderBusy] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [placedOrder, setPlacedOrder] = useState<{
@@ -331,7 +330,11 @@ function PublicBusinessPage() {
         const asaasResponse = await fetch("/api/asaas/charge", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ orderId: result.id, trackingToken: result.trackingToken }),
+          body: JSON.stringify({
+            orderId: result.id,
+            trackingToken: result.trackingToken,
+            billingType: "PIX",
+          }),
         });
         const asaas = (await asaasResponse.json()) as { success?: boolean; error?: string };
         if (!asaasResponse.ok || !asaas.success) {
@@ -341,16 +344,7 @@ function PublicBusinessPage() {
         return;
       }
       if (paymentMethod === "online_card") {
-        const checkoutResponse = await fetch("/api/stripe/checkout", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ orderId: result.id, trackingToken: result.trackingToken }),
-        });
-        const checkout = (await checkoutResponse.json()) as { url?: string; error?: string };
-        if (!checkoutResponse.ok || !checkout.url) {
-          throw new Error(checkout.error ?? "Não foi possível iniciar o pagamento online.");
-        }
-        window.location.assign(checkout.url);
+        window.location.assign(`/pedido/${result.trackingToken}`);
         return;
       }
       setPlacedOrder({
@@ -1702,9 +1696,7 @@ function PublicBusinessPage() {
                       {business?.onlinePaymentEnabled && (
                         <>
                           <option value="online_pix">Pix online (aprovação imediata via Asaas)</option>
-                          {stripeCheckoutEnabled && (
-                            <option value="online_card">Cartão online (Stripe)</option>
-                          )}
+                          <option value="online_card">Cartão de crédito online (Asaas)</option>
                         </>
                       )}
                     </select>

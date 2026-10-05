@@ -44,7 +44,9 @@ import { Route as StudioPedidosRouteImport } from './routes/studio.pedidos'
 import { Route as StudioPrecificacaoRouteImport } from './routes/studio.precificacao'
 import { Route as StudioSettingsRouteImport } from './routes/studio.settings'
 import { Route as ApiAsaasChargeRouteImport } from './routes/api.asaas.charge'
+import { Route as ApiAsaasSubaccountRouteImport } from './routes/api.asaas.subaccount'
 import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas.webhook'
+import { Route as ApiAsaasWithdrawRouteImport } from './routes/api.asaas.withdraw'
 import { Route as ApiStripeCheckoutRouteImport } from './routes/api.stripe.checkout'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as AppBusinessClientsRouteImport } from './routes/app.business.clients'
@@ -234,9 +236,19 @@ const ApiAsaasChargeRoute = ApiAsaasChargeRouteImport.update({
   path: '/api/asaas/charge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAsaasSubaccountRoute = ApiAsaasSubaccountRouteImport.update({
+  id: '/api/asaas/subaccount',
+  path: '/api/asaas/subaccount',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAsaasWebhookRoute = ApiAsaasWebhookRouteImport.update({
   id: '/api/asaas/webhook',
   path: '/api/asaas/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAsaasWithdrawRoute = ApiAsaasWithdrawRouteImport.update({
+  id: '/api/asaas/withdraw',
+  path: '/api/asaas/withdraw',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiStripeCheckoutRoute = ApiStripeCheckoutRouteImport.update({
@@ -344,7 +356,9 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
+  '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
+  '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
@@ -393,7 +407,9 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/studio': typeof StudioIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
+  '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
+  '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
@@ -445,7 +461,9 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
+  '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
+  '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
@@ -498,7 +516,9 @@ export interface FileRouteTypes {
     | '/app/'
     | '/studio/'
     | '/api/asaas/charge'
+    | '/api/asaas/subaccount'
     | '/api/asaas/webhook'
+    | '/api/asaas/withdraw'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
     | '/app/business/clients'
@@ -547,7 +567,9 @@ export interface FileRouteTypes {
     | '/app'
     | '/studio'
     | '/api/asaas/charge'
+    | '/api/asaas/subaccount'
     | '/api/asaas/webhook'
+    | '/api/asaas/withdraw'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
     | '/app/business/clients'
@@ -598,7 +620,9 @@ export interface FileRouteTypes {
     | '/app/'
     | '/studio/'
     | '/api/asaas/charge'
+    | '/api/asaas/subaccount'
     | '/api/asaas/webhook'
+    | '/api/asaas/withdraw'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
     | '/app/business/clients'
@@ -625,7 +649,9 @@ export interface RootRouteChildren {
   PSlugRoute: typeof PSlugRoute
   PedidoTokenRoute: typeof PedidoTokenRoute
   ApiAsaasChargeRoute: typeof ApiAsaasChargeRoute
+  ApiAsaasSubaccountRoute: typeof ApiAsaasSubaccountRoute
   ApiAsaasWebhookRoute: typeof ApiAsaasWebhookRoute
+  ApiAsaasWithdrawRoute: typeof ApiAsaasWithdrawRoute
   ApiStripeCheckoutRoute: typeof ApiStripeCheckoutRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   CBusinessSlugCampaignSlugRoute: typeof CBusinessSlugCampaignSlugRoute
@@ -880,11 +906,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAsaasChargeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/asaas/subaccount': {
+      id: '/api/asaas/subaccount'
+      path: '/api/asaas/subaccount'
+      fullPath: '/api/asaas/subaccount'
+      preLoaderRoute: typeof ApiAsaasSubaccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/asaas/webhook': {
       id: '/api/asaas/webhook'
       path: '/api/asaas/webhook'
       fullPath: '/api/asaas/webhook'
       preLoaderRoute: typeof ApiAsaasWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/asaas/withdraw': {
+      id: '/api/asaas/withdraw'
+      path: '/api/asaas/withdraw'
+      fullPath: '/api/asaas/withdraw'
+      preLoaderRoute: typeof ApiAsaasWithdrawRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/stripe/checkout': {
@@ -1085,7 +1125,9 @@ const rootRouteChildren: RootRouteChildren = {
   PSlugRoute: PSlugRoute,
   PedidoTokenRoute: PedidoTokenRoute,
   ApiAsaasChargeRoute: ApiAsaasChargeRoute,
+  ApiAsaasSubaccountRoute: ApiAsaasSubaccountRoute,
   ApiAsaasWebhookRoute: ApiAsaasWebhookRoute,
+  ApiAsaasWithdrawRoute: ApiAsaasWithdrawRoute,
   ApiStripeCheckoutRoute: ApiStripeCheckoutRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   CBusinessSlugCampaignSlugRoute: CBusinessSlugCampaignSlugRoute,
