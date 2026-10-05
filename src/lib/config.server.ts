@@ -28,9 +28,9 @@ export function getServerConfig() {
 
 export function getAsaasServerConfig() {
   return {
-    apiKey: process.env.ASAAS_API_KEY,
-    apiBaseUrl: process.env.ASAAS_API_BASE_URL ?? "https://api-sandbox.asaas.com/v3",
-    webhookToken: process.env.ASAAS_WEBHOOK_TOKEN,
+    apiKey: process.env.ASAAS_API_KEY?.trim(),
+    apiBaseUrl: process.env.ASAAS_API_BASE_URL?.trim() || "https://sandbox.asaas.com/api/v3",
+    webhookToken: process.env.ASAAS_WEBHOOK_TOKEN?.trim(),
   };
 }
 
