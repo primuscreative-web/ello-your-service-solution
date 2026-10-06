@@ -49,21 +49,49 @@ revoke all on public.localhub_payment_accounts from public, anon, authenticated;
 grant select on public.localhub_payment_accounts to authenticated;
 grant all on public.localhub_payment_accounts to service_role;
 
--- 2. Tabela de Saques e Transferências da Carteira do Lojista
+-- 2. Tabela de Transações da Carteira
+create table if not exists public.localhub_wallet_transactions (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.localhub_businesses(id) on delete cascade,
+  provider_transaction_id text unique,
+  transaction_type text not null check (transaction_type in ('sale', 'fee', 'refund', 'withdrawal', 'adjustment')),
+  status text not null check (status in ('pending', 'available', 'completed', 'failed', 'reversed')),
+  amount_cents bigint not null,
+  available_at timestamptz,
+  description text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists localhub_wallet_transactions_business_created_idx
+  on public.localhub_wallet_transactions (business_id, created_at desc);
+
+alter table public.localhub_wallet_transactions enable row level security;
+
+drop policy if exists "owners read own wallet transactions" on public.localhub_wallet_transactions;
+create policy "owners read own wallet transactions"
+  on public.localhub_wallet_transactions for select to authenticated
+  using (exists (
+    select 1 from public.localhub_businesses business
+    where business.id = business_id and business.owner_id = (select auth.uid())
+  ));
+
+revoke all on public.localhub_wallet_transactions from public, anon, authenticated;
+grant select on public.localhub_wallet_transactions to authenticated;
+grant all on public.localhub_wallet_transactions to service_role;
+
+-- 3. Tabela de Saques e Transferências da Carteira do Lojista
 create table if not exists public.localhub_wallet_withdrawals (
   id uuid primary key default gen_random_uuid(),
   business_id uuid not null references public.localhub_businesses(id) on delete cascade,
+  idempotency_key text not null,
+  provider_transfer_id text unique,
   amount_cents bigint not null check (amount_cents > 0),
-  fee_cents bigint not null default 0 check (fee_cents >= 0),
-  net_amount_cents bigint not null check (net_amount_cents > 0),
-  status text not null default 'pending'
-    check (status in ('pending', 'processing', 'completed', 'failed', 'cancelled')),
-  destination_pix_key text not null,
-  destination_pix_key_type text not null,
-  provider_transfer_id text,
+  status text not null default 'requested'
+    check (status in ('requested', 'processing', 'completed', 'failed', 'cancelled')),
   failure_reason text,
   requested_at timestamptz not null default now(),
-  processed_at timestamptz
+  completed_at timestamptz,
+  unique (business_id, idempotency_key)
 );
 
 create index if not exists localhub_wallet_withdrawals_business_requested_idx
@@ -83,13 +111,13 @@ revoke all on public.localhub_wallet_withdrawals from public, anon, authenticate
 grant select on public.localhub_wallet_withdrawals to authenticated;
 grant all on public.localhub_wallet_withdrawals to service_role;
 
--- 3. Adiciona campos de Cartão de Crédito e Parcelamento na tabela de pagamentos
+-- 4. Adiciona campos de Cartão de Crédito e Parcelamento na tabela de pagamentos
 alter table public.localhub_asaas_order_payments
   add column if not exists credit_card_brand text,
   add column if not exists credit_card_last4 text,
   add column if not exists installments integer default 1;
 
--- 4. Função Segura para Obter Perfil de Pagamento do Lojista (Oculta subaccount_api_key)
+-- 5. Função Segura para Obter Perfil de Pagamento do Lojista (Oculta subaccount_api_key)
 create or replace function public.localhub_get_business_payment_profile(p_business_id uuid)
 returns table (
   business_id uuid,
@@ -163,7 +191,7 @@ $$;
 revoke all on function public.localhub_get_business_payment_profile(uuid) from public, anon;
 grant execute on function public.localhub_get_business_payment_profile(uuid) to authenticated;
 
--- 5. RPC Segura para o Cliente obter dados do pagamento (Pix e Cartão) no Checkout/Tracking
+-- 6. RPC Segura para o Cliente obter dados do pagamento (Pix e Cartão) no Checkout/Tracking
 create or replace function public.localhub_get_order_payment_info(p_tracking_token uuid)
 returns table (
   order_id uuid,
