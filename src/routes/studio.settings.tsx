@@ -2,16 +2,19 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowUpRight,
+  Check,
   Copy,
   CalendarDays,
   ExternalLink,
   ImagePlus,
+  Loader2,
   MapPin,
   MessageCircle,
   Save,
   Store,
   Trash2,
 } from "lucide-react";
+import { formatCep, fetchAddressFromCep } from "@/lib/cities";
 import {
   Field,
   inputClass,
@@ -87,6 +90,35 @@ function SettingsPage() {
   );
   const [staffSaving, setStaffSaving] = useState(false);
   const [staffFormOpen, setStaffFormOpen] = useState(false);
+  const [cepDraft, setCepDraft] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepFeedback, setCepFeedback] = useState<string | null>(null);
+
+  async function handleCepSearch(val: string) {
+    const clean = val.replace(/\D/g, "");
+    if (clean.length !== 8) return;
+    setCepLoading(true);
+    setCepFeedback(null);
+    try {
+      const res = await fetchAddressFromCep(clean);
+      if (res) {
+        setSaved(false);
+        setForm((current) => ({
+          ...current,
+          city: res.fullCity,
+          address: res.formattedAddress || current.address,
+        }));
+        setCepFeedback(`✓ ${res.fullCity} preenchido via CEP!`);
+      } else {
+        setCepFeedback("CEP não encontrado.");
+      }
+    } catch {
+      setCepFeedback("Erro ao consultar CEP.");
+    } finally {
+      setCepLoading(false);
+    }
+  }
+
   const openingHours = form.openingHours ?? defaultOpeningHours;
 
   useEffect(() => {
@@ -429,7 +461,7 @@ function SettingsPage() {
           </section>
 
           {form.category !== "alimentacao" && (
-            <section id="profissionais" className="scroll-mt-24 border-t border-slate-100 pt-5">
+            <section id="portfolio" className="scroll-mt-24 border-t border-slate-100 pt-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="font-bold">Portfólio de trabalhos</h2>
@@ -543,6 +575,48 @@ function SettingsPage() {
                   className={inputClass + " resize-y"}
                 />
               </Field>
+              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                    <MapPin size={13} className="text-[#687847]" /> Preencher por CEP (opcional)
+                  </span>
+                  {cepLoading && (
+                    <span className="flex items-center gap-1 text-[11px] font-medium text-amber-700">
+                      <Loader2 size={11} className="animate-spin" /> Buscando endereço...
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    maxLength={9}
+                    placeholder="Ex.: 13010-000"
+                    value={cepDraft}
+                    onChange={(e) => {
+                      const formatted = formatCep(e.target.value);
+                      setCepDraft(formatted);
+                      if (formatted.replace(/\D/g, "").length === 8) {
+                        void handleCepSearch(formatted);
+                      }
+                    }}
+                    className={inputClass}
+                    aria-label="CEP opcional para preencher endereço"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleCepSearch(cepDraft)}
+                    disabled={cepLoading || cepDraft.replace(/\D/g, "").length !== 8}
+                    className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                  >
+                    Buscar CEP
+                  </button>
+                </div>
+                {cepFeedback && (
+                  <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-emerald-700">
+                    <Check size={12} /> {cepFeedback}
+                  </p>
+                )}
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Cidade">
                   <input

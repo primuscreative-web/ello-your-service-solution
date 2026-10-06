@@ -277,6 +277,21 @@
     }
   }
 
+  @keyframes ello-aurora-drift {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    33% {
+      transform: translate3d(32px, -28px, 0) scale(1.08);
+    }
+    66% {
+      transform: translate3d(-24px, 20px, 0) scale(0.94);
+    }
+    100% {
+      transform: translate3d(18px, -12px, 0) scale(1.05);
+    }
+  }
+
   @media (hover: hover) and (pointer: fine) {
     .auth-card:hover {
       animation-play-state: paused;
@@ -599,26 +614,39 @@
     border-radius: 1.25rem;
     background: #252720;
     font-size: 0.875rem;
-    font-weight: 800;
+    font-weight: 700;
     color: white;
-    box-shadow: 0 8px 20px -12px oklch(0.22 0.015 115 / 0.38);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 1px 2px rgba(0, 0, 0, 0.08),
+      0 8px 20px -8px rgba(37, 39, 32, 0.35);
     transition:
-      transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-      box-shadow 0.2s;
+      transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 0.18s ease,
+      box-shadow 0.18s ease;
   }
 
   .ello-btn-primary:hover:not(:disabled) {
-    background: #3c3e35;
-    box-shadow: 0 12px 24px -14px oklch(0.22 0.015 115 / 0.4);
+    background: #393b32;
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.24),
+      0 4px 12px rgba(0, 0, 0, 0.1),
+      0 14px 28px -8px rgba(37, 39, 32, 0.42);
   }
 
   .ello-btn-primary:active:not(:disabled) {
-    transform: scale(0.97);
+    transform: scale(0.98) translateY(0);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 2px 6px rgba(0, 0, 0, 0.08);
   }
 
   .ello-btn-primary:disabled {
-    opacity: 0.55;
+    opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 
   .ello-btn-secondary {
@@ -629,24 +657,33 @@
     height: 3rem;
     width: 100%;
     border-radius: 1.125rem;
-    border: 1px solid oklch(0.9 0.012 95);
-    background: oklch(1 0 0 / 0.92);
+    border: 1px solid #dedfd6;
+    background: rgba(255, 255, 255, 0.95);
     font-size: 0.875rem;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--color-foreground);
-    box-shadow: 0 4px 14px -10px oklch(0.22 0.015 115 / 0.18);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 1px 2px rgba(0, 0, 0, 0.04);
     transition:
-      transform 0.2s,
-      border-color 0.2s;
+      transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.18s ease,
+      background-color 0.18s ease,
+      box-shadow 0.18s ease;
   }
 
   .ello-btn-secondary:hover:not(:disabled) {
-    border-color: oklch(0.62 0.1 125 / 0.55);
+    border-color: #c7c9bc;
+    background: #ffffff;
     transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 1),
+      0 4px 12px rgba(0, 0, 0, 0.06);
   }
 
   .ello-btn-secondary:active:not(:disabled) {
-    transform: scale(0.98);
+    transform: scale(0.98) translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
 
   .ello-btn-ghost {
@@ -1473,22 +1510,39 @@
 
   .ello-btn-primary,
   .ello-action {
-    border-radius: 10px;
+    border-radius: 12px;
     background: var(--primary);
-    box-shadow: none;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 2px 4px rgba(0, 0, 0, 0.06),
+      0 8px 20px -6px oklch(0.22 0.015 115 / 0.32);
     font-weight: 700;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .ello-btn-primary:hover:not(:disabled),
   .ello-action:hover:not(:disabled) {
     background: oklch(0.32 0.018 115);
-    box-shadow: none;
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      0 4px 8px rgba(0, 0, 0, 0.08),
+      0 12px 26px -6px oklch(0.22 0.015 115 / 0.42);
   }
 
   .ello-btn-secondary {
-    border-radius: 10px;
+    border-radius: 12px;
     border-color: var(--border);
-    box-shadow: none;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .ello-btn-secondary:hover:not(:disabled) {
+    border-color: oklch(0.62 0.1 125 / 0.55);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   }
 
   .ello-eyebrow,
@@ -1577,7 +1631,7 @@
     position: fixed;
     z-index: -1;
     inset: 0;
-    background: rgba(248, 247, 244, 0.72);
+    background: rgba(245, 244, 239, 0.72);
     pointer-events: none;
   }
 
@@ -1632,37 +1686,68 @@
     justify-content: center;
     gap: 10px;
     border-radius: 999px;
-    padding: 0 19px;
-    font-size: 12px;
-    font-weight: 600;
+    padding: 0 20px;
+    font-size: 13px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    cursor: pointer;
     transition:
-      transform 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
       background-color 160ms ease,
       color 160ms ease;
   }
   .ello-cta:active {
-    transform: scale(0.97);
+    transform: scale(0.97) translateY(0);
   }
   .ello-cta-dark {
     background: #252720;
     color: #fff;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      0 2px 4px rgba(0, 0, 0, 0.08),
+      0 6px 18px -4px rgba(37, 39, 32, 0.35);
   }
   .ello-cta-dark:hover {
-    background: #414338;
+    background: #393b32;
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      0 4px 10px rgba(0, 0, 0, 0.1),
+      0 12px 24px -4px rgba(37, 39, 32, 0.45);
   }
   .ello-cta-lime {
     background: #d0f25a;
     color: #242620;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.65),
+      0 1px 2px rgba(0, 0, 0, 0.05),
+      0 6px 18px -3px rgba(208, 242, 90, 0.48);
   }
   .ello-cta-lime:hover {
-    background: #c2e84b;
+    background: #d9f76a;
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      0 3px 6px rgba(0, 0, 0, 0.06),
+      0 10px 26px -3px rgba(208, 242, 90, 0.62);
   }
   .ello-cta-quiet {
     border: 1px solid #dfdfd7;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
     color: #41433d;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 1px 3px rgba(0, 0, 0, 0.04);
   }
   .ello-cta-quiet:hover {
-    background: #fff;
+    background: #ffffff;
+    border-color: #c7c9bc;
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 1),
+      0 4px 12px rgba(0, 0, 0, 0.06);
   }
   .ello-kicker,
   .ello-section-index {
@@ -1942,15 +2027,15 @@
   }
 
   @media (max-width: 639px) {
+    .ello-scroll-video {
+      object-position: center 48%;
+    }
     .ello-hero-actions {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
     }
     .ello-hero-actions .ello-cta {
       width: 100%;
-    }
-    .ello-scroll-video {
-      object-position: center 48%;
     }
     .ello-showcase {
       min-width: 0;
@@ -1999,12 +2084,12 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ello-store-card {
-      animation: none;
-    }
     .ello-scroll-video,
     .ello-scroll-video-overlay {
       display: none;
+    }
+    .ello-store-card {
+      animation: none;
     }
     .ello-site *,
     .ello-site *::before,

@@ -360,7 +360,7 @@ function BusinessShowcase({
 
     const interval = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % SHOWCASE_BUSINESSES.length);
-    }, 2000);
+    }, 4500);
 
     return () => window.clearInterval(interval);
   }, [isPaused, setActiveIndex]);

@@ -9,7 +9,9 @@ import {
   Pencil,
   Plus,
   Power,
+  Search,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   Field,
@@ -127,6 +129,24 @@ function CatalogPage() {
     }
   }
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "hidden">("all");
+
+  const activeCount = services.filter((item) => item.active).length;
+  const hiddenCount = services.filter((item) => !item.active).length;
+
+  const filteredServices = services.filter((item) => {
+    const matchesSearch =
+      searchTerm.trim() === "" ||
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      Boolean(item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" && item.active) ||
+      (statusFilter === "hidden" && !item.active);
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <>
       <PageTitle
@@ -136,6 +156,18 @@ function CatalogPage() {
           hasAppointments
             ? `Cadastre cada ${copy.offer}, defina seu tempo e preço. A duração ajusta os horários oferecidos na agenda.`
             : "Organize os itens, descrições e preços do seu cardápio público."
+        }
+        action={
+          <button
+            onClick={() => {
+              setEditing(null);
+              setCreating(true);
+            }}
+            className={primaryButtonClass}
+          >
+            <Plus size={16} />
+            {copy.addOffer}
+          </button>
         }
       />
       {creating && (
@@ -151,32 +183,99 @@ function CatalogPage() {
         />
       )}
       {error && (
-        <p role="alert" className="mb-4 text-sm text-red-700">
+        <div role="alert" className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <span className="size-2 rounded-full bg-red-500" />
           {error}
-        </p>
+        </div>
       )}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e1e3d8] bg-[#edf0e5] p-4">
-        <div className="flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-xl bg-white text-[#667448]">
-            <Package size={18} />
+
+      {/* Metrics Banner */}
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="flex items-center gap-3.5 rounded-2xl border border-[#e8e6df] bg-white p-4 shadow-xs">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#edf0e5] text-[#586341]">
+            <Package size={20} />
           </span>
           <div>
-            <div className="text-sm font-bold">
-              {hasAppointments
-                ? `Seus ${copy.offers} aparecem na sua página`
-                : "Seus itens aparecem no cardápio"}
-            </div>
-            <div className="mt-1 text-xs text-slate-500">
-              {hasAppointments
-                ? `O tempo definido em cada ${copy.offer} organiza a disponibilidade e evita horários sobrepostos.`
-                : "Seus clientes consultam os itens e fazem o pedido pelo WhatsApp."}
-            </div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total no Catálogo</div>
+            <div className="text-xl font-bold tracking-tight text-[#292b25]">{services.length} {services.length === 1 ? "item" : "itens"}</div>
           </div>
         </div>
-        <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#586341]">
-          {services.filter((item) => item.active).length} ativos
-        </span>
+        <div className="flex items-center gap-3.5 rounded-2xl border border-[#e8e6df] bg-white p-4 shadow-xs">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700">
+            <span className="size-3 rounded-full bg-emerald-500 animate-pulse" />
+          </span>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ativos na Página</div>
+            <div className="text-xl font-bold tracking-tight text-emerald-700">{activeCount} visíveis</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3.5 rounded-2xl border border-[#e8e6df] bg-white p-4 shadow-xs">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500">
+            <Power size={18} />
+          </span>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ocultos / Pausados</div>
+            <div className="text-xl font-bold tracking-tight text-slate-600">{hiddenCount} itens</div>
+          </div>
+        </div>
       </div>
+
+      {/* Search and Filters Toolbar */}
+      {services.length > 0 && (
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por nome ou descrição..."
+              className="w-full rounded-xl border border-[#dedfd6] bg-white pl-10 pr-9 py-2.5 text-sm text-[#292b25] shadow-xs outline-none transition placeholder:text-slate-400 focus:border-[#778253] focus:ring-2 focus:ring-[#edf0e5]"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 self-start sm:self-auto">
+            <button
+              onClick={() => setStatusFilter("all")}
+              className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
+                statusFilter === "all"
+                  ? "bg-[#292b25] text-white shadow-xs"
+                  : "bg-white text-slate-600 border border-[#e8e6df] hover:bg-[#fafaf7]"
+              }`}
+            >
+              Todos ({services.length})
+            </button>
+            <button
+              onClick={() => setStatusFilter("active")}
+              className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
+                statusFilter === "active"
+                  ? "bg-emerald-700 text-white shadow-xs"
+                  : "bg-white text-slate-600 border border-[#e8e6df] hover:bg-[#fafaf7]"
+              }`}
+            >
+              Ativos ({activeCount})
+            </button>
+            <button
+              onClick={() => setStatusFilter("hidden")}
+              className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
+                statusFilter === "hidden"
+                  ? "bg-slate-700 text-white shadow-xs"
+                  : "bg-white text-slate-600 border border-[#e8e6df] hover:bg-[#fafaf7]"
+              }`}
+            >
+              Ocultos ({hiddenCount})
+            </button>
+          </div>
+        </div>
+      )}
+
       {editing && (
         <ServiceEditor
           initial={editing}
@@ -190,106 +289,133 @@ function CatalogPage() {
           }}
         />
       )}
+
       {services.length ? (
-        <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-          <div
-            className={`hidden ${desktopGridColumns} gap-4 border-b border-slate-100 px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:grid`}
-          >
-            <span>Oferta</span>
-            {hasAppointments && <span>Tempo</span>}
-            <span>Preço</span>
-            <span>Status</span>
-          </div>
-          {services.map((service) => (
-            <article
-              key={service.id}
-              className={`grid gap-3 border-b border-slate-100 px-5 py-4 last:border-0 ${desktopGridColumns} sm:items-center sm:gap-4`}
+        filteredServices.length ? (
+          <div className="overflow-hidden rounded-2xl border border-[#e8e6df] bg-white shadow-xs">
+            <div
+              className={`hidden ${desktopGridColumns} gap-4 border-b border-[#e8e6df] bg-[#fafaf7] px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:grid`}
             >
-              <div className="flex min-w-0 items-center gap-3">
-                {service.imageUrl ? (
-                  <img
-                    src={service.imageUrl}
-                    alt=""
-                    loading="lazy"
-                    className="size-12 shrink-0 rounded-xl object-cover"
-                  />
-                ) : (
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#edf0e5] text-[#667448]">
-                    <Package size={17} />
-                  </span>
-                )}
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-bold">{service.name}</div>
-                  <div className="mt-1 truncate text-xs text-slate-400">
-                    {service.description || "Sem descrição"}
+              <span>Oferta</span>
+              {hasAppointments && <span>Tempo</span>}
+              <span>Preço</span>
+              <span>Status</span>
+            </div>
+            {filteredServices.map((service) => (
+              <article
+                key={service.id}
+                className={`grid gap-3 border-b border-[#f0eee6] px-6 py-4.5 transition-colors duration-150 hover:bg-[#fafaf6] last:border-0 ${desktopGridColumns} sm:items-center sm:gap-4`}
+              >
+                <div className="flex min-w-0 items-center gap-3.5">
+                  {service.imageUrl ? (
+                    <img
+                      src={service.imageUrl}
+                      alt=""
+                      loading="lazy"
+                      className="size-13 shrink-0 rounded-xl object-cover ring-1 ring-[#e8e6df]"
+                    />
+                  ) : (
+                    <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#edf0e5] text-[#586341]">
+                      <Package size={20} />
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-bold text-[#292b25]">{service.name}</div>
+                    <div className="mt-0.5 truncate text-xs text-slate-500">
+                      {service.description || "Sem descrição"}
+                    </div>
                   </div>
                 </div>
-              </div>
-              {hasAppointments && (
-                <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <Clock3 size={14} />
-                  {service.duration} min
+                {hasAppointments && (
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+                    <Clock3 size={14} className="text-[#8a9668]" />
+                    {service.duration} min
+                  </div>
+                )}
+                <div className="text-sm font-bold text-[#292b25]">{money(service.price)}</div>
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className={
+                      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold " +
+                      (service.active
+                        ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                        : "bg-slate-100 text-slate-600 ring-1 ring-slate-200")
+                    }
+                  >
+                    <span
+                      className={`size-1.5 rounded-full ${
+                        service.active ? "bg-emerald-500" : "bg-slate-400"
+                      }`}
+                    />
+                    {service.active ? "Ativo" : "Oculto"}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      title="Editar serviço"
+                      onClick={() => {
+                        setCreating(false);
+                        setEditing(service);
+                      }}
+                      className="grid size-8.5 place-items-center rounded-lg text-slate-500 transition hover:bg-[#edf0e5] hover:text-[#586341]"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      title={service.active ? "Ocultar da página" : "Ativar na página"}
+                      onClick={() => void persistService({ ...service, active: !service.active })}
+                      className="grid size-8.5 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                    >
+                      <Power size={15} />
+                    </button>
+                    <button
+                      title="Excluir serviço"
+                      onClick={() => {
+                        if (window.confirm("Excluir " + service.name + " do catálogo?"))
+                          void removeService(service.id)
+                            .then(() => setError(""))
+                            .catch((caught: unknown) =>
+                              setError(describeError(caught, "Não foi possível excluir o item.")),
+                            );
+                      }}
+                      className="grid size-8.5 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
-              )}
-              <div className="text-sm font-bold">{money(service.price)}</div>
-              <div className="flex items-center justify-between gap-2">
-                <span
-                  className={
-                    "rounded-full px-2.5 py-1 text-[10px] font-bold " +
-                    (service.active
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-slate-100 text-slate-500")
-                  }
-                >
-                  {service.active ? "Ativo" : "Oculto"}
-                </span>
-                <div className="flex gap-1">
-                  <button
-                    title="Editar serviço"
-                    onClick={() => {
-                      setCreating(false);
-                      setEditing(service);
-                    }}
-                    className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-[#edf0e5] hover:text-[#586341]"
-                  >
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    title={service.active ? "Ocultar serviço" : "Ativar serviço"}
-                    onClick={() => void persistService({ ...service, active: !service.active })}
-                    className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100"
-                  >
-                    <Power size={15} />
-                  </button>
-                  <button
-                    title="Excluir serviço"
-                    onClick={() => {
-                      if (window.confirm("Excluir " + service.name + " do catálogo?"))
-                        void removeService(service.id)
-                          .then(() => setError(""))
-                          .catch((caught: unknown) =>
-                            setError(describeError(caught, "Não foi possível excluir o item.")),
-                          );
-                    }}
-                    className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-[#dedfd6] bg-white px-6 py-12 text-center">
+            <span className="mx-auto grid size-12 place-items-center rounded-xl bg-[#fafaf7] text-slate-400">
+              <Search size={22} />
+            </span>
+            <h3 className="mt-3 text-sm font-bold text-[#292b25]">Nenhum item encontrado</h3>
+            <p className="mt-1 text-xs text-slate-500">
+              Não encontramos resultados para sua busca ou filtros selecionados.
+            </p>
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                setStatusFilter("all");
+              }}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg border border-[#dedfd6] bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-[#fafaf7]"
+            >
+              Limpar filtros
+            </button>
+          </div>
+        )
       ) : (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#edf0e5] text-[#667448]">
-            <Package size={22} />
+        <div className="rounded-2xl border border-dashed border-[#dedfd6] bg-white px-6 py-16 text-center shadow-xs">
+          <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-[#edf0e5] text-[#586341]">
+            <Package size={26} />
           </span>
-          <h2 className="mt-4 font-bold">{copy.emptyOffersTitle}</h2>
-          <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+          <h2 className="mt-4 text-lg font-bold text-[#292b25]">{copy.emptyOffersTitle}</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-slate-500">
             {copy.emptyOffersDescription}
           </p>
-          <button onClick={() => setCreating(true)} className={primaryButtonClass + " mt-5"}>
+          <button onClick={() => setCreating(true)} className={primaryButtonClass + " mt-6"}>
             <Plus size={16} />
             {copy.addOffer}
           </button>

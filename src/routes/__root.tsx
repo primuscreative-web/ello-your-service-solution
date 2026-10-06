@@ -98,6 +98,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Apresente seus serviços, receba pedidos e organize seu negócio local em um só lugar.",
       },
+      { name: "theme-color", content: "#292b25" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "author", content: "ELLO" },
       { property: "og:title", content: "ELLO — Seu negócio, no seu melhor lugar" },
       {
@@ -110,6 +113,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@elloapp" },
     ],
     links: [
+      {
+        rel: "manifest",
+        href: "/manifest.json",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -128,11 +135,45 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+const elloStructuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://ello.app.br/#organization",
+      "name": "ELLO",
+      "url": "https://ello.app.br",
+      "description":
+        "Plataforma completa para gestão, cardápio digital, agendamento e vendas para negócios locais e prestadores de serviços.",
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://ello.app.br/#software",
+      "name": "ELLO Studio & Delivery",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "featureList": [
+        "Cardápio digital sem comissão",
+        "Agendamento online inteligente",
+        "Gestão de entregas próprias e motoboys",
+        "Frente de caixa e financeiro integrado",
+        "Página profissional personalizada",
+      ],
+    },
+  ],
+};
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
       <head>
         <HeadContent />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(elloStructuredData),
+          }}
+        />
       </head>
       <body>
         <script
@@ -153,7 +194,7 @@ function createPublicRuntimeConfigScript() {
     supabaseAnonKey: "sb_publishable_2wUjef5P5H6bPLqRhfouWw_AFp-Mbk_",
   };
 
-  return `window.__ELLO_CONFIG__=${JSON.stringify(config).replace(/</g, "\\u003c")};`;
+  return `window.__ELLO_CONFIG__=${JSON.stringify(config).replace(/</g, "\\u003c")};if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').catch(()=>{});});}`;
 }
 
 function RootComponent() {

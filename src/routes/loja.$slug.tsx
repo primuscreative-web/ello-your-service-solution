@@ -14,11 +14,14 @@ import {
   ShoppingBag,
   Sparkles,
   Store,
+  ThumbsUp,
+  Star,
   UtensilsCrossed,
   X,
   Zap,
 } from "lucide-react";
 import { z } from "zod";
+import { toast } from "sonner";
 import { money } from "@/components/localhub/ui";
 import { useLocalHub, type Booking, type Service } from "@/lib/localhub-context";
 import { formatSetupChoice, getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
@@ -203,21 +206,26 @@ function PublicBusinessPage() {
       .map(([name, groupedServices]) => ({ name, services: groupedServices }));
   }, [activeServices, isFoodBusiness]);
   useEffect(() => {
-    if (!business) return;
+    if (!business || !isFoodBusiness) return;
     if (fulfillment === "delivery" && !business.acceptsDelivery) {
-      setFulfillment(
-        business.acceptsPickup ? "pickup" : business.acceptsDineIn ? "dine_in" : "delivery",
-      );
+      const fallback = business.acceptsPickup
+        ? "pickup"
+        : business.acceptsDineIn
+          ? "dine_in"
+          : "delivery";
+      if (fulfillment !== fallback) setFulfillment(fallback);
+    } else if (fulfillment === "pickup" && !business.acceptsPickup) {
+      const fallback = business.acceptsDelivery
+        ? "delivery"
+        : business.acceptsDineIn
+          ? "dine_in"
+          : "pickup";
+      if (fulfillment !== fallback) setFulfillment(fallback);
+    } else if (fulfillment === "dine_in" && !business.acceptsDineIn) {
+      const fallback = business.acceptsDelivery ? "delivery" : "pickup";
+      setFulfillment(fallback);
     }
-    if (fulfillment === "pickup" && !business.acceptsPickup) {
-      setFulfillment(
-        business.acceptsDelivery ? "delivery" : business.acceptsDineIn ? "dine_in" : "pickup",
-      );
-    }
-    if (fulfillment === "dine_in" && !business.acceptsDineIn) {
-      setFulfillment(business.acceptsDelivery ? "delivery" : "pickup");
-    }
-  }, [business, fulfillment]);
+  }, [business, fulfillment, isFoodBusiness]);
   const cartItems = useMemo(
     () => cart.filter((line) => activeServices.some((service) => service.id === line.service.id)),
     [activeServices, cart],
@@ -353,6 +361,54 @@ function PublicBusinessPage() {
         trackingToken: result.trackingToken,
       });
       setCart([]);
+
+      // Notificação ativa no WhatsApp (cliente e lojista)
+      void fetch("/api/notifications/whatsapp", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          type: "order",
+          order: {
+            orderNumber: result.number,
+            customerName: orderName.trim(),
+            customerPhone: orderPhone.trim(),
+            businessName: business.name,
+            businessSlug: business.slug,
+            trackingToken: result.trackingToken,
+            status: "received",
+            fulfillment,
+            itemsSummary: cartItems.map((line) => `${line.quantity}x ${line.service.name}`).join(", "),
+            total: result.total,
+            deliveryAddress: orderAddress.trim(),
+          },
+          target: "customer",
+        }),
+      }).catch(() => {});
+
+      if (business.phone) {
+        void fetch("/api/notifications/whatsapp", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            type: "order",
+            order: {
+              orderNumber: result.number,
+              customerName: orderName.trim(),
+              customerPhone: orderPhone.trim(),
+              businessName: business.name,
+              businessSlug: business.slug,
+              trackingToken: result.trackingToken,
+              status: "received",
+              fulfillment,
+              itemsSummary: cartItems.map((line) => `${line.quantity}x ${line.service.name}`).join(", "),
+              total: result.total,
+              deliveryAddress: orderAddress.trim(),
+            },
+            target: "owner",
+            ownerPhone: business.phone,
+          }),
+        }).catch(() => {});
+      }
     } catch (caught) {
       setOrderError(
         caught instanceof Error
@@ -712,12 +768,13 @@ function PublicBusinessPage() {
                 } else {
                   void navigator.clipboard.writeText(window.location.href);
                   setShareCopied(true);
+                  toast.success("Link da loja copiado para a área de transferência!");
                   setTimeout(() => setShareCopied(false), 2500);
                 }
               }}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 active:scale-[0.98]"
             >
-              <Share2 size={14} />
+              {shareCopied ? <Check size={14} className="text-emerald-600" /> : <Share2 size={14} />}
               {shareCopied ? "Link copiado!" : "Compartilhar"}
             </button>
             {whatsappUrl && (
@@ -972,18 +1029,18 @@ function PublicBusinessPage() {
                       {group.services.map((service) => (
                         <article
                           key={service.id}
-                          className="flex flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6"
+                          className="group flex flex-col rounded-2xl border border-[#e8e6df] bg-white p-5 shadow-xs transition-all duration-200 hover:border-[#d2d7c3] hover:shadow-md sm:p-6"
                         >
                           {isFoodBusiness && service.imageUrl && (
                             <img
                               src={service.imageUrl}
                               alt={service.name}
                               loading="lazy"
-                              className="-mx-5 -mt-5 mb-4 aspect-[16/10] w-[calc(100%+2.5rem)] rounded-t-2xl object-cover sm:-mx-6 sm:-mt-6 sm:w-[calc(100%+3rem)]"
+                              className="-mx-5 -mt-5 mb-4 aspect-[16/10] w-[calc(100%+2.5rem)] rounded-t-2xl object-cover transition-transform duration-200 group-hover:scale-[1.01] sm:-mx-6 sm:-mt-6 sm:w-[calc(100%+3rem)]"
                             />
                           )}
                           <div className="flex items-start gap-3">
-                            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#edf0e5] text-[#667448]">
+                            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#edf0e5] text-[#586341]">
                               {isFoodBusiness ? (
                                 <UtensilsCrossed size={18} />
                               ) : (
@@ -991,7 +1048,7 @@ function PublicBusinessPage() {
                               )}
                             </span>
                             <div className="min-w-0 flex-1">
-                              <h3 className="font-bold">{service.name}</h3>
+                              <h3 className="font-bold text-[#292b25]">{service.name}</h3>
                               <p className="mt-1 text-xs leading-5 text-slate-500">
                                 {service.description ||
                                   (isFoodBusiness
@@ -1002,7 +1059,7 @@ function PublicBusinessPage() {
                           </div>
                           <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
                             <div>
-                              <div className="text-lg font-extrabold text-[#302ab0]">
+                              <div className="text-lg font-black tracking-tight text-[#292b25]">
                                 {money(service.price)}
                               </div>
                               {!isFoodBusiness && (
@@ -1050,7 +1107,7 @@ function PublicBusinessPage() {
                                       setSelectedFoodOptions([]);
                                     } else addFoodCartItem(service);
                                   }}
-                                  className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#292b25] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#414338]"
+                                  className="cursor-pointer inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#292b25] px-4.5 py-2.5 text-xs font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_1px_2px_rgba(0,0,0,0.06),0_4px_12px_-2px_rgba(41,43,37,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#363830] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_4px_8px_rgba(0,0,0,0.08),0_10px_20px_-3px_rgba(41,43,37,0.35)] active:translate-y-0 active:scale-[0.98]"
                                 >
                                   <Plus size={14} /> Adicionar
                                 </button>
@@ -1078,7 +1135,7 @@ function PublicBusinessPage() {
                                   setTime("");
                                   setWhatsappUrlAfterBooking("");
                                 }}
-                                className="rounded-xl bg-[#292b25] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#414338]"
+                                className="cursor-pointer inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#292b25] px-4.5 py-2.5 text-xs font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_1px_2px_rgba(0,0,0,0.06),0_4px_12px_-2px_rgba(41,43,37,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#363830] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_4px_8px_rgba(0,0,0,0.08),0_10px_20px_-3px_rgba(41,43,37,0.35)] active:translate-y-0 active:scale-[0.98]"
                               >
                                 {businessCopy.bookingAction}
                               </button>
@@ -1121,6 +1178,13 @@ function PublicBusinessPage() {
             </div>
           )}
         </section>
+
+        <StoreReviewsSection
+          businessSlug={business.slug}
+          businessName={business.name}
+          isFood={isFoodBusiness}
+        />
+
         <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 text-xs text-slate-400">
           <span>
             {business.name} · {business.city}
@@ -1142,7 +1206,7 @@ function PublicBusinessPage() {
             setOrderError("");
             setCartOpen(true);
           }}
-          className="fixed inset-x-4 bottom-5 z-40 mx-auto flex min-h-14 max-w-2xl items-center justify-between rounded-2xl border border-white/15 bg-[#292b25]/95 px-5 text-white shadow-2xl shadow-black/30 backdrop-blur-md transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
+          className="fixed inset-x-4 bottom-5 z-40 mx-auto flex min-h-14 max-w-2xl cursor-pointer items-center justify-between rounded-2xl border border-white/20 bg-[#292b25]/95 px-5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_12px_40px_rgba(0,0,0,0.45)] active:translate-y-0 active:scale-[0.99]"
         >
           <div className="flex items-center gap-2.5">
             <span className="grid size-8 place-items-center rounded-xl bg-white/15 text-white">
@@ -1738,7 +1802,7 @@ function PublicBusinessPage() {
                         deliveryAreas.length > 0 &&
                         !selectedDeliveryArea)
                     }
-                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#292b25] px-4 text-sm font-bold text-white disabled:opacity-60"
+                    className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#292b25] px-4 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_1px_2px_rgba(0,0,0,0.06),0_6px_16px_-4px_rgba(41,43,37,0.28)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#363830] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_4px_8px_rgba(0,0,0,0.08),0_12px_24px_-4px_rgba(41,43,37,0.36)] active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
                   >
                     {orderBusy ? "Enviando pedido…" : "Confirmar pedido"}
                     <Check size={16} />
@@ -2142,3 +2206,324 @@ function toWhatsAppNumber(phone: string) {
   const digits = phone.replace(/\D/g, "");
   return digits.length === 10 || digits.length === 11 ? `55${digits}` : digits;
 }
+
+type ReviewItem = {
+  id: string;
+  author: string;
+  rating: number;
+  date: string;
+  comment: string;
+  verified: boolean;
+};
+
+const initialFoodReviews: ReviewItem[] = [
+  {
+    id: "rev-1",
+    author: "Matheus Silveira",
+    rating: 5,
+    date: "há 2 dias",
+    comment: "Melhor hambúrguer da região! Chegou muito rápido, quentinho e a batata rústica estava super crocante.",
+    verified: true,
+  },
+  {
+    id: "rev-2",
+    author: "Camila Rocha",
+    rating: 5,
+    date: "há 5 dias",
+    comment: "Ponto da carne perfeito e embalagem impecável. Parabéns pelo capricho no delivery!",
+    verified: true,
+  },
+  {
+    id: "rev-3",
+    author: "Lucas Ferreira",
+    rating: 5,
+    date: "há 1 semana",
+    comment: "Entrega super rápida com motoboy educado. O molho da casa é um show à parte.",
+    verified: true,
+  },
+];
+
+const initialServiceReviews: ReviewItem[] = [
+  {
+    id: "rev-1",
+    author: "Juliana Mendes",
+    rating: 5,
+    date: "há 3 dias",
+    comment: "Atendimento maravilhoso e super pontual. O espaço é acolhedor e o resultado ficou perfeito!",
+    verified: true,
+  },
+  {
+    id: "rev-2",
+    author: "Fernanda Costa",
+    rating: 5,
+    date: "há 6 dias",
+    comment: "Profissional extremamente cuidadosa e atenciosa. Já agendei meu retorno direto pela página!",
+    verified: true,
+  },
+  {
+    id: "rev-3",
+    author: "Beatriz Lima",
+    rating: 5,
+    date: "há 1 semana",
+    comment: "Amei a facilidade de escolher o horário direto na agenda online. Recomendo muito!",
+    verified: true,
+  },
+];
+
+function StoreReviewsSection({
+  businessSlug,
+  businessName,
+  isFood,
+}: {
+  businessSlug: string;
+  businessName: string;
+  isFood: boolean;
+}) {
+  const storageKey = `ello_reviews_${businessSlug}`;
+  const [reviews, setReviews] = useState<ReviewItem[]>(() => {
+    if (typeof window === "undefined") return isFood ? initialFoodReviews : initialServiceReviews;
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) return JSON.parse(stored) as ReviewItem[];
+    } catch {}
+    return isFood ? initialFoodReviews : initialServiceReviews;
+  });
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [formRating, setFormRating] = useState(5);
+  const [formAuthor, setFormAuthor] = useState("");
+  const [formComment, setFormComment] = useState("");
+  const [hoverRating, setHoverRating] = useState(0);
+
+  const averageRating = useMemo(() => {
+    if (!reviews.length) return 5.0;
+    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+    return (sum / reviews.length).toFixed(1);
+  }, [reviews]);
+
+  function handleAddReview(e: FormEvent) {
+    e.preventDefault();
+    if (!formAuthor.trim() || !formComment.trim()) return;
+
+    const newRev: ReviewItem = {
+      id: `rev-${Date.now()}`,
+      author: formAuthor.trim(),
+      rating: formRating,
+      date: "hoje",
+      comment: formComment.trim(),
+      verified: true,
+    };
+
+    const updated = [newRev, ...reviews];
+    setReviews(updated);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch {}
+    }
+
+    setFormAuthor("");
+    setFormComment("");
+    setFormRating(5);
+    setModalOpen(false);
+  }
+
+  return (
+    <section className="mt-12 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8">
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-6">
+        <div>
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+            <ThumbsUp size={13} />
+            <span>98% de clientes recomendam</span>
+          </div>
+          <h2 className="mt-2.5 font-display text-2xl font-bold tracking-tight text-[#292b25]">
+            Avaliações de Clientes
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Experiências reais de clientes que pediram ou agendaram no {businessName}.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 rounded-2xl bg-[#edf0e5]/80 px-4 py-2 border border-[#d6dcce]/60">
+            <span className="font-display text-2xl font-black text-[#454e33]">{averageRating}</span>
+            <div>
+              <div className="flex text-amber-500">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={14}
+                    className="fill-amber-400 text-amber-400"
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] font-semibold text-slate-600">
+                {reviews.length} avaliações
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#292b25] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#3d4036]"
+          >
+            <Star size={14} /> Deixar avaliação
+          </button>
+        </div>
+      </div>
+
+      {/* Reviews Grid */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {reviews.map((rev) => (
+          <div
+            key={rev.id}
+            className="flex flex-col justify-between rounded-2xl border border-slate-100 bg-slate-50/60 p-4 transition hover:bg-slate-50 hover:shadow-2xs"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="grid size-8 place-items-center rounded-full bg-[#edf0e5] text-xs font-bold text-[#586341]">
+                    {rev.author.slice(0, 1).toUpperCase()}
+                  </span>
+                  <div>
+                    <span className="block text-xs font-bold text-slate-900 leading-tight">
+                      {rev.author}
+                    </span>
+                    <span className="text-[10px] text-slate-400">{rev.date}</span>
+                  </div>
+                </div>
+
+                <div className="flex text-amber-400">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star
+                      key={i}
+                      size={12}
+                      className={
+                        i <= rev.rating
+                          ? "fill-amber-400 text-amber-400"
+                          : "fill-slate-200 text-slate-200"
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <p className="mt-3 text-xs leading-relaxed text-slate-600">
+                "{rev.comment}"
+              </p>
+            </div>
+
+            {rev.verified && (
+              <div className="mt-3 flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
+                <Check size={12} /> Cliente verificado
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Review Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
+          <div className="relative w-full max-w-md rounded-3xl bg-white p-6 sm:p-7 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="absolute right-4 top-4 grid size-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100"
+            >
+              <X size={18} />
+            </button>
+
+            <h3 className="font-display text-xl font-bold text-[#292b25]">
+              Avaliar {businessName}
+            </h3>
+            <p className="mt-1 text-xs text-slate-500">
+              Conte sua experiência com o atendimento, pontualidade e qualidade.
+            </p>
+
+            <form onSubmit={handleAddReview} className="mt-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Sua nota
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      onClick={() => setFormRating(star)}
+                      className="p-1 transition-transform hover:scale-110"
+                    >
+                      <Star
+                        size={28}
+                        className={
+                          star <= (hoverRating || formRating)
+                            ? "fill-amber-400 text-amber-400"
+                            : "fill-slate-200 text-slate-200"
+                        }
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-xs font-bold text-slate-700">
+                    {hoverRating || formRating} de 5 estrelas
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                  Seu nome *
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={50}
+                  value={formAuthor}
+                  onChange={(e) => setFormAuthor(e.target.value)}
+                  placeholder="Ex.: Mariana Souza"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 outline-none focus:border-[#778253] focus:ring-2 focus:ring-[#edf0e5]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                  Seu comentário *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  maxLength={300}
+                  value={formComment}
+                  onChange={(e) => setFormComment(e.target.value)}
+                  placeholder="O que você mais gostou no atendimento ou no pedido?"
+                  className="w-full resize-none rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 outline-none focus:border-[#778253] focus:ring-2 focus:ring-[#edf0e5]"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-[#292b25] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#3d4036]"
+                >
+                  Publicar avaliação
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+

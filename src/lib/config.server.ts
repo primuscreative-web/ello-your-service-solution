@@ -52,3 +52,18 @@ export function getStripeServerConfig() {
           : "http://localhost:3000"),
   };
 }
+
+export function getWhatsAppServerConfig() {
+  return {
+    provider: (process.env.WHATSAPP_PROVIDER?.trim().toLowerCase() || "none") as
+      | "evolution"
+      | "zapi"
+      | "meta"
+      | "webhook"
+      | "none",
+    apiUrl: process.env.WHATSAPP_API_URL?.trim() || "",
+    apiToken: process.env.WHATSAPP_API_TOKEN?.trim() || "",
+    instanceId: process.env.WHATSAPP_INSTANCE_ID?.trim() || "",
+    notifyOwner: process.env.WHATSAPP_NOTIFY_OWNER === "true",
+  };
+}

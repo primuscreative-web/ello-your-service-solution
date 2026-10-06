@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowUpRight,
   CalendarDays,
+  Check,
   Clock3,
   Copy,
   ExternalLink,
@@ -12,6 +13,7 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
+import { toast } from "sonner";
 import { PageTitle, money, primaryButtonClass } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
@@ -41,8 +43,18 @@ function DashboardPage() {
     .filter((booking) => booking.status !== "cancelled")
     .sort((a, b) => (a.date + " " + a.time).localeCompare(b.date + " " + b.time))
     .slice(0, 4);
+
+  const [copied, setCopied] = useState(false);
   const copyLink = async () => {
-    await navigator.clipboard.writeText(window.location.origin + "/loja/" + business!.slug);
+    if (!business?.slug) return;
+    try {
+      await navigator.clipboard.writeText(window.location.origin + "/loja/" + business.slug);
+      setCopied(true);
+      toast.success("Link da sua página copiado para a área de transferência!");
+      setTimeout(() => setCopied(false), 2200);
+    } catch {
+      toast.error("Não foi possível copiar o link.");
+    }
   };
 
   return (
@@ -50,7 +62,7 @@ function DashboardPage() {
       <PageTitle
         eyebrow="Seu negócio em movimento"
         title={"Olá, " + business?.name + "!"}
-        description="Aqui está um resumo do que acontece com sua página."
+        description="Aqui está um resumo do que acontece com sua página em tempo real."
         action={
           <Link to="/studio/catalog" className={primaryButtonClass}>
             <Plus size={16} />
@@ -58,28 +70,33 @@ function DashboardPage() {
           </Link>
         }
       />
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e1e3d8] bg-gradient-to-r from-[#edf0e5] to-[#fbfaf7] p-4 sm:px-5">
-        <div className="flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-xl bg-white text-[#667448] shadow-sm">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e1e3d8] bg-gradient-to-r from-[#edf0e5] via-[#f7f8f2] to-[#fbfaf7] p-4 shadow-xs sm:px-5">
+        <div className="flex items-center gap-3.5">
+          <span className="grid size-10.5 place-items-center rounded-xl bg-white text-[#586341] shadow-xs">
             <Sparkles size={18} />
           </span>
           <div>
-            <div className="text-sm font-bold">Prévia da sua página neste navegador</div>
-            <div className="mt-1 text-xs text-slate-500">/loja/{business?.slug}</div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-[#292b25]">Sua página está no ar</span>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                Ativa
+              </span>
+            </div>
+            <div className="mt-0.5 text-xs text-slate-500">ello.app.br/loja/{business?.slug}</div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => void copyLink()}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#dedfd6] bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:border-[#c7c9bc] hover:bg-[#fafaf7] active:scale-[0.98]"
           >
-            <Copy size={14} />
-            Copiar endereço
+            {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+            {copied ? "Link copiado!" : "Copiar link"}
           </button>
           <Link
             to="/loja/$slug"
             params={{ slug: business!.slug }}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#292b25] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#414338]"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#292b25] px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[#414338] active:scale-[0.98]"
           >
             <ExternalLink size={14} />
             Abrir página
@@ -100,13 +117,17 @@ function DashboardPage() {
                 ).length
               : todayBookings.length,
             icon: CalendarDays,
-            note: "Pedidos recebidos",
+            note: "Recebidos hoje",
+            color: "text-[#586341]",
+            bg: "bg-[#edf0e5]",
           },
           {
             label: `${capitalize(copy.offers)} ativos`,
             value: services.filter((item) => item.active).length,
             icon: Package,
             note: "Visíveis na página",
+            color: "text-emerald-700",
+            bg: "bg-emerald-50",
           },
           {
             label: isFoodBusiness ? "Pedidos em andamento" : "Pedidos aguardando",
@@ -114,21 +135,27 @@ function DashboardPage() {
               ? orders.filter((order) => !["completed", "cancelled"].includes(order.status)).length
               : bookings.filter((item) => item.status === "pending").length,
             icon: Clock3,
-            note: "Precisam da sua atenção",
+            note: "Precisam de atenção",
+            color: "text-amber-700",
+            bg: "bg-amber-50",
           },
           {
             label: "Faturamento hoje",
             value: money(todayRevenue),
             icon: TrendingUp,
-            note: "Total de vendas e atendimentos",
+            note: "Vendas e atendimentos",
+            color: "text-indigo-700",
+            bg: "bg-indigo-50",
           },
-        ].map(({ label, value, icon: Icon, note }) => (
-          <div key={label} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+        ].map(({ label, value, icon: Icon, note, color, bg }) => (
+          <div key={label} className="group rounded-2xl border border-[#e8e6df] bg-white p-5 shadow-xs transition duration-150 hover:border-[#dedfd6] hover:shadow-md">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-500">{label}</span>
-              <Icon size={18} className="text-[#778253]" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</span>
+              <span className={`grid size-8 place-items-center rounded-lg ${bg} ${color} transition-transform group-hover:scale-105`}>
+                <Icon size={16} />
+              </span>
             </div>
-            <div className="mt-4 text-3xl font-extrabold tracking-tight">{value}</div>
+            <div className="mt-3.5 text-2xl font-black tracking-tight text-[#292b25]">{value}</div>
             <div className="mt-1 text-xs text-slate-400">{note}</div>
           </div>
         ))}

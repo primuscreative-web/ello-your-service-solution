@@ -42,11 +42,13 @@ import { Route as StudioFinanceiroRouteImport } from './routes/studio.financeiro
 import { Route as StudioMetricasRouteImport } from './routes/studio.metricas'
 import { Route as StudioPedidosRouteImport } from './routes/studio.pedidos'
 import { Route as StudioPrecificacaoRouteImport } from './routes/studio.precificacao'
+import { Route as StudioProfissionaisRouteImport } from './routes/studio.profissionais'
 import { Route as StudioSettingsRouteImport } from './routes/studio.settings'
 import { Route as ApiAsaasChargeRouteImport } from './routes/api.asaas.charge'
 import { Route as ApiAsaasSubaccountRouteImport } from './routes/api.asaas.subaccount'
 import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas.webhook'
 import { Route as ApiAsaasWithdrawRouteImport } from './routes/api.asaas.withdraw'
+import { Route as ApiNotificationsWhatsappRouteImport } from './routes/api.notifications.whatsapp'
 import { Route as ApiStripeCheckoutRouteImport } from './routes/api.stripe.checkout'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as AppBusinessClientsRouteImport } from './routes/app.business.clients'
@@ -226,6 +228,11 @@ const StudioPrecificacaoRoute = StudioPrecificacaoRouteImport.update({
   path: '/precificacao',
   getParentRoute: () => StudioRoute,
 } as any)
+const StudioProfissionaisRoute = StudioProfissionaisRouteImport.update({
+  id: '/profissionais',
+  path: '/profissionais',
+  getParentRoute: () => StudioRoute,
+} as any)
 const StudioSettingsRoute = StudioSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -251,6 +258,12 @@ const ApiAsaasWithdrawRoute = ApiAsaasWithdrawRouteImport.update({
   path: '/api/asaas/withdraw',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiNotificationsWhatsappRoute =
+  ApiNotificationsWhatsappRouteImport.update({
+    id: '/api/notifications/whatsapp',
+    path: '/api/notifications/whatsapp',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiStripeCheckoutRoute = ApiStripeCheckoutRouteImport.update({
   id: '/api/stripe/checkout',
   path: '/api/stripe/checkout',
@@ -352,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/studio/metricas': typeof StudioMetricasRoute
   '/studio/pedidos': typeof StudioPedidosRoute
   '/studio/precificacao': typeof StudioPrecificacaoRoute
+  '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
@@ -359,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
   '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
+  '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
@@ -403,6 +418,7 @@ export interface FileRoutesByTo {
   '/studio/metricas': typeof StudioMetricasRoute
   '/studio/pedidos': typeof StudioPedidosRoute
   '/studio/precificacao': typeof StudioPrecificacaoRoute
+  '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
   '/app': typeof AppIndexRoute
   '/studio': typeof StudioIndexRoute
@@ -410,6 +426,7 @@ export interface FileRoutesByTo {
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
   '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
+  '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
@@ -457,6 +474,7 @@ export interface FileRoutesById {
   '/studio/metricas': typeof StudioMetricasRoute
   '/studio/pedidos': typeof StudioPedidosRoute
   '/studio/precificacao': typeof StudioPrecificacaoRoute
+  '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
@@ -464,6 +482,7 @@ export interface FileRoutesById {
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
   '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
+  '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
@@ -512,6 +531,7 @@ export interface FileRouteTypes {
     | '/studio/metricas'
     | '/studio/pedidos'
     | '/studio/precificacao'
+    | '/studio/profissionais'
     | '/studio/settings'
     | '/app/'
     | '/studio/'
@@ -519,6 +539,7 @@ export interface FileRouteTypes {
     | '/api/asaas/subaccount'
     | '/api/asaas/webhook'
     | '/api/asaas/withdraw'
+    | '/api/notifications/whatsapp'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
     | '/app/business/clients'
@@ -563,6 +584,7 @@ export interface FileRouteTypes {
     | '/studio/metricas'
     | '/studio/pedidos'
     | '/studio/precificacao'
+    | '/studio/profissionais'
     | '/studio/settings'
     | '/app'
     | '/studio'
@@ -570,6 +592,7 @@ export interface FileRouteTypes {
     | '/api/asaas/subaccount'
     | '/api/asaas/webhook'
     | '/api/asaas/withdraw'
+    | '/api/notifications/whatsapp'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
     | '/app/business/clients'
@@ -616,6 +639,7 @@ export interface FileRouteTypes {
     | '/studio/metricas'
     | '/studio/pedidos'
     | '/studio/precificacao'
+    | '/studio/profissionais'
     | '/studio/settings'
     | '/app/'
     | '/studio/'
@@ -623,6 +647,7 @@ export interface FileRouteTypes {
     | '/api/asaas/subaccount'
     | '/api/asaas/webhook'
     | '/api/asaas/withdraw'
+    | '/api/notifications/whatsapp'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
     | '/app/business/clients'
@@ -652,6 +677,7 @@ export interface RootRouteChildren {
   ApiAsaasSubaccountRoute: typeof ApiAsaasSubaccountRoute
   ApiAsaasWebhookRoute: typeof ApiAsaasWebhookRoute
   ApiAsaasWithdrawRoute: typeof ApiAsaasWithdrawRoute
+  ApiNotificationsWhatsappRoute: typeof ApiNotificationsWhatsappRoute
   ApiStripeCheckoutRoute: typeof ApiStripeCheckoutRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   CBusinessSlugCampaignSlugRoute: typeof CBusinessSlugCampaignSlugRoute
@@ -892,6 +918,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioPrecificacaoRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/studio/profissionais': {
+      id: '/studio/profissionais'
+      path: '/profissionais'
+      fullPath: '/studio/profissionais'
+      preLoaderRoute: typeof StudioProfissionaisRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/studio/settings': {
       id: '/studio/settings'
       path: '/settings'
@@ -925,6 +958,13 @@ declare module '@tanstack/react-router' {
       path: '/api/asaas/withdraw'
       fullPath: '/api/asaas/withdraw'
       preLoaderRoute: typeof ApiAsaasWithdrawRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/notifications/whatsapp': {
+      id: '/api/notifications/whatsapp'
+      path: '/api/notifications/whatsapp'
+      fullPath: '/api/notifications/whatsapp'
+      preLoaderRoute: typeof ApiNotificationsWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/stripe/checkout': {
@@ -1093,6 +1133,7 @@ interface StudioRouteChildren {
   StudioMetricasRoute: typeof StudioMetricasRoute
   StudioPedidosRoute: typeof StudioPedidosRoute
   StudioPrecificacaoRoute: typeof StudioPrecificacaoRoute
+  StudioProfissionaisRoute: typeof StudioProfissionaisRoute
   StudioSettingsRoute: typeof StudioSettingsRoute
   StudioIndexRoute: typeof StudioIndexRoute
 }
@@ -1107,6 +1148,7 @@ const StudioRouteChildren: StudioRouteChildren = {
   StudioMetricasRoute: StudioMetricasRoute,
   StudioPedidosRoute: StudioPedidosRoute,
   StudioPrecificacaoRoute: StudioPrecificacaoRoute,
+  StudioProfissionaisRoute: StudioProfissionaisRoute,
   StudioSettingsRoute: StudioSettingsRoute,
   StudioIndexRoute: StudioIndexRoute,
 }
@@ -1128,6 +1170,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAsaasSubaccountRoute: ApiAsaasSubaccountRoute,
   ApiAsaasWebhookRoute: ApiAsaasWebhookRoute,
   ApiAsaasWithdrawRoute: ApiAsaasWithdrawRoute,
+  ApiNotificationsWhatsappRoute: ApiNotificationsWhatsappRoute,
   ApiStripeCheckoutRoute: ApiStripeCheckoutRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   CBusinessSlugCampaignSlugRoute: CBusinessSlugCampaignSlugRoute,

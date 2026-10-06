@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getAsaasAdminSupabase, verifyAsaasWebhookToken } from "@/lib/asaas.server";
+import { sendWhatsAppMessage } from "@/lib/whatsapp.server";
 
 type AsaasWebhookPayload = {
   event:
@@ -143,13 +144,15 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                   })
                   .eq("order_id", targetOrderId);
 
-                await supabase
+                const { data: updatedOrder } = await supabase
                   .from("localhub_orders")
                   .update({
                     payment_status: "paid",
                     updated_at: new Date().toISOString(),
                   })
-                  .eq("id", targetOrderId);
+                  .eq("id", targetOrderId)
+                  .select("order_number, customer_phone, customer_name, total, public_tracking_token")
+                  .single();
 
                 await supabase
                   .from("localhub_wallet_transactions")
@@ -158,6 +161,21 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                     available_at: new Date().toISOString(),
                   })
                   .eq("provider_transaction_id", paymentId);
+
+                // Notifica o cliente que o pagamento online foi confirmado com sucesso
+                if (updatedOrder?.customer_phone) {
+                  const trackingUrl = updatedOrder.public_tracking_token
+                    ? `https://ello.app.br/pedido/${updatedOrder.public_tracking_token}`
+                    : "https://ello.app.br";
+                  void sendWhatsAppMessage({
+                    phone: updatedOrder.customer_phone,
+                    text:
+                      `Olá, *${(updatedOrder.customer_name || "Cliente").trim()}*! 🎉\n\n` +
+                      `Seu pagamento de *R$ ${Number(updatedOrder.total || 0).toFixed(2).replace(".", ",")}* para o *Pedido #${updatedOrder.order_number}* foi *CONFIRMADO*!\n\n` +
+                      `O estabelecimento já foi notificado e está cuidando do seu pedido.\n` +
+                      `📱 Acompanhe em tempo real: ${trackingUrl}`,
+                  }).catch(() => {});
+                }
               }
 
               // Estorno / Devolução

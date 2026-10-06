@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LoaderCircle, Lock, Mail } from "lucide-react";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { useLocalHub } from "@/lib/localhub-context";
 import { primaryButtonClass } from "@/components/localhub/ui";
+import { AuthAmbientCanvas } from "@/components/generative/auth-ambient-canvas";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
 
@@ -150,18 +151,7 @@ function AuthPage() {
   return (
     <main className="auth-page min-h-screen bg-[#f5f4ef] text-[#292b25] lg:grid lg:grid-cols-2">
       <section className="auth-story relative hidden min-h-screen flex-col justify-between overflow-hidden bg-[#292b25] p-12 text-white lg:flex xl:p-16">
-        <video
-          className="auth-story-video"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-hidden="true"
-          tabIndex={-1}
-        >
-          <source src="/videos/auth-background.mp4" type="video/mp4" />
-        </video>
+        <AuthAmbientCanvas />
         <Link
           to="/"
           className="auth-wordmark relative z-10"
@@ -203,27 +193,67 @@ function AuthPage() {
               "Informe seu e-mail e enviaremos um link seguro para redefinir sua senha."}
             {mode === "recovery" && "Escolha uma nova senha para voltar ao seu espaço ELLO."}
           </p>
-          <form onSubmit={(event) => void submit(event)} className="mt-7 space-y-4">
+          {(mode === "login" || mode === "signup") && (
+            <div className="mt-6 flex rounded-xl border border-[#e8e6df] bg-[#f0eee6] p-1 shadow-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("login");
+                  setError("");
+                  setMessage("");
+                }}
+                className={`flex-1 cursor-pointer rounded-lg py-2 text-xs font-bold transition-all ${
+                  mode === "login"
+                    ? "bg-white text-[#292b25] shadow-xs"
+                    : "text-slate-600 hover:text-[#292b25]"
+                }`}
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("signup");
+                  setError("");
+                  setMessage("");
+                }}
+                className={`flex-1 cursor-pointer rounded-lg py-2 text-xs font-bold transition-all ${
+                  mode === "signup"
+                    ? "bg-white text-[#292b25] shadow-xs"
+                    : "text-slate-600 hover:text-[#292b25]"
+                }`}
+              >
+                Criar conta
+              </button>
+            </div>
+          )}
+
+          <form onSubmit={(event) => void submit(event)} className="mt-6 space-y-4">
             {mode !== "recovery" && (
-              <label className="block text-sm font-semibold">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                 E-mail
-                <input
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-[#dedfd6] px-4 py-3 outline-none focus:border-[#8a9668] focus:ring-2 focus:ring-[#edf0e5]"
-                />
+                <div className="relative mt-2">
+                  <Mail size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="seu@email.com"
+                    className="w-full rounded-xl border border-[#dedfd6] bg-white pl-10 pr-4 py-3 text-sm text-[#292b25] outline-none shadow-xs transition placeholder:text-slate-400 focus:border-[#778253] focus:ring-2 focus:ring-[#edf0e5]"
+                  />
+                </div>
               </label>
             )}
             {mode !== "forgot" && (
               <>
-                <div className="block text-sm font-semibold">
+                <div className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                   <label htmlFor="auth-password">
                     {mode === "recovery" ? "Nova senha" : "Senha"}
                   </label>
                   <div className="relative mt-2">
+                    <Lock size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       id="auth-password"
                       type={showPassword ? "text" : "password"}
@@ -232,7 +262,8 @@ function AuthPage() {
                       autoComplete={mode === "login" ? "current-password" : "new-password"}
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
-                      className="w-full rounded-xl border border-[#dedfd6] px-4 py-3 pr-12 outline-none focus:border-[#8a9668] focus:ring-2 focus:ring-[#edf0e5]"
+                      placeholder="••••••••"
+                      className="w-full rounded-xl border border-[#dedfd6] bg-white pl-10 pr-12 py-3 text-sm text-[#292b25] outline-none shadow-xs transition placeholder:text-slate-400 focus:border-[#778253] focus:ring-2 focus:ring-[#edf0e5]"
                     />
                     <button
                       type="button"
@@ -253,15 +284,16 @@ function AuthPage() {
                       setError("");
                       setMessage("");
                     }}
-                    className="auth-forgot-link -mt-2 text-sm font-semibold text-[#667448]"
+                    className="auth-forgot-link -mt-1 cursor-pointer text-xs font-semibold text-[#667448] hover:underline"
                   >
                     Esqueci minha senha
                   </button>
                 )}
                 {mode === "recovery" && (
-                  <div className="block text-sm font-semibold">
+                  <div className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                     <label htmlFor="auth-confirm-password">Confirme a nova senha</label>
                     <div className="relative mt-2">
+                      <Lock size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
                         id="auth-confirm-password"
                         type={showConfirmPassword ? "text" : "password"}
@@ -270,7 +302,8 @@ function AuthPage() {
                         autoComplete="new-password"
                         value={confirmPassword}
                         onChange={(event) => setConfirmPassword(event.target.value)}
-                        className="w-full rounded-xl border border-[#dedfd6] px-4 py-3 pr-12 outline-none focus:border-[#8a9668] focus:ring-2 focus:ring-[#edf0e5]"
+                        placeholder="••••••••"
+                        className="w-full rounded-xl border border-[#dedfd6] bg-white pl-10 pr-12 py-3 text-sm text-[#292b25] outline-none shadow-xs transition placeholder:text-slate-400 focus:border-[#778253] focus:ring-2 focus:ring-[#edf0e5]"
                       />
                       <button
                         type="button"
@@ -287,25 +320,38 @@ function AuthPage() {
               </>
             )}
             {error && (
-              <p role="alert" className="text-sm text-red-600">
-                {error}
-              </p>
+              <div role="alert" className="flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-700">
+                <span className="size-1.5 shrink-0 rounded-full bg-red-500" />
+                <span>{error}</span>
+              </div>
             )}
             {message && (
-              <p role="status" className="text-sm text-emerald-700">
-                {message}
-              </p>
+              <div role="status" className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-medium text-emerald-800">
+                <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+                <span>{message}</span>
+              </div>
             )}
-            <button disabled={busy} className={`${primaryButtonClass} w-full justify-center`}>
-              {busy
-                ? "Aguarde..."
-                : mode === "login"
-                  ? "Entrar"
-                  : mode === "signup"
-                    ? "Criar conta"
-                    : mode === "forgot"
-                      ? "Enviar link de recuperação"
-                      : "Salvar nova senha"}
+            <button disabled={busy} className={`${primaryButtonClass} w-full justify-center mt-2`}>
+              {busy ? (
+                <>
+                  <LoaderCircle size={16} className="animate-spin" />
+                  Aguarde...
+                </>
+              ) : mode === "login" ? (
+                <>
+                  Entrar no meu espaço
+                  <ArrowRight size={15} />
+                </>
+              ) : mode === "signup" ? (
+                <>
+                  Criar minha conta
+                  <ArrowRight size={15} />
+                </>
+              ) : mode === "forgot" ? (
+                "Enviar link de recuperação"
+              ) : (
+                "Salvar nova senha"
+              )}
             </button>
           </form>
           {mode === "recovery" ? (

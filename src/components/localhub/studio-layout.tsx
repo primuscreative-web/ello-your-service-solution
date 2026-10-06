@@ -51,8 +51,7 @@ export function StudioLayout() {
     ...(!isFoodBusiness
       ? [
           {
-            to: "/studio/settings" as const,
-            hash: "profissionais",
+            to: "/studio/profissionais" as const,
             label: "Profissionais",
             icon: UsersRound,
           },
@@ -90,37 +89,39 @@ export function StudioLayout() {
         </div>
         <nav className="space-y-1">
           {navigation.map(({ to, label, icon: Icon, ...options }) => {
-            const targetHash = "hash" in options ? options.hash : undefined;
-            const active = targetHash
-              ? pathname === to && hash.includes(targetHash)
-              : to === "/studio/settings"
-                ? pathname === to && !hash.includes("profissionais")
-                : "exact" in options && options.exact
-                  ? pathname === to
-                  : pathname.startsWith(to);
+            const active =
+              "exact" in options && options.exact
+                ? pathname === to
+                : pathname === to || pathname.startsWith(`${to}/`);
             return (
               <Link
-                key={to + (targetHash ? `#${targetHash}` : "")}
+                key={to}
                 to={to}
-                hash={targetHash}
-                className={`flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${active ? "bg-[#d0f25a] text-[#292b25] shadow-sm" : "text-[#dedfd8] hover:bg-[#3a3c34] hover:text-white"}`}
+                className={`group flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-all duration-150 active:scale-[0.98] ${
+                  active
+                    ? "bg-[#d0f25a] text-[#292b25] font-bold shadow-xs"
+                    : "text-[#dedfd8] font-medium hover:bg-[#3a3c34] hover:text-white"
+                }`}
               >
-                <Icon size={18} strokeWidth={active ? 2.4 : 1.9} />
-                {label}
+                <Icon size={18} strokeWidth={active ? 2.4 : 1.9} className="shrink-0 transition-transform group-hover:scale-105" />
+                <span className="truncate">{label}</span>
               </Link>
             );
           })}
         </nav>
-        <div className="mt-auto rounded-2xl border border-[#484a40] bg-[#32342d] p-4">
-          <div className="text-xs font-semibold text-[#f4f3ea]">Prévia da sua página</div>
-          <p className="mt-1 text-xs leading-relaxed text-[#c9cbc1]">
-            Confira como sua página aparece para os clientes.
+        <div className="mt-auto rounded-2xl border border-[#484a40] bg-[#32342d]/90 p-4 shadow-xs backdrop-blur-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-[#f4f3ea]">Prévia da sua página</span>
+            <span className="rounded-full bg-[#484a40] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#d0f25a]">Online</span>
+          </div>
+          <p className="mt-1.5 text-xs leading-relaxed text-[#c9cbc1]">
+            Confira como sua página aparece para os clientes em tempo real.
           </p>
           {business && (
             <Link
               to="/loja/$slug"
               params={{ slug: business.slug }}
-              className="mt-3 inline-flex min-h-9 items-center gap-2 text-xs font-semibold text-[#d0f25a]"
+              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg bg-[#40433a] px-3 py-1.5 text-xs font-semibold text-[#d0f25a] transition hover:bg-[#4d5045]"
             >
               Abrir prévia <ExternalLink size={13} />
             </Link>
@@ -167,17 +168,14 @@ export function StudioLayout() {
           className="flex gap-1 overflow-x-auto border-b border-[#34352f] bg-[#292b25] px-3 py-2 lg:hidden"
         >
           {navigation.map(({ to, label, icon: Icon, ...options }) => {
-            const targetHash = "hash" in options ? options.hash : undefined;
             const active =
-              pathname === to &&
-              (targetHash
-                ? hash.includes(targetHash)
-                : !(to === "/studio/settings" && hash.includes("profissionais")));
+              "exact" in options && options.exact
+                ? pathname === to
+                : pathname === to || pathname.startsWith(`${to}/`);
             return (
               <Link
-                key={to + (targetHash ? `#${targetHash}` : "")}
+                key={to}
                 to={to}
-                hash={targetHash}
                 className={`flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold ${active ? "bg-[#d0f25a] text-[#292b25]" : "text-[#dedfd8]"}`}
               >
                 <Icon size={15} />

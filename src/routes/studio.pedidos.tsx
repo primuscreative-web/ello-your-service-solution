@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Bell,
   Check,
   Clock3,
   MapPin,
@@ -10,14 +11,16 @@ import {
   Printer,
   Search,
   Sun,
+  Tag,
   UtensilsCrossed,
   Volume2,
+  VolumeX,
   Zap,
 } from "lucide-react";
-import { PageTitle, primaryButtonClass } from "@/components/localhub/ui";
-import { money } from "@/components/localhub/ui";
+import { PageTitle, primaryButtonClass, money } from "@/components/localhub/ui";
 import { useLocalHub, type FoodOrder } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { printThermalReceipt } from "@/lib/thermal-receipt";
 
 export const Route = createFileRoute("/studio/pedidos")({ component: OrdersPage });
 
@@ -55,7 +58,83 @@ function OrdersPage() {
   const [query, setQuery] = useState("");
   const [receiptWidth, setReceiptWidth] = useState<"58mm" | "80mm">("80mm");
   const [kdsMode, setKdsMode] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("ello_order_sound_enabled") !== "false";
+  });
+  const [notificationsGranted, setNotificationsGranted] = useState(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return false;
+    return Notification.permission === "granted";
+  });
   const knownOrderIds = useRef<Set<string> | null>(null);
+
+  async function requestNotificationPermission() {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationsGranted(permission === "granted");
+      if (permission === "granted") {
+        new Notification("🔔 ELLO Pedidos", {
+          body: "Notificações do dispositivo ativadas com sucesso!",
+          icon: "/favicon.ico",
+        });
+      }
+    } catch {
+      // Navegador bloqueou ou não suporta
+    }
+  }
+
+  function toggleSound() {
+    setSoundEnabled((curr) => {
+      const nextVal = !curr;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("ello_order_sound_enabled", String(nextVal));
+      }
+      if (nextVal) playOrderChime();
+      return nextVal;
+    });
+  }
+
+  function playOrderChime() {
+    try {
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      const now = ctx.currentTime;
+
+      // Primeiro tom suave (659Hz - Mi5)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(659.25, now);
+      gain1.gain.setValueAtTime(0.14, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.35);
+
+      // Segundo tom harmônico (880Hz - Lá5 estilo campainha ding-dong)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(880, now + 0.18);
+      gain2.gain.setValueAtTime(0.18, now + 0.18);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.18);
+      osc2.stop(now + 0.7);
+
+      setTimeout(() => {
+        void ctx.close().catch(() => {});
+      }, 900);
+    } catch {
+      // Navegadores podem bloquear áudio antes de interação do usuário
+    }
+  }
 
   useEffect(() => {
     if (!business?.id) return;
@@ -89,7 +168,57 @@ function OrdersPage() {
       window.clearInterval(interval);
     };
   }, [business?.id, refresh]);
+
   const activeOrders = orders.filter((order) => !["completed", "cancelled"].includes(order.status));
+  const receivedOrders = orders.filter((order) => order.status === "received");
+
+  // Dispara notificação nativa do sistema quando um novo pedido com status "received" é detectado
+  useEffect(() => {
+    if (orders.length === 0) return;
+    const currentIds = new Set(orders.map((o) => o.id));
+
+    if (knownOrderIds.current) {
+      const newOrders = orders.filter(
+        (o) => !knownOrderIds.current!.has(o.id) && o.status === "received",
+      );
+      if (
+        newOrders.length > 0 &&
+        typeof window !== "undefined" &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        for (const order of newOrders) {
+          try {
+            new Notification(`🔔 Novo Pedido #${order.number}!`, {
+              body: `${order.customerName} · ${money(order.total)} (${order.fulfillment === "delivery" ? "Entrega" : "Retirada"})`,
+              icon: "/favicon.ico",
+              tag: `order-${order.id}`,
+            });
+          } catch {}
+        }
+      }
+    }
+
+    knownOrderIds.current = currentIds;
+  }, [orders]);
+
+  // Alarme contínuo quando há pedidos novos aguardando aceite
+  useEffect(() => {
+    if (!soundEnabled || receivedOrders.length === 0) return;
+
+    // Toca imediatamente
+    playOrderChime();
+
+    // Repete a cada 9 segundos enquanto houver pedido novo
+    const soundInterval = window.setInterval(() => {
+      playOrderChime();
+    }, 9_000);
+
+    return () => {
+      window.clearInterval(soundInterval);
+    };
+  }, [receivedOrders.length, soundEnabled]);
+
   const visibleOrders = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
     return orders.filter((order) => {
@@ -107,36 +236,6 @@ function OrdersPage() {
       return matchesFilter && (!normalizedQuery || searchableText.includes(normalizedQuery));
     });
   }, [filter, orders, query]);
-  useEffect(() => {
-    const currentIds = new Set(
-      orders.filter((order) => order.status === "received").map((order) => order.id),
-    );
-    if (knownOrderIds.current) {
-      const hasNewOrder = [...currentIds].some((id) => !knownOrderIds.current?.has(id));
-      if (hasNewOrder) {
-        try {
-          const AudioContextClass =
-            window.AudioContext ??
-            (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-          const audio = AudioContextClass ? new AudioContextClass() : null;
-          if (audio) {
-            const oscillator = audio.createOscillator();
-            const gain = audio.createGain();
-            oscillator.connect(gain);
-            gain.connect(audio.destination);
-            oscillator.frequency.value = 880;
-            gain.gain.value = 0.08;
-            oscillator.start();
-            oscillator.stop(audio.currentTime + 0.18);
-            oscillator.onended = () => void audio.close();
-          }
-        } catch {
-          setError("O alerta sonoro não está disponível neste navegador.");
-        }
-      }
-    }
-    knownOrderIds.current = currentIds;
-  }, [orders]);
 
   function getCustomerWhatsAppLink(order: FoodOrder) {
     const cleanPhone = order.phone.replace(/\D/g, "");
@@ -163,54 +262,47 @@ function OrdersPage() {
     return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
   }
 
-  function printOrder(order: FoodOrder) {
-    const receipt = window.open("", "_blank", "popup,width=420,height=720");
-    if (!receipt) {
-      setError("Permita pop-ups para imprimir a comanda.");
-      return;
-    }
-    const escape = (value: string) =>
-      value.replace(
-        /[&<>"']/g,
-        (character) =>
-          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!,
-      );
-    const lines = order.items
-      .map(
-        (item) =>
-          `<div class="row"><span><b>${item.quantity}×</b> ${escape(item.name)}</span><b>${money(item.price * item.quantity)}</b></div>`,
-      )
-      .join("");
-    const isPaid = order.paymentStatus === "paid" || order.paymentMethod === "online_pix";
-    const paymentLabel = isPaid
-      ? "PAGO VIA PIX ONLINE"
-      : order.paymentMethod === "pix"
-        ? "PIX NA ENTREGA/RETIRADA"
-        : order.paymentMethod === "card"
-          ? "CARTÃO NA ENTREGA/RETIRADA"
-          : "DINHEIRO";
-
-    receipt.document.write(
-      `<!doctype html><html><head><title>Comanda ${order.number}</title><style>@page{size:${receiptWidth} auto;margin:3mm}*{box-sizing:border-box}body{font:12px/1.4 ui-monospace,monospace;width:100%;margin:0;color:#111}.center{text-align:center}.row{display:flex;justify-content:space-between;gap:8px;margin:5px 0}.rule{border-top:1px dashed #333;margin:8px 0}h1{font-size:16px;margin:0 0 4px}.small{font-size:10px}.badge{display:block;padding:4px 6px;font-weight:bold;border:1px solid #111;margin:6px 0;text-align:center}@media print{button{display:none}}</style></head><body><div class="center"><h1>${escape(business?.name ?? "ELLO")}</h1><b>COMANDA · PEDIDO #${order.number}</b><p class="small">${new Date(order.createdAt).toLocaleString("pt-BR")}</p><div class="badge">${isPaid ? "✓ JÁ PAGO ONLINE (NÃO COBRAR)" : "⚠️ COBRAR DO CLIENTE: " + money(order.total)}</div></div><div class="rule"></div><p><b>Cliente:</b> ${escape(order.customerName)}<br><b>Tel:</b> ${escape(order.phone)}<br><b>Tipo:</b> ${escape(order.fulfillment === "delivery" ? "ENTREGA em " + order.address : order.fulfillment === "pickup" ? "RETIRADA NO BALCÃO" : "CONSUMO NO LOCAL")}</p><div class="rule"></div>${lines}<div class="rule"></div><div class="row"><span>Subtotal:</span><span>${money(order.subtotal)}</span></div>${order.deliveryFee > 0 ? `<div class="row"><span>Taxa de entrega:</span><span>${money(order.deliveryFee)}</span></div>` : ""}${order.discountAmount > 0 ? `<div class="row"><span>Desconto:</span><span>-${money(order.discountAmount)}</span></div>` : ""}<div class="row" style="font-size:14px"><b>TOTAL</b><b>${money(order.total)}</b></div><div class="row"><span>Pagamento:</span><b>${paymentLabel}</b></div>${order.notes ? `<div class="rule"></div><p><b>Obs.:</b> ${escape(order.notes)}</p>` : ""}<script>window.onload=()=>window.print()</script></body></html>`,
-    );
-    receipt.document.close();
-  }
   async function update(order: FoodOrder, status: FoodOrder["status"], driverId?: string | null) {
     setBusy(order.id);
     try {
       await setOrderStatus(order.id, status, driverId);
       setError("");
+
+      // Dispara atualização em tempo real para o WhatsApp do cliente
+      void fetch("/api/notifications/whatsapp", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          type: "order",
+          order: {
+            orderNumber: order.number,
+            customerName: order.customerName,
+            customerPhone: order.phone,
+            businessName: business?.name ?? "ELLO",
+            businessSlug: business?.slug ?? "",
+            trackingToken: order.publicTrackingToken,
+            status,
+            fulfillment: order.fulfillment,
+            itemsSummary: order.items.map((i) => `${i.quantity}x ${i.name}`).join(", "),
+            total: order.total,
+            deliveryAddress: order.address,
+          },
+          target: "customer",
+        }),
+      }).catch(() => {});
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível atualizar o pedido.");
     } finally {
       setBusy(null);
     }
   }
+
   function next(order: FoodOrder) {
     if (order.status === "ready" && order.fulfillment === "delivery")
       return "out_for_delivery" as const;
     return nextStatus[order.status];
   }
+
   return (
     <div
       className={
@@ -221,10 +313,47 @@ function OrdersPage() {
     >
       <PageTitle
         eyebrow="Operação do restaurante"
-        title="Pedidos"
-        description="Receba, prepare e acompanhe cada pedido feito pelo seu cardápio ELLO."
+        title="Pedidos & KDS"
+        description="Receba, prepare e despache cada pedido com impressão de nota para sacola, comanda de cozinha e motoboy."
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleSound}
+              className={`inline-flex min-h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
+                soundEnabled
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                  : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+              }`}
+              title={soundEnabled ? "Campainha ativada para novos pedidos" : "Campainha silenciada"}
+            >
+              {soundEnabled ? (
+                <>
+                  <Volume2 size={15} className="text-emerald-700 animate-pulse" />
+                  <span>Alarme: Ativo</span>
+                </>
+              ) : (
+                <>
+                  <VolumeX size={15} />
+                  <span>Alarme: Mudo</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void requestNotificationPermission()}
+              className={`inline-flex min-h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
+                notificationsGranted
+                  ? "border-sky-300 bg-sky-50 text-sky-800"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+              title="Receber alertas nativos na barra do Windows/Mac/Android mesmo fora da aba"
+            >
+              <Bell size={14} className={notificationsGranted ? "text-sky-600" : "text-slate-400"} />
+              <span>{notificationsGranted ? "Avisos no Dispositivo: Ativos" : "Ativar Avisos no Dispositivo"}</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setKdsMode((prev) => !prev)}
@@ -237,23 +366,26 @@ function OrdersPage() {
               {kdsMode ? <Sun size={14} /> : <Moon size={14} />}
               {kdsMode ? "KDS Cozinha Ativo" : "Modo Cozinha (KDS)"}
             </button>
-            <label className="inline-flex items-center gap-1 text-xs text-slate-500">
-              <Printer size={14} />
+
+            <label className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600">
+              <Printer size={14} className="text-slate-500" />
+              <span>Bobina:</span>
               <select
                 aria-label="Largura de impressão da comanda"
                 value={receiptWidth}
                 onChange={(event) => setReceiptWidth(event.target.value as "58mm" | "80mm")}
-                className="min-h-10 rounded-lg border bg-white px-2"
+                className="bg-transparent font-bold outline-none cursor-pointer"
               >
-                <option value="58mm">58 mm</option>
-                <option value="80mm">80 mm</option>
+                <option value="80mm">80 mm (Padrão)</option>
+                <option value="58mm">58 mm (Mini)</option>
               </select>
             </label>
+
             <button
               onClick={() => void refresh()}
-              className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold"
+              className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
-              <Volume2 size={14} /> Atualizar
+              Atualizar
             </button>
           </div>
         }
@@ -430,10 +562,35 @@ function OrdersPage() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => printOrder(order)}
-                    className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 px-3 text-xs font-semibold"
+                    onClick={() =>
+                      printThermalReceipt({
+                        order,
+                        business,
+                        drivers,
+                        type: "bag_tag",
+                        width: receiptWidth,
+                      })
+                    }
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 text-xs font-bold text-amber-900 shadow-2xs hover:bg-amber-100 transition"
+                    title="Imprimir nota para grampear na sacola com dados do motoboy, endereço e valores"
                   >
-                    <Printer size={14} /> Comanda
+                    <Tag size={13} /> Grampear na Sacola
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      printThermalReceipt({
+                        order,
+                        business,
+                        drivers,
+                        type: "kitchen",
+                        width: receiptWidth,
+                      })
+                    }
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                    title="Imprimir comanda de preparo para a cozinha"
+                  >
+                    <UtensilsCrossed size={13} /> Cozinha
                   </button>
                   <a
                     href={getCustomerWhatsAppLink(order)}

@@ -1,25 +1,34 @@
-import { useState, type FormEvent } from "react";
+import { useState, useMemo, type FormEvent } from "react";
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
+  Building2,
   Clock3,
   Check,
   CarFront,
   HeartPulse,
   House,
+  Loader2,
   MapPin,
   Phone,
   PawPrint,
   GraduationCap,
   Scissors,
+  Search,
   Sparkles,
   UtensilsCrossed,
   Wrench,
 } from "lucide-react";
 import { useLocalHub, createSlug, type BusinessOnboardingDetails } from "@/lib/localhub-context";
 import { Field, inputClass, primaryButtonClass } from "@/components/localhub/ui";
+import {
+  formatCep,
+  fetchAddressFromCep,
+  searchCities,
+  BRAZILIAN_STATES,
+} from "@/lib/cities";
 
 export const Route = createFileRoute("/onboarding")({ component: OnboardingPage });
 
@@ -266,26 +275,28 @@ const setupProfiles: Record<string, SetupProfile> = {
   },
 };
 
-const cityPresets = [
-  "São Paulo, SP",
-  "Rio de Janeiro, RJ",
-  "Belo Horizonte, MG",
-  "Brasília, DF",
-  "Salvador, BA",
-  "Fortaleza, CE",
-  "Curitiba, PR",
-  "Recife, PE",
-  "Porto Alegre, RS",
-  "Manaus, AM",
-  "Belém, PA",
-  "Goiânia, GO",
-  "Campinas, SP",
-  "Florianópolis, SC",
-  "Vitória, ES",
+const popularStateShortcuts = [
+  "TODOS",
+  "SP",
+  "RJ",
+  "MG",
+  "PR",
+  "RS",
+  "SC",
+  "BA",
+  "PE",
+  "CE",
+  "GO",
+  "DF",
+  "ES",
+  "MT",
+  "MS",
+  "PA",
+  "AM",
 ];
 
 const stepNavigationButtonClass =
-  "flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50";
+  "inline-flex flex-1 min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dedfd6] bg-white px-4 py-2.5 text-sm font-semibold text-[#51534c] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#c7c9bc] hover:bg-[#fafaf7] hover:text-[#292b25] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] active:translate-y-0 active:scale-[0.98]";
 
 function formatBrazilianPhone(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -323,6 +334,62 @@ function OnboardingPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [creationCompleted, setCreationCompleted] = useState(false);
+  const [cepInput, setCepInput] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepFeedback, setCepFeedback] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
+  const [selectedStateFilter, setSelectedStateFilter] = useState("TODOS");
+  const [citySearchQuery, setCitySearchQuery] = useState("");
+
+  const suggestedCities = useMemo(() => {
+    return searchCities(citySearchQuery, selectedStateFilter, 28);
+  }, [citySearchQuery, selectedStateFilter]);
+
+  async function handleCepSearch(rawCep: string) {
+    const clean = rawCep.replace(/\D/g, "");
+    if (clean.length !== 8) {
+      setCepFeedback({ type: "error", message: "Digite um CEP válido com 8 dígitos." });
+      return;
+    }
+    setCepLoading(true);
+    setCepFeedback({ type: "info", message: "Localizando endereço via CEP..." });
+    try {
+      const result = await fetchAddressFromCep(clean);
+      if (result) {
+        update("city", result.fullCity);
+        if (result.formattedAddress) {
+          update("address", result.formattedAddress);
+        }
+        setCepFeedback({
+          type: "success",
+          message: `✓ Localizado: ${result.fullCity} — cidade e endereço preenchidos!`,
+        });
+      } else {
+        setCepFeedback({
+          type: "error",
+          message: "CEP não encontrado. Você pode escolher ou digitar sua cidade abaixo.",
+        });
+      }
+    } catch {
+      setCepFeedback({
+        type: "error",
+        message: "Não foi possível consultar o CEP no momento. Escolha sua cidade abaixo.",
+      });
+    } finally {
+      setCepLoading(false);
+    }
+  }
+
+  function handleCepChange(val: string) {
+    const formatted = formatCep(val);
+    setCepInput(formatted);
+    setCepFeedback(null);
+    if (formatted.replace(/\D/g, "").length === 8) {
+      void handleCepSearch(formatted);
+    }
+  }
   const pageSlug = createSlug(form.slug || form.name);
   const categoryBackground = categoryBackgrounds[form.category];
   const setupProfile = setupProfiles[form.category] ?? setupProfiles["outros-servicos"];
@@ -377,7 +444,7 @@ function OnboardingPage() {
     : step === 1
       ? "Vamos preparar sua página para apresentar seus produtos e serviços."
       : step === 2
-        ? "Informe a cidade e, se quiser, o endereço onde seu negócio funciona."
+        ? "Informe sua cidade ou use o CEP opcional para localizar seu endereço automaticamente."
         : step === 3
           ? "Defina seu WhatsApp e o endereço curto da sua página."
           : step === 4
@@ -400,18 +467,33 @@ function OnboardingPage() {
           <span className="ello-brand-mark ello-brand-mark-small">e</span>
           ello
         </Link>
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-semibold text-slate-400">
-            {creationCompleted ? "PÁGINA CRIADA" : `PASSO ${step} DE 5`}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5" aria-hidden="true">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <div
+                key={s}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  creationCompleted
+                    ? "w-7 bg-emerald-600"
+                    : s === step
+                      ? "w-8 bg-[#292b25]"
+                      : s < step
+                        ? "w-6 bg-[#667448]"
+                        : "w-4 bg-[#dedfd6]"
+                }`}
+              />
+            ))}
+          </div>
+          <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+            {creationCompleted ? "PRONTO" : `PASSO ${step} DE 5`}
           </span>
-          {!creationCompleted && (
+          {!creationCompleted && step > 1 && (
             <button
               type="button"
-              onClick={() => setStep(1)}
-              disabled={step === 1}
-              aria-label="Voltar para o passo 1"
-              title="Voltar para o passo 1"
-              className="flex size-8 items-center justify-center rounded-lg border border-[#e2e4d8] text-[#667448] transition hover:bg-[#edf0e5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a9668] disabled:cursor-not-allowed disabled:opacity-40"
+              onClick={() => setStep((s) => Math.max(1, s - 1))}
+              aria-label="Voltar para o passo anterior"
+              title="Voltar para o passo anterior"
+              className="flex size-8.5 items-center justify-center rounded-xl border border-[#e2e4d8] bg-white text-[#667448] shadow-xs transition hover:bg-[#edf0e5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a9668]"
             >
               <ArrowLeft size={15} aria-hidden="true" />
             </button>
@@ -520,24 +602,39 @@ function OnboardingPage() {
                 <legend className="mb-2 text-sm font-semibold text-slate-700">
                   Tipo de negócio
                 </legend>
-                <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
-                  {categories.map(({ id, label, icon: Icon }) => (
-                    <button
-                      type="button"
-                      key={id}
-                      onClick={() => {
-                        if (form.category !== id) {
-                          setOnboardingDetails({ specialties: [], serviceModes: [] });
-                        }
-                        update("category", id);
-                      }}
-                      aria-pressed={form.category === id}
-                      className={`flex min-h-14 min-w-0 items-center gap-2 rounded-[10px] border px-3 text-left text-xs font-semibold leading-tight transition sm:text-sm ${form.category === id ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] text-slate-600 hover:bg-[#f7f7f1]"}`}
-                    >
-                      <Icon className="shrink-0" size={17} aria-hidden="true" />
-                      <span className="min-w-0 break-words">{label}</span>
-                    </button>
-                  ))}
+                <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:grid-cols-3">
+                  {categories.map(({ id, label, icon: Icon }) => {
+                    const selected = form.category === id;
+                    return (
+                      <button
+                        type="button"
+                        key={id}
+                        onClick={() => {
+                          if (form.category !== id) {
+                            setOnboardingDetails({ specialties: [], serviceModes: [] });
+                          }
+                          update("category", id);
+                        }}
+                        aria-pressed={selected}
+                        className={`flex min-h-14 min-w-0 items-center gap-2.5 rounded-xl border p-3 text-left text-xs font-semibold leading-tight shadow-xs transition-all duration-150 active:scale-[0.98] sm:text-sm ${
+                          selected
+                            ? "border-[#8a9668] bg-[#edf0e5] text-[#343e20] ring-2 ring-[#8a9668]/30 font-bold"
+                            : "border-[#dedfd6] bg-white text-slate-700 hover:border-[#c7c9bc] hover:bg-[#fafaf7]"
+                        }`}
+                      >
+                        <span
+                          className={`grid size-8 shrink-0 place-items-center rounded-lg transition-colors ${
+                            selected
+                              ? "bg-[#dce3ce] text-[#343e20]"
+                              : "bg-slate-100 text-slate-500"
+                          }`}
+                        >
+                          <Icon size={16} aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0 break-words">{label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </fieldset>
               <Field
@@ -568,48 +665,189 @@ function OnboardingPage() {
               </button>
             </div>
           ) : step === 2 ? (
-            <div key="step-2" className="space-y-5">
-              <Field label="Cidade">
-                <input
-                  autoFocus
-                  required
-                  list="city-presets"
-                  value={form.city}
-                  onChange={(event) => update("city", event.target.value)}
-                  placeholder="Ex.: São Paulo, SP"
-                  className={inputClass}
-                />
-                <datalist id="city-presets">
-                  {cityPresets.map((city) => (
-                    <option key={city} value={city} />
-                  ))}
-                </datalist>
-              </Field>
-              <div role="group" aria-label="Cidades sugeridas" className="flex flex-wrap gap-2">
-                {cityPresets.map((city) => {
-                  const selected = form.city === city;
-                  return (
-                    <button
-                      type="button"
-                      key={city}
-                      onClick={() => update("city", city)}
-                      aria-pressed={selected}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${selected ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] bg-white/65 text-slate-600 hover:bg-white"}`}
-                    >
-                      {city}
-                    </button>
-                  );
-                })}
+            <div key="step-2" className="space-y-6">
+              {/* Card de Preenchimento por CEP Opcional */}
+              <div className="rounded-2xl border border-[#dedfd6] bg-white/90 p-4 shadow-xs backdrop-blur-sm sm:p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="grid size-7 place-items-center rounded-lg bg-[#edf0e5] text-[#4c5832]">
+                      <MapPin size={15} />
+                    </span>
+                    <div>
+                      <h3 className="text-xs font-bold text-[#292b25] sm:text-sm">
+                        Preenchimento rápido por CEP (opcional)
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Localiza cidade, bairro e rua automaticamente via correios
+                      </p>
+                    </div>
+                  </div>
+                  {cepLoading && (
+                    <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-700">
+                      <Loader2 size={13} className="animate-spin" /> Buscando...
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-3 flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={9}
+                      value={cepInput}
+                      onChange={(e) => handleCepChange(e.target.value)}
+                      placeholder="Ex.: 13010-000"
+                      className={inputClass}
+                      aria-label="CEP opcional para preenchimento automático"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleCepSearch(cepInput)}
+                    disabled={cepLoading || cepInput.replace(/\D/g, "").length !== 8}
+                    className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[#cfd4be] bg-[#edf0e5] px-4 text-xs font-semibold text-[#343e20] transition hover:bg-[#e2e7d7] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Search size={14} /> Buscar CEP
+                  </button>
+                </div>
+
+                {cepFeedback && (
+                  <div
+                    className={`mt-2.5 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium ${
+                      cepFeedback.type === "success"
+                        ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
+                        : cepFeedback.type === "info"
+                          ? "border border-amber-200 bg-amber-50 text-amber-800"
+                          : "border border-red-200 bg-red-50 text-red-700"
+                    }`}
+                  >
+                    {cepFeedback.type === "success" && (
+                      <Check size={14} className="shrink-0 text-emerald-600" />
+                    )}
+                    <span>{cepFeedback.message}</span>
+                  </div>
+                )}
               </div>
-              <Field label="Endereço (opcional)" hint="Você pode adicionar rua, número e bairro.">
+
+              {/* Campo Cidade & Pesquisa Rápida */}
+              <div className="space-y-3">
+                <Field
+                  label="Cidade do negócio"
+                  hint="Digite o nome da sua cidade ou selecione uma das sugestões abaixo."
+                >
+                  <div className="relative">
+                    <Building2
+                      size={16}
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      autoFocus
+                      required
+                      list="brazilian-cities-list"
+                      value={form.city}
+                      onChange={(event) => {
+                        const val = event.target.value;
+                        update("city", val);
+                        setCitySearchQuery(val);
+                      }}
+                      placeholder="Ex.: Campinas, SP ou São José dos Campos, SP"
+                      className={`${inputClass} pl-10`}
+                    />
+                  </div>
+                  <datalist id="brazilian-cities-list">
+                    {suggestedCities.map((city) => (
+                      <option key={city} value={city} />
+                    ))}
+                  </datalist>
+                </Field>
+
+                {/* Filtro rápido por Estado */}
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
+                    <span className="font-semibold text-slate-700">Filtro rápido por Estado:</span>
+                    <span className="text-[11px] text-slate-400">Clique para filtrar cidades</span>
+                  </div>
+                  <div
+                    className="flex flex-wrap gap-1.5"
+                    role="group"
+                    aria-label="Filtrar cidades por estado"
+                  >
+                    {popularStateShortcuts.map((uf) => {
+                      const active = selectedStateFilter === uf;
+                      return (
+                        <button
+                          type="button"
+                          key={uf}
+                          onClick={() => setSelectedStateFilter(uf)}
+                          aria-pressed={active}
+                          className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                            active
+                              ? "bg-[#343e20] text-white shadow-xs"
+                              : "border border-[#dedfd6] bg-white text-slate-600 hover:border-[#b7c294] hover:bg-[#edf0e5]"
+                          }`}
+                        >
+                          {uf}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Chips de cidades sugeridas (capitais e pólos do interior) */}
+                <div>
+                  <div className="mb-2 text-xs font-semibold text-slate-700">
+                    Sugestões rápidas de cidades{" "}
+                    {selectedStateFilter !== "TODOS"
+                      ? `em ${selectedStateFilter}`
+                      : "(capitais e pólos regionais)"}
+                    :
+                  </div>
+                  <div
+                    role="group"
+                    aria-label="Cidades sugeridas"
+                    className="flex max-h-40 flex-wrap gap-2 overflow-y-auto pr-1"
+                  >
+                    {suggestedCities.map((city) => {
+                      const selected = form.city.toLowerCase() === city.toLowerCase();
+                      return (
+                        <button
+                          type="button"
+                          key={city}
+                          onClick={() => {
+                            update("city", city);
+                            setCitySearchQuery("");
+                          }}
+                          aria-pressed={selected}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                            selected
+                              ? "border-[#8a9668] bg-[#edf0e5] font-bold text-[#343e20] ring-2 ring-[#8a9668]/30"
+                              : "border-[#dedfd6] bg-white text-slate-600 hover:border-[#c7c9bc] hover:bg-[#fafaf7]"
+                          }`}
+                        >
+                          {selected && <Check size={12} className="text-[#343e20]" />}
+                          {city}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Endereço opcional */}
+              <Field
+                label="Endereço da sede ou atendimento (opcional)"
+                hint="Rua, número, complemento e bairro (se tiver espaço físico ou retirada)."
+              >
                 <input
                   value={form.address}
                   onChange={(event) => update("address", event.target.value)}
-                  placeholder="Rua, número e bairro"
+                  placeholder="Ex.: Av. Brasil, 1500 - Sala 12 - Centro"
                   className={inputClass}
                 />
               </Field>
-              <div className="flex gap-3">
+
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
@@ -718,10 +956,22 @@ function OnboardingPage() {
                         onClick={() => toggleOnboardingChoice("specialties", id)}
                         aria-pressed={selected}
                         data-selected={selected}
-                        className={`flex min-h-14 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#89966a] ${selected ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] bg-white/65 text-slate-600 hover:bg-white"}`}
+                        className={`flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3.5 text-left text-sm font-semibold shadow-xs transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#89966a] ${
+                          selected
+                            ? "border-[#8a9668] bg-[#edf0e5] text-[#343e20] ring-2 ring-[#8a9668]/30 font-bold"
+                            : "border-[#dedfd6] bg-white text-slate-700 hover:border-[#c7c9bc] hover:bg-[#fafaf7]"
+                        }`}
                       >
-                        {label}
-                        {selected && <Check size={16} aria-hidden="true" />}
+                        <span>{label}</span>
+                        <span
+                          className={`grid size-6 shrink-0 place-items-center rounded-full transition-all ${
+                            selected
+                              ? "bg-[#586341] text-white scale-100"
+                              : "border border-slate-300 bg-transparent opacity-40 scale-90"
+                          }`}
+                        >
+                          <Check size={13} strokeWidth={2.5} aria-hidden="true" />
+                        </span>
                       </button>
                     );
                   })}
@@ -772,10 +1022,22 @@ function OnboardingPage() {
                         onClick={() => toggleOnboardingChoice("serviceModes", id)}
                         aria-pressed={selected}
                         data-selected={selected}
-                        className={`flex min-h-14 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#89966a] ${selected ? "border-[#b7c294] bg-[#edf0e5] text-[#4c5832]" : "border-[#dedfd6] bg-white/65 text-slate-600 hover:bg-white"}`}
+                        className={`flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3.5 text-left text-sm font-semibold shadow-xs transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#89966a] ${
+                          selected
+                            ? "border-[#8a9668] bg-[#edf0e5] text-[#343e20] ring-2 ring-[#8a9668]/30 font-bold"
+                            : "border-[#dedfd6] bg-white text-slate-700 hover:border-[#c7c9bc] hover:bg-[#fafaf7]"
+                        }`}
                       >
-                        {label}
-                        {selected && <Check size={16} aria-hidden="true" />}
+                        <span>{label}</span>
+                        <span
+                          className={`grid size-6 shrink-0 place-items-center rounded-full transition-all ${
+                            selected
+                              ? "bg-[#586341] text-white scale-100"
+                              : "border border-slate-300 bg-transparent opacity-40 scale-90"
+                          }`}
+                        >
+                          <Check size={13} strokeWidth={2.5} aria-hidden="true" />
+                        </span>
                       </button>
                     );
                   })}

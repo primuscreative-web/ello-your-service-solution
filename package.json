@@ -9,7 +9,7 @@
     "verify:production-target": "node scripts/verify-production-target.mjs",
     "deploy:prod": "npm run verify:production-target && vercel --prod",
     "build:dev": "vite build --mode development",
-    "test": "node --test src/lib/appointments.test.ts src/lib/asaas.test.ts src/lib/coupons.test.ts src/lib/ello-navigation.test.ts src/lib/onboarding-state.test.ts src/lib/wallet.test.ts",
+    "test": "node --test src/lib/appointments.test.ts src/lib/asaas.test.ts src/lib/coupons.test.ts src/lib/ello-navigation.test.ts src/lib/onboarding-state.test.ts src/lib/wallet.test.ts src/lib/whatsapp.test.ts",
     "test:appointments": "node --test src/lib/appointments.test.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
