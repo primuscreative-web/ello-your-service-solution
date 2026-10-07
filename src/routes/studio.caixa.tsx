@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Banknote, CircleDollarSign, Minus, Plus, ShoppingCart } from "lucide-react";
+import { Banknote, CircleDollarSign, Minus, Plus, ShoppingCart, Search, MessageCircle, CheckCircle2 } from "lucide-react";
 import { Field, inputClass, money, PageTitle, primaryButtonClass } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -16,6 +16,14 @@ type CashMovement = {
   movement_type: "withdrawal" | "addition";
   amount: number;
   description: string;
+};
+
+type LastSaleRecord = {
+  customerName: string;
+  phone: string;
+  total: number;
+  payment: string;
+  itemsText: string;
 };
 
 function CashRegisterPage() {
@@ -34,6 +42,8 @@ function CashRegisterPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [payment, setPayment] = useState<"cash" | "pix" | "card">("cash");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [lastSale, setLastSale] = useState<LastSaleRecord | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const total = useMemo(
@@ -41,6 +51,9 @@ function CashRegisterPage() {
     [quantities, services],
   );
   const activeServices = services.filter((service) => service.active);
+  const filteredServices = activeServices.filter((service) =>
+    service.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
   const expectedCash =
     Number(session?.opening_amount ?? 0) +
     (paymentTotals.cash ?? 0) +
@@ -168,6 +181,12 @@ function CashRegisterPage() {
     const items = activeServices
       .filter((service) => (quantities[service.id] ?? 0) > 0)
       .map((service) => ({ id: service.id, quantity: quantities[service.id] }));
+    const saleTotal = total;
+    const soldItems = activeServices
+      .filter((service) => (quantities[service.id] ?? 0) > 0)
+      .map((service) => `${quantities[service.id]}x ${service.name}`)
+      .join(", ");
+
     setSaving(true);
     const { error: writeError } = await client.rpc("localhub_create_pdv_food_order", {
       p_business_id: business.id,
@@ -185,6 +204,13 @@ function CashRegisterPage() {
       return;
     }
     setError("");
+    setLastSale({
+      customerName: customerName.trim() || "Cliente",
+      phone: customerPhone,
+      total: saleTotal,
+      payment: payment === "cash" ? "Dinheiro" : payment === "pix" ? "Pix" : "Cartão",
+      itemsText: soldItems,
+    });
     setCustomerName("");
     setCustomerPhone("");
     setQuantities({});
@@ -202,6 +228,45 @@ function CashRegisterPage() {
         <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">
           {error}
         </p>
+      )}
+
+      {/* COMPROVANTE RÁPIDO WHATSAPP APÓS VENDA */}
+      {lastSale && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="grid size-10 place-items-center rounded-xl bg-emerald-600 text-white">
+              <CheckCircle2 size={20} />
+            </span>
+            <div>
+              <div className="text-sm font-bold text-emerald-950">
+                Venda de {money(lastSale.total)} registrada com sucesso!
+              </div>
+              <div className="text-xs text-emerald-800">
+                {lastSale.itemsText} · Pago via {lastSale.payment}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {lastSale.phone.replace(/\D/g, "").length >= 10 && (
+              <a
+                href={`https://wa.me/${lastSale.phone.replace(/\D/g, "").length === 10 || lastSale.phone.replace(/\D/g, "").length === 11 ? `55${lastSale.phone.replace(/\D/g, "")}` : lastSale.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${lastSale.customerName}! 👋\nSegue seu comprovante de pagamento no *${business?.name ?? "nosso negócio"}*:\n\n📋 *Itens/Serviços:* ${lastSale.itemsText}\n💳 *Forma:* ${lastSale.payment}\n💰 *Total:* R$ ${lastSale.total.toFixed(2).replace(".", ",")}\n📅 *Data:* ${new Date().toLocaleString("pt-BR")}\n\nMuito obrigado pela preferência!`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700 active:scale-95"
+              >
+                <MessageCircle size={14} />
+                <span>Enviar Comprovante WhatsApp</span>
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => setLastSale(null)}
+              className="rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-50"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
       )}
       {!session ? (
         <form
@@ -319,12 +384,26 @@ function CashRegisterPage() {
         className="grid items-start gap-5 xl:grid-cols-[1.3fr_.7fr]"
       >
         <section className="rounded-2xl border border-slate-100 bg-white p-4 sm:p-5">
-          <div className="mb-3 flex items-center gap-2">
-            <ShoppingCart size={17} className="text-[#778253]" />
-            <h2 className="font-bold">Venda de balcão</h2>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <ShoppingCart size={17} className="text-[#778253]" />
+              <h2 className="font-bold">Venda de balcão</h2>
+            </div>
+            {activeServices.length > 3 && (
+              <div className="relative w-full max-w-xs">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar produto ou serviço..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#778253]"
+                />
+              </div>
+            )}
           </div>
           <div className="divide-y divide-slate-100">
-            {activeServices.map((service) => (
+            {filteredServices.map((service) => (
               <div key={service.id} className="flex items-center gap-3 py-3">
                 <span className="min-w-0 flex-1">
                   <b className="block truncate text-sm">{service.name}</b>
@@ -339,7 +418,7 @@ function CashRegisterPage() {
                       [service.id]: Math.max(0, (current[service.id] ?? 0) - 1),
                     }))
                   }
-                  className="grid size-9 place-items-center rounded-full border"
+                  className="grid size-9 place-items-center rounded-full border border-slate-200 hover:bg-slate-50 transition active:scale-95"
                 >
                   <Minus size={14} />
                 </button>
@@ -355,15 +434,17 @@ function CashRegisterPage() {
                       [service.id]: (current[service.id] ?? 0) + 1,
                     }))
                   }
-                  className="grid size-9 place-items-center rounded-full border"
+                  className="grid size-9 place-items-center rounded-full border border-slate-200 hover:bg-slate-50 transition active:scale-95"
                 >
                   <Plus size={14} />
                 </button>
               </div>
             ))}
-            {!activeServices.length && (
-              <p className="py-8 text-sm text-slate-500">
-                Cadastre produtos no cardápio para iniciar.
+            {!filteredServices.length && (
+              <p className="py-8 text-sm text-slate-500 text-center">
+                {searchTerm
+                  ? "Nenhum item encontrado para sua busca."
+                  : "Cadastre produtos ou serviços no catálogo para iniciar."}
               </p>
             )}
           </div>

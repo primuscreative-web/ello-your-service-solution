@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { PageTitle, money, primaryButtonClass } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
+import { StudioBusinessTools } from "@/components/localhub/studio-business-tools";
 
 export const Route = createFileRoute("/studio/")({ component: DashboardPage });
 
@@ -160,6 +161,11 @@ function DashboardPage() {
           </div>
         ))}
       </div>
+
+      <div className="mt-6">
+        <StudioBusinessTools />
+      </div>
+
       <div className="mt-6 grid gap-5 xl:grid-cols-[1.45fr_.85fr]">
         <section className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6">
           <div className="flex items-center justify-between">

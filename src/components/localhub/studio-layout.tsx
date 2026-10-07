@@ -19,37 +19,44 @@ import {
 import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getBusinessCopy } from "@/lib/localhub-business";
+import {
+  StudioOnboardingTour,
+  StudioTourTriggerButton,
+} from "@/components/localhub/studio-onboarding-tour";
 
 export function StudioLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const hash = useRouterState({ select: (state) => state.location.hash });
   const { business, user, isStaffAccount } = useLocalHub();
   const businessCopy = getBusinessCopy(business?.category);
   const isFoodBusiness = business?.category === "alimentacao";
   const navigate = useNavigate();
+
   const ownerNavigation = [
-    { to: "/studio", label: "Visão geral", icon: LayoutDashboard, exact: true },
-    { to: "/studio/catalog", label: businessCopy.offerTitle, icon: Package },
+    { to: "/studio", label: "Visão geral", icon: LayoutDashboard, exact: true, id: "tour-nav-overview" },
+    { to: "/studio/catalog", label: businessCopy.offerTitle, icon: Package, id: "tour-nav-catalog" },
     {
       to: isFoodBusiness ? "/studio/pedidos" : "/studio/agenda",
       label: isFoodBusiness ? "Pedidos" : "Agendamentos",
       icon: isFoodBusiness ? ClipboardList : CalendarDays,
+      id: "tour-nav-operations",
     },
+    {
+      to: "/studio/caixa" as const,
+      label: "Frente de caixa / PDV",
+      icon: WalletCards,
+      id: "tour-nav-caixa",
+    },
+    {
+      to: "/studio/crm" as const,
+      label: isFoodBusiness ? "Clientes e promoções" : "Clientes e fichas",
+      icon: HeartHandshake,
+      id: "tour-nav-crm",
+    },
+    ...(isFoodBusiness ? [{ to: "/studio/mesas" as const, label: "Mesas e Salão", icon: Utensils }] : []),
     ...(isFoodBusiness ? [{ to: "/studio/entregas" as const, label: "Motoboys", icon: Bike }] : []),
-    ...(isFoodBusiness
-      ? [{ to: "/studio/metricas" as const, label: "Métricas", icon: BarChart3 }]
-      : []),
-    ...(isFoodBusiness
-      ? [{ to: "/studio/precificacao" as const, label: "Custos e preços", icon: Calculator }]
-      : []),
-    ...(isFoodBusiness
-      ? [
-          { to: "/studio/crm" as const, label: "Clientes e promoções", icon: HeartHandshake },
-          { to: "/studio/mesas" as const, label: "Mesas e Salão", icon: Utensils },
-          { to: "/studio/caixa" as const, label: "Frente de caixa / PDV", icon: WalletCards },
-        ]
-      : []),
-    { to: "/studio/financeiro" as const, label: "Financeiro e carteira", icon: WalletCards },
+    { to: "/studio/metricas" as const, label: "Métricas", icon: BarChart3 },
+    { to: "/studio/precificacao" as const, label: "Custos e preços", icon: Calculator },
+    { to: "/studio/financeiro" as const, label: "Financeiro e carteira", icon: WalletCards, id: "tour-nav-financeiro" },
     ...(!isFoodBusiness
       ? [
           {
@@ -59,8 +66,9 @@ export function StudioLayout() {
           },
         ]
       : []),
-    { to: "/studio/settings", label: "Minha página", icon: Settings2 },
+    { to: "/studio/settings", label: "Minha página & WhatsApp", icon: Settings2, id: "tour-nav-settings" },
   ] as const;
+
   const navigation = isStaffAccount
     ? [{ to: "/studio/agenda" as const, label: "Minha agenda", icon: CalendarDays }]
     : ownerNavigation;
@@ -81,6 +89,9 @@ export function StudioLayout() {
 
   return (
     <div className="ello-studio min-h-screen bg-[#f8f7f4] text-[#292b25]">
+      {/* Mini Tutorial Guiado Interativo com luz de foco, setas e botão Pular Tutorial */}
+      <StudioOnboardingTour />
+
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-[252px] flex-col border-r border-[#34352f] bg-[#292b25] px-5 py-7 text-[#f7f6ef] lg:flex">
         <Link to="/" className="mb-10 flex items-center gap-3 px-2">
           <span className="ello-brand-mark">e</span>
@@ -90,7 +101,7 @@ export function StudioLayout() {
           Seu espaço
         </div>
         <nav className="space-y-1">
-          {navigation.map(({ to, label, icon: Icon, ...options }) => {
+          {navigation.map(({ to, label, icon: Icon, id, ...options }) => {
             const active =
               "exact" in options && options.exact
                 ? pathname === to
@@ -98,6 +109,7 @@ export function StudioLayout() {
             return (
               <Link
                 key={to}
+                id={id}
                 to={to}
                 className={`group flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-all duration-150 active:scale-[0.98] ${
                   active
@@ -111,7 +123,10 @@ export function StudioLayout() {
             );
           })}
         </nav>
-        <div className="mt-auto rounded-2xl border border-[#484a40] bg-[#32342d]/90 p-4 shadow-xs backdrop-blur-xs">
+        <div
+          id="tour-preview-card"
+          className="mt-auto rounded-2xl border border-[#484a40] bg-[#32342d]/90 p-4 shadow-xs backdrop-blur-xs"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#f4f3ea]">Prévia da sua página</span>
             <span className="rounded-full bg-[#484a40] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#d0f25a]">Online</span>
@@ -139,6 +154,9 @@ export function StudioLayout() {
           </div>
           <div className="hidden text-sm text-slate-500 lg:block">Painel do negócio</div>
           <div className="flex items-center gap-3">
+            {/* Botão de Como Usar / Tutorial para reabrir a qualquer momento */}
+            <StudioTourTriggerButton />
+
             <span className="hidden max-w-48 truncate text-xs text-slate-500 md:block">
               {user?.email}
             </span>
@@ -169,7 +187,7 @@ export function StudioLayout() {
           aria-label="Navegação do painel"
           className="flex gap-1 overflow-x-auto border-b border-[#34352f] bg-[#292b25] px-3 py-2 lg:hidden"
         >
-          {navigation.map(({ to, label, icon: Icon, ...options }) => {
+          {navigation.map(({ to, label, icon: Icon, id, ...options }) => {
             const active =
               "exact" in options && options.exact
                 ? pathname === to
@@ -177,6 +195,7 @@ export function StudioLayout() {
             return (
               <Link
                 key={to}
+                id={id ? `${id}-mobile` : undefined}
                 to={to}
                 className={`flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold ${active ? "bg-[#d0f25a] text-[#292b25]" : "text-[#dedfd8]"}`}
               >

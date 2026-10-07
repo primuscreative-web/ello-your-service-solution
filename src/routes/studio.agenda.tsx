@@ -395,19 +395,70 @@ function AgendaPage() {
                         <BookingStatus status={booking.status} />
                       </div>
                       {booking.status !== "cancelled" && (
-                        <div className="mt-2 flex flex-wrap justify-end gap-2">
-                          {booking.status === "confirmed" &&
-                            booking.reminderConsent &&
-                            normalizePhone(booking.phone).length >= 10 && (
-                              <a
-                                href={appointmentReminderUrl(booking, business?.name ?? "")}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-200 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50"
-                              >
-                                <MessageCircle size={13} /> Enviar lembrete
-                              </a>
-                            )}
+                        <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5">
+                          {/* Ações de status de atendimento */}
+                          {booking.status === "confirmed" && (
+                            <button
+                              type="button"
+                              onClick={() => void setBookingStatus(booking.id, "in_progress")}
+                              title="Iniciar atendimento do cliente agora"
+                              className="inline-flex min-h-8 items-center gap-1 rounded-lg bg-sky-50 px-2.5 py-1 text-[11px] font-bold text-sky-700 transition hover:bg-sky-100"
+                            >
+                              Iniciar atendimento
+                            </button>
+                          )}
+                          {booking.status === "in_progress" && (
+                            <button
+                              type="button"
+                              onClick={() => void setBookingStatus(booking.id, "completed")}
+                              title="Finalizar atendimento com sucesso"
+                              className="inline-flex min-h-8 items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 transition hover:bg-emerald-100"
+                            >
+                              <Check size={12} strokeWidth={2.5} /> Finalizar
+                            </button>
+                          )}
+
+                          {/* Mensagens rápidas no WhatsApp */}
+                          {normalizePhone(booking.phone).length >= 10 && (
+                            <>
+                              {booking.status === "confirmed" && (
+                                <a
+                                  href={appointmentReminderUrl(booking, business?.name ?? "")}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title="Enviar lembrete amigável do horário marcado"
+                                  className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50/50 px-2 py-1 text-[11px] font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                                >
+                                  <MessageCircle size={12} /> Lembrete
+                                </a>
+                              )}
+
+                              {(booking.status === "in_progress" || booking.status === "confirmed") && (
+                                <a
+                                  href={appointmentReadyUrl(booking, business?.name ?? "", business?.category)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title={business?.category === "pet" ? "Avisar que o pet já está pronto" : "Avisar cliente que o serviço está pronto"}
+                                  className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-amber-200 bg-amber-50/60 px-2 py-1 text-[11px] font-semibold text-amber-800 transition hover:bg-amber-100"
+                                >
+                                  <MessageCircle size={12} /> {business?.category === "pet" ? "Pet pronto 🐾" : "Pronto"}
+                                </a>
+                              )}
+
+                              {booking.status === "completed" && (
+                                <a
+                                  href={appointmentThankYouUrl(booking, business?.name ?? "", business?.slug)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title="Enviar agradecimento e link de avaliação"
+                                  className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
+                                >
+                                  <MessageCircle size={12} /> Agradecer ⭐
+                                </a>
+                              )}
+                            </>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => {
@@ -416,7 +467,7 @@ function AgendaPage() {
                               setRescheduleTime("");
                               setRescheduleError("");
                             }}
-                            className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                            className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
                           >
                             Reagendar
                           </button>
@@ -776,6 +827,24 @@ function appointmentReminderUrl(booking: Booking, businessName: string) {
     month: "long",
   });
   const message = `Olá, ${booking.customerName}! Passando para lembrar do seu atendimento com ${businessName}, em ${formattedDate} às ${booking.time}. Até lá!`;
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+}
+
+function appointmentReadyUrl(booking: Booking, businessName: string, category?: string) {
+  const digits = normalizePhone(booking.phone);
+  const whatsappNumber = digits.length === 10 || digits.length === 11 ? `55${digits}` : digits;
+  const isPet = category === "pet";
+  const message = isPet
+    ? `Olá, ${booking.customerName}! 🐾 Boas notícias: seu pet já está prontinho, cheiroso e esperando você no ${businessName}! Pode vir buscar.`
+    : `Olá, ${booking.customerName}! Seu atendimento/serviço no ${businessName} foi finalizado com sucesso e já está pronto para retirada. Muito obrigado!`;
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+}
+
+function appointmentThankYouUrl(booking: Booking, businessName: string, slug?: string) {
+  const digits = normalizePhone(booking.phone);
+  const whatsappNumber = digits.length === 10 || digits.length === 11 ? `55${digits}` : digits;
+  const link = slug ? `https://ello.app.br/loja/${slug}` : "";
+  const message = `Olá, ${booking.customerName}! Passando para agradecer pela sua preferência hoje no ${businessName}. Foi um prazer atender você! ${link ? `Deixe sua avaliação ou agende seu próximo horário: ${link}` : ""}`;
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 

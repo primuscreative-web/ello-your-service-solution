@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { UsersRound, Search, Send, Tag, Plus, Link2, Copy } from "lucide-react";
+import { UsersRound, Search, Send, Tag, Plus, Link2, Copy, MessageCircle } from "lucide-react";
 import { Field, inputClass, PageTitle, primaryButtonClass } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -100,7 +100,7 @@ function FoodCrmPage() {
     if (!client || !business?.id) return;
     const eligibleSince = new Date(Date.now() - 30 * 60 * 1000).toISOString();
     const discardBefore = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const [customerResult, couponResult, cartResult, campaignResult] = await Promise.all([
+    const [customerResult, couponResult, cartResult, campaignResult, bookingsResult] = await Promise.all([
       client.rpc("localhub_food_customers", { p_business_id: business.id }),
       client
         .from("localhub_coupons")
@@ -125,18 +125,53 @@ function FoodCrmPage() {
         .select("id,name,slug,coupon_id,clicks,conversions")
         .eq("business_id", business.id)
         .order("created_at", { ascending: false }),
+      client
+        .from("localhub_bookings")
+        .select("id,customer_name,phone,created_at,date,status")
+        .eq("business_id", business.id)
+        .neq("status", "cancelled"),
     ]);
-    if (customerResult.error || couponResult.error || cartResult.error || campaignResult.error) {
+    if (couponResult.error || cartResult.error || campaignResult.error) {
       setError(
-        customerResult.error?.message ??
-          couponResult.error?.message ??
+        couponResult.error?.message ??
           cartResult.error?.message ??
           campaignResult.error?.message ??
           "Falha ao consultar CRM.",
       );
       return;
     }
-    setCustomers((customerResult.data ?? []) as Customer[]);
+
+    const foodCustomers = (customerResult.data ?? []) as Customer[];
+    const knownPhones = new Set(foodCustomers.map((c) => c.phone_e164.replace(/\D/g, "")));
+
+    const bookingCustomersMap = new Map<string, Customer>();
+    for (const b of (bookingsResult.data ?? [])) {
+      const cleanPhone = (b.phone || "").replace(/\D/g, "");
+      if (!cleanPhone || knownPhones.has(cleanPhone)) continue;
+
+      if (!bookingCustomersMap.has(cleanPhone)) {
+        bookingCustomersMap.set(cleanPhone, {
+          id: `booking-${cleanPhone}`,
+          full_name: b.customer_name || "Cliente",
+          phone_e164: b.phone,
+          email: null,
+          marketing_consent: true,
+          first_order_at: b.created_at,
+          last_order_at: b.created_at,
+          orders_count: 1,
+          lifetime_value: 0,
+          loyalty_balance: 0,
+          segment: "new",
+        });
+      } else {
+        const item = bookingCustomersMap.get(cleanPhone)!;
+        item.orders_count += 1;
+        item.segment = item.orders_count > 1 ? "recurring" : "new";
+      }
+    }
+
+    const mergedCustomers = [...foodCustomers, ...Array.from(bookingCustomersMap.values())];
+    setCustomers(mergedCustomers);
     setCoupons((couponResult.data ?? []) as Coupon[]);
     setAbandonedCarts((cartResult.data ?? []) as AbandonedCart[]);
     setCampaigns((campaignResult.data ?? []) as Campaign[]);
@@ -348,6 +383,31 @@ function FoodCrmPage() {
     setLoadingOrdersFor(null);
   }
 
+  const getCustomerWhatsAppMessage = (customer: Customer) => {
+    const bizName = business?.name ?? "nosso negócio";
+    const slug = business?.slug ? `https://ello.app.br/loja/${business.slug}` : "";
+    const cat = business?.category;
+
+    if (customer.segment === "inactive") {
+      if (cat === "beleza" || cat === "barbearia") {
+        return `Olá, ${customer.full_name}! Passando para saber como você está e se já está na hora de renovar seu corte/visual no *${bizName}*! ✂️ Dá uma olhada nos nossos horários disponíveis: ${slug}`;
+      }
+      if (cat === "pet") {
+        return `Olá, ${customer.full_name}! Como está o seu pet? 🐾 Sentimos falta de vocês no *${bizName}*! Que tal agendar um banho e tosa para deixá-lo cheiroso? Veja aqui: ${slug}`;
+      }
+      if (cat === "saude") {
+        return `Olá, ${customer.full_name}! Passando para acompanhar seu bem-estar com a equipe do *${bizName}*. Caso queira agendar um retorno ou nova consulta: ${slug}`;
+      }
+      if (cat === "alimentacao") {
+        return `Olá, ${customer.full_name}! Sentimos sua falta aqui no *${bizName}*! ❤️ Preparamos um presente especial para matar a vontade. Acesse nosso cardápio online com novidades: ${slug}`;
+      }
+      return `Olá, ${customer.full_name}! Sentimos sua falta aqui no *${bizName}*! Estamos à disposição com condições especiais. Confira nossa página: ${slug}`;
+    }
+
+    // Para clientes ativos, VIP ou recorrentes
+    return `Olá, ${customer.full_name}! Tudo bem? Passando para agradecer pela sua preferência com a equipe do *${bizName}*. Estamos à disposição! ${slug}`;
+  };
+
   return (
     <>
       <PageTitle
@@ -435,15 +495,16 @@ function FoodCrmPage() {
                       ? "Ocultar histórico"
                       : "Ver compras"}
                 </button>
-                {customer.segment === "inactive" && (
+                {customer.phone_e164 && (
                   <a
-                    href={`https://wa.me/${customer.phone_e164.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${customer.full_name}! Sentimos sua falta aqui no ${business?.name ?? "nosso restaurante"}! ❤️ Preparamos um presente especial para você matar a vontade. Acesse nosso cardápio online com novidades: https://ello.app.br/loja/${business?.slug ?? ""}`)}`}
+                    href={`https://wa.me/${customer.phone_e164.replace(/\D/g, "").length === 10 || customer.phone_e164.replace(/\D/g, "").length === 11 ? `55${customer.phone_e164.replace(/\D/g, "")}` : customer.phone_e164.replace(/\D/g, "")}?text=${encodeURIComponent(getCustomerWhatsAppMessage(customer))}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
-                    title="Enviar mensagem amigável no WhatsApp convidando o cliente de volta"
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition active:scale-95"
+                    title="Enviar mensagem amigável no WhatsApp"
                   >
-                    💬 WhatsApp de Volta
+                    <MessageCircle size={13} />
+                    <span>{customer.segment === "inactive" ? "Reconquistar" : "WhatsApp"}</span>
                   </a>
                 )}
                 {customer.marketing_consent && customer.segment === "inactive" && (
