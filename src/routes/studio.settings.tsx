@@ -64,6 +64,8 @@ function SettingsPage() {
   const [form, setForm] = useState({ ...business! });
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState("");
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [galleryPreviewUrls, setGalleryPreviewUrls] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
@@ -134,6 +136,16 @@ function SettingsPage() {
     setBannerPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [bannerFile]);
+
+  useEffect(() => {
+    if (!logoFile) {
+      setLogoPreview("");
+      return;
+    }
+    const url = URL.createObjectURL(logoFile);
+    setLogoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [logoFile]);
 
   useEffect(() => {
     const urls = galleryFiles.map((file) => URL.createObjectURL(file));
@@ -274,8 +286,9 @@ function SettingsPage() {
     setError("");
     try {
       let bannerUrl = form.bannerUrl ?? null;
+      let logoUrl = form.logoUrl ?? null;
       let galleryUrls = form.galleryUrls ?? [];
-      if (bannerFile || galleryFiles.length > 0) {
+      if (bannerFile || logoFile || galleryFiles.length > 0) {
         const client = getSupabaseBrowserClient();
         if (!client || !user) throw new Error("Entre novamente para enviar a imagem.");
         if (bannerFile) {
@@ -291,6 +304,20 @@ function SettingsPage() {
             });
           if (uploadError) throw uploadError;
           bannerUrl = client.storage.from("business-banners").getPublicUrl(path).data.publicUrl;
+        }
+        if (logoFile) {
+          const extension =
+            logoFile.type === "image/jpeg" ? "jpg" : logoFile.type.split("/")[1];
+          const path = `${user.id}/business-${business.id}/logo-${crypto.randomUUID()}.${extension}`;
+          const { error: uploadError } = await client.storage
+            .from("business-banners")
+            .upload(path, logoFile, {
+              cacheControl: "3600",
+              contentType: logoFile.type,
+              upsert: false,
+            });
+          if (uploadError) throw uploadError;
+          logoUrl = client.storage.from("business-banners").getPublicUrl(path).data.publicUrl;
         }
         for (const file of galleryFiles) {
           const extension = file.type === "image/jpeg" ? "jpg" : file.type.split("/")[1];
@@ -309,8 +336,8 @@ function SettingsPage() {
           ];
         }
       }
-      await saveBusiness({ ...form, bannerUrl, galleryUrls, slug: createSlug(form.slug) });
-      setForm((current) => ({ ...current, bannerUrl, galleryUrls }));
+      await saveBusiness({ ...form, bannerUrl, logoUrl, galleryUrls, slug: createSlug(form.slug) });
+      setForm((current) => ({ ...current, bannerUrl, logoUrl, galleryUrls }));
       const removedUrls = (business.galleryUrls ?? []).filter((url) => !galleryUrls.includes(url));
       if (removedUrls.length && user) {
         const client = getSupabaseBrowserClient();
@@ -362,6 +389,23 @@ function SettingsPage() {
     setBannerFile(file);
   }
 
+  function selectLogo(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!imageTypes.includes(file.type)) {
+      setError("Escolha uma imagem JPG, PNG ou WebP para a logo.");
+      return;
+    }
+    if (file.size > maxImageSize) {
+      setError("A logo deve ter até 10 MB.");
+      return;
+    }
+    setError("");
+    setSaved(false);
+    setLogoFile(file);
+  }
+
   function selectGalleryFiles(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
@@ -389,6 +433,7 @@ function SettingsPage() {
   const businessCopy = getBusinessCopy(form.category);
   const isFoodBusiness = form.category === "alimentacao";
   const banner = bannerPreview || form.bannerUrl || "";
+  const logo = logoPreview || form.logoUrl || "";
 
   return (
     <>
@@ -458,6 +503,59 @@ function SettingsPage() {
             {banner && (
               <p className="mt-2 text-xs text-slate-400">Clique na imagem para escolher outra.</p>
             )}
+          </section>
+
+          <section className="border-t border-slate-100 pt-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="font-bold">Logotipo do estabelecimento</h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Aparece em destaque centralizado no topo do cardápio digital (estilo InstaDelivery).
+                </p>
+              </div>
+              {logo && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLogoFile(null);
+                    set("logoUrl", null);
+                  }}
+                  className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-red-700"
+                >
+                  <Trash2 size={14} /> Remover logo
+                </button>
+              )}
+            </div>
+            <div className="mt-4 flex items-center gap-4">
+              <label className="group flex size-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-slate-300 bg-slate-50 text-center transition hover:border-[#8a9668] hover:bg-[#f7f8f3] shadow-xs">
+                {logo ? (
+                  <img src={logo} alt="Prévia do logotipo" className="size-full object-cover" />
+                ) : (
+                  <span className="grid place-items-center text-slate-400 group-hover:text-[#778253]">
+                    <ImagePlus size={22} />
+                  </span>
+                )}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={selectLogo}
+                  className="sr-only"
+                />
+              </label>
+              <div className="text-xs text-slate-500 space-y-1">
+                <p className="font-semibold text-slate-700">Foto quadrada ou circular</p>
+                <p className="text-[11px] text-slate-400">Recomendado: 500 × 500 px. Formatos JPG, PNG ou WebP.</p>
+                <label className="inline-block cursor-pointer font-bold text-[#687847] hover:underline">
+                  {logo ? "Trocar imagem da logo" : "Selecionar arquivo de logo"}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={selectLogo}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+            </div>
           </section>
 
           {form.category !== "alimentacao" && (

@@ -1,8 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  ArrowDown,
+  ArrowUp,
   Clock3,
+  Flame,
   ImagePlus,
+  Layers,
   LoaderCircle,
   MoreHorizontal,
   Package,
@@ -10,6 +14,7 @@ import {
   Plus,
   Power,
   Search,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -108,16 +113,69 @@ function DecimalInput({
 }
 
 function CatalogPage() {
-  const { business, services, saveService, removeService, user } = useLocalHub();
+  const { business, services, saveService, removeService, saveBusiness, user } = useLocalHub();
   const copy = getBusinessCopy(business?.category);
   const hasAppointments = supportsAppointments(business?.category);
   const desktopGridColumns = hasAppointments
     ? "sm:grid-cols-[minmax(0,1fr)_130px_110px_110px]"
-    : "sm:grid-cols-[minmax(0,1fr)_110px_110px]";
+    : "sm:grid-cols-[minmax(0,1fr)_120px_110px]";
   const [editing, setEditing] = useState<Service | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [newCategoryDraft, setNewCategoryDraft] = useState("");
+  const [savingCategoryOrder, setSavingCategoryOrder] = useState(false);
   const healthServiceModes: Booking["serviceMode"][] = ["in_person", "online"];
+
+  const existingCategories = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of services) {
+      const cat = s.menuCategory?.trim();
+      if (cat) set.add(cat);
+    }
+    const currentOrder = business?.menuCategoriesOrder ?? [];
+    const ordered: string[] = [];
+    for (const cat of currentOrder) {
+      if (set.has(cat)) {
+        ordered.push(cat);
+        set.delete(cat);
+      }
+    }
+    for (const remaining of set) {
+      ordered.push(remaining);
+    }
+    return ordered;
+  }, [services, business?.menuCategoriesOrder]);
+
+  async function moveCategory(index: number, direction: "up" | "down") {
+    if (!business) return;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= existingCategories.length) return;
+    setSavingCategoryOrder(true);
+    try {
+      const nextOrder = [...existingCategories];
+      const [moved] = nextOrder.splice(index, 1);
+      nextOrder.splice(targetIndex, 0, moved);
+      await saveBusiness({ ...business, menuCategoriesOrder: nextOrder });
+    } finally {
+      setSavingCategoryOrder(false);
+    }
+  }
+
+  async function addCategoryToOrder(catName: string) {
+    if (!business || !catName.trim()) return;
+    const clean = catName.trim();
+    if (existingCategories.includes(clean)) return;
+    setSavingCategoryOrder(true);
+    try {
+      const nextOrder = [...existingCategories, clean];
+      await saveBusiness({ ...business, menuCategoriesOrder: nextOrder });
+      setNewCategoryDraft("");
+    } finally {
+      setSavingCategoryOrder(false);
+    }
+  }
+
   async function persistService(item: Omit<Service, "id"> & { id?: string }) {
     try {
       await saveService(item);
@@ -155,21 +213,122 @@ function CatalogPage() {
         description={
           hasAppointments
             ? `Cadastre cada ${copy.offer}, defina seu tempo e preço. A duração ajusta os horários oferecidos na agenda.`
-            : "Organize os itens, descrições e preços do seu cardápio público."
+            : "Organize os itens, descrições, fotos, grupos e promoções do seu cardápio público."
         }
         action={
-          <button
-            onClick={() => {
-              setEditing(null);
-              setCreating(true);
-            }}
-            className={primaryButtonClass}
-          >
-            <Plus size={16} />
-            {copy.addOffer}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {business?.category === "alimentacao" && (
+              <button
+                type="button"
+                onClick={() => setShowCategoryManager((prev) => !prev)}
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition ${
+                  showCategoryManager
+                    ? "border-[#778253] bg-[#edf0e5] text-[#4d5735]"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+                title="Definir a ordem que os grupos aparecem para os clientes no cardápio"
+              >
+                <Layers size={15} />
+                Grupos do Cardápio ({existingCategories.length})
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setEditing(null);
+                setCreating(true);
+              }}
+              className={primaryButtonClass}
+            >
+              <Plus size={16} />
+              {copy.addOffer}
+            </button>
+          </div>
         }
       />
+
+      {showCategoryManager && business?.category === "alimentacao" && (
+        <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">Ordem de Exibição dos Grupos</h3>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Use as setas para definir qual grupo aparece primeiro no cardápio online (ex: Hambúrgueres antes de Bebidas).
+              </p>
+            </div>
+            {savingCategoryOrder && (
+              <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                <LoaderCircle size={13} className="animate-spin" /> Salvando ordem...
+              </span>
+            )}
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {existingCategories.length === 0 ? (
+              <p className="text-xs text-slate-400 py-2">
+                Nenhum grupo cadastrado ainda. Crie itens atribuindo grupos como "Hambúrgueres", "Bebidas", "Combos".
+              </p>
+            ) : (
+              existingCategories.map((categoryName, index) => {
+                const count = services.filter((s) => s.menuCategory?.trim() === categoryName).length;
+                return (
+                  <div
+                    key={categoryName}
+                    className="flex items-center justify-between rounded-xl border border-slate-100 bg-[#fafaf7] px-3.5 py-2.5 text-xs font-semibold"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="grid size-6 place-items-center rounded-lg bg-white border border-slate-200 text-[11px] font-bold text-slate-500">
+                        {index + 1}º
+                      </span>
+                      <span className="font-bold text-slate-800">{categoryName}</span>
+                      <span className="text-[11px] font-normal text-slate-400">({count} {count === 1 ? "item" : "itens"})</span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={index === 0 || savingCategoryOrder}
+                        onClick={() => void moveCategory(index, "up")}
+                        title="Subir posição"
+                        className="grid size-7 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none"
+                      >
+                        <ArrowUp size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === existingCategories.length - 1 || savingCategoryOrder}
+                        onClick={() => void moveCategory(index, "down")}
+                        title="Descer posição"
+                        className="grid size-7 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none"
+                      >
+                        <ArrowDown size={13} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="mt-4 pt-3.5 border-t border-slate-100 flex gap-2">
+            <input
+              type="text"
+              value={newCategoryDraft}
+              onChange={(e) => setNewCategoryDraft(e.target.value)}
+              placeholder="Criar novo grupo (ex.: Sobremesas, Combos, Porções)"
+              maxLength={40}
+              className="flex-1 rounded-xl border border-slate-200 bg-[#fdfdfc] px-3 py-2 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#778253]"
+            />
+            <button
+              type="button"
+              disabled={!newCategoryDraft.trim() || savingCategoryOrder}
+              onClick={() => void addCategoryToOrder(newCategoryDraft)}
+              className="rounded-xl bg-[#292b25] px-3.5 py-2 text-xs font-bold text-white hover:bg-black transition disabled:opacity-40"
+            >
+              Adicionar Grupo
+            </button>
+          </div>
+        </section>
+      )}
       {creating && (
         <ServiceEditor
           category={business?.category}
@@ -320,9 +479,22 @@ function CatalogPage() {
                     </span>
                   )}
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-bold text-[#292b25]">{service.name}</div>
-                    <div className="mt-0.5 truncate text-xs text-slate-500">
-                      {service.description || "Sem descrição"}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="truncate text-sm font-bold text-[#292b25]">{service.name}</span>
+                      {service.isFeatured && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                          <Flame size={10} className="text-amber-600" />
+                          {service.promotionBadge || "Destaque"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-500">
+                      {service.menuCategory && (
+                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                          {service.menuCategory}
+                        </span>
+                      )}
+                      <span className="truncate">{service.description || "Sem descrição"}</span>
                     </div>
                   </div>
                 </div>
@@ -332,7 +504,16 @@ function CatalogPage() {
                     {service.duration} min
                   </div>
                 )}
-                <div className="text-sm font-bold text-[#292b25]">{money(service.price)}</div>
+                <div>
+                  {service.promotionalPrice && service.promotionalPrice > 0 ? (
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-emerald-700">{money(service.promotionalPrice)}</span>
+                      <span className="text-[11px] text-slate-400 line-through">{money(service.price)}</span>
+                    </div>
+                  ) : (
+                    <div className="text-sm font-bold text-[#292b25]">{money(service.price)}</div>
+                  )}
+                </div>
                 <div className="flex items-center justify-between gap-2">
                   <span
                     className={
@@ -468,6 +649,10 @@ function ServiceEditor({
   const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? "");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageError, setImageError] = useState("");
+  const [isFeatured, setIsFeatured] = useState(initial?.isFeatured ?? false);
+  const [isPromotion, setIsPromotion] = useState(initial?.isPromotion ?? false);
+  const [promotionalPrice, setPromotionalPrice] = useState<number | undefined>(initial?.promotionalPrice);
+  const [promotionBadge, setPromotionBadge] = useState(initial?.promotionBadge ?? "");
   const { business, user } = useLocalHub();
   const copy = getBusinessCopy(category);
   const hasAppointments = supportsAppointments(category);
@@ -513,6 +698,10 @@ function ServiceEditor({
       cfop,
       fiscalOrigin,
       taxRegimeCode,
+      isFeatured,
+      isPromotion: Boolean(isPromotion || (promotionalPrice && promotionalPrice > 0)),
+      promotionalPrice: promotionalPrice && promotionalPrice > 0 ? promotionalPrice : undefined,
+      promotionBadge: promotionBadge.trim(),
     });
   }
   return (
@@ -701,6 +890,84 @@ function ServiceEditor({
             <p role="alert" className="mt-2 text-xs text-red-700">
               {imageError}
             </p>
+          )}
+        </section>
+      )}
+      {category === "alimentacao" && (
+        <section className="mt-5 rounded-2xl border border-amber-200/80 bg-amber-50/40 p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-9 place-items-center rounded-xl bg-amber-100 text-amber-700 font-bold text-base">
+                🔥
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">Destaque & Promoção do Dia</h3>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Exibe o produto no topo do cardápio digital com maior visibilidade e selo atrativo.
+                </p>
+              </div>
+            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                checked={isFeatured}
+                onChange={(e) => setIsFeatured(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="h-6 w-11 rounded-full bg-slate-200 peer-focus:outline-none peer peer-checked:bg-amber-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+            </label>
+          </div>
+
+          {isFeatured && (
+            <div className="mt-4 pt-4 border-t border-amber-200/60 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Preço Promocional (De R$ {price.toFixed(2)} por:)
+                </label>
+                <DecimalInput
+                  value={promotionalPrice ?? 0}
+                  onValueChange={(val) => {
+                    setPromotionalPrice(val > 0 ? val : undefined);
+                    if (val > 0) setIsPromotion(true);
+                  }}
+                  placeholder="0,00 (deixe zerado para usar preço normal)"
+                  className={inputClass}
+                />
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Se informado, o cardápio mostrará o preço original riscado ao lado do valor com desconto.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Selo do Destaque (Tag)
+                </label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {["🔥 Mais Vendido", "⭐ Destaque", "💥 Oferta do Dia", "✨ Novidade", "👑 Campeão"].map((badge) => (
+                    <button
+                      key={badge}
+                      type="button"
+                      onClick={() => setPromotionBadge(badge)}
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${
+                        promotionBadge === badge
+                          ? "bg-amber-600 text-white shadow-xs"
+                          : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {badge}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={promotionBadge}
+                  onChange={(e) => setPromotionBadge(e.target.value)}
+                  placeholder="Ou digite um selo customizado"
+                  maxLength={30}
+                  className={inputClass}
+                />
+              </div>
+            </div>
           )}
         </section>
       )}

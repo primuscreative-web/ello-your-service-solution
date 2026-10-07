@@ -50,6 +50,8 @@ export type Business = {
   loyaltyMode?: "points" | "cashback";
   loyaltyRate?: number;
   deliveryFee?: number;
+  logoUrl?: string | null;
+  menuCategoriesOrder?: string[];
 };
 
 export type Service = {
@@ -71,6 +73,11 @@ export type Service = {
   cfop?: string;
   fiscalOrigin?: string;
   taxRegimeCode?: string;
+  isFeatured?: boolean;
+  isPromotion?: boolean;
+  promotionalPrice?: number;
+  promotionBadge?: string;
+  displayOrder?: number;
 };
 
 export type ProductVariant = { id?: string; name: string; priceDelta: number; active: boolean };
@@ -192,6 +199,8 @@ type BusinessRow = Omit<Business, "onboardingDetails" | "openingHours" | "blocke
   loyalty_mode?: "points" | "cashback";
   loyalty_rate?: number;
   delivery_fee?: number;
+  logo_url?: string | null;
+  menu_categories_order?: string[];
 };
 type ServiceRow = {
   id: string;
@@ -209,6 +218,11 @@ type ServiceRow = {
   fiscal_origin?: string;
   tax_regime_code?: string;
   image_url?: string | null;
+  is_featured?: boolean;
+  is_promotion?: boolean;
+  promotional_price?: number | string | null;
+  promotion_badge?: string | null;
+  display_order?: number | null;
 };
 type OrderItemRow = {
   service_id: string | null;
@@ -299,6 +313,8 @@ const businessFromRow = (row: BusinessRow): Business => {
     loyaltyMode: row.loyalty_mode ?? "points",
     loyaltyRate: Number(row.loyalty_rate ?? 0),
     deliveryFee: Number(row.delivery_fee ?? 0),
+    logoUrl: row.logo_url ?? null,
+    menuCategoriesOrder: Array.isArray(row.menu_categories_order) ? row.menu_categories_order : [],
   };
 };
 
@@ -390,6 +406,11 @@ const serviceFromRow = (row: ServiceRow): Service => ({
   cfop: row.cfop ?? "",
   fiscalOrigin: row.fiscal_origin ?? "",
   taxRegimeCode: row.tax_regime_code ?? "",
+  isFeatured: Boolean(row.is_featured),
+  isPromotion: Boolean(row.is_promotion),
+  promotionalPrice: row.promotional_price !== null && row.promotional_price !== undefined ? Number(row.promotional_price) : undefined,
+  promotionBadge: row.promotion_badge ?? "",
+  displayOrder: row.display_order ? Number(row.display_order) : 0,
 });
 const bookingFromRow = (row: BookingRow): Booking => ({
   id: row.id,
@@ -446,13 +467,24 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       setReady(true);
       return;
     }
-    const { data: ownedRow, error: businessError } = await supabase
+    let { data: ownedRow, error: businessError } = await supabase
       .from("localhub_businesses")
       .select(
-        "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee",
+        "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order",
       )
       .eq("owner_id", auth.user.id)
       .maybeSingle();
+    if (businessError && (businessError.message?.includes("logo_url") || businessError.message?.includes("menu_categories_order"))) {
+      const fallbackRes = await supabase
+        .from("localhub_businesses")
+        .select(
+          "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee",
+        )
+        .eq("owner_id", auth.user.id)
+        .maybeSingle();
+      ownedRow = fallbackRes.data;
+      businessError = fallbackRes.error;
+    }
     if (businessError) {
       setError(businessError.message);
       setReady(true);
@@ -806,14 +838,26 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
   const getPublicStore = useCallback(async (slug: string) => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) throw new Error("O serviço está temporariamente indisponível.");
-    const { data, error: queryError } = await supabase
+    let { data, error: queryError } = await supabase
       .from("localhub_businesses")
       .select(
-        "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,onboarding_details,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee",
+        "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,onboarding_details,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order",
       )
       .eq("slug", slug)
       .eq("is_published", true)
       .maybeSingle();
+    if (queryError && (queryError.message?.includes("logo_url") || queryError.message?.includes("menu_categories_order"))) {
+      const fallbackQuery = await supabase
+        .from("localhub_businesses")
+        .select(
+          "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,onboarding_details,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee",
+        )
+        .eq("slug", slug)
+        .eq("is_published", true)
+        .maybeSingle();
+      data = fallbackQuery.data;
+      queryError = fallbackQuery.error;
+    }
     if (queryError) throw queryError;
     if (!data) return null;
     const store = businessFromRow(data as BusinessRow);
@@ -997,9 +1041,43 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         loyalty_mode: item.loyaltyMode ?? business.loyaltyMode ?? "points",
         loyalty_rate: item.loyaltyRate ?? business.loyaltyRate ?? 0,
         delivery_fee: item.deliveryFee ?? business.deliveryFee ?? 0,
+        logo_url: item.logoUrl !== undefined ? item.logoUrl : business.logoUrl ?? null,
+        menu_categories_order: item.menuCategoriesOrder ?? business.menuCategoriesOrder ?? [],
       })
       .eq("id", business.id);
-    if (writeError) throw writeError;
+    if (writeError) {
+      if (writeError.message?.includes("logo_url") || writeError.message?.includes("menu_categories_order")) {
+        const { error: fallbackErr } = await client
+          .from("localhub_businesses")
+          .update({
+            name: item.name.trim(),
+            slug: item.slug,
+            category: item.category,
+            city: item.city.trim(),
+            phone: item.phone.trim(),
+            description: item.description.trim(),
+            address: item.address.trim(),
+            banner_url: item.bannerUrl?.trim() || null,
+            onboarding_details:
+              item.onboardingDetails ?? business.onboardingDetails ?? emptyOnboardingDetails,
+            gallery_urls: item.galleryUrls ?? business.galleryUrls ?? [],
+            booking_policy: item.bookingPolicy?.trim() ?? business.bookingPolicy ?? "",
+            opening_hours: item.openingHours ?? business.openingHours ?? defaultOpeningHours,
+            blocked_dates: item.blockedDates ?? business.blockedDates ?? [],
+            accepts_delivery: item.acceptsDelivery ?? business.acceptsDelivery ?? true,
+            accepts_pickup: item.acceptsPickup ?? business.acceptsPickup ?? true,
+            accepts_dine_in: item.acceptsDineIn ?? business.acceptsDineIn ?? false,
+            loyalty_enabled: item.loyaltyEnabled ?? business.loyaltyEnabled ?? false,
+            loyalty_mode: item.loyaltyMode ?? business.loyaltyMode ?? "points",
+            loyalty_rate: item.loyaltyRate ?? business.loyaltyRate ?? 0,
+            delivery_fee: item.deliveryFee ?? business.deliveryFee ?? 0,
+          })
+          .eq("id", business.id);
+        if (fallbackErr) throw fallbackErr;
+      } else {
+        throw writeError;
+      }
+    }
     await refresh();
   };
   const saveService = async (item: Omit<Service, "id"> & { id?: string }) => {
@@ -1019,12 +1097,41 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       tax_regime_code: item.taxRegimeCode ?? "",
       price: item.price,
       is_active: item.active,
+      is_featured: item.isFeatured ?? false,
+      is_promotion: item.isPromotion ?? false,
+      promotional_price: item.promotionalPrice ?? null,
+      promotion_badge: item.promotionBadge ?? "",
+      display_order: item.displayOrder ?? 0,
     };
     const client = requireClient();
-    const request = item.id
+    let request = item.id
       ? client.from("localhub_services").update(payload).eq("id", item.id).select("id").single()
       : client.from("localhub_services").insert(payload).select("id").single();
-    const { data: savedService, error: writeError } = await request;
+    let { data: savedService, error: writeError } = await request;
+    if (writeError && (writeError.message?.includes("is_featured") || writeError.message?.includes("promotional_price"))) {
+      const fallbackPayload = {
+        business_id: business.id,
+        name: item.name.trim(),
+        description: item.description.trim(),
+        duration_minutes: item.duration,
+        menu_category: item.menuCategory ?? "",
+        image_url: item.imageUrl ?? null,
+        service_modes: item.serviceModes ?? ["in_person"],
+        ncm: item.ncm ?? "",
+        cest: item.cest ?? "",
+        cfop: item.cfop ?? "",
+        fiscal_origin: item.fiscalOrigin ?? "",
+        tax_regime_code: item.taxRegimeCode ?? "",
+        price: item.price,
+        is_active: item.active,
+      };
+      const fallbackReq = item.id
+        ? client.from("localhub_services").update(fallbackPayload).eq("id", item.id).select("id").single()
+        : client.from("localhub_services").insert(fallbackPayload).select("id").single();
+      const fallbackRes = await fallbackReq;
+      savedService = fallbackRes.data;
+      writeError = fallbackRes.error;
+    }
     if (writeError) throw writeError;
     if (business.category === "alimentacao") {
       const serviceId = savedService.id as string;

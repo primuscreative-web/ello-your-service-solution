@@ -201,10 +201,30 @@ function PublicBusinessPage() {
       if (group) group.push(service);
       else groups.set(name, [service]);
     }
+    // Ordenar itens dentro de cada grupo por displayOrder se definido
+    for (const [, items] of groups) {
+      items.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    }
+    const orderList = business?.menuCategoriesOrder ?? [];
     return [...groups.entries()]
-      .sort(([first], [second]) => first.localeCompare(second, "pt-BR", { sensitivity: "base" }))
+      .sort(([first], [second]) => {
+        const indexA = orderList.indexOf(first);
+        const indexB = orderList.indexOf(second);
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        return first.localeCompare(second, "pt-BR", { sensitivity: "base" });
+      })
       .map(([name, groupedServices]) => ({ name, services: groupedServices }));
+  }, [activeServices, isFoodBusiness, business?.menuCategoriesOrder]);
+
+  const featuredServices = useMemo(() => {
+    if (!isFoodBusiness) return [];
+    return activeServices
+      .filter((service) => service.isFeatured || service.isPromotion)
+      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
   }, [activeServices, isFoodBusiness]);
+
   useEffect(() => {
     if (!business || !isFoodBusiness) return;
     if (fulfillment === "delivery" && !business.acceptsDelivery) {
@@ -232,6 +252,12 @@ function PublicBusinessPage() {
   );
   const cartCount = cartItems.reduce((sum, line) => sum + line.quantity, 0);
   const cartSubtotal = cartItems.reduce((sum, line) => {
+    const baseItemPrice =
+      line.service.isPromotion &&
+      typeof line.service.promotionalPrice === "number" &&
+      line.service.promotionalPrice > 0
+        ? line.service.promotionalPrice
+        : line.service.price;
     const variantDelta =
       line.service.productVariants?.find((variant) => variant.id === line.variantId)?.priceDelta ??
       0;
@@ -239,7 +265,7 @@ function PublicBusinessPage() {
       .flatMap((group) => group.options)
       .filter((option) => line.optionIds.includes(option.id ?? ""))
       .reduce((total, option) => total + option.priceDelta, 0);
-    return sum + (line.service.price + variantDelta + optionDelta) * line.quantity;
+    return sum + (baseItemPrice + variantDelta + optionDelta) * line.quantity;
   }, 0);
   const couponPreviewKey = `${couponCode.trim().toUpperCase()}|${orderPhone.trim()}|${cartSubtotal.toFixed(2)}`;
   const appliedCoupon = couponPreview?.key === couponPreviewKey ? couponPreview : null;
@@ -745,12 +771,42 @@ function PublicBusinessPage() {
     : undefined;
   return (
     <div className="min-h-screen bg-[#f5f4ef] pb-12 text-[#292b25]">
-      <header className="border-b border-slate-100 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2 text-sm font-extrabold">
-            <span className="ello-brand-mark ello-brand-mark-small">e</span>
-            ello
-          </Link>
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {isFoodBusiness && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPlacedOrder(null);
+                  setOrderError("");
+                  setCartOpen(true);
+                }}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 shadow-2xs transition hover:bg-slate-100 active:scale-95"
+                aria-label="Abrir carrinho de compras"
+              >
+                <div className="relative">
+                  <ShoppingBag size={16} className="text-[#586341]" />
+                  {cartCount > 0 && (
+                    <span className="absolute -right-2 -top-2 flex size-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-black text-white">
+                      {cartCount}
+                    </span>
+                  )}
+                </div>
+                <span className="hidden sm:inline">Carrinho</span>
+                {cartCount > 0 && (
+                  <span className="font-extrabold text-[#586341]">
+                    {money(cartSubtotal)}
+                  </span>
+                )}
+              </button>
+            )}
+            <Link to="/" className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800">
+              <span className="ello-brand-mark ello-brand-mark-small">e</span>
+              <span className="hidden sm:inline">ello</span>
+            </Link>
+          </div>
+
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -772,10 +828,10 @@ function PublicBusinessPage() {
                   setTimeout(() => setShareCopied(false), 2500);
                 }
               }}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 active:scale-[0.98]"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 active:scale-[0.98]"
             >
               {shareCopied ? <Check size={14} className="text-emerald-600" /> : <Share2 size={14} />}
-              {shareCopied ? "Link copiado!" : "Compartilhar"}
+              <span className="hidden sm:inline">{shareCopied ? "Copiado!" : "Compartilhar"}</span>
             </button>
             {whatsappUrl && (
               <a
@@ -785,74 +841,161 @@ function PublicBusinessPage() {
                 className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100/70"
               >
                 <MessageCircle size={15} />
-                WhatsApp
+                <span className="hidden sm:inline">WhatsApp</span>
               </a>
             )}
           </div>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 sm:px-6">
-        <section
-          className="relative mt-5 overflow-hidden rounded-2xl bg-[#292b25] bg-cover bg-center px-6 py-9 text-white sm:mt-8 sm:px-10 sm:py-12"
-          style={
-            business.bannerUrl
-              ? {
-                  backgroundImage: `linear-gradient(90deg, rgba(25,27,22,.9), rgba(25,27,22,.66)), url("${business.bannerUrl}")`,
-                }
-              : undefined
-          }
-        >
-          <div className="absolute -right-8 -top-20 size-64 rounded-full bg-[#d5ec9a]/10 blur-3xl" />
-          <div className="absolute -bottom-28 left-1/3 size-72 rounded-full bg-[#d5ec9a]/10 blur-3xl" />
-          <div className="relative max-w-2xl">
-            <h1 className="mt-4 font-display text-4xl font-semibold tracking-[-.05em] sm:text-5xl">
-              {business.name}
-            </h1>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">
-              {business.description ||
-                (hasAppointments
-                  ? `Conheça nossos ${businessCopy.offers} e escolha o melhor horário para você.`
-                  : isFoodBusiness
-                    ? "Confira nosso cardápio e faça seu pedido online."
+        {isFoodBusiness ? (
+          /* Layout Gastronômico Estilo InstaDelivery: Banner + Logo Centralizada */
+          <section className="mt-4 overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xs">
+            <div
+              className="relative h-36 w-full bg-[#292b25] bg-cover bg-center sm:h-52"
+              style={
+                business.bannerUrl
+                  ? {
+                      backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 100%), url("${business.bannerUrl}")`,
+                    }
+                  : {
+                      background: "linear-gradient(135deg, #2b2e24 0%, #444a38 100%)",
+                    }
+              }
+            >
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+            </div>
+
+            {/* Logo Centralizada no estilo InstaDelivery */}
+            <div className="relative -mt-14 px-4 pb-6 sm:-mt-16 sm:px-8">
+              <div className="flex flex-col items-center text-center">
+                <div className="size-24 overflow-hidden rounded-full border-4 border-white bg-white shadow-xl sm:size-28">
+                  {business.logoUrl ? (
+                    <img
+                      src={business.logoUrl}
+                      alt={business.name}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="grid size-full place-items-center bg-[#edf0e5] text-[#586341]">
+                      <UtensilsCrossed size={34} />
+                    </div>
+                  )}
+                </div>
+
+                <h1 className="mt-3.5 font-display text-2xl font-black tracking-tight text-[#292b25] sm:text-3xl">
+                  {business.name}
+                </h1>
+
+                {business.description && (
+                  <p className="mt-1.5 max-w-xl text-xs leading-5 text-slate-500 sm:text-sm">
+                    {business.description}
+                  </p>
+                )}
+
+                {/* Badges de Informação & Status */}
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+                    <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
+                    Aberto agora
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+                    <Clock3 size={13} className="text-slate-500" />
+                    35 – 50 min
+                  </span>
+                  {business.acceptsDelivery && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                      Entrega
+                    </span>
+                  )}
+                  {business.acceptsPickup && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                      Retirada
+                    </span>
+                  )}
+                  {business.onlinePaymentEnabled && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">
+                      <Zap size={13} className="text-amber-600" />
+                      Pix Online
+                    </span>
+                  )}
+                </div>
+
+                {business.city && (
+                  <div className="mt-2.5 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+                    <MapPin size={13} />
+                    <span>
+                      {business.address ? `${business.address} · ` : ""}
+                      {business.city}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        ) : (
+          /* Layout Padrão para Clínicas, Salões e Serviços */
+          <section
+            className="relative mt-5 overflow-hidden rounded-2xl bg-[#292b25] bg-cover bg-center px-6 py-9 text-white sm:mt-8 sm:px-10 sm:py-12"
+            style={
+              business.bannerUrl
+                ? {
+                    backgroundImage: `linear-gradient(90deg, rgba(25,27,22,.9), rgba(25,27,22,.66)), url("${business.bannerUrl}")`,
+                  }
+                : undefined
+            }
+          >
+            <div className="absolute -right-8 -top-20 size-64 rounded-full bg-[#d5ec9a]/10 blur-3xl" />
+            <div className="absolute -bottom-28 left-1/3 size-72 rounded-full bg-[#d5ec9a]/10 blur-3xl" />
+            <div className="relative max-w-2xl">
+              <div className="flex items-center gap-3">
+                {business.logoUrl && (
+                  <img
+                    src={business.logoUrl}
+                    alt={business.name}
+                    className="size-14 rounded-full border-2 border-white/30 object-cover shadow-md"
+                  />
+                )}
+                <div>
+                  <h1 className="font-display text-4xl font-semibold tracking-[-.05em] sm:text-5xl">
+                    {business.name}
+                  </h1>
+                </div>
+              </div>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">
+                {business.description ||
+                  (hasAppointments
+                    ? `Conheça nossos ${businessCopy.offers} e escolha o melhor horário para você.`
                     : "Conheça nossos serviços e fale diretamente com o estabelecimento.")}
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300">
-                <span className="size-2 animate-pulse rounded-full bg-emerald-400" />
-                Aberto agora
-              </span>
-              {isFoodBusiness && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
-                  <Clock3 size={13} />
-                  35 – 50 min
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300">
+                  <span className="size-2 animate-pulse rounded-full bg-emerald-400" />
+                  Aberto agora
                 </span>
-              )}
-              {business.onlinePaymentEnabled && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
-                  <Zap size={13} className="text-amber-300" />
-                  Pix Online imediato
-                </span>
-              )}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/70">
-              {business.city && (
+                {business.onlinePaymentEnabled && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
+                    <Zap size={13} className="text-amber-300" />
+                    Pix Online imediato
+                  </span>
+                )}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/70">
+                {business.city && (
+                  <span className="flex items-center gap-1.5">
+                    <MapPin size={14} />
+                    {business.address ? business.address + " · " : ""}
+                    {business.city}
+                  </span>
+                )}
                 <span className="flex items-center gap-1.5">
-                  <MapPin size={14} />
-                  {business.address ? business.address + " · " : ""}
-                  {business.city}
+                  <CalendarDays size={14} />
+                  {hasAppointments ? "Agendamento online" : "Fale com o estabelecimento"}
                 </span>
-              )}
-              <span className="flex items-center gap-1.5">
-                <CalendarDays size={14} />
-                {hasAppointments
-                  ? "Agendamento online"
-                  : isFoodBusiness
-                    ? "Pedido online"
-                    : "Fale com o estabelecimento"}
-              </span>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
         {galleryUrls.length > 0 && (
           <section className="mt-5" aria-label="Portfólio de trabalhos">
             <div className="mb-3 flex items-end justify-between gap-3">
@@ -999,150 +1142,321 @@ function PublicBusinessPage() {
           </div>
           {activeServices.length ? (
             <>
-              {isFoodBusiness && menuGroups.length > 1 && (
+              {/* Navegação Sticky de Grupos / Categorias */}
+              {isFoodBusiness && (menuGroups.length > 1 || featuredServices.length > 0) && (
                 <nav
                   aria-label="Categorias do cardápio"
-                  className="mt-4 flex gap-2 overflow-x-auto pb-2"
+                  className="sticky top-14 z-30 -mx-4 mb-6 flex gap-2 overflow-x-auto border-y border-slate-200/80 bg-[#f5f4ef]/95 px-4 py-2.5 backdrop-blur-md sm:-mx-6 sm:px-6"
                 >
+                  {featuredServices.length > 0 && (
+                    <a
+                      href="#menu-destaques"
+                      className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-rose-300 bg-rose-50 px-3.5 py-1.5 text-xs font-bold text-rose-800 shadow-2xs transition hover:bg-rose-100 active:scale-95"
+                    >
+                      <Sparkles size={13} className="text-rose-600" />
+                      Promoções do Dia
+                    </a>
+                  )}
                   {menuGroups.map((group, index) => (
                     <a
                       key={group.name}
                       href={`#menu-category-${index}`}
-                      className="min-h-10 shrink-0 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-[#a5b280] hover:bg-[#edf0e5]"
+                      className="inline-flex min-h-9 shrink-0 items-center rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition hover:border-[#a5b280] hover:bg-[#edf0e5] active:scale-95"
                     >
                       {group.name}
                     </a>
                   ))}
                 </nav>
               )}
-              <div className="mt-4 space-y-8">
+
+              {/* Seção Especial: Destaques & Promoções do Dia (Acima dos grupos) */}
+              {isFoodBusiness && featuredServices.length > 0 && (
+                <section id="menu-destaques" className="mb-8 scroll-mt-28">
+                  <div className="mb-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="grid size-7 place-items-center rounded-lg bg-rose-100 text-rose-700">
+                        <Sparkles size={16} />
+                      </span>
+                      <div>
+                        <h3 className="font-display text-base font-extrabold text-[#292b25] sm:text-lg">
+                          Destaques & Promoções do Dia
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Ofertas especiais selecionadas para você hoje
+                        </p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-bold text-rose-800">
+                      {featuredServices.length} {featuredServices.length === 1 ? "oferta" : "ofertas"}
+                    </span>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {featuredServices.map((service) => {
+                      const inCartQty = cart
+                        .filter((line) => line.service.id === service.id)
+                        .reduce((sum, line) => sum + line.quantity, 0);
+                      const isPromo = Boolean(
+                        service.isPromotion &&
+                          typeof service.promotionalPrice === "number" &&
+                          service.promotionalPrice > 0,
+                      );
+                      return (
+                        <article
+                          key={`featured-${service.id}`}
+                          className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-rose-200/80 bg-gradient-to-b from-rose-50/30 to-white p-4 shadow-xs transition-all duration-200 hover:border-rose-300 hover:shadow-md"
+                        >
+                          <div className="flex gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                                <span className="inline-flex items-center gap-1 rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-rose-800">
+                                  {service.promotionBadge || (isPromo ? "🔥 Oferta do Dia" : "⭐ Destaque")}
+                                </span>
+                              </div>
+                              <h4 className="font-bold text-[#292b25] sm:text-base">{service.name}</h4>
+                              <p className="mt-1 line-clamp-2 text-xs leading-4 text-slate-500">
+                                {service.description || "Adicione ao pedido online."}
+                              </p>
+                            </div>
+                            {service.imageUrl && (
+                              <img
+                                src={service.imageUrl}
+                                alt={service.name}
+                                loading="lazy"
+                                className="size-20 shrink-0 rounded-xl object-cover shadow-2xs transition-transform duration-200 group-hover:scale-[1.02] sm:size-24"
+                              />
+                            )}
+                          </div>
+
+                          <div className="mt-3.5 flex items-center justify-between border-t border-slate-100 pt-3">
+                            <div>
+                              {isPromo ? (
+                                <div className="flex items-baseline gap-1.5">
+                                  <span className="text-base font-black tracking-tight text-rose-600 sm:text-lg">
+                                    {money(service.promotionalPrice!)}
+                                  </span>
+                                  <span className="text-xs text-slate-400 line-through">
+                                    {money(service.price)}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-base font-black tracking-tight text-[#292b25] sm:text-lg">
+                                  {money(service.price)}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              {inCartQty > 0 && (
+                                <>
+                                  <button
+                                    type="button"
+                                    aria-label={`Remover ${service.name}`}
+                                    onClick={() => {
+                                      const line = [...cart]
+                                        .reverse()
+                                        .find((item) => item.service.id === service.id);
+                                      if (line) setFoodCartQuantity(line.key, line.quantity - 1);
+                                    }}
+                                    className="grid size-8 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-2xs hover:bg-slate-50 active:scale-95"
+                                  >
+                                    <Minus size={13} />
+                                  </button>
+                                  <span className="min-w-4 text-center text-xs font-bold">
+                                    {inCartQty}
+                                  </span>
+                                </>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (
+                                    (service.productVariants?.length ?? 0) ||
+                                    (service.optionGroups?.length ?? 0)
+                                  ) {
+                                    setConfiguringProduct(service);
+                                    setSelectedFoodVariant("");
+                                    setSelectedFoodOptions([]);
+                                  } else addFoodCartItem(service);
+                                }}
+                                className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-xl bg-[#292b25] px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-[#3d4036] active:scale-95"
+                              >
+                                <Plus size={13} />
+                                <span>Adicionar</span>
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* Grupos do Cardápio / Serviços */}
+              <div className="space-y-8">
                 {menuGroups.map((group, groupIndex) => (
                   <section
                     key={group.name || "offers"}
                     id={isFoodBusiness ? `menu-category-${groupIndex}` : undefined}
-                    className="scroll-mt-6"
+                    className="scroll-mt-28"
                   >
                     {isFoodBusiness && (
-                      <h3 className="mb-3 text-base font-bold text-[#292b25]">{group.name}</h3>
+                      <div className="mb-3 flex items-center justify-between border-b border-slate-200/60 pb-2">
+                        <h3 className="font-display text-base font-extrabold text-[#292b25] sm:text-lg">
+                          {group.name}
+                        </h3>
+                        <span className="text-xs text-slate-400">
+                          {group.services.length} {group.services.length === 1 ? "item" : "itens"}
+                        </span>
+                      </div>
                     )}
                     <div className="grid gap-3 sm:grid-cols-2">
-                      {group.services.map((service) => (
-                        <article
-                          key={service.id}
-                          className="group flex flex-col rounded-2xl border border-[#e8e6df] bg-white p-5 shadow-xs transition-all duration-200 hover:border-[#d2d7c3] hover:shadow-md sm:p-6"
-                        >
-                          {isFoodBusiness && service.imageUrl && (
-                            <img
-                              src={service.imageUrl}
-                              alt={service.name}
-                              loading="lazy"
-                              className="-mx-5 -mt-5 mb-4 aspect-[16/10] w-[calc(100%+2.5rem)] rounded-t-2xl object-cover transition-transform duration-200 group-hover:scale-[1.01] sm:-mx-6 sm:-mt-6 sm:w-[calc(100%+3rem)]"
-                            />
-                          )}
-                          <div className="flex items-start gap-3">
-                            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#edf0e5] text-[#586341]">
-                              {isFoodBusiness ? (
-                                <UtensilsCrossed size={18} />
-                              ) : (
-                                <Package size={18} />
-                              )}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <h3 className="font-bold text-[#292b25]">{service.name}</h3>
-                              <p className="mt-1 text-xs leading-5 text-slate-500">
-                                {service.description ||
-                                  (isFoodBusiness
-                                    ? "Preparado com cuidado. Adicione ao pedido online."
-                                    : "Atendimento pensado para você.")}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-                            <div>
-                              <div className="text-lg font-black tracking-tight text-[#292b25]">
-                                {money(service.price)}
-                              </div>
-                              {!isFoodBusiness && (
-                                <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-400">
-                                  <Clock3 size={12} />
-                                  {service.duration} minutos
-                                </div>
-                              )}
-                            </div>
-                            {isFoodBusiness ? (
-                              <div className="flex items-center gap-2">
-                                {cart
-                                  .filter((line) => line.service.id === service.id)
-                                  .reduce((sum, line) => sum + line.quantity, 0) > 0 && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      aria-label={`Remover ${service.name}`}
-                                      onClick={() => {
-                                        const line = [...cart]
-                                          .reverse()
-                                          .find((item) => item.service.id === service.id);
-                                        if (line) setFoodCartQuantity(line.key, line.quantity - 1);
-                                      }}
-                                      className="grid size-9 place-items-center rounded-full border border-slate-200 text-slate-600"
+                      {group.services.map((service) => {
+                        const inCartQty = isFoodBusiness
+                          ? cart
+                              .filter((line) => line.service.id === service.id)
+                              .reduce((sum, line) => sum + line.quantity, 0)
+                          : 0;
+                        const isPromo = Boolean(
+                          service.isPromotion &&
+                            typeof service.promotionalPrice === "number" &&
+                            service.promotionalPrice > 0,
+                        );
+                        return (
+                          <article
+                            key={service.id}
+                            className="group flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all duration-200 hover:border-[#a5b280] hover:shadow-md"
+                          >
+                            <div className="flex gap-3">
+                              <div className="min-w-0 flex-1">
+                                {(isPromo || service.isFeatured) && (
+                                  <div className="mb-1">
+                                    <span
+                                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                                        isPromo
+                                          ? "bg-rose-100 text-rose-800"
+                                          : "bg-amber-100 text-amber-800"
+                                      }`}
                                     >
-                                      <Minus size={14} />
-                                    </button>
-                                    <span className="min-w-4 text-center text-sm font-bold">
-                                      {cart
-                                        .filter((line) => line.service.id === service.id)
-                                        .reduce((sum, line) => sum + line.quantity, 0)}
+                                      {service.promotionBadge ||
+                                        (isPromo ? "🔥 Promoção" : "⭐ Destaque")}
                                     </span>
-                                  </>
+                                  </div>
                                 )}
+                                <h3 className="font-bold text-[#292b25]">{service.name}</h3>
+                                <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                                  {service.description ||
+                                    (isFoodBusiness
+                                      ? "Preparado com cuidado. Adicione ao pedido online."
+                                      : "Atendimento pensado para você.")}
+                                </p>
+                              </div>
+                              {isFoodBusiness && service.imageUrl && (
+                                <img
+                                  src={service.imageUrl}
+                                  alt={service.name}
+                                  loading="lazy"
+                                  className="size-20 shrink-0 rounded-xl object-cover shadow-2xs transition-transform duration-200 group-hover:scale-[1.02] sm:size-24"
+                                />
+                              )}
+                            </div>
+
+                            <div className="mt-3.5 flex items-center justify-between border-t border-slate-100 pt-3">
+                              <div>
+                                {isPromo ? (
+                                  <div className="flex items-baseline gap-1.5">
+                                    <span className="text-base font-black tracking-tight text-rose-600 sm:text-lg">
+                                      {money(service.promotionalPrice!)}
+                                    </span>
+                                    <span className="text-xs text-slate-400 line-through">
+                                      {money(service.price)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="text-base font-black tracking-tight text-[#292b25] sm:text-lg">
+                                    {money(service.price)}
+                                  </div>
+                                )}
+                                {!isFoodBusiness && (
+                                  <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-400">
+                                    <Clock3 size={12} />
+                                    {service.duration} minutos
+                                  </div>
+                                )}
+                              </div>
+                              {isFoodBusiness ? (
+                                <div className="flex items-center gap-1.5">
+                                  {inCartQty > 0 && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        aria-label={`Remover ${service.name}`}
+                                        onClick={() => {
+                                          const line = [...cart]
+                                            .reverse()
+                                            .find((item) => item.service.id === service.id);
+                                          if (line) setFoodCartQuantity(line.key, line.quantity - 1);
+                                        }}
+                                        className="grid size-8 place-items-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95"
+                                      >
+                                        <Minus size={13} />
+                                      </button>
+                                      <span className="min-w-4 text-center text-xs font-bold">
+                                        {inCartQty}
+                                      </span>
+                                    </>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (
+                                        (service.productVariants?.length ?? 0) ||
+                                        (service.optionGroups?.length ?? 0)
+                                      ) {
+                                        setConfiguringProduct(service);
+                                        setSelectedFoodVariant("");
+                                        setSelectedFoodOptions([]);
+                                      } else addFoodCartItem(service);
+                                    }}
+                                    className="cursor-pointer inline-flex min-h-8 items-center gap-1.5 rounded-xl bg-[#292b25] px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-[#3d4036] active:scale-95"
+                                  >
+                                    <Plus size={13} />
+                                    <span>Adicionar</span>
+                                  </button>
+                                </div>
+                              ) : (
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (
-                                      (service.productVariants?.length ?? 0) ||
-                                      (service.optionGroups?.length ?? 0)
-                                    ) {
-                                      setConfiguringProduct(service);
-                                      setSelectedFoodVariant("");
-                                      setSelectedFoodOptions([]);
-                                    } else addFoodCartItem(service);
+                                    setSelected(service);
+                                    setSelectedStaffId(activeStaff[0]?.id ?? "");
+                                    setSelectedAddonIds([]);
+                                    setVisitType("first_visit");
+                                    setServiceMode(
+                                      service.serviceModes?.[0] ??
+                                        availableHealthModes[0]?.value ??
+                                        "in_person",
+                                    );
+                                    setReminderConsent(false);
+                                    setWaitlistConsent(false);
+                                    setWaitlistAdded(false);
+                                    setWaitlistError("");
+                                    setComplete(false);
+                                    setBookingError("");
+                                    setDate("");
+                                    setTime("");
+                                    setWhatsappUrlAfterBooking("");
                                   }}
-                                  className="cursor-pointer inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#292b25] px-4.5 py-2.5 text-xs font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_1px_2px_rgba(0,0,0,0.06),0_4px_12px_-2px_rgba(41,43,37,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#363830] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_4px_8px_rgba(0,0,0,0.08),0_10px_20px_-3px_rgba(41,43,37,0.35)] active:translate-y-0 active:scale-[0.98]"
+                                  className="cursor-pointer inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-[#292b25] px-4 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-[#3d4036] active:scale-95"
                                 >
-                                  <Plus size={14} /> Adicionar
+                                  {businessCopy.bookingAction}
                                 </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelected(service);
-                                  setSelectedStaffId(activeStaff[0]?.id ?? "");
-                                  setSelectedAddonIds([]);
-                                  setVisitType("first_visit");
-                                  setServiceMode(
-                                    service.serviceModes?.[0] ??
-                                      availableHealthModes[0]?.value ??
-                                      "in_person",
-                                  );
-                                  setReminderConsent(false);
-                                  setWaitlistConsent(false);
-                                  setWaitlistAdded(false);
-                                  setWaitlistError("");
-                                  setComplete(false);
-                                  setBookingError("");
-                                  setDate("");
-                                  setTime("");
-                                  setWhatsappUrlAfterBooking("");
-                                }}
-                                className="cursor-pointer inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#292b25] px-4.5 py-2.5 text-xs font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_1px_2px_rgba(0,0,0,0.06),0_4px_12px_-2px_rgba(41,43,37,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#363830] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_4px_8px_rgba(0,0,0,0.08),0_10px_20px_-3px_rgba(41,43,37,0.35)] active:translate-y-0 active:scale-[0.98]"
-                              >
-                                {businessCopy.bookingAction}
-                              </button>
-                            )}
-                          </div>
-                        </article>
-                      ))}
+                              )}
+                            </div>
+                          </article>
+                        );
+                      })}
                     </div>
                   </section>
                 ))}
