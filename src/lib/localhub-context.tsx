@@ -482,7 +482,9 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         )
         .eq("owner_id", auth.user.id)
         .maybeSingle();
-      ownedRow = fallbackRes.data;
+      ownedRow = fallbackRes.data
+        ? ({ ...fallbackRes.data, logo_url: null, menu_categories_order: [] } as unknown as BusinessRow)
+        : null;
       businessError = fallbackRes.error;
     }
     if (businessError) {
@@ -511,19 +513,32 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         const { data: staffBusiness, error: staffBusinessError } = await supabase
           .from("localhub_businesses")
           .select(
-            "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee",
+            "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order",
           )
           .eq("id", access.business_id)
           .maybeSingle();
         if (staffBusinessError) {
-          setBusiness(null);
-          setIsStaffAccount(false);
-          setStaffMemberId(null);
-          setError(staffBusinessError.message);
-          setReady(true);
-          return;
+          const fallbackStaff = await supabase
+            .from("localhub_businesses")
+            .select(
+              "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee",
+            )
+            .eq("id", access.business_id)
+            .maybeSingle();
+          if (fallbackStaff.error) {
+            setBusiness(null);
+            setIsStaffAccount(false);
+            setStaffMemberId(null);
+            setError(fallbackStaff.error.message);
+            setReady(true);
+            return;
+          }
+          row = fallbackStaff.data
+            ? ({ ...fallbackStaff.data, logo_url: null, menu_categories_order: [] } as unknown as BusinessRow)
+            : null;
+        } else {
+          row = staffBusiness as BusinessRow | null;
         }
-        row = staffBusiness;
       }
     }
     setIsStaffAccount(Boolean(currentStaffId && row));
@@ -855,7 +870,9 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         .eq("slug", slug)
         .eq("is_published", true)
         .maybeSingle();
-      data = fallbackQuery.data;
+      data = fallbackQuery.data
+        ? ({ ...fallbackQuery.data, logo_url: null, menu_categories_order: [] } as unknown as BusinessRow)
+        : null;
       queryError = fallbackQuery.error;
     }
     if (queryError) throw queryError;
@@ -1047,7 +1064,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       .eq("id", business.id);
     if (writeError) {
       if (writeError.message?.includes("logo_url") || writeError.message?.includes("menu_categories_order")) {
-        const { error: fallbackErr } = await client
+        const { error: fallbackErr } = await requireClient()
           .from("localhub_businesses")
           .update({
             name: item.name.trim(),
@@ -1133,6 +1150,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       writeError = fallbackRes.error;
     }
     if (writeError) throw writeError;
+    if (!savedService) throw new Error("Não foi possível identificar o item salvo.");
     if (business.category === "alimentacao") {
       const serviceId = savedService.id as string;
       const variants = item.productVariants ?? [];

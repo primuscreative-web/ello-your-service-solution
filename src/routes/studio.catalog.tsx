@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowDown,
@@ -268,7 +268,7 @@ function CatalogPage() {
                 Nenhum grupo cadastrado ainda. Crie itens atribuindo grupos como "Hambúrgueres", "Bebidas", "Combos".
               </p>
             ) : (
-              existingCategories.map((categoryName, index) => {
+              existingCategories.map((categoryName: string, index: number) => {
                 const count = services.filter((s) => s.menuCategory?.trim() === categoryName).length;
                 return (
                   <div
