@@ -96,6 +96,51 @@ function SettingsPage() {
   const [cepLoading, setCepLoading] = useState(false);
   const [cepFeedback, setCepFeedback] = useState<string | null>(null);
 
+  // WhatsApp Evolution API State
+  const [waState, setWaState] = useState<"loading" | "open" | "connecting" | "close" | "not_configured">("loading");
+  const [waQrCode, setWaQrCode] = useState<string | null>(null);
+  const [waLoading, setWaLoading] = useState(false);
+
+  const fetchWhatsAppStatus = async () => {
+    try {
+      setWaLoading(true);
+      const res = await fetch("/api/whatsapp/session");
+      const data = await res.json();
+      setWaState(data.state || "connecting");
+      setWaQrCode(data.qrcode || null);
+    } catch {
+      setWaState("close");
+    } finally {
+      setWaLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void fetchWhatsAppStatus();
+    const interval = setInterval(() => {
+      // Polling automático enquanto aguarda leitura do QR Code
+      if (waState === "connecting") {
+        void fetchWhatsAppStatus();
+      }
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [waState]);
+
+  const handleDisconnectWhatsApp = async () => {
+    if (!confirm("Deseja realmente desconectar o WhatsApp desta loja?")) return;
+    setWaLoading(true);
+    try {
+      await fetch("/api/whatsapp/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "disconnect" }),
+      });
+      await fetchWhatsAppStatus();
+    } finally {
+      setWaLoading(false);
+    }
+  };
+
   async function handleCepSearch(val: string) {
     const clean = val.replace(/\D/g, "");
     if (clean.length !== 8) return;
@@ -1319,6 +1364,106 @@ function SettingsPage() {
                         {deliveryAreaBusy ? "Salvando…" : "Adicionar bairro"}
                       </button>
                     </form>
+                  </div>
+
+                  {/* Conexão de WhatsApp Automático (Evolution API) */}
+                  <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="grid size-10 place-items-center rounded-xl bg-emerald-600 text-white font-black">
+                          <MessageCircle size={20} />
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-emerald-950">
+                              WhatsApp da Loja (Disparos Automáticos)
+                            </h3>
+                            {waState === "open" ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold text-white">
+                                <span className="size-1.5 rounded-full bg-white animate-pulse" /> Conectado
+                              </span>
+                            ) : waState === "connecting" ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white">
+                                <span className="size-1.5 rounded-full bg-white animate-ping" /> Aguardando Leitura
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-slate-400 px-2.5 py-0.5 text-[10px] font-bold text-white">
+                                Desconectado
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-emerald-800">
+                            Envie status de pedidos, rastreamento de motoboy e lembretes de agendamento do seu próprio número.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void fetchWhatsAppStatus()}
+                          disabled={waLoading}
+                          className="rounded-xl border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50"
+                        >
+                          {waLoading ? "Atualizando..." : "Atualizar QR Code"}
+                        </button>
+                        {waState === "open" && (
+                          <button
+                            type="button"
+                            onClick={() => void handleDisconnectWhatsApp()}
+                            className="rounded-xl border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm hover:bg-red-50"
+                          >
+                            Desconectar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {waState === "open" ? (
+                      <div className="mt-4 rounded-xl border border-emerald-200 bg-white p-4 text-xs text-emerald-900 flex items-center gap-3">
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700 font-bold">
+                          ✓
+                        </span>
+                        <div>
+                          <p className="font-bold">Seu WhatsApp está conectado e operando 100% automático!</p>
+                          <p className="text-emerald-700">
+                            Todos os pedidos feitos no cardápio, saídas para entrega e agendamentos serão notificados aos clientes a partir deste número.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 grid gap-4 rounded-xl border border-emerald-200 bg-white p-5 sm:grid-cols-[auto_1fr] sm:items-center">
+                        <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-50 border border-slate-200">
+                          {waQrCode ? (
+                            <img
+                              src={waQrCode.startsWith("data:") ? waQrCode : `data:image/png;base64,${waQrCode}`}
+                              alt="QR Code WhatsApp"
+                              className="size-48 rounded-lg shadow-sm"
+                            />
+                          ) : (
+                            <div className="size-48 grid place-items-center text-center text-xs text-slate-400 p-4">
+                              {waLoading ? "Gerando QR Code..." : "Clique em 'Atualizar QR Code' para carregar"}
+                            </div>
+                          )}
+                          <span className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            Aponte a câmera do WhatsApp
+                          </span>
+                        </div>
+
+                        <div className="space-y-2.5 text-xs text-slate-700">
+                          <h4 className="font-bold text-sm text-slate-900">Como conectar o WhatsApp da sua loja:</h4>
+                          <ol className="list-decimal pl-4 space-y-1.5 text-slate-600">
+                            <li>Abra o aplicativo do <b>WhatsApp</b> no celular do seu negócio.</li>
+                            <li>Acesse <b>Configurações</b> (ou os 3 pontinhos) ➜ <b>Aparelhos Conectados</b>.</li>
+                            <li>Toque no botão <b>Conectar um aparelho</b>.</li>
+                            <li>Aponte a câmera do celular para este QR Code ao lado.</li>
+                          </ol>
+                          <div className="rounded-lg bg-emerald-50 p-2.5 text-[11px] text-emerald-800 border border-emerald-200">
+                            💡 <b>Dica:</b> O sistema reconhece a leitura em tempo real e muda o status para Conectado sozinho!
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Integração iFood */}

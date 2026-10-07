@@ -53,6 +53,7 @@ import { Route as ApiAsaasWithdrawRouteImport } from './routes/api.asaas.withdra
 import { Route as ApiNotificationsWhatsappRouteImport } from './routes/api.notifications.whatsapp'
 import { Route as ApiStripeCheckoutRouteImport } from './routes/api.stripe.checkout'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
+import { Route as ApiWhatsappSessionRouteImport } from './routes/api.whatsapp.session'
 import { Route as AppBusinessClientsRouteImport } from './routes/app.business.clients'
 import { Route as AppBusinessQuotesRouteImport } from './routes/app.business.quotes'
 import { Route as AppBusinessReviewsRouteImport } from './routes/app.business.reviews'
@@ -286,6 +287,11 @@ const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   path: '/api/stripe/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWhatsappSessionRoute = ApiWhatsappSessionRouteImport.update({
+  id: '/api/whatsapp/session',
+  path: '/api/whatsapp/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppBusinessClientsRoute = AppBusinessClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
@@ -390,6 +396,7 @@ export interface FileRoutesByFullPath {
   '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/business/reviews': typeof AppBusinessReviewsRoute
@@ -445,6 +452,7 @@ export interface FileRoutesByTo {
   '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/business/reviews': typeof AppBusinessReviewsRoute
@@ -503,6 +511,7 @@ export interface FileRoutesById {
   '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
   '/app/business/reviews': typeof AppBusinessReviewsRoute
@@ -562,6 +571,7 @@ export interface FileRouteTypes {
     | '/api/notifications/whatsapp'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
+    | '/api/whatsapp/session'
     | '/app/business/clients'
     | '/app/business/quotes'
     | '/app/business/reviews'
@@ -617,6 +627,7 @@ export interface FileRouteTypes {
     | '/api/notifications/whatsapp'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
+    | '/api/whatsapp/session'
     | '/app/business/clients'
     | '/app/business/quotes'
     | '/app/business/reviews'
@@ -674,6 +685,7 @@ export interface FileRouteTypes {
     | '/api/notifications/whatsapp'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
+    | '/api/whatsapp/session'
     | '/app/business/clients'
     | '/app/business/quotes'
     | '/app/business/reviews'
@@ -705,6 +717,7 @@ export interface RootRouteChildren {
   ApiNotificationsWhatsappRoute: typeof ApiNotificationsWhatsappRoute
   ApiStripeCheckoutRoute: typeof ApiStripeCheckoutRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  ApiWhatsappSessionRoute: typeof ApiWhatsappSessionRoute
   CBusinessSlugCampaignSlugRoute: typeof CBusinessSlugCampaignSlugRoute
   ApiStripeConnectOnboardingRoute: typeof ApiStripeConnectOnboardingRoute
   ApiV1OrdersExternalRoute: typeof ApiV1OrdersExternalRoute
@@ -1020,6 +1033,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/whatsapp/session': {
+      id: '/api/whatsapp/session'
+      path: '/api/whatsapp/session'
+      fullPath: '/api/whatsapp/session'
+      preLoaderRoute: typeof ApiWhatsappSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/business/clients': {
       id: '/app/business/clients'
       path: '/clients'
@@ -1215,6 +1235,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsWhatsappRoute: ApiNotificationsWhatsappRoute,
   ApiStripeCheckoutRoute: ApiStripeCheckoutRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  ApiWhatsappSessionRoute: ApiWhatsappSessionRoute,
   CBusinessSlugCampaignSlugRoute: CBusinessSlugCampaignSlugRoute,
   ApiStripeConnectOnboardingRoute: ApiStripeConnectOnboardingRoute,
   ApiV1OrdersExternalRoute: ApiV1OrdersExternalRoute,
