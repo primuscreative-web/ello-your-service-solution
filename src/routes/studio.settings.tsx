@@ -106,7 +106,17 @@ function SettingsPage() {
   const fetchWhatsAppStatus = async () => {
     try {
       setWaLoading(true);
-      const res = await fetch("/api/whatsapp/session");
+      const supabase = getSupabaseBrowserClient();
+      const session = (await supabase?.auth.getSession())?.data.session;
+      const res = await fetch("/api/whatsapp/session", {
+        headers: {
+          authorization: session?.access_token ? `Bearer ${session.access_token}` : "",
+        },
+      });
+      if (res.status === 401) {
+        setWaState("close");
+        return;
+      }
       const data = await res.json();
       setWaState(data.state || "connecting");
       setWaQrCode(data.qrcode || null);
@@ -132,9 +142,14 @@ function SettingsPage() {
     if (!confirm("Deseja realmente desconectar o WhatsApp desta loja?")) return;
     setWaLoading(true);
     try {
+      const supabase = getSupabaseBrowserClient();
+      const session = (await supabase?.auth.getSession())?.data.session;
       await fetch("/api/whatsapp/session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          authorization: session?.access_token ? `Bearer ${session.access_token}` : "",
+        },
         body: JSON.stringify({ action: "disconnect" }),
       });
       await fetchWhatsAppStatus();

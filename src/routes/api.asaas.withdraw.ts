@@ -7,15 +7,33 @@ import {
   isAsaasConfigured,
 } from "@/lib/asaas.server";
 
+import {
+  checkRateLimit,
+  getClientIp,
+  createRateLimitResponse,
+  maskSensitiveData,
+} from "@/lib/security.server";
+
 const withdrawInputSchema = z.object({
   businessId: z.string().uuid(),
-  amountCents: z.number().int().positive("Valor deve ser maior que zero."),
+  amountCents: z
+    .number()
+    .int()
+    .min(500, "O valor mínimo para transferência é de R$ 5,00.")
+    .max(5_000_000, "O valor máximo por transferência é de R$ 50.000,00."),
 });
 
 export const Route = createFileRoute("/api/asaas/withdraw")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // 1. Rate Limiting por IP (Máx 5 req/min)
+        const ip = getClientIp(request);
+        const ipLimit = checkRateLimit(`withdraw-ip:${ip}`, 5, 60_000);
+        if (!ipLimit.allowed) {
+          return createRateLimitResponse(ipLimit.resetSeconds);
+        }
+
         const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
         if (!token) {
           return Response.json({ error: "Autenticação necessária." }, { status: 401 });
@@ -24,8 +42,18 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
         let input: z.infer<typeof withdrawInputSchema>;
         try {
           input = withdrawInputSchema.parse(await request.json());
-        } catch {
-          return Response.json({ error: "Dados inválidos para saque." }, { status: 400 });
+        } catch (err: any) {
+          const msg = err?.errors?.[0]?.message || "Dados inválidos para saque.";
+          return Response.json({ error: msg }, { status: 400 });
+        }
+
+        // 2. Rate Limiting por Negócio (Máx 3 saques por 5 minutos para evitar esvaziamento concorrente)
+        const bizLimit = checkRateLimit(`withdraw-biz:${input.businessId}`, 3, 300_000);
+        if (!bizLimit.allowed) {
+          return Response.json(
+            { error: "Limite de solicitações de saque atingido para este período. Aguarde 5 minutos." },
+            { status: 429 },
+          );
         }
 
         if (!isAsaasConfigured()) {
@@ -50,7 +78,24 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
             .maybeSingle();
 
           if (!business) {
-            return Response.json({ error: "Negócio não encontrado." }, { status: 404 });
+            return Response.json({ error: "Negócio não encontrado ou acesso não autorizado." }, { status: 404 });
+          }
+
+          // 3. Prevenção de Race Condition: Checa se há transferência em andamento nos últimos 60 segundos
+          const sixtySecondsAgo = new Date(Date.now() - 60_000).toISOString();
+          const { data: inFlightWithdrawal } = await supabase
+            .from("localhub_wallet_withdrawals")
+            .select("id")
+            .eq("business_id", input.businessId)
+            .eq("status", "processing")
+            .gte("created_at", sixtySecondsAgo)
+            .limit(1);
+
+          if (inFlightWithdrawal && inFlightWithdrawal.length > 0) {
+            return Response.json(
+              { error: "Já existe uma transferência em processamento para este negócio. Aguarde a confirmação." },
+              { status: 409 },
+            );
           }
 
           const { data: account } = await supabase

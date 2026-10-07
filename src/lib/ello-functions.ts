@@ -1,11 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
-import process from "node:process";
 import { z } from "zod";
 
-// ============================================================================
-// PROFESSIONAL PROFILE FUNCTIONS
-// ============================================================================
+/**
+ * Funções Legadas de Protótipo.
+ *
+ * Todas as operações atuais do ELLO são executadas de forma segura e auditada
+ * via LocalHub (RPCs seguras com RLS no PostgreSQL do Supabase).
+ * As funções abaixo foram neutralizadas para fechar superfícies de ataque RPC.
+ */
+
+function disabledLegacyEndpoint(): never {
+  throw new Error("Esta função RPC legada foi desativada permanentemente por políticas de segurança.");
+}
 
 const createProfessionalProfileSchema = z.object({
   userId: z.string(),
@@ -19,48 +25,9 @@ const createProfessionalProfileSchema = z.object({
 
 export const createProfessionalProfile = createServerFn({ method: "POST" })
   .validator(createProfessionalProfileSchema)
-  .handler(async ({ data }) => {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error("Backend não está configurado.");
-    }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    const { data: profile, error } = await supabase
-      .from("professional_profiles")
-      .insert({
-        user_id: data.userId,
-        public_name: data.publicName,
-        specialty: data.specialty,
-        city: data.city,
-        description: data.description,
-        experience_years: data.experienceYears,
-        headline: data.headline,
-        verification_status: "draft",
-        profile_status: "active",
-        ello_link_slug: data.publicName.toLowerCase().replace(/\s+/g, "-"),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return { success: true, profile };
+  .handler(async () => {
+    disabledLegacyEndpoint();
   });
-
-// ============================================================================
-// SERVICE FUNCTIONS
-// ============================================================================
 
 const createServiceSchema = z.object({
   professionalProfileId: z.string(),
@@ -73,44 +40,9 @@ const createServiceSchema = z.object({
 
 export const createService = createServerFn({ method: "POST" })
   .validator(createServiceSchema)
-  .handler(async ({ data }) => {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error("Backend não está configurado.");
-    }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    const { data: service, error } = await supabase
-      .from("services")
-      .insert({
-        professional_profile_id: data.professionalProfileId,
-        title: data.title,
-        category: data.category,
-        description: data.description,
-        price: data.price,
-        duration_minutes: data.duration,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return { success: true, service };
+  .handler(async () => {
+    disabledLegacyEndpoint();
   });
-
-// ============================================================================
-// APPOINTMENT FUNCTIONS
-// ============================================================================
 
 const createAppointmentSchema = z.object({
   clientId: z.string(),
@@ -123,46 +55,9 @@ const createAppointmentSchema = z.object({
 
 export const createAppointment = createServerFn({ method: "POST" })
   .validator(createAppointmentSchema)
-  .handler(async ({ data }) => {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error("Backend não está configurado.");
-    }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    const appointmentDateTime = new Date(`${data.appointmentDate}T${data.appointmentTime}`);
-
-    const { data: appointment, error } = await supabase
-      .from("appointments")
-      .insert({
-        client_id: data.clientId,
-        professional_profile_id: data.professionalProfileId,
-        service_id: data.serviceId,
-        appointment_date: appointmentDateTime.toISOString(),
-        status: "pending",
-        notes: data.notes,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return { success: true, appointment };
+  .handler(async () => {
+    disabledLegacyEndpoint();
   });
-
-// ============================================================================
-// QUOTE REQUEST FUNCTIONS
-// ============================================================================
 
 const createQuoteRequestSchema = z.object({
   clientId: z.string(),
@@ -174,44 +69,9 @@ const createQuoteRequestSchema = z.object({
 
 export const createQuoteRequest = createServerFn({ method: "POST" })
   .validator(createQuoteRequestSchema)
-  .handler(async ({ data }) => {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error("Backend não está configurado.");
-    }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    const { data: quote, error } = await supabase
-      .from("quote_requests")
-      .insert({
-        client_id: data.clientId,
-        professional_profile_id: data.professionalProfileId,
-        title: data.title,
-        description: data.description,
-        budget: data.budget,
-        status: "pending",
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return { success: true, quote };
+  .handler(async () => {
+    disabledLegacyEndpoint();
   });
-
-// ============================================================================
-// PORTFOLIO FUNCTIONS
-// ============================================================================
 
 const uploadPortfolioItemSchema = z.object({
   professionalProfileId: z.string(),
@@ -222,42 +82,9 @@ const uploadPortfolioItemSchema = z.object({
 
 export const uploadPortfolioItem = createServerFn({ method: "POST" })
   .validator(uploadPortfolioItemSchema)
-  .handler(async ({ data }) => {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error("Backend não está configurado.");
-    }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    const { data: item, error } = await supabase
-      .from("portfolio_items")
-      .insert({
-        professional_profile_id: data.professionalProfileId,
-        title: data.title,
-        description: data.description,
-        image_url: data.imageUrl,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return { success: true, item };
+  .handler(async () => {
+    disabledLegacyEndpoint();
   });
-
-// ============================================================================
-// REVIEW FUNCTIONS
-// ============================================================================
 
 const createReviewSchema = z.object({
   appointmentId: z.string(),
@@ -267,34 +94,6 @@ const createReviewSchema = z.object({
 
 export const createReview = createServerFn({ method: "POST" })
   .validator(createReviewSchema)
-  .handler(async ({ data }) => {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error("Backend não está configurado.");
-    }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    const { data: review, error } = await supabase
-      .from("reviews")
-      .insert({
-        appointment_id: data.appointmentId,
-        rating: data.rating,
-        comment: data.comment,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return { success: true, review };
+  .handler(async () => {
+    disabledLegacyEndpoint();
   });

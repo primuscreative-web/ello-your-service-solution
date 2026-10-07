@@ -8,28 +8,34 @@ import {
   isAsaasConfigured,
 } from "@/lib/asaas.server";
 
+import {
+  checkRateLimit,
+  getClientIp,
+  createRateLimitResponse,
+} from "@/lib/security.server";
+
 const creditCardSchema = z.object({
-  holderName: z.string().min(2),
-  number: z.string().min(13),
+  holderName: z.string().min(2).max(100),
+  number: z.string().min(13).max(19),
   expiryMonth: z.string().length(2),
   expiryYear: z.string().length(4),
-  ccv: z.string().min(3),
+  ccv: z.string().min(3).max(4),
 });
 
 const chargeSchema = z.object({
   orderId: z.string().uuid(),
   trackingToken: z.string().uuid(),
-  customerCpfCnpj: z.string().optional(),
+  customerCpfCnpj: z.string().max(20).optional(),
   billingType: z.enum(["PIX", "CREDIT_CARD", "BOLETO"]).default("PIX"),
   creditCard: creditCardSchema.optional(),
   creditCardHolderInfo: z
     .object({
-      name: z.string(),
-      email: z.string().email(),
-      cpfCnpj: z.string(),
-      postalCode: z.string(),
-      addressNumber: z.string(),
-      phone: z.string(),
+      name: z.string().max(120),
+      email: z.string().email().max(120),
+      cpfCnpj: z.string().max(20),
+      postalCode: z.string().max(12),
+      addressNumber: z.string().max(20),
+      phone: z.string().max(30),
     })
     .optional(),
   installmentCount: z.number().int().min(1).max(12).optional(),
@@ -39,20 +45,36 @@ export const Route = createFileRoute("/api/asaas/charge")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // 1. Rate Limiting por IP (Proteção Anti-Carding e Anti-Flood: máx 12 req/min)
+        const ip = getClientIp(request);
+        const ipRateLimit = checkRateLimit(`charge-ip:${ip}`, 12, 60_000);
+        if (!ipRateLimit.allowed) {
+          return createRateLimitResponse(ipRateLimit.resetSeconds);
+        }
+
         let input: z.infer<typeof chargeSchema>;
         try {
           const body = await request.json();
           input = chargeSchema.parse(body);
-        } catch (err) {
+        } catch {
           return Response.json(
-            { error: "Dados inválidos para geração da cobrança Asaas.", details: err },
+            { error: "Dados inválidos para geração da cobrança." },
             { status: 400 },
+          );
+        }
+
+        // 2. Rate Limiting por Pedido (Máx 5 tentativas de pagamento por pedido em 10 min)
+        const orderRateLimit = checkRateLimit(`charge-order:${input.orderId}`, 5, 600_000);
+        if (!orderRateLimit.allowed) {
+          return Response.json(
+            { error: "Limite de tentativas de pagamento para este pedido excedido. Aguarde alguns minutos." },
+            { status: 429 },
           );
         }
 
         if (!isAsaasConfigured()) {
           return Response.json(
-            { error: "O gateway Asaas ainda não foi configurado no servidor (ASAAS_API_KEY ausente)." },
+            { error: "O gateway de pagamento ainda não foi configurado no servidor." },
             { status: 503 },
           );
         }
