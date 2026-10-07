@@ -95,19 +95,23 @@ alter table public.localhub_restaurant_drivers enable row level security;
 alter table public.localhub_bills enable row level security;
 
 -- Policies para proprietários dos estabelecimentos
+drop policy if exists "Owners manage tables" on public.localhub_restaurant_tables;
 create policy "Owners manage tables" on public.localhub_restaurant_tables
   for all using (
     exists (select 1 from public.localhub_businesses b where b.id = business_id and b.owner_id = auth.uid())
   );
 
+drop policy if exists "Public view active tables" on public.localhub_restaurant_tables;
 create policy "Public view active tables" on public.localhub_restaurant_tables
   for select using (active = true);
 
+drop policy if exists "Owners manage drivers" on public.localhub_restaurant_drivers;
 create policy "Owners manage drivers" on public.localhub_restaurant_drivers
   for all using (
     exists (select 1 from public.localhub_businesses b where b.id = business_id and b.owner_id = auth.uid())
   );
 
+drop policy if exists "Owners manage bills" on public.localhub_bills;
 create policy "Owners manage bills" on public.localhub_bills
   for all using (
     exists (select 1 from public.localhub_businesses b where b.id = business_id and b.owner_id = auth.uid())
