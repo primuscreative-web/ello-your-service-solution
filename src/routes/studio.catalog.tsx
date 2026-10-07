@@ -629,6 +629,13 @@ function CatalogPage() {
                   ) : (
                     <div className="text-sm font-bold text-[#292b25]">{money(service.price)}</div>
                   )}
+                  {service.costPrice !== undefined && service.costPrice > 0 && service.price > 0 && (
+                    <div className="mt-1">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
+                        Custo: {money(service.costPrice)} · Margem: {(((service.price - service.costPrice) / service.price) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <span
@@ -739,6 +746,7 @@ function ServiceEditor({
   const [description, setDescription] = useState(initial?.description ?? "");
   const [duration, setDuration] = useState(initial?.duration ?? 30);
   const [price, setPrice] = useState(initial?.price ?? 0);
+  const [costPrice, setCostPrice] = useState<number>(initial?.costPrice ?? 0);
   const [active, setActive] = useState(initial?.active ?? true);
   const [menuCategory, setMenuCategory] = useState(initial?.menuCategory ?? "");
   const [serviceModes, setServiceModes] = useState<Booking["serviceMode"][]>(
@@ -829,6 +837,7 @@ function ServiceEditor({
       imageUrl: imageUrl || null,
       duration,
       price,
+      costPrice,
       active,
       menuCategory,
       serviceModes,
@@ -949,13 +958,46 @@ function ServiceEditor({
             />
           </Field>
         )}
-        <Field label="Preço (R$)">
+        <Field label="Preço de venda (R$)">
           <DecimalInput
             value={price}
             onValueChange={setPrice}
             className={inputClass}
           />
         </Field>
+        <Field
+          label="Custo de insumos / produtos (R$)"
+          hint="Gasto com cosméticos, descartáveis ou ingredientes por atendimento"
+        >
+          <DecimalInput
+            value={costPrice}
+            onValueChange={setCostPrice}
+            className={inputClass}
+          />
+        </Field>
+        {price > 0 && (
+          <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-[#f8f9f4] p-3 text-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-700">Previsão Financeira:</span>
+              <span className="text-slate-600">
+                Lucro Bruto: <strong>{money(Math.max(0, price - costPrice))}</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`rounded-full px-2.5 py-0.5 font-bold ${
+                  ((price - costPrice) / price) * 100 >= 60
+                    ? "bg-emerald-100 text-emerald-800"
+                    : ((price - costPrice) / price) * 100 >= 30
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                Margem Estimada: {(((price - costPrice) / price) * 100).toFixed(1).replace(".", ",")}%
+              </span>
+            </div>
+          </div>
+        )}
       </div>
       {category === "alimentacao" && (
         <section className="mt-5 rounded-xl border border-slate-200 p-4">

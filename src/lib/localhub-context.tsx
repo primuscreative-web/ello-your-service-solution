@@ -24,6 +24,7 @@ export type BusinessOnboardingDetails = {
   serviceModes: string[];
   supplies?: ProductSupply[];
   serviceSupplyFormulas?: Record<string, ServiceSupplyUsage[]>;
+  customerNotes?: Record<string, string>;
 };
 
 export type BusinessDayHours = {
@@ -1193,6 +1194,11 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     }
     if (writeError) throw writeError;
     if (!savedService) throw new Error("Não foi possível identificar o item salvo.");
+    if (item.costPrice !== undefined && Number.isFinite(item.costPrice) && item.costPrice >= 0) {
+      await client
+        .from("localhub_service_costs")
+        .upsert({ service_id: savedService.id, cost_price: item.costPrice }, { onConflict: "service_id" });
+    }
     if (business.category === "alimentacao") {
       const serviceId = savedService.id as string;
       const variants = item.productVariants ?? [];

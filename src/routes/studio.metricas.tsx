@@ -4,10 +4,15 @@ import {
   BarChart3,
   Bike,
   CalendarDays,
+  Coins,
   MapPin,
   Package,
+  Scissors,
   ShoppingBag,
+  Sparkles,
   TrendingUp,
+  CheckCircle2,
+  DollarSign,
 } from "lucide-react";
 import { PageTitle, money } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
@@ -147,6 +152,8 @@ function MetricsPage() {
   const maxAreaCount = Math.max(...topAreas.map((area) => area.count), 1);
   const maxDriverCount = Math.max(...topDrivers.map((driver) => driver.count), 1);
 
+  const isFoodBusiness = business?.category === "alimentacao";
+
   const appointmentMetrics = useMemo(() => {
     const startDate = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, "0")}-${String(since.getDate()).padStart(2, "0")}`;
     const today = new Date();
@@ -155,70 +162,141 @@ function MetricsPage() {
       (booking) => booking.date >= startDate && booking.date <= endDate,
     );
     const active = current.filter((booking) => booking.status !== "cancelled");
-    const countByService = new Map<string, number>();
+    const completed = current.filter((booking) => booking.status === "completed");
+
+    let totalRevenue = 0;
+    let totalSuppliesCost = 0;
+    const countByService = new Map<string, { count: number; revenue: number }>();
     const countByStaff = new Map<string, number>();
+
     for (const booking of active) {
-      countByService.set(booking.serviceId, (countByService.get(booking.serviceId) ?? 0) + 1);
-      if (booking.staffId)
+      const s = services.find((service) => service.id === booking.serviceId);
+      const price = s?.price ?? 0;
+      const cost = s?.costPrice ?? 0;
+
+      if (booking.status === "completed") {
+        totalRevenue += price;
+        totalSuppliesCost += cost;
+      }
+
+      const prev = countByService.get(booking.serviceId) ?? { count: 0, revenue: 0 };
+      countByService.set(booking.serviceId, {
+        count: prev.count + 1,
+        revenue: prev.revenue + price,
+      });
+
+      if (booking.staffId) {
         countByStaff.set(booking.staffId, (countByStaff.get(booking.staffId) ?? 0) + 1);
+      }
     }
+
+    const grossProfit = totalRevenue - totalSuppliesCost;
+    const profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+    const averageTicket = completed.length > 0 ? totalRevenue / completed.length : 0;
+
+    const dailyTrend = Array.from({ length: range }, (_, index) => {
+      const date = new Date(since);
+      date.setDate(since.getDate() + index);
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const dayBookings = current.filter(
+        (b) => b.date === dateStr && b.status === "completed",
+      );
+      const daySales = dayBookings.reduce((sum, b) => {
+        const s = services.find((srv) => srv.id === b.serviceId);
+        return sum + (s?.price ?? 0);
+      }, 0);
+      return {
+        date,
+        label: dayLabel(date),
+        fullDate: date.toLocaleDateString("pt-BR"),
+        vendas: daySales,
+        atendimentos: dayBookings.length,
+      };
+    });
+
     return {
       current,
       active,
-      completed: current.filter((booking) => booking.status === "completed").length,
+      completed: completed.length,
       noShows: current.filter((booking) => booking.status === "no_show").length,
       cancelled: current.filter((booking) => booking.status === "cancelled").length,
       pending: current.filter((booking) => booking.status === "pending").length,
+      totalRevenue,
+      totalSuppliesCost,
+      grossProfit,
+      profitMargin,
+      averageTicket,
+      dailyTrend,
       services: [...countByService.entries()]
-        .map(([id, count]) => ({
-          name: services.find((service) => service.id === id)?.name ?? "Atendimento removido",
-          count,
+        .map(([id, data]) => ({
+          name: services.find((service) => service.id === id)?.name ?? "Atendimento",
+          count: data.count,
+          revenue: data.revenue,
         }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5),
       staff: [...countByStaff.entries()]
         .map(([id, count]) => ({
-          name: staff.find((member) => member.id === id)?.name ?? "Profissional removido",
+          name: staff.find((member) => member.id === id)?.name ?? "Profissional",
           count,
         }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5),
     };
-  }, [bookings, services, since, staff]);
+  }, [bookings, services, since, staff, range]);
 
-  if (business?.category === "saude") {
+  if (!isFoodBusiness) {
     const trackedAppointments = appointmentMetrics.current.length;
     const maxServiceCount = Math.max(...appointmentMetrics.services.map((item) => item.count), 1);
     const maxStaffCount = Math.max(...appointmentMetrics.staff.map((item) => item.count), 1);
+
+    const isBeauty = business?.category === "beleza" || business?.category === "barbearia";
+    const eyebrow = isBeauty
+      ? "Beleza, Barbearia & Estética"
+      : business?.category === "saude"
+      ? "Saúde & Bem-Estar"
+      : business?.category === "pet"
+      ? "Pet Shop & Estética Animal"
+      : "Serviços & Atendimentos";
+
+    const title = isBeauty
+      ? "Métricas de Atendimentos, Faturamento & Custos"
+      : "Métricas de Atendimentos & Faturamento";
+
     const cards = [
       {
-        label: "Agendamentos",
-        value: trackedAppointments,
-        note: `${appointmentMetrics.pending} aguardando confirmação`,
+        label: "Faturamento com Serviços",
+        value: money(appointmentMetrics.totalRevenue),
+        note: `${appointmentMetrics.completed} atendimentos concluídos`,
+        icon: TrendingUp,
       },
       {
-        label: "Atendimentos concluídos",
-        value: appointmentMetrics.completed,
-        note: `Nos últimos ${range} dias`,
+        label: "Custo Estimado de Insumos",
+        value: money(appointmentMetrics.totalSuppliesCost),
+        note: "Produtos e descartáveis consumidos",
+        icon: Coins,
       },
       {
-        label: "Faltas",
-        value: appointmentMetrics.noShows,
-        note: "Marcadas manualmente na agenda",
+        label: "Lucro Bruto Real",
+        value: money(appointmentMetrics.grossProfit),
+        note: `Margem bruta: ${appointmentMetrics.profitMargin.toFixed(1).replace(".", ",")}%`,
+        icon: DollarSign,
       },
       {
-        label: "Cancelamentos",
-        value: appointmentMetrics.cancelled,
-        note: "No período selecionado",
+        label: "Ticket Médio",
+        value: money(appointmentMetrics.averageTicket),
+        note: `${trackedAppointments} agendamentos no período`,
+        icon: Sparkles,
       },
     ];
+
     return (
       <>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <PageTitle
-            eyebrow="Desempenho"
-            title="Métricas de atendimentos"
-            description="Acompanhe a operação da agenda. Os indicadores não representam resultados clínicos."
+            eyebrow={eyebrow}
+            title={title}
+            description="Acompanhe o faturamento, custos de produtos de bancada, margem de lucro real e fluxo de atendimentos da equipe."
           />
           <label className="mb-6 flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600">
             <CalendarDays size={15} />
@@ -234,32 +312,115 @@ function MetricsPage() {
             </select>
           </label>
         </div>
+
         <section
           aria-label="Indicadores de atendimentos"
           className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
         >
-          {cards.map((card) => (
-            <article
-              key={card.label}
-              className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
-            >
-              <p className="text-xs font-semibold text-slate-500">{card.label}</p>
-              <p className="mt-3 text-3xl font-extrabold">{card.value}</p>
-              <p className="mt-1 text-xs text-slate-400">{card.note}</p>
-            </article>
-          ))}
+          {cards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <article
+                key={card.label}
+                className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-slate-500">{card.label}</p>
+                  <span className="grid size-8 place-items-center rounded-xl bg-[#edf0e5] text-[#667448]">
+                    <Icon size={16} />
+                  </span>
+                </div>
+                <p className="mt-3 text-2xl font-black text-[#292b25]">{card.value}</p>
+                <p className="mt-1 text-xs text-slate-400">{card.note}</p>
+              </article>
+            );
+          })}
         </section>
-        <section className="mt-5 grid gap-5 lg:grid-cols-2">
+
+        {/* GRÁFICO DE FATURAMENTO AO LONGO DO TEMPO */}
+        <section className="mt-5 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h2 className="font-bold">Faturamento de Atendimentos ao Longo do Tempo</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Atendimentos concluídos · últimos {range} dias
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-extrabold text-emerald-900">
+                {money(appointmentMetrics.totalRevenue)}
+              </div>
+              <span className="text-[11px] text-slate-400">faturado no período</span>
+            </div>
+          </div>
+
+          <div className="mt-5 h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={appointmentMetrics.dailyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="serviceSalesGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#778253" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#778253" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="label"
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  interval="preserveStartEnd"
+                />
+                <Tooltip
+                  formatter={((val: any) => [
+                    money(typeof val === "number" ? val : Number(val ?? 0)),
+                    "Faturamento",
+                  ]) as any}
+                  labelFormatter={(_, payload) =>
+                    (payload?.[0]?.payload as { fullDate?: string; atendimentos?: number } | undefined)?.fullDate
+                      ? `${(payload[0].payload as any).fullDate} (${(payload[0].payload as any).atendimentos} atendimentos)`
+                      : ""
+                  }
+                  contentStyle={{
+                    backgroundColor: "#292b25",
+                    borderColor: "#3f4236",
+                    borderRadius: "12px",
+                    color: "#fff",
+                    fontSize: "12px",
+                  }}
+                  itemStyle={{ color: "#d5ec9a", fontWeight: "bold" }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="vendas"
+                  stroke="#778253"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#serviceSalesGrad)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        {/* RANKINGS E RITMO DA AGENDA */}
+        <section className="mt-5 grid gap-5 lg:grid-cols-3">
+          {/* PROCEDIMENTOS MAIS SOLICITADOS */}
           <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="font-bold">Atendimentos mais solicitados</h2>
-            <p className="mt-1 text-xs text-slate-500">Agendamentos não cancelados no período.</p>
+            <div className="flex items-center gap-2">
+              <Scissors size={17} className="text-[#687348]" />
+              <h2 className="font-bold">Procedimentos Mais Solicitados</h2>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">Volume e faturamento gerado.</p>
             {appointmentMetrics.services.length ? (
               <ul className="mt-5 space-y-4">
                 {appointmentMetrics.services.map((item) => (
                   <li key={item.name}>
                     <div className="flex justify-between gap-3 text-xs">
-                      <span className="font-semibold">{item.name}</span>
-                      <span className="text-slate-500">{item.count}</span>
+                      <span className="font-semibold text-slate-800">{item.name}</span>
+                      <span className="text-slate-500 font-bold">
+                        {item.count} un · {money(item.revenue)}
+                      </span>
                     </div>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
                       <div
@@ -272,22 +433,27 @@ function MetricsPage() {
               </ul>
             ) : (
               <p className="mt-5 rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">
-                Ainda não há dados neste período.
+                Ainda não há atendimentos neste período.
               </p>
             )}
           </article>
+
+          {/* ATENDIMENTOS POR PROFISSIONAL */}
           <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="font-bold">Atendimentos por profissional</h2>
+            <div className="flex items-center gap-2">
+              <Sparkles size={17} className="text-[#687348]" />
+              <h2 className="font-bold">Atendimentos por Profissional</h2>
+            </div>
             <p className="mt-1 text-xs text-slate-500">
-              Volume de agenda — não é uma avaliação de desempenho clínico.
+              Distribuição dos atendimentos da equipe.
             </p>
             {appointmentMetrics.staff.length ? (
               <ul className="mt-5 space-y-4">
                 {appointmentMetrics.staff.map((item) => (
                   <li key={item.name}>
                     <div className="flex justify-between gap-3 text-xs">
-                      <span className="font-semibold">{item.name}</span>
-                      <span className="text-slate-500">{item.count}</span>
+                      <span className="font-semibold text-slate-800">{item.name}</span>
+                      <span className="text-slate-500 font-bold">{item.count} atendimentos</span>
                     </div>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
                       <div
@@ -300,9 +466,36 @@ function MetricsPage() {
               </ul>
             ) : (
               <p className="mt-5 rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">
-                Atribua atendimentos a profissionais para acompanhar a distribuição.
+                Atribua profissionais aos agendamentos para acompanhar a distribuição.
               </p>
             )}
+          </article>
+
+          {/* RITMO DA OPERAÇÃO / AGENDA */}
+          <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="flex items-center gap-2">
+              <CalendarDays size={17} className="text-[#687348]" />
+              <h2 className="font-bold">Status da Operação</h2>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">Resumo da rotina da agenda.</p>
+            <div className="mt-5 divide-y divide-slate-100">
+              <div className="flex justify-between py-2.5 text-xs">
+                <span className="text-slate-600 font-medium">Concluídos com sucesso</span>
+                <strong className="text-emerald-700 font-bold">{appointmentMetrics.completed}</strong>
+              </div>
+              <div className="flex justify-between py-2.5 text-xs">
+                <span className="text-slate-600 font-medium">Aguardando confirmação</span>
+                <strong className="text-amber-700 font-bold">{appointmentMetrics.pending}</strong>
+              </div>
+              <div className="flex justify-between py-2.5 text-xs">
+                <span className="text-slate-600 font-medium">Faltas registradas (no-show)</span>
+                <strong className="text-slate-700 font-bold">{appointmentMetrics.noShows}</strong>
+              </div>
+              <div className="flex justify-between py-2.5 text-xs">
+                <span className="text-slate-600 font-medium">Cancelamentos</span>
+                <strong className="text-red-600 font-bold">{appointmentMetrics.cancelled}</strong>
+              </div>
+            </div>
           </article>
         </section>
       </>

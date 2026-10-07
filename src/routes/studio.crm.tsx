@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { UsersRound, Search, Send, Tag, Plus, Link2, Copy, MessageCircle } from "lucide-react";
+import { UsersRound, Search, Send, Tag, Plus, Link2, Copy, MessageCircle, CalendarDays, FileText } from "lucide-react";
 import { Field, inputClass, PageTitle, primaryButtonClass } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -67,7 +67,10 @@ const toCampaignSlug = (value: string) =>
     .replace(/^-|-$/g, "");
 
 function FoodCrmPage() {
-  const { business } = useLocalHub();
+  const { business, bookings, services, staff, saveBusiness } = useLocalHub();
+  const [editingNoteFor, setEditingNoteFor] = useState<string | null>(null);
+  const [customerNoteDraft, setCustomerNoteDraft] = useState<string>("");
+  const [savingNote, setSavingNote] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<AbandonedCart[]>([]);
@@ -239,6 +242,35 @@ function FoodCrmPage() {
       await load();
     }
   }
+
+  const handleSaveCustomerNote = async (phone: string, note: string) => {
+    if (!business?.id) return;
+    setSavingNote(true);
+    try {
+      const clean = phone.replace(/\D/g, "");
+      const currentNotes = { ...(business.onboardingDetails?.customerNotes ?? {}) };
+      if (note.trim()) {
+        currentNotes[clean] = note.trim();
+      } else {
+        delete currentNotes[clean];
+      }
+      const nextDetails = {
+        ...(business.onboardingDetails ?? { specialties: [], serviceModes: [] }),
+        customerNotes: currentNotes,
+      };
+      await saveBusiness({
+        ...business,
+        onboardingDetails: nextDetails,
+      });
+      setEditingNoteFor(null);
+      setNotice("Ficha de preferências do cliente salva com sucesso!");
+      window.setTimeout(() => setNotice(""), 4000);
+    } catch (err: any) {
+      setError(err?.message ?? "Falha ao salvar nota do cliente.");
+    } finally {
+      setSavingNote(false);
+    }
+  };
 
   async function redeemCustomerBalance(event: FormEvent<HTMLFormElement>, customer: Customer) {
     event.preventDefault();
@@ -563,42 +595,170 @@ function FoodCrmPage() {
                     </button>
                   </form>
                 )}
-                {expandedCustomerId === customer.id && (
-                  <div className="basis-full rounded-xl bg-slate-50 p-3">
-                    <h3 className="text-xs font-bold text-slate-700">Últimos pedidos</h3>
-                    {(customerOrders[customer.id] ?? []).map((order) => (
-                      <div key={order.id} className="mt-3 border-t border-slate-200 pt-3">
-                        <div className="flex flex-wrap justify-between gap-2 text-xs">
-                          <strong>Pedido #{order.order_number}</strong>
-                          <span>{formatMoney(order.total)}</span>
-                          <span className="text-slate-500">
-                            {new Date(order.created_at).toLocaleString("pt-BR")}
-                          </span>
+                {expandedCustomerId === customer.id && (() => {
+                  const cleanPhone = customer.phone_e164.replace(/\D/g, "");
+                  const customerBookings = bookings.filter((b) => (b.phone || "").replace(/\D/g, "") === cleanPhone);
+                  const existingNote = business?.onboardingDetails?.customerNotes?.[cleanPhone] || "";
+                  const orders = customerOrders[customer.id] ?? [];
+                  const isFood = business?.category === "alimentacao";
+
+                  return (
+                    <div className="basis-full rounded-xl bg-slate-50 p-4 space-y-4 border border-slate-200">
+                      {/* FICHA DE PREFERÊNCIAS / ANOTAÇÕES DO CLIENTE */}
+                      <div className="rounded-xl border border-[#dfe3d4] bg-white p-3.5 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                            <FileText size={14} className="text-[#687348]" />
+                            Ficha de Preferências & Anotações do Cliente
+                          </div>
+                          {editingNoteFor !== customer.id && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingNoteFor(customer.id);
+                                setCustomerNoteDraft(existingNote);
+                              }}
+                              className="text-[11px] font-bold text-[#586341] hover:underline"
+                            >
+                              {existingNote ? "Editar Ficha" : "+ Adicionar Anotação"}
+                            </button>
+                          )}
                         </div>
-                        <p className="mt-1 text-xs capitalize text-slate-500">
-                          {order.status.replaceAll("_", " ")}
-                          {" · "}
-                          {order.fulfillment.replaceAll("_", " ")}
-                          {" · "}
-                          {order.payment_method.replaceAll("_", " ")}
-                        </p>
-                        <ul className="mt-2 space-y-1 text-xs text-slate-600">
-                          {order.items.map((item, index) => (
-                            <li key={`${order.id}-${index}`} className="flex justify-between gap-3">
-                              <span>
-                                {item.quantity}× {item.item_name}
+
+                        {editingNoteFor === customer.id ? (
+                          <div className="mt-2.5 space-y-2">
+                            <textarea
+                              rows={2}
+                              value={customerNoteDraft}
+                              onChange={(e) => setCustomerNoteDraft(e.target.value)}
+                              placeholder="Ex.: Prefere corte com tesoura no topo; Tonalizante 7.1; Alérgica a esmaltes com tolueno..."
+                              className="w-full rounded-lg border border-slate-200 bg-[#fdfdfc] p-2.5 text-xs text-slate-800 outline-none focus:border-[#778253]"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditingNoteFor(null)}
+                                className="rounded-lg px-2.5 py-1 text-xs text-slate-500 hover:bg-slate-100"
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                type="button"
+                                disabled={savingNote}
+                                onClick={() => void handleSaveCustomerNote(customer.phone_e164, customerNoteDraft)}
+                                className="rounded-lg bg-[#292b25] px-3 py-1 text-xs font-bold text-white hover:bg-black disabled:opacity-50"
+                              >
+                                {savingNote ? "Salvando…" : "Salvar Ficha"}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-1.5 text-xs text-slate-600">
+                            {existingNote ? (
+                              <span className="whitespace-pre-line font-medium text-slate-700">{existingNote}</span>
+                            ) : (
+                              <span className="italic text-slate-400">
+                                Nenhuma anotação gravada ainda. Clique para anotar o tipo de corte, preferências ou histórico do cliente.
                               </span>
-                              <span>{formatMoney(item.line_total)}</span>
-                            </li>
-                          ))}
-                        </ul>
+                            )}
+                          </p>
+                        )}
                       </div>
-                    ))}
-                    {customerOrders[customer.id]?.length === 0 && (
-                      <p className="mt-2 text-xs text-slate-500">Nenhum pedido encontrado.</p>
-                    )}
-                  </div>
-                )}
+
+                      {/* HISTÓRICO DE AGENDAMENTOS / ATENDIMENTOS */}
+                      {customerBookings.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 mb-2">
+                            <CalendarDays size={14} className="text-[#687348]" />
+                            Histórico de Atendimentos ({customerBookings.length})
+                          </div>
+                          <div className="space-y-2">
+                            {customerBookings.map((b) => {
+                              const s = services.find((srv) => srv.id === b.serviceId);
+                              const st = staff.find((m) => m.id === b.staffId);
+                              return (
+                                <div
+                                  key={b.id}
+                                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white p-2.5 text-xs"
+                                >
+                                  <div>
+                                    <strong className="text-slate-800">{s?.name ?? "Serviço"}</strong>
+                                    <div className="text-[11px] text-slate-500 mt-0.5">
+                                      {b.date} às {b.time}
+                                      {st ? ` · Profissional: ${st.name}` : ""}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-slate-700">
+                                      {formatMoney(s?.price ?? 0)}
+                                    </span>
+                                    <span
+                                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                        b.status === "completed"
+                                          ? "bg-emerald-100 text-emerald-800"
+                                          : b.status === "confirmed"
+                                          ? "bg-blue-100 text-blue-800"
+                                          : b.status === "in_progress"
+                                          ? "bg-amber-100 text-amber-800"
+                                          : "bg-slate-100 text-slate-600"
+                                      }`}
+                                    >
+                                      {b.status === "completed"
+                                        ? "Concluído"
+                                        : b.status === "confirmed"
+                                        ? "Confirmado"
+                                        : b.status === "in_progress"
+                                        ? "Em andamento"
+                                        : b.status}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* HISTÓRICO DE PEDIDOS (GASTRONOMIA) */}
+                      {isFood && (
+                        <div>
+                          <h3 className="text-xs font-bold text-slate-700 mb-2">Últimos pedidos de delivery / balcão</h3>
+                          {orders.map((order) => (
+                            <div key={order.id} className="mt-2 rounded-lg border border-slate-200 bg-white p-2.5">
+                              <div className="flex flex-wrap justify-between gap-2 text-xs">
+                                <strong>Pedido #{order.order_number}</strong>
+                                <span>{formatMoney(order.total)}</span>
+                                <span className="text-slate-500">
+                                  {new Date(order.created_at).toLocaleString("pt-BR")}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-[11px] capitalize text-slate-500">
+                                {order.status.replaceAll("_", " ")}
+                                {" · "}
+                                {order.fulfillment.replaceAll("_", " ")}
+                                {" · "}
+                                {order.payment_method.replaceAll("_", " ")}
+                              </p>
+                              <ul className="mt-2 space-y-1 text-xs text-slate-600">
+                                {order.items.map((item, index) => (
+                                  <li key={`${order.id}-${index}`} className="flex justify-between gap-3">
+                                    <span>
+                                      {item.quantity}× {item.item_name}
+                                    </span>
+                                    <span>{formatMoney(item.line_total)}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                          {orders.length === 0 && (
+                            <p className="text-xs text-slate-400 italic">Nenhum pedido registrado.</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </article>
             ))}
             {!visibleCustomers.length && (
