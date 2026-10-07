@@ -293,7 +293,7 @@ function SettingsPage() {
     setForm((current) => ({ ...current, onboardingDetails: next }));
   }
 
-  function addOnboardingChoice(field: keyof BusinessOnboardingDetails, value: string) {
+  function addOnboardingChoice(field: "specialties" | "serviceModes", value: string) {
     const choice = createSlug(value);
     if (!choice) return;
     const details = form.onboardingDetails ?? { specialties: [], serviceModes: [] };

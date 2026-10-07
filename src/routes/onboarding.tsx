@@ -396,7 +396,7 @@ function OnboardingPage() {
   const CategoryIcon = categories.find(({ id }) => id === form.category)?.icon ?? Wrench;
   const update = (key: keyof typeof form, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
-  const toggleOnboardingChoice = (key: keyof BusinessOnboardingDetails, choice: string) =>
+  const toggleOnboardingChoice = (key: "specialties" | "serviceModes", choice: string) =>
     setOnboardingDetails((current) => ({
       ...current,
       [key]: current[key].includes(choice)

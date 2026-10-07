@@ -167,6 +167,24 @@ export function StudioBusinessTools() {
                     Cadastre profissionais da equipe e acompanhe os atendimentos.
                   </p>
                 </Link>
+
+                <Link
+                  to="/studio/precificacao"
+                  className="group col-span-full flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/50 p-3.5 transition hover:border-emerald-400 hover:bg-white hover:shadow-xs"
+                >
+                  <div className="flex items-center gap-2.5 text-slate-800">
+                    <span className="grid size-7 place-items-center rounded-lg bg-emerald-100 text-emerald-800">
+                      <Calculator size={15} />
+                    </span>
+                    <div>
+                      <span className="text-xs font-bold block">Custos de Insumos & Produtos de Bancada</span>
+                      <p className="text-[11px] text-slate-500">
+                        Custo médio por aplicação/dose e margem real de lucro dos procedimentos.
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight size={15} className="text-emerald-700 transition group-hover:translate-x-1" />
+                </Link>
               </div>
             </div>
 

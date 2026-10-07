@@ -2,9 +2,28 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
+export type ProductSupply = {
+  id: string;
+  name: string;
+  category?: string;
+  purchasePrice: number;
+  packageQuantity: number;
+  unitMeasure: string;
+  costPerUnit: number;
+  brand?: string;
+  notes?: string;
+};
+
+export type ServiceSupplyUsage = {
+  supplyId: string;
+  quantity: number;
+};
+
 export type BusinessOnboardingDetails = {
   specialties: string[];
   serviceModes: string[];
+  supplies?: ProductSupply[];
+  serviceSupplyFormulas?: Record<string, ServiceSupplyUsage[]>;
 };
 
 export type BusinessDayHours = {
@@ -292,7 +311,12 @@ type BookingRow = {
   service_mode?: Booking["serviceMode"];
   reminder_consent?: boolean;
 };
-const emptyOnboardingDetails: BusinessOnboardingDetails = { specialties: [], serviceModes: [] };
+const emptyOnboardingDetails: BusinessOnboardingDetails = {
+  specialties: [],
+  serviceModes: [],
+  supplies: [],
+  serviceSupplyFormulas: {},
+};
 
 const businessFromRow = (row: BusinessRow): Business => {
   const { onboarding_details, banner_url, opening_hours, blocked_dates, ...business } = row;
@@ -350,6 +374,12 @@ type LocalHubContextValue = {
   saveBusiness: (business: Business) => Promise<void>;
   saveService: (service: Omit<Service, "id"> & { id?: string }) => Promise<void>;
   saveServiceCost: (serviceId: string, costPrice: number) => Promise<void>;
+  saveSupplies: (supplies: ProductSupply[]) => Promise<void>;
+  saveServiceSupplyFormula: (
+    serviceId: string,
+    usages: ServiceSupplyUsage[],
+    calculatedCost?: number,
+  ) => Promise<void>;
   removeService: (id: string) => Promise<void>;
   addBooking: (businessId: string, booking: Omit<Booking, "id" | "status">) => Promise<void>;
   addToWaitlist: (
@@ -639,7 +669,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
             .order("created_at")
         : { data: [], error: null };
     const costResult =
-      nextBusiness.category === "alimentacao"
+      nextBusiness.id
         ? await supabase.from("localhub_service_costs").select("service_id,cost_price")
         : { data: [], error: null };
     if (
@@ -1331,8 +1361,8 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     await refresh();
   };
   const saveServiceCost = async (serviceId: string, costPrice: number) => {
-    if (!business?.id || business.category !== "alimentacao") {
-      throw new Error("A precificação de custos está disponível para negócios de alimentação.");
+    if (!business?.id) {
+      throw new Error("Negócio não selecionado.");
     }
     if (!Number.isFinite(costPrice) || costPrice < 0) {
       throw new Error("Informe um custo válido, igual ou maior que zero.");
@@ -1342,6 +1372,41 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       .upsert({ service_id: serviceId, cost_price: costPrice }, { onConflict: "service_id" });
     if (writeError) throw writeError;
     await refresh();
+  };
+  const saveSupplies = async (supplies: ProductSupply[]) => {
+    if (!business?.id) {
+      throw new Error("Negócio não selecionado.");
+    }
+    const nextDetails: BusinessOnboardingDetails = {
+      ...(business.onboardingDetails ?? emptyOnboardingDetails),
+      supplies,
+    };
+    await saveBusiness({
+      ...business,
+      onboardingDetails: nextDetails,
+    });
+  };
+  const saveServiceSupplyFormula = async (
+    serviceId: string,
+    usages: ServiceSupplyUsage[],
+    calculatedCost?: number,
+  ) => {
+    if (!business?.id) {
+      throw new Error("Negócio não selecionado.");
+    }
+    const currentFormulas = { ...(business.onboardingDetails?.serviceSupplyFormulas ?? {}) };
+    currentFormulas[serviceId] = usages;
+    const nextDetails: BusinessOnboardingDetails = {
+      ...(business.onboardingDetails ?? emptyOnboardingDetails),
+      serviceSupplyFormulas: currentFormulas,
+    };
+    await saveBusiness({
+      ...business,
+      onboardingDetails: nextDetails,
+    });
+    if (calculatedCost !== undefined && Number.isFinite(calculatedCost) && calculatedCost >= 0) {
+      await saveServiceCost(serviceId, calculatedCost);
+    }
   };
   const removeService = async (id: string) => {
     const { error: writeError } = await requireClient()
@@ -1641,6 +1706,8 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         saveBusiness,
         saveService,
         saveServiceCost,
+        saveSupplies,
+        saveServiceSupplyFormula,
         removeService,
         addBooking,
         addToWaitlist,
