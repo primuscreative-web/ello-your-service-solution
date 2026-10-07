@@ -364,35 +364,7 @@ function PublicBusinessPage() {
           optionIds: line.optionIds,
         })),
       });
-      if (paymentMethod === "online_pix") {
-        const asaasResponse = await fetch("/api/asaas/charge", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            orderId: result.id,
-            trackingToken: result.trackingToken,
-            billingType: "PIX",
-          }),
-        });
-        const asaas = (await asaasResponse.json()) as { success?: boolean; error?: string };
-        if (!asaasResponse.ok || !asaas.success) {
-          throw new Error(asaas.error ?? "Não foi possível gerar a cobrança Pix.");
-        }
-        window.location.assign(`/pedido/${result.trackingToken}`);
-        return;
-      }
-      if (paymentMethod === "online_card") {
-        window.location.assign(`/pedido/${result.trackingToken}`);
-        return;
-      }
-      setPlacedOrder({
-        number: result.number,
-        total: result.total,
-        trackingToken: result.trackingToken,
-      });
-      setCart([]);
-
-      // Notificação ativa no WhatsApp (cliente e lojista)
+      // Notificação ativa no WhatsApp (cliente e lojista) para todos os pedidos
       void fetch("/api/notifications/whatsapp", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -439,6 +411,35 @@ function PublicBusinessPage() {
           }),
         }).catch(() => {});
       }
+
+      setCart([]);
+
+      if (paymentMethod === "online_pix") {
+        const asaasResponse = await fetch("/api/asaas/charge", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            orderId: result.id,
+            trackingToken: result.trackingToken,
+            billingType: "PIX",
+          }),
+        });
+        const asaas = (await asaasResponse.json()) as { success?: boolean; error?: string };
+        if (!asaasResponse.ok || !asaas.success) {
+          throw new Error(asaas.error ?? "Não foi possível gerar a cobrança Pix.");
+        }
+        window.location.assign(`/pedido/${result.trackingToken}`);
+        return;
+      }
+      if (paymentMethod === "online_card") {
+        window.location.assign(`/pedido/${result.trackingToken}`);
+        return;
+      }
+      setPlacedOrder({
+        number: result.number,
+        total: result.total,
+        trackingToken: result.trackingToken,
+      });
     } catch (caught) {
       setOrderError(
         caught instanceof Error

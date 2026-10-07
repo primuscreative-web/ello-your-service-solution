@@ -1033,7 +1033,15 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       address: item.address.trim(),
       onboarding_details: item.onboardingDetails ?? emptyOnboardingDetails,
     });
-    if (writeError) throw writeError;
+    if (writeError) {
+      if (writeError.code === "23505" || writeError.message?.includes("slug")) {
+        throw new Error(`O endereço link "/loja/${item.slug}" já está em uso por outro negócio. Escolha outro nome ou personalize o link.`);
+      }
+      if (writeError.message?.includes("owner_id")) {
+        throw new Error("Você já possui um negócio cadastrado nesta conta.");
+      }
+      throw writeError;
+    }
     await refresh();
   };
   const saveBusiness = async (item: Business) => {
