@@ -85,13 +85,16 @@ export const Route = createFileRoute("/studio/financeiro")({
 });
 
 function BusinessFinancePage() {
-  const { business, saveBusiness, orders } = useLocalHub();
+  const { business, saveBusiness, orders, bookings, services } = useLocalHub();
+  const isFood = business?.category === "alimentacao";
   const [activeTab, setActiveTab] = useState<"wallet" | "bills" | "reports">("wallet");
   const [bills, setBills] = useState<LocalBill[]>([]);
   const [newBillTitle, setNewBillTitle] = useState("");
   const [newBillAmount, setNewBillAmount] = useState("");
   const [newBillType, setNewBillType] = useState<"payable" | "receivable">("payable");
-  const [newBillCategory, setNewBillCategory] = useState("Ingredientes / Insumos");
+  const [newBillCategory, setNewBillCategory] = useState(
+    business?.category === "alimentacao" ? "Ingredientes & Alimentos" : "Produtos & Insumos de Bancada",
+  );
   const [newBillDueDate, setNewBillDueDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [newBillNotes, setNewBillNotes] = useState("");
   const [reportPeriod, setReportPeriod] = useState<"weekly" | "monthly">("monthly");
@@ -301,6 +304,24 @@ function BusinessFinancePage() {
 
     const ordersRevenue = filteredOrders.reduce((sum, o) => sum + o.total, 0);
 
+    const servicePriceMap = new Map(services.map((s) => [s.id, s.price]));
+    const serviceCostMap = new Map(services.map((s) => [s.id, s.costPrice || 0]));
+
+    const filteredBookings = bookings.filter((b) => {
+      if (b.status === "cancelled") return false;
+      const bookingDate = new Date(`${b.date}T12:00:00`);
+      return bookingDate >= startDate;
+    });
+
+    const bookingsRevenue = filteredBookings.reduce(
+      (sum, b) => sum + (servicePriceMap.get(b.serviceId) || 0),
+      0,
+    );
+    const bookingsSuppliesCost = filteredBookings.reduce(
+      (sum, b) => sum + (serviceCostMap.get(b.serviceId) || 0),
+      0,
+    );
+
     const filteredBills = bills.filter((b) => {
       const billDate = new Date(b.due_date);
       return billDate >= startDate;
@@ -310,7 +331,7 @@ function BusinessFinancePage() {
       .filter((b) => b.bill_type === "receivable" && b.status === "paid")
       .reduce((sum, b) => sum + Number(b.amount), 0);
 
-    const totalGrossRevenue = ordersRevenue + extraRevenuePaid;
+    const totalGrossRevenue = ordersRevenue + bookingsRevenue + extraRevenuePaid;
 
     const operatingExpensesPaid = filteredBills
       .filter((b) => b.bill_type === "payable" && b.status === "paid")
@@ -333,8 +354,12 @@ function BusinessFinancePage() {
     }
 
     return {
+      isFood,
       ordersCount: filteredOrders.length,
       ordersRevenue,
+      bookingsCount: filteredBookings.length,
+      bookingsRevenue,
+      bookingsSuppliesCost,
       extraRevenuePaid,
       totalGrossRevenue,
       operatingExpensesPaid,
@@ -343,7 +368,7 @@ function BusinessFinancePage() {
       profitMargin,
       categoryExpenses,
     };
-  }, [bills, orders, reportPeriod]);
+  }, [bills, orders, bookings, services, reportPeriod, isFood]);
 
   async function handleToggleSales() {
     if (!business?.id) return;
@@ -900,7 +925,11 @@ function BusinessFinancePage() {
                   required
                   value={newBillTitle}
                   onChange={(e) => setNewBillTitle(e.target.value)}
-                  placeholder="Ex: Distribuidora de Carnes Silva"
+                  placeholder={
+                    isFood
+                      ? "Ex: Distribuidora de Carnes Silva / Hortifruti"
+                      : "Ex: Distribuidora de Cosméticos / Fornecedor"
+                  }
                   className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none"
                 />
               </div>
@@ -912,15 +941,31 @@ function BusinessFinancePage() {
                   onChange={(e) => setNewBillCategory(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none"
                 >
-                  <option value="Ingredientes / Insumos">Ingredientes / Insumos</option>
-                  <option value="Embalagens & Sacolas">Embalagens & Sacolas</option>
-                  <option value="Aluguel & Condomínio">Aluguel & Condomínio</option>
-                  <option value="Energia, Água & Gás">Energia, Água & Gás</option>
-                  <option value="Equipe & Diárias Motoboy">Equipe & Diárias Motoboy</option>
-                  <option value="Marketing & Anúncios">Marketing & Anúncios</option>
-                  <option value="Sistemas & Softwares">Sistemas & Softwares</option>
-                  <option value="Impostos & Taxas">Impostos & Taxas</option>
-                  <option value="Outras Despesas">Outras Despesas</option>
+                  {isFood ? (
+                    <>
+                      <option value="Ingredientes & Alimentos">Ingredientes & Alimentos</option>
+                      <option value="Embalagens & Descartáveis">Embalagens & Descartáveis</option>
+                      <option value="Aluguel & Condomínio">Aluguel & Condomínio</option>
+                      <option value="Energia, Água & Gás">Energia, Água & Gás</option>
+                      <option value="Equipe & Diárias Motoboy">Equipe & Diárias Motoboy</option>
+                      <option value="Marketing & Divulgação">Marketing & Divulgação</option>
+                      <option value="Sistemas & Softwares">Sistemas & Softwares</option>
+                      <option value="Impostos & Taxas">Impostos & Taxas</option>
+                      <option value="Outras Despesas">Outras Despesas</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Produtos & Insumos de Bancada">Produtos & Insumos de Bancada</option>
+                      <option value="Comissões & Repasses de Equipe">Comissões & Repasses de Equipe</option>
+                      <option value="Descartáveis, Luvas & EPIs">Descartáveis, Luvas & EPIs</option>
+                      <option value="Aluguel & Condomínio">Aluguel & Condomínio</option>
+                      <option value="Energia, Água & Internet">Energia, Água & Internet</option>
+                      <option value="Marketing & Redes Sociais">Marketing & Redes Sociais</option>
+                      <option value="Sistemas & Softwares">Sistemas & Softwares</option>
+                      <option value="Impostos, Taxas & Alvarás">Impostos, Taxas & Alvarás</option>
+                      <option value="Outras Despesas">Outras Despesas</option>
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -1082,7 +1127,14 @@ function BusinessFinancePage() {
                 {money(reportsData.totalGrossRevenue)}
               </p>
               <span className="text-[11px] text-emerald-700">
-                {reportsData.ordersCount} pedidos concluídos
+                {reportsData.isFood ? (
+                  `${reportsData.ordersCount} pedidos concluídos`
+                ) : (
+                  <>
+                    {reportsData.bookingsCount} atendimentos
+                    {reportsData.ordersCount > 0 && ` • ${reportsData.ordersCount} pedidos`}
+                  </>
+                )}
               </span>
             </div>
 
@@ -1132,18 +1184,41 @@ function BusinessFinancePage() {
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
               <h3 className="text-sm font-bold text-slate-900">Estrutura do DRE</h3>
               <div className="mt-3 space-y-2 text-xs">
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-600">(+) Vendas do Cardápio</span>
-                  <b className="text-slate-900">{money(reportsData.ordersRevenue)}</b>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span className="text-slate-600">(+) Outras Receitas Pagas</span>
-                  <b className="text-slate-900">{money(reportsData.extraRevenuePaid)}</b>
-                </div>
+                {reportsData.isFood ? (
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">(+) Vendas do Cardápio & Delivery</span>
+                    <b className="text-slate-900">{money(reportsData.ordersRevenue)}</b>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between py-1.5 border-b border-slate-100">
+                      <span className="text-slate-600">(+) Atendimentos & Serviços</span>
+                      <b className="text-slate-900">{money(reportsData.bookingsRevenue)}</b>
+                    </div>
+                    {reportsData.ordersRevenue > 0 && (
+                      <div className="flex justify-between py-1.5 border-b border-slate-100">
+                        <span className="text-slate-600">(+) Vendas de Produtos / Balcão</span>
+                        <b className="text-slate-900">{money(reportsData.ordersRevenue)}</b>
+                      </div>
+                    )}
+                  </>
+                )}
+                {reportsData.extraRevenuePaid > 0 && (
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">(+) Outras Receitas Pagas</span>
+                    <b className="text-slate-900">{money(reportsData.extraRevenuePaid)}</b>
+                  </div>
+                )}
                 <div className="flex justify-between py-1.5 border-b border-slate-200 font-bold bg-slate-50 px-2 rounded-lg">
                   <span className="text-slate-800">(=) Faturamento Bruto</span>
                   <span className="text-slate-900">{money(reportsData.totalGrossRevenue)}</span>
                 </div>
+                {!reportsData.isFood && reportsData.bookingsSuppliesCost > 0 && (
+                  <div className="flex justify-between py-1.5 border-b border-slate-100 text-amber-700 bg-amber-50/50 px-2 rounded-md">
+                    <span>(Ref) Custo de Insumos dos Procedimentos</span>
+                    <b>{money(reportsData.bookingsSuppliesCost)}</b>
+                  </div>
+                )}
                 <div className="flex justify-between py-1.5 border-b border-slate-100 text-rose-700">
                   <span>(−) Despesas Operacionais Pagas</span>
                   <b>−{money(reportsData.operatingExpensesPaid)}</b>

@@ -39,7 +39,14 @@ function DashboardPage() {
             order.status !== "cancelled",
         )
         .reduce((sum, order) => sum + order.total, 0)
-    : todayBookings.reduce((sum, b) => sum + (serviceMap.get(b.serviceId) || 0), 0);
+    : todayBookings.reduce((sum, b) => sum + (serviceMap.get(b.serviceId) || 0), 0) +
+      orders
+        .filter(
+          (order) =>
+            new Date(order.createdAt).toDateString() === new Date().toDateString() &&
+            order.status !== "cancelled",
+        )
+        .reduce((sum, order) => sum + order.total, 0);
   const upcoming = [...bookings]
     .filter((booking) => booking.status !== "cancelled")
     .sort((a, b) => (a.date + " " + a.time).localeCompare(b.date + " " + b.time))
@@ -131,7 +138,11 @@ function DashboardPage() {
             bg: "bg-emerald-50",
           },
           {
-            label: isFoodBusiness ? "Pedidos em andamento" : "Pedidos aguardando",
+            label: isFoodBusiness
+              ? "Pedidos em andamento"
+              : hasAppointments
+                ? `${capitalize(copy.bookings)} pendentes`
+                : "Atendimentos aguardando",
             value: isFoodBusiness
               ? orders.filter((order) => !["completed", "cancelled"].includes(order.status)).length
               : bookings.filter((item) => item.status === "pending").length,
