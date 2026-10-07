@@ -467,13 +467,15 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       setReady(true);
       return;
     }
-    let { data: ownedRow, error: businessError } = await supabase
+    const initialRes = await supabase
       .from("localhub_businesses")
       .select(
         "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order",
       )
       .eq("owner_id", auth.user.id)
       .maybeSingle();
+    let ownedRow: BusinessRow | null = initialRes.data ? (initialRes.data as unknown as BusinessRow) : null;
+    let businessError = initialRes.error;
     if (businessError && (businessError.message?.includes("logo_url") || businessError.message?.includes("menu_categories_order"))) {
       const fallbackRes = await supabase
         .from("localhub_businesses")
@@ -853,7 +855,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
   const getPublicStore = useCallback(async (slug: string) => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) throw new Error("O serviço está temporariamente indisponível.");
-    let { data, error: queryError } = await supabase
+    const initialStoreRes = await supabase
       .from("localhub_businesses")
       .select(
         "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,onboarding_details,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order",
@@ -861,6 +863,8 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       .eq("slug", slug)
       .eq("is_published", true)
       .maybeSingle();
+    let data: BusinessRow | null = initialStoreRes.data ? (initialStoreRes.data as unknown as BusinessRow) : null;
+    let queryError = initialStoreRes.error;
     if (queryError && (queryError.message?.includes("logo_url") || queryError.message?.includes("menu_categories_order"))) {
       const fallbackQuery = await supabase
         .from("localhub_businesses")
