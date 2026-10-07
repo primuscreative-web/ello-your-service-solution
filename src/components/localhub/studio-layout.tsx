@@ -19,10 +19,7 @@ import {
 import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getBusinessCopy } from "@/lib/localhub-business";
-import {
-  StudioOnboardingTour,
-  StudioTourTriggerButton,
-} from "@/components/localhub/studio-onboarding-tour";
+import { StudioOnboardingTour } from "@/components/localhub/studio-onboarding-tour";
 
 export function StudioLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -154,9 +151,6 @@ export function StudioLayout() {
           </div>
           <div className="hidden text-sm text-slate-500 lg:block">Painel do negócio</div>
           <div className="flex items-center gap-3">
-            {/* Botão de Como Usar / Tutorial para reabrir a qualquer momento */}
-            <StudioTourTriggerButton />
-
             <span className="hidden max-w-48 truncate text-xs text-slate-500 md:block">
               {user?.email}
             </span>

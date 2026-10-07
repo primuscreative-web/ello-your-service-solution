@@ -11,7 +11,8 @@ import {
   HeartHandshake,
   Settings2,
   ExternalLink,
-  HelpCircle,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 
 export type TourStep = {
@@ -60,7 +61,7 @@ const DEFAULT_STEPS: TourStep[] = [
     title: "3. Frente de Caixa & PDV",
     badge: "Cobranças no balcão",
     description:
-      "Registre vendas rápidas de balcão ou atendimentos presenciais, receba em Pix, cartão ou dinheiro e controle o fluxo do dia.",
+      "Registre vendas rápidas de balcão ou atendimentos presenciais, receba em Pix, cartão ou dinheiro e envie comprovante no WhatsApp.",
     tip: "Ideal para cobrar sem burocracia e fechar o caixa no final do expediente.",
     icon: WalletCards,
     preferredPlacement: "right",
@@ -72,7 +73,7 @@ const DEFAULT_STEPS: TourStep[] = [
     title: "4. Clientes & Histórico",
     badge: "Fidelização e preferências",
     description:
-      "Consulte a lista de clientes, histórico de compras, preferências (corte, pet, ficha clínica) e crie cupons de desconto.",
+      "Consulte a lista de clientes, histórico de compras, preferências (corte, pet, ficha clínica) e envie mensagens no WhatsApp.",
     tip: "Clientes fiéis compram até 3x mais quando recebem atenção personalizada.",
     icon: HeartHandshake,
     preferredPlacement: "right",
@@ -105,36 +106,39 @@ const DEFAULT_STEPS: TourStep[] = [
 
 interface StudioOnboardingTourProps {
   steps?: TourStep[];
-  autoStart?: boolean;
 }
 
-export function StudioOnboardingTour({
-  steps = DEFAULT_STEPS,
-  autoStart = true,
-}: StudioOnboardingTourProps) {
+export function StudioOnboardingTour({ steps = DEFAULT_STEPS }: StudioOnboardingTourProps) {
   const [isActive, setIsActive] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number; placement: "top" | "bottom" | "left" | "right" } | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{
+    top: number;
+    left: number;
+    placement: "top" | "bottom" | "left" | "right";
+    arrowOffsetTop?: number;
+  } | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
-  // Inicializa verificação de primeira visita
+  // O tutorial SÓ deve abrir automaticamente se o usuário tiver acabado de finalizar o cadastro!
   useEffect(() => {
     try {
-      const alreadyCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
-      if (!alreadyCompleted && autoStart) {
-        // Pequeno atraso para a página terminar de renderizar o DOM
+      const shouldTrigger = sessionStorage.getItem("ello_show_onboarding_tour") === "true";
+      if (shouldTrigger) {
+        sessionStorage.removeItem("ello_show_onboarding_tour");
+        localStorage.setItem(TOUR_STORAGE_KEY, "completed");
         const timer = setTimeout(() => {
+          setCurrentStepIndex(0);
           setIsActive(true);
-        }, 800);
+        }, 700);
         return () => clearTimeout(timer);
       }
     } catch {
-      // localStorage indisponível
+      // ignore
     }
-  }, [autoStart]);
+  }, []);
 
-  // Listener para evento customizado de abrir tour pelo botão de ajuda
+  // Listener para evento customizado disparado em Configurações > Tutorial
   useEffect(() => {
     const handleOpenTour = () => {
       setCurrentStepIndex(0);
@@ -146,7 +150,7 @@ export function StudioOnboardingTour({
 
   const currentStep = steps[currentStepIndex];
 
-  // Função para localizar o elemento alvo atual (com fallback para mobile)
+  // Localiza elemento alvo atual
   const getTargetElement = useCallback((): HTMLElement | null => {
     if (!currentStep) return null;
     const isMobile = window.innerWidth < 1024;
@@ -157,7 +161,6 @@ export function StudioOnboardingTour({
     const desktopEl = document.getElementById(currentStep.targetId);
     if (desktopEl && desktopEl.offsetParent !== null) return desktopEl;
 
-    // Tentar o alternativo se o principal não estiver visível
     if (currentStep.mobileTargetId) {
       const altEl = document.getElementById(currentStep.mobileTargetId);
       if (altEl && altEl.offsetParent !== null) return altEl;
@@ -165,7 +168,7 @@ export function StudioOnboardingTour({
     return desktopEl;
   }, [currentStep]);
 
-  // Atualiza posição do elemento e do balão de dica
+  // Atualiza posição do elemento e do balão com cálculo anti-corte estrito
   const updatePosition = useCallback(() => {
     if (!isActive) return;
     const element = getTargetElement();
@@ -178,33 +181,32 @@ export function StudioOnboardingTour({
     const rect = element.getBoundingClientRect();
     setTargetRect(rect);
 
-    // Rolar suavemente para a visão caso esteja fora da tela
+    // Rola suavemente até o elemento se estiver fora da viewport
     const isInViewport =
-      rect.top >= 0 &&
+      rect.top >= 20 &&
       rect.left >= 0 &&
-      rect.bottom <= window.innerHeight &&
+      rect.bottom <= window.innerHeight - 20 &&
       rect.right <= window.innerWidth;
 
     if (!isInViewport) {
       element.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
     }
 
-    // Calcula melhor posicionamento do tooltip
     const isMobile = window.innerWidth < 768;
     const pad = 16;
     const tooltipWidth = isMobile ? Math.min(window.innerWidth - 32, 340) : 380;
-    const tooltipHeight = 260; // estimativa confortável
+    // Mede a altura real do balão ou usa estimativa segura de 380px
+    const tooltipHeight = tooltipRef.current?.offsetHeight || 370;
 
     let placement: "top" | "bottom" | "left" | "right" = currentStep?.preferredPlacement || "bottom";
 
-    // Se estiver no mobile, preferimos posicionar centralizado abaixo ou acima
+    // MOBILE: sempre centralizado horizontalmente, empurrado para dentro da viewport
     if (isMobile) {
-      const topSpace = rect.top;
       const bottomSpace = window.innerHeight - rect.bottom;
-      placement = bottomSpace >= tooltipHeight + 20 ? "bottom" : topSpace >= tooltipHeight + 20 ? "top" : "bottom";
+      placement = bottomSpace >= tooltipHeight + 20 ? "bottom" : "top";
 
       let top = placement === "bottom" ? rect.bottom + pad : rect.top - tooltipHeight - pad;
-      // Garante que não saia da tela verticalmente
+      // Garante que o balão e os botões NUNCA fiquem cortados
       top = Math.max(16, Math.min(window.innerHeight - tooltipHeight - 16, top));
       const left = Math.max(16, (window.innerWidth - tooltipWidth) / 2);
 
@@ -212,11 +214,28 @@ export function StudioOnboardingTour({
       return;
     }
 
-    // Desktop: avaliar posicionamento lateral (à direita da sidebar é o preferido para menus)
+    // DESKTOP: posicionamento lateral (à direita dos menus)
     if (placement === "right") {
       if (rect.right + tooltipWidth + pad <= window.innerWidth) {
-        const top = Math.max(20, Math.min(window.innerHeight - tooltipHeight - 20, rect.top - 10));
-        setTooltipPos({ top, left: rect.right + pad, placement: "right" });
+        // Cálculo anti-corte vertical:
+        // Se o elemento estiver perto da base da janela, sobe o balão para que seu rodapé fique 100% visível!
+        let top: number;
+        if (rect.top > window.innerHeight - tooltipHeight - 40) {
+          // Alinha pela base ou sobe garantindo respiro de 24px no fundo da tela
+          top = Math.max(20, window.innerHeight - tooltipHeight - 24);
+        } else {
+          top = Math.max(20, rect.top - 10);
+        }
+
+        // Calcula offset da seta para apontar exatamente para o centro do item
+        const arrowOffsetTop = Math.max(20, Math.min(tooltipHeight - 35, rect.top + rect.height / 2 - top));
+
+        setTooltipPos({
+          top,
+          left: rect.right + pad,
+          placement: "right",
+          arrowOffsetTop,
+        });
         return;
       }
       placement = "bottom";
@@ -231,8 +250,8 @@ export function StudioOnboardingTour({
       placement = "bottom";
     }
 
-    // Fallback bottom
-    const top = Math.min(window.innerHeight - tooltipHeight - 20, rect.bottom + pad);
+    // Fallback bottom (garantindo que nunca ultrapasse a janela)
+    const top = Math.max(20, Math.min(window.innerHeight - tooltipHeight - 20, rect.bottom + pad));
     const left = Math.max(20, Math.min(window.innerWidth - tooltipWidth - 20, rect.left + rect.width / 2 - tooltipWidth / 2));
     setTooltipPos({ top, left, placement: "bottom" });
   }, [getTargetElement, isActive, currentStep]);
@@ -253,7 +272,7 @@ export function StudioOnboardingTour({
     };
   }, [isActive, currentStepIndex, updatePosition]);
 
-  // Atalhos de teclado (Escape, Enter, Setas)
+  // Teclas de atalho (Escape, Enter, Setas)
   useEffect(() => {
     if (!isActive) return;
 
@@ -290,20 +309,10 @@ export function StudioOnboardingTour({
 
   const skipTour = () => {
     setIsActive(false);
-    try {
-      localStorage.setItem(TOUR_STORAGE_KEY, "skipped");
-    } catch {
-      // ignore
-    }
   };
 
   const finishTour = () => {
     setIsActive(false);
-    try {
-      localStorage.setItem(TOUR_STORAGE_KEY, "completed");
-    } catch {
-      // ignore
-    }
   };
 
   if (!isActive || !currentStep) return null;
@@ -311,8 +320,8 @@ export function StudioOnboardingTour({
   const StepIcon = currentStep.icon;
   const isLastStep = currentStepIndex === steps.length - 1;
 
-  // Dimensões do foco com margem de respiro
-  const padOffset = 8;
+  // Dimensões do foco luminoso
+  const padOffset = 6;
   const spotTop = targetRect ? Math.max(0, targetRect.top - padOffset) : 0;
   const spotLeft = targetRect ? Math.max(0, targetRect.left - padOffset) : 0;
   const spotWidth = targetRect ? targetRect.width + padOffset * 2 : 0;
@@ -325,7 +334,7 @@ export function StudioOnboardingTour({
       aria-label="Tutorial do painel ELLO"
       className="fixed inset-0 z-[99990] overflow-hidden select-none"
     >
-      {/* BOTÃO FIXO "PULAR TUTORIAL" NO CANTO SUPERIOR DIREITO (EXATO REQUISITO) */}
+      {/* BOTÃO FIXO "PULAR TUTORIAL" NO CANTO SUPERIOR DIREITO */}
       <div className="fixed top-4 right-4 z-[99999]">
         <button
           type="button"
@@ -344,24 +353,24 @@ export function StudioOnboardingTour({
       {/* LUZ DE FOCO (SPOTLIGHT / BACKDROP RECORTADO) */}
       {targetRect && (
         <div
-          className="pointer-events-none fixed transition-all duration-300 ease-out"
+          onClick={nextStep}
+          title="Clique para ir para o próximo passo"
+          className="cursor-pointer fixed transition-all duration-300 ease-out"
           style={{
             top: `${spotTop}px`,
             left: `${spotLeft}px`,
             width: `${spotWidth}px`,
             height: `${spotHeight}px`,
             borderRadius: "16px",
-            // Cria o corte escuro 360 graus e borda luminosa neon
             boxShadow: "0 0 0 9999px rgba(15, 17, 23, 0.78), 0 0 28px rgba(208, 242, 90, 0.45)",
             border: "2.5px solid #d0f25a",
           }}
         >
-          {/* Anel pulsante decorativo ao redor da luz de foco */}
           <div className="absolute -inset-1.5 rounded-[20px] border border-[#d0f25a]/40 animate-ping pointer-events-none" />
         </div>
       )}
 
-      {/* BACKDROP DE FALLBACK SE NÃO HOUVER ELEMENTO EM TELA */}
+      {/* BACKDROP DE FALLBACK */}
       {!targetRect && (
         <div
           className="fixed inset-0 bg-[#0f1117]/80 backdrop-blur-xs transition-opacity duration-300"
@@ -369,7 +378,7 @@ export function StudioOnboardingTour({
         />
       )}
 
-      {/* BALÃO EXPLICATIVO COM SETAS DIRECIONAIS */}
+      {/* BALÃO EXPLICATIVO COM DESIGN FLEXÍVEL E CONTROLES DUPLOS (TOPO E BASE) */}
       {tooltipPos && (
         <div
           ref={tooltipRef}
@@ -377,81 +386,107 @@ export function StudioOnboardingTour({
             top: `${tooltipPos.top}px`,
             left: `${tooltipPos.left}px`,
           }}
-          className="fixed z-[99995] w-[350px] max-w-[calc(100vw-32px)] transition-all duration-200 ease-out"
+          className="fixed z-[99995] w-[360px] max-w-[calc(100vw-32px)] transition-all duration-200 ease-out"
         >
-          {/* SETA APONTANDO PARA O ELEMENTO */}
+          {/* SETA DINÂMICA APONTANDO PARA O ELEMENTO */}
           {tooltipPos.placement === "right" && (
             <div
-              className="absolute -left-3 top-6 size-0 border-y-[9px] border-y-transparent border-r-[12px] border-r-[#22241d] drop-shadow-md animate-bounce"
-              style={{ animationDuration: "1.8s" }}
+              style={{ top: `${tooltipPos.arrowOffsetTop ?? 32}px` }}
+              className="absolute -left-3 size-0 border-y-[9px] border-y-transparent border-r-[12px] border-r-[#22241d] drop-shadow-md animate-bounce"
               aria-hidden="true"
             />
           )}
           {tooltipPos.placement === "left" && (
             <div
-              className="absolute -right-3 top-6 size-0 border-y-[9px] border-y-transparent border-l-[12px] border-l-[#22241d] drop-shadow-md animate-bounce"
-              style={{ animationDuration: "1.8s" }}
+              style={{ top: `${tooltipPos.arrowOffsetTop ?? 32}px` }}
+              className="absolute -right-3 size-0 border-y-[9px] border-y-transparent border-l-[12px] border-l-[#22241d] drop-shadow-md animate-bounce"
               aria-hidden="true"
             />
           )}
           {tooltipPos.placement === "bottom" && (
             <div
               className="absolute -top-3 left-8 size-0 border-x-[9px] border-x-transparent border-b-[12px] border-b-[#22241d] drop-shadow-md animate-bounce"
-              style={{ animationDuration: "1.8s" }}
               aria-hidden="true"
             />
           )}
           {tooltipPos.placement === "top" && (
             <div
               className="absolute -bottom-3 left-8 size-0 border-x-[9px] border-x-transparent border-t-[12px] border-t-[#22241d] drop-shadow-md animate-bounce"
-              style={{ animationDuration: "1.8s" }}
               aria-hidden="true"
             />
           )}
 
-          {/* CARD DO CONTEÚDO DO BALÃO */}
-          <div className="overflow-hidden rounded-2xl border border-[#3e4235] bg-[#22241d] text-white shadow-2xl backdrop-blur-md">
-            {/* CABEÇALHO DO PASSO */}
-            <div className="flex items-center justify-between border-b border-white/10 bg-[#292b23] px-4 py-3">
+          {/* CARD CONTAINER COM SCROLL INTERNO ANTI-CORTE */}
+          <div className="flex flex-col max-h-[calc(100vh-48px)] overflow-hidden rounded-2xl border border-[#3e4235] bg-[#22241d] text-white shadow-2xl backdrop-blur-md">
+            {/* CABEÇALHO COM CONTROLES COMPACTOS (GARANTIA DE PASSAGEM MESMO EM TELAS PEQUENAS) */}
+            <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#292b23] px-4 py-2.5">
               <div className="flex items-center gap-2">
-                <span className="grid size-7 place-items-center rounded-lg bg-[#d0f25a] text-[#22241d]">
-                  <StepIcon size={15} strokeWidth={2.4} />
+                <span className="grid size-6 place-items-center rounded-lg bg-[#d0f25a] text-[#22241d]">
+                  <StepIcon size={14} strokeWidth={2.4} />
                 </span>
                 <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#d0f25a]">
-                  Passo {currentStepIndex + 1} de {steps.length}
+                  {currentStepIndex + 1} de {steps.length}
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={skipTour}
-                className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white"
-                title="Pular tutorial"
-              >
-                <X size={16} />
-              </button>
+
+              {/* CONTROLES DE AVANÇO COMPACTOS NO TOPO */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  disabled={currentStepIndex === 0}
+                  className={`grid size-7 place-items-center rounded-lg transition ${
+                    currentStepIndex === 0
+                      ? "opacity-20 cursor-not-allowed"
+                      : "text-slate-300 hover:bg-white/10 hover:text-white"
+                  }`}
+                  title="Passo anterior"
+                  aria-label="Passo anterior"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  className="grid size-7 place-items-center rounded-lg bg-[#d0f25a] text-[#22241d] hover:bg-[#bde343] transition font-bold"
+                  title="Próximo passo"
+                  aria-label="Próximo passo"
+                >
+                  <ChevronRight size={16} strokeWidth={2.5} />
+                </button>
+                <button
+                  type="button"
+                  onClick={skipTour}
+                  className="ml-1 grid size-7 place-items-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white"
+                  title="Fechar tutorial"
+                  aria-label="Fechar tutorial"
+                >
+                  <X size={15} />
+                </button>
+              </div>
             </div>
 
-            {/* CORPO COM TÍTULO E EXPLICAÇÃO BREVE */}
-            <div className="p-4 sm:p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-[#b8baad]">
+            {/* CORPO DO TEXTO COM SCROLL CASO A JANELA SEJA BAIXA */}
+            <div className="overflow-y-auto px-4 py-3.5 sm:px-5 sm:py-4">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-[#b8baad]">
                 {currentStep.badge}
               </div>
-              <h3 className="mt-1 text-base font-bold text-white tracking-tight">
+              <h3 className="mt-0.5 text-base font-bold text-white tracking-tight">
                 {currentStep.title}
               </h3>
-              <p className="mt-2 text-xs leading-relaxed text-[#d9dbcf]">
+              <p className="mt-1.5 text-xs leading-relaxed text-[#d9dbcf]">
                 {currentStep.description}
               </p>
 
               {currentStep.tip && (
-                <div className="mt-3 flex items-start gap-2 rounded-xl border border-[#3a3d31] bg-[#1a1b15]/70 p-2.5 text-[11px] text-[#c7c9be]">
-                  <Sparkles size={14} className="shrink-0 text-[#d0f25a] mt-0.5" />
+                <div className="mt-2.5 flex items-start gap-2 rounded-xl border border-[#3a3d31] bg-[#1a1b15]/70 p-2.5 text-[11px] text-[#c7c9be]">
+                  <Sparkles size={13} className="shrink-0 text-[#d0f25a] mt-0.5" />
                   <span>{currentStep.tip}</span>
                 </div>
               )}
 
-              {/* BARRA DE PROGRESSO COM PONTOS */}
-              <div className="mt-4 flex items-center justify-center gap-1.5">
+              {/* PONTINHOS DE PROGRESSO */}
+              <div className="mt-3 flex items-center justify-center gap-1.5">
                 {steps.map((step, idx) => (
                   <button
                     key={step.id}
@@ -468,67 +503,45 @@ export function StudioOnboardingTour({
                   />
                 ))}
               </div>
+            </div>
 
-              {/* BOTÕES DE NAVEGAÇÃO */}
-              <div className="mt-4 flex items-center justify-between gap-2 pt-2 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  disabled={currentStepIndex === 0}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                    currentStepIndex === 0
-                      ? "opacity-30 cursor-not-allowed text-slate-400"
-                      : "text-slate-300 hover:bg-white/10 hover:text-white active:scale-95"
-                  }`}
-                >
-                  <ArrowLeft size={13} />
-                  Anterior
-                </button>
+            {/* RODAPÉ SEMPRE VISÍVEL COM BOTÕES LARGOS */}
+            <div className="shrink-0 flex items-center justify-between gap-2 border-t border-white/10 bg-[#292b23] px-4 py-2.5">
+              <button
+                type="button"
+                onClick={prevStep}
+                disabled={currentStepIndex === 0}
+                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
+                  currentStepIndex === 0
+                    ? "opacity-25 cursor-not-allowed text-slate-400"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white active:scale-95"
+                }`}
+              >
+                <ArrowLeft size={13} />
+                Anterior
+              </button>
 
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#d0f25a] px-4 py-2 text-xs font-bold text-[#22241d] shadow-sm transition hover:bg-[#bde343] hover:scale-105 active:scale-95"
-                >
-                  {isLastStep ? (
-                    <>
-                      <span>Entendi, vamos lá!</span>
-                      <CheckCircle2 size={14} strokeWidth={2.4} />
-                    </>
-                  ) : (
-                    <>
-                      <span>Próximo</span>
-                      <ArrowRight size={13} strokeWidth={2.4} />
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={nextStep}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#d0f25a] px-4 py-2 text-xs font-bold text-[#22241d] shadow-sm transition hover:bg-[#bde343] hover:scale-105 active:scale-95"
+              >
+                {isLastStep ? (
+                  <>
+                    <span>Entendi, vamos lá!</span>
+                    <CheckCircle2 size={14} strokeWidth={2.4} />
+                  </>
+                ) : (
+                  <>
+                    <span>Próximo</span>
+                    <ArrowRight size={13} strokeWidth={2.4} />
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
       )}
     </div>
-  );
-}
-
-/**
- * Botão discreto para disparar o tour guiado a qualquer momento
- */
-export function StudioTourTriggerButton() {
-  const openTour = () => {
-    window.dispatchEvent(new CustomEvent("ello:open-studio-tour"));
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={openTour}
-      aria-label="Iniciar tutorial rápido do painel"
-      title="Tutorial rápido: veja como usar o painel da ELLO"
-      className="inline-flex items-center gap-1.5 rounded-xl border border-[#dedfd6] bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition hover:border-[#c7c9bc] hover:bg-[#fafaf7] hover:text-[#292b25] active:scale-95"
-    >
-      <HelpCircle size={14} className="text-[#586341]" />
-      <span className="hidden sm:inline">Como usar</span>
-    </button>
   );
 }

@@ -417,6 +417,7 @@ function OnboardingPage() {
     setSaving(true);
     try {
       await createBusiness({ ...form, slug, onboardingDetails });
+      sessionStorage.setItem("ello_show_onboarding_tour", "true");
       setCreationCompleted(true);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível criar sua página.");
@@ -576,7 +577,11 @@ function OnboardingPage() {
                 >
                   Ver página pública <ArrowRight size={16} aria-hidden="true" />
                 </a>
-                <Link to="/studio" className={`${primaryButtonClass} w-full`}>
+                <Link
+                  to="/studio"
+                  onClick={() => sessionStorage.setItem("ello_show_onboarding_tour", "true")}
+                  className={`${primaryButtonClass} w-full`}
+                >
                   Ir para meu painel <ArrowRight size={16} aria-hidden="true" />
                 </Link>
               </div>

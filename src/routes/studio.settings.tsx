@@ -13,6 +13,8 @@ import {
   Save,
   Store,
   Trash2,
+  HelpCircle,
+  Sparkles,
 } from "lucide-react";
 import { formatCep, fetchAddressFromCep } from "@/lib/cities";
 import {
@@ -1959,6 +1961,32 @@ function SettingsPage() {
             </Link>{" "}
             e refletem aqui automaticamente.
           </p>
+
+          {/* SEÇÃO TUTORIAL DO PAINEL */}
+          <section id="tutorial" className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-8 place-items-center rounded-xl bg-[#edf0e5] text-[#586341]">
+                <HelpCircle size={16} />
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">Tutorial do Painel</h3>
+                <p className="text-[11px] text-slate-400">Guia com setas e luz de foco</p>
+              </div>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-slate-600">
+              Quer rever o passo a passo com as principais ferramentas e recursos do seu negócio?
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("ello:open-studio-tour"));
+              }}
+              className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#292b25] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#3f4137] active:scale-95"
+            >
+              <HelpCircle size={14} className="text-[#d0f25a]" />
+              <span>Ver tutorial</span>
+            </button>
+          </section>
         </aside>
       </div>
     </>
