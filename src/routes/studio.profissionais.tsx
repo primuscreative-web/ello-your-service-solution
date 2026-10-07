@@ -18,12 +18,20 @@ import {
   AlertCircle,
   Briefcase,
   Check,
+  Percent,
+  Receipt,
+  DollarSign,
+  Calculator,
+  Share2,
+  TrendingUp,
+  Sparkles,
 } from "lucide-react";
 import {
   PageTitle,
   Field,
   SurfaceCard,
   StatusBadge,
+  money,
   inputClass,
   primaryButtonClass,
   secondaryButtonClass,
@@ -61,7 +69,7 @@ const defaultStaffHours: BusinessOpeningHours = {
 };
 
 function StudioProfissionaisPage() {
-  const { business, staff, saveStaff, removeStaff, bookings } = useLocalHub();
+  const { business, staff, saveStaff, saveStaffCommission, removeStaff, bookings, services } = useLocalHub();
 
   if (business && business.category === "alimentacao") {
     return (
@@ -86,6 +94,11 @@ function StudioProfissionaisPage() {
     );
   }
 
+  const [viewTab, setViewTab] = useState<"equipe" | "comissoes">("equipe");
+  const [selectedStaffFilter, setSelectedStaffFilter] = useState<string>("all");
+  const [commissionPeriod, setCommissionPeriod] = useState<"current_month" | "previous_month" | "all">("current_month");
+  const [copiedReport, setCopiedReport] = useState(false);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused" | "access">("all");
   const [modalOpen, setModalOpen] = useState(false);
@@ -99,12 +112,18 @@ function StudioProfissionaisPage() {
   const [formRegistrationLabel, setFormRegistrationLabel] = useState("");
   const [formRegistrationNumber, setFormRegistrationNumber] = useState("");
   const [formAccessEmail, setFormAccessEmail] = useState("");
+  const [formCommissionRate, setFormCommissionRate] = useState("50");
+  const [formDeductSupplies, setFormDeductSupplies] = useState(false);
   const [formWeeklyHours, setFormWeeklyHours] = useState<BusinessOpeningHours>(defaultStaffHours);
   const [formSaving, setFormSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   const businessHours = business?.openingHours ?? defaultStaffHours;
+  const staffCommissionsMap = useMemo(
+    () => business?.onboardingDetails?.staffCommissions ?? {},
+    [business?.onboardingDetails?.staffCommissions],
+  );
 
   // Filtered staff
   const filteredStaff = useMemo(() => {
@@ -126,6 +145,123 @@ function StudioProfissionaisPage() {
     });
   }, [staff, search, statusFilter]);
 
+  // Cálculos de Fechamento de Comissões e Repasses por Atendimento
+  const commissionAnalysis = useMemo(() => {
+    const now = new Date();
+    const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevYearMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, "0")}`;
+
+    const eligibleBookings = bookings.filter((b) => {
+      if (!b.staffId) return false;
+      if (b.status === "cancelled") return false;
+
+      if (commissionPeriod === "current_month") {
+        return b.date.startsWith(currentYearMonth);
+      }
+      if (commissionPeriod === "previous_month") {
+        return b.date.startsWith(prevYearMonth);
+      }
+      return true;
+    });
+
+    const detailedItems = eligibleBookings.map((b) => {
+      const srv = services.find((s) => s.id === b.serviceId);
+      const st = staff.find((m) => m.id === b.staffId);
+      const price = srv?.price ?? 0;
+      const cost = srv?.costPrice ?? 0;
+      const cfg = staffCommissionsMap[b.staffId ?? ""] ?? { rate: 50, deductSupplies: false };
+      const rate = typeof cfg.rate === "number" ? cfg.rate : 50;
+      const deduct = Boolean(cfg.deductSupplies);
+      const commissionBase = deduct ? Math.max(0, price - cost) : price;
+      const commissionAmount = (commissionBase * rate) / 100;
+      const salonGross = price - commissionAmount;
+      const salonNet = price - commissionAmount - cost;
+
+      return {
+        bookingId: b.id,
+        date: b.date,
+        time: b.time,
+        customerName: b.customerName,
+        serviceName: srv?.name ?? "Serviço",
+        staffId: b.staffId,
+        staffName: st?.name ?? "Profissional",
+        servicePrice: price,
+        supplyCost: cost,
+        rate,
+        deduct,
+        commissionAmount,
+        salonGross,
+        salonNet,
+        status: b.status,
+      };
+    });
+
+    const filteredItems = selectedStaffFilter === "all"
+      ? detailedItems
+      : detailedItems.filter((item) => item.staffId === selectedStaffFilter);
+
+    const totalRevenue = filteredItems.reduce((acc, i) => acc + i.servicePrice, 0);
+    const totalSupplies = filteredItems.reduce((acc, i) => acc + i.supplyCost, 0);
+    const totalCommissions = filteredItems.reduce((acc, i) => acc + i.commissionAmount, 0);
+    const totalSalonNet = filteredItems.reduce((acc, i) => acc + i.salonNet, 0);
+
+    return {
+      items: filteredItems,
+      totalCount: filteredItems.length,
+      totalRevenue,
+      totalSupplies,
+      totalCommissions,
+      totalSalonNet,
+      marginPercent: totalRevenue > 0 ? (totalSalonNet / totalRevenue) * 100 : 0,
+      currentYearMonth,
+      prevYearMonth,
+    };
+  }, [bookings, services, staff, staffCommissionsMap, commissionPeriod, selectedStaffFilter]);
+
+  const handleCopyCommissionSummary = async (targetStaff?: StaffMember) => {
+    const memberName = targetStaff ? targetStaff.name : (staff.find((m) => m.id === selectedStaffFilter)?.name || "Todos os profissionais");
+    const targetItems = targetStaff
+      ? commissionAnalysis.items.filter((i) => i.staffId === targetStaff.id)
+      : commissionAnalysis.items;
+
+    const rev = targetItems.reduce((acc, i) => acc + i.servicePrice, 0);
+    const supp = targetItems.reduce((acc, i) => acc + i.supplyCost, 0);
+    const comm = targetItems.reduce((acc, i) => acc + i.commissionAmount, 0);
+    const salon = targetItems.reduce((acc, i) => acc + i.salonNet, 0);
+    const count = targetItems.length;
+
+    const periodLabel =
+      commissionPeriod === "current_month"
+        ? "Mês Atual"
+        : commissionPeriod === "previous_month"
+        ? "Mês Anterior"
+        : "Período Completo";
+
+    const businessName = business?.name || "Nosso Espaço";
+
+    const text = `💈 *Fechamento de Repasse / Comissão - ${businessName}*\n` +
+      `👤 *Profissional:* ${memberName}\n` +
+      `📅 *Período:* ${periodLabel}\n` +
+      `----------------------------------------\n` +
+      `✂️ *Atendimentos realizados:* ${count}\n` +
+      `💵 *Faturamento bruto gerado:* ${money(rev)}\n` +
+      (supp > 0 ? `🧪 *Custo de insumos de bancada:* ${money(supp)}\n` : "") +
+      `✨ *SUA COMISSÃO A RECEBER:* *${money(comm)}*\n` +
+      `----------------------------------------\n` +
+      `🏦 *Retenção líquida do espaço:* ${money(salon)}\n\n` +
+      `Qualquer dúvida ou conferência de agendamentos, estou à disposição! 🤝`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedReport(true);
+      showFeedback(`Extrato de ${memberName} copiado para envio no WhatsApp!`);
+      setTimeout(() => setCopiedReport(false), 3000);
+    } catch {
+      alert("Não foi possível copiar o extrato.");
+    }
+  };
+
   // KPIs
   const totalStaff = staff.length;
   const activeStaffCount = staff.filter((m) => m.active).length;
@@ -139,6 +275,8 @@ function StudioProfissionaisPage() {
     setFormRegistrationLabel("");
     setFormRegistrationNumber("");
     setFormAccessEmail("");
+    setFormCommissionRate("50");
+    setFormDeductSupplies(false);
     setFormWeeklyHours(businessHours);
     setFormError("");
     setModalOpen(true);
@@ -151,6 +289,9 @@ function StudioProfissionaisPage() {
     setFormRegistrationLabel(member.registrationLabel ?? "");
     setFormRegistrationNumber(member.registrationNumber ?? "");
     setFormAccessEmail(member.accessEmail ?? "");
+    const cfg = staffCommissionsMap[member.id];
+    setFormCommissionRate(cfg?.rate !== undefined ? String(cfg.rate) : "50");
+    setFormDeductSupplies(Boolean(cfg?.deductSupplies));
     setFormWeeklyHours(member.weeklyHours ?? businessHours);
     setFormError("");
     setModalOpen(true);
@@ -176,7 +317,7 @@ function StudioProfissionaisPage() {
     setFormError("");
 
     try {
-      await saveStaff({
+      const savedStaffId = await saveStaff({
         id: editingMember?.id,
         name: formName.trim(),
         specialty: formSpecialty.trim(),
@@ -188,6 +329,14 @@ function StudioProfissionaisPage() {
         blockedDates: editingMember?.blockedDates ?? [],
         active: editingMember ? editingMember.active : true,
       });
+
+      const targetId = editingMember?.id || savedStaffId;
+      if (targetId) {
+        await saveStaffCommission(targetId, {
+          rate: Number(formCommissionRate) || 0,
+          deductSupplies: formDeductSupplies,
+        });
+      }
 
       setModalOpen(false);
       showFeedback(
@@ -317,18 +466,207 @@ function StudioProfissionaisPage() {
         }
       />
 
-      {/* Metrics overview */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SurfaceCard className="relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Total na equipe
+      {/* Tabs de navegação */}
+      <div className="flex border-b border-slate-200 gap-6">
+        <button
+          type="button"
+          onClick={() => setViewTab("equipe")}
+          className={`pb-3 text-sm font-bold transition flex items-center gap-2 border-b-2 -mb-px cursor-pointer ${
+            viewTab === "equipe"
+              ? "border-[#586341] text-[#292b25]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <Users size={16} />
+          Membros da Equipe & Horários ({totalStaff})
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewTab("comissoes")}
+          className={`pb-3 text-sm font-bold transition flex items-center gap-2 border-b-2 -mb-px cursor-pointer ${
+            viewTab === "comissoes"
+              ? "border-[#586341] text-[#292b25]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <Receipt size={16} />
+          Fechamento de Comissões & Repasses
+          {commissionAnalysis.totalCount > 0 && (
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+              {commissionAnalysis.totalCount} atendimentos
             </span>
-            <span className="grid size-9 place-items-center rounded-xl bg-[#edf0e5] text-[#586341]">
-              <Users size={18} />
-            </span>
+          )}
+        </button>
+      </div>
+
+      {viewTab === "comissoes" ? (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Barra de Filtros e Ações de Fechamento */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Período:</span>
+              <button
+                type="button"
+                onClick={() => setCommissionPeriod("current_month")}
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold cursor-pointer transition ${
+                  commissionPeriod === "current_month"
+                    ? "bg-[#292b25] text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                Este Mês
+              </button>
+              <button
+                type="button"
+                onClick={() => setCommissionPeriod("previous_month")}
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold cursor-pointer transition ${
+                  commissionPeriod === "previous_month"
+                    ? "bg-[#292b25] text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                Mês Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() => setCommissionPeriod("all")}
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold cursor-pointer transition ${
+                  commissionPeriod === "all"
+                    ? "bg-[#292b25] text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                Todos
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                Profissional:
+                <select
+                  value={selectedStaffFilter}
+                  onChange={(e) => setSelectedStaffFilter(e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800"
+                >
+                  <option value="all">Todos os profissionais ({staff.length})</option>
+                  {staff.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({staffCommissionsMap[m.id]?.rate ?? 50}%)
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <button
+                type="button"
+                onClick={() => void handleCopyCommissionSummary(selectedStaffFilter !== "all" ? staff.find((m) => m.id === selectedStaffFilter) : undefined)}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition active:scale-[0.98]"
+              >
+                <Share2 size={14} />
+                {copiedReport ? "Extrato Copiado!" : "Copiar Extrato WhatsApp"}
+              </button>
+            </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
+
+          {/* Cards de Métricas de Fechamento */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <SurfaceCard className="p-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Atendimentos</span>
+              <div className="mt-2 text-2xl font-black text-slate-900">{commissionAnalysis.totalCount}</div>
+              <span className="text-[11px] text-slate-400">no período</span>
+            </SurfaceCard>
+            <SurfaceCard className="p-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Faturamento Bruto</span>
+              <div className="mt-2 text-2xl font-black text-slate-900">{money(commissionAnalysis.totalRevenue)}</div>
+              <span className="text-[11px] text-slate-400">total cobrado</span>
+            </SurfaceCard>
+            <SurfaceCard className="p-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Insumos / Cosméticos</span>
+              <div className="mt-2 text-2xl font-black text-rose-700">{money(commissionAnalysis.totalSupplies)}</div>
+              <span className="text-[11px] text-slate-400">produtos de bancada</span>
+            </SurfaceCard>
+            <SurfaceCard className="p-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Repasses / Comissões</span>
+              <div className="mt-2 text-2xl font-black text-amber-700">{money(commissionAnalysis.totalCommissions)}</div>
+              <span className="text-[11px] text-slate-400">a pagar aos profissionais</span>
+            </SurfaceCard>
+            <SurfaceCard className="p-4 bg-emerald-50/70 border-emerald-200">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">Sobra do Salão</span>
+              <div className="mt-2 text-2xl font-black text-emerald-800">{money(commissionAnalysis.totalSalonNet)}</div>
+              <span className="text-[11px] font-bold text-emerald-700">{commissionAnalysis.marginPercent.toFixed(1)}% margem líquida</span>
+            </SurfaceCard>
+          </div>
+
+          {/* Tabela detalhada de Atendimentos */}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+            <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-3 font-bold text-xs text-slate-700 flex items-center justify-between">
+              <span>Detalhamento dos Atendimentos com Comissão Calculada</span>
+              <span className="text-slate-400 font-normal">{commissionAnalysis.items.length} registros</span>
+            </div>
+
+            {commissionAnalysis.items.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-white">
+                    <tr>
+                      <th className="px-4 py-3">Data/Hora</th>
+                      <th className="px-4 py-3">Cliente</th>
+                      <th className="px-4 py-3">Profissional</th>
+                      <th className="px-4 py-3">Serviço</th>
+                      <th className="px-4 py-3 text-right">Valor Cobrado</th>
+                      <th className="px-4 py-3 text-right">Insumo</th>
+                      <th className="px-4 py-3 text-right">Comissão</th>
+                      <th className="px-4 py-3 text-right">Espaço Líquido</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {commissionAnalysis.items.map((item) => (
+                      <tr key={item.bookingId} className="hover:bg-slate-50/80 transition">
+                        <td className="px-4 py-3 text-slate-600 font-medium">
+                          {item.date.split("-").reverse().join("/")} às {item.time}
+                        </td>
+                        <td className="px-4 py-3 font-bold text-slate-800">{item.customerName}</td>
+                        <td className="px-4 py-3 font-semibold text-[#586341]">{item.staffName}</td>
+                        <td className="px-4 py-3 text-slate-700">{item.serviceName}</td>
+                        <td className="px-4 py-3 text-right font-bold text-slate-900">{money(item.servicePrice)}</td>
+                        <td className="px-4 py-3 text-right text-rose-600 font-medium">
+                          {item.supplyCost > 0 ? money(item.supplyCost) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-right font-black text-amber-700">
+                          {money(item.commissionAmount)}
+                          <span className="block text-[10px] font-normal text-slate-400">
+                            {item.rate}% {item.deduct ? "(líquido)" : ""}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-black text-emerald-800">
+                          {money(item.salonNet)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-12 text-center text-slate-500 text-xs">
+                Nenhum agendamento com profissional atribuído encontrado para o período selecionado.
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Metrics overview */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <SurfaceCard className="relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Total na equipe
+                </span>
+                <span className="grid size-9 place-items-center rounded-xl bg-[#edf0e5] text-[#586341]">
+                  <Users size={18} />
+                </span>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
             <span className="font-display text-3xl font-semibold text-[#292b25]">{totalStaff}</span>
             <span className="text-xs text-slate-500">
               {totalStaff === 1 ? "membro cadastrado" : "membros cadastrados"}
@@ -535,6 +873,14 @@ function StudioProfissionaisPage() {
                       <Clock size={11} />
                       {openDays.length} {openDays.length === 1 ? "dia/sem" : "dias/sem"}
                     </span>
+
+                    {staffCommissionsMap[member.id]?.rate !== undefined && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                        <Percent size={11} />
+                        Comissão: {staffCommissionsMap[member.id]?.rate}%
+                        {staffCommissionsMap[member.id]?.deductSupplies && " (líquido)"}
+                      </span>
+                    )}
                   </div>
 
                   {/* Info details */}
@@ -543,6 +889,17 @@ function StudioProfissionaisPage() {
                       <span className="text-slate-400">Atendimentos:</span>
                       <span className="font-semibold text-slate-800">
                         {activeBookings} em aberto · {completedBookings} concluídos
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">Repasse acumulado:</span>
+                      <span className="font-bold text-emerald-700">
+                        {money(
+                          commissionAnalysis.items
+                            .filter((i) => i.staffId === member.id)
+                            .reduce((sum, i) => sum + i.commissionAmount, 0),
+                        )}
                       </span>
                     </div>
 
@@ -575,6 +932,18 @@ function StudioProfissionaisPage() {
                       title="Editar dados e horários"
                     >
                       <Edit3 size={14} /> Editar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedStaffFilter(member.id);
+                        setViewTab("comissoes");
+                      }}
+                      className="inline-flex items-center gap-1 rounded-xl bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition"
+                      title="Ver extrato de comissões"
+                    >
+                      <Receipt size={14} /> Extrato
                     </button>
 
                     <button
@@ -668,8 +1037,10 @@ function StudioProfissionaisPage() {
           </div>
         </SurfaceCard>
       )}
+    </>
+  )}
 
-      {/* Modal / Dialog for Create & Edit */}
+  {/* Modal / Dialog for Create & Edit */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white p-6 sm:p-8 shadow-2xl">
@@ -784,6 +1155,74 @@ function StudioProfissionaisPage() {
                     />
                   </div>
                 </Field>
+              </div>
+
+              {/* Comissões & Repasses do Profissional */}
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Percent size={18} className="text-emerald-700" />
+                  <h3 className="text-sm font-bold text-emerald-900">
+                    Comissão & Repasse de Atendimentos
+                  </h3>
+                </div>
+                <p className="text-xs text-emerald-800 leading-relaxed">
+                  Defina o percentual repassado a este profissional sobre os procedimentos realizados e se os custos de insumos/cosméticos devem ser deduzidos antes do repasse.
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2 items-start">
+                  <Field label="Taxa de Comissão Padrão (%)" hint="Ex.: 50 para barbeiro/manicure, 40 para cabeleireiro">
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={formCommissionRate}
+                        onChange={(e) => setFormCommissionRate(e.target.value)}
+                        placeholder="50"
+                        className={`${inputClass} pr-8`}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400">%</span>
+                    </div>
+                  </Field>
+
+                  <div className="flex flex-col justify-end pt-2 sm:pt-6">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={formDeductSupplies}
+                        onChange={(e) => setFormDeductSupplies(e.target.checked)}
+                        className="size-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      Deduzir insumos antes da comissão?
+                    </label>
+                    <span className="text-[11px] text-slate-500 mt-1">
+                      {formDeductSupplies
+                        ? "O custo dos produtos de bancada é subtraído antes de calcular a comissão."
+                        : "A comissão incide sobre o valor bruto total cobrado do cliente."}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Exemplo de cálculo em tempo real */}
+                <div className="mt-2 rounded-xl bg-white p-3 border border-emerald-200/80 text-xs">
+                  <span className="font-bold text-slate-700 block mb-1">Simulação em um serviço de R$ 100 com R$ 15 de insumo:</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <span className="text-slate-600">
+                      Profissional recebe: <strong className="text-emerald-700">
+                        {formDeductSupplies
+                          ? money((85 * (Number(formCommissionRate) || 0)) / 100)
+                          : money((100 * (Number(formCommissionRate) || 0)) / 100)}
+                      </strong>
+                    </span>
+                    <span className="text-slate-600">
+                      Espaço retém líquido: <strong className="text-slate-800">
+                        {formDeductSupplies
+                          ? money(85 - (85 * (Number(formCommissionRate) || 0)) / 100)
+                          : money(85 - (100 * (Number(formCommissionRate) || 0)) / 100)}
+                      </strong>
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Weekly schedule */}

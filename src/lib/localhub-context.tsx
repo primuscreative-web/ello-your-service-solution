@@ -19,12 +19,18 @@ export type ServiceSupplyUsage = {
   quantity: number;
 };
 
+export type StaffCommissionSetting = {
+  rate: number; // percentual de comissao (ex: 40 para 40%)
+  deductSupplies?: boolean; // se deduz o custo de insumos antes de calcular comissao
+};
+
 export type BusinessOnboardingDetails = {
   specialties: string[];
   serviceModes: string[];
   supplies?: ProductSupply[];
   serviceSupplyFormulas?: Record<string, ServiceSupplyUsage[]>;
   customerNotes?: Record<string, string>;
+  staffCommissions?: Record<string, StaffCommissionSetting>;
 };
 
 export type BusinessDayHours = {
@@ -415,7 +421,8 @@ type LocalHubContextValue = {
   ) => Promise<void>;
   saveDriver: (driver: Omit<DeliveryDriver, "id"> & { id?: string }) => Promise<void>;
   removeDriver: (id: string) => Promise<void>;
-  saveStaff: (staff: Omit<StaffMember, "id"> & { id?: string }) => Promise<void>;
+  saveStaff: (staff: Omit<StaffMember, "id"> & { id?: string }) => Promise<string>;
+  saveStaffCommission: (staffId: string, setting: StaffCommissionSetting) => Promise<void>;
   removeStaff: (id: string) => Promise<void>;
   saveDeliveryArea: (area: Omit<DeliveryArea, "id"> & { id?: string }) => Promise<void>;
   removeDeliveryArea: (id: string) => Promise<void>;
@@ -1648,6 +1655,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     const { error: accessError } = await accessQuery;
     if (accessError) throw accessError;
     await refresh();
+    return savedStaff.id as string;
   };
   const removeStaff = async (id: string) => {
     if (!business?.id) throw new Error("Não foi possível localizar seu negócio.");
@@ -1658,6 +1666,19 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       .eq("business_id", business.id);
     if (deleteError) throw deleteError;
     await refresh();
+  };
+  const saveStaffCommission = async (staffId: string, setting: StaffCommissionSetting) => {
+    if (!business?.id) throw new Error("Negócio não selecionado.");
+    const current = { ...(business.onboardingDetails?.staffCommissions ?? {}) };
+    current[staffId] = setting;
+    const nextDetails: BusinessOnboardingDetails = {
+      ...(business.onboardingDetails ?? emptyOnboardingDetails),
+      staffCommissions: current,
+    };
+    await saveBusiness({
+      ...business,
+      onboardingDetails: nextDetails,
+    });
   };
   const saveDeliveryArea: LocalHubContextValue["saveDeliveryArea"] = async (area) => {
     if (!business?.id) throw new Error("Não foi possível localizar seu negócio.");
@@ -1726,6 +1747,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         saveDriver,
         removeDriver,
         saveStaff,
+        saveStaffCommission,
         removeStaff,
         saveDeliveryArea,
         removeDeliveryArea,
