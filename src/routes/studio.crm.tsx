@@ -130,7 +130,7 @@ function FoodCrmPage() {
         .order("created_at", { ascending: false }),
       client
         .from("localhub_bookings")
-        .select("id,customer_name,phone,created_at,date,status")
+        .select("id,customer_name,phone,created_at,date,status,service_id")
         .eq("business_id", business.id)
         .neq("status", "cancelled"),
     ]);
@@ -147,10 +147,17 @@ function FoodCrmPage() {
     const foodCustomers = (customerResult.data ?? []) as Customer[];
     const knownPhones = new Set(foodCustomers.map((c) => c.phone_e164.replace(/\D/g, "")));
 
+    const servicePriceMap = new Map(services.map((s) => [s.id, s.price]));
+    const nowMs = Date.now();
+    const fortyFiveDaysMs = 45 * 24 * 60 * 60 * 1000;
+
     const bookingCustomersMap = new Map<string, Customer>();
     for (const b of (bookingsResult.data ?? [])) {
       const cleanPhone = (b.phone || "").replace(/\D/g, "");
       if (!cleanPhone || knownPhones.has(cleanPhone)) continue;
+
+      const bookingValue = (b.service_id && servicePriceMap.get(b.service_id)) || 0;
+      const bDate = b.date ? new Date(`${b.date}T12:00:00`).toISOString() : b.created_at;
 
       if (!bookingCustomersMap.has(cleanPhone)) {
         bookingCustomersMap.set(cleanPhone, {
@@ -159,17 +166,36 @@ function FoodCrmPage() {
           phone_e164: b.phone,
           email: null,
           marketing_consent: true,
-          first_order_at: b.created_at,
-          last_order_at: b.created_at,
+          first_order_at: bDate,
+          last_order_at: bDate,
           orders_count: 1,
-          lifetime_value: 0,
+          lifetime_value: bookingValue,
           loyalty_balance: 0,
           segment: "new",
         });
       } else {
         const item = bookingCustomersMap.get(cleanPhone)!;
         item.orders_count += 1;
-        item.segment = item.orders_count > 1 ? "recurring" : "new";
+        item.lifetime_value += bookingValue;
+        if (new Date(bDate).getTime() > new Date(item.last_order_at || 0).getTime()) {
+          item.last_order_at = bDate;
+        }
+      }
+    }
+
+    // Refina os segmentos dos clientes de agendamento (VIP, Inativo, Recorrente, Novo)
+    for (const item of bookingCustomersMap.values()) {
+      const lastBookingTime = item.last_order_at ? new Date(item.last_order_at).getTime() : 0;
+      const isOld = nowMs - lastBookingTime > fortyFiveDaysMs;
+
+      if (item.orders_count >= 4 || item.lifetime_value >= 300) {
+        item.segment = "vip";
+      } else if (isOld && item.orders_count > 0) {
+        item.segment = "inactive";
+      } else if (item.orders_count > 1) {
+        item.segment = "recurring";
+      } else {
+        item.segment = "new";
       }
     }
 
@@ -179,7 +205,7 @@ function FoodCrmPage() {
     setAbandonedCarts((cartResult.data ?? []) as AbandonedCart[]);
     setCampaigns((campaignResult.data ?? []) as Campaign[]);
     setError("");
-  }, [business?.id]);
+  }, [business?.id, services]);
   useEffect(() => {
     void load();
   }, [load]);
@@ -500,8 +526,11 @@ function FoodCrmPage() {
                 <div className="min-w-0 flex-1">
                   <strong className="block truncate text-sm">{customer.full_name}</strong>
                   <span className="text-xs text-slate-500">
-                    {customer.phone_e164} · {customer.orders_count} pedidos ·{" "}
-                    {formatMoney(Number(customer.lifetime_value))}
+                    {customer.phone_e164} ·{" "}
+                    {business?.category === "alimentacao"
+                      ? `${customer.orders_count} pedidos`
+                      : `${customer.orders_count} atendimentos`}{" "}
+                    · {formatMoney(Number(customer.lifetime_value))}
                     {business?.loyaltyEnabled && (
                       <>
                         {" · Saldo: "}
@@ -525,7 +554,9 @@ function FoodCrmPage() {
                     ? "Carregando…"
                     : expandedCustomerId === customer.id
                       ? "Ocultar histórico"
-                      : "Ver compras"}
+                      : business?.category === "alimentacao"
+                        ? "Ver compras"
+                        : "Ver histórico"}
                 </button>
                 {customer.phone_e164 && (
                   <a
