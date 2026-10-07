@@ -12,6 +12,9 @@ import {
   Package,
   Pencil,
   Plus,
+  FileText,
+  Printer,
+  Image as ImageIcon,
   Power,
   Search,
   Sparkles,
@@ -38,6 +41,25 @@ import { getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/studio/catalog")({ component: CatalogPage });
+
+const FOOD_STOCK_PHOTOS = [
+  { label: "Hambúrguer Clássico", category: "Lanches", url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80" },
+  { label: "Smash Burger Duplo", category: "Lanches", url: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=800&q=80" },
+  { label: "Hambúrguer com Bacon", category: "Lanches", url: "https://images.unsplash.com/photo-1553979459-d2229ba7433b?auto=format&fit=crop&w=800&q=80" },
+  { label: "Pizza Calabresa", category: "Pizzas", url: "https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=800&q=80" },
+  { label: "Pizza Margherita", category: "Pizzas", url: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=800&q=80" },
+  { label: "Batata Frita Crocante", category: "Porções", url: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80" },
+  { label: "Batata com Cheddar e Bacon", category: "Porções", url: "https://images.unsplash.com/photo-1585109649139-366815a0d713?auto=format&fit=crop&w=800&q=80" },
+  { label: "Salgados Fritos", category: "Porções", url: "https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=800&q=80" },
+  { label: "Refrigerante Gelado", category: "Bebidas", url: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80" },
+  { label: "Suco Natural", category: "Bebidas", url: "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80" },
+  { label: "Cerveja / Chopp", category: "Bebidas", url: "https://images.unsplash.com/photo-1608270102607-4220b30bb66c?auto=format&fit=crop&w=800&q=80" },
+  { label: "Açaí na Tigela", category: "Sobremesas", url: "https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=800&q=80" },
+  { label: "Brownie com Sorvete", category: "Sobremesas", url: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80" },
+  { label: "Pudim de Leite", category: "Sobremesas", url: "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&w=800&q=80" },
+  { label: "Sushi / Combinado", category: "Japonês", url: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=800&q=80" },
+  { label: "Pastel Frito", category: "Pastéis", url: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=80" },
+];
 
 const manicureServiceSuggestions = [
   { name: "Manicure tradicional", duration: 45 },
@@ -205,6 +227,89 @@ function CatalogPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const handlePrintMenuPdf = () => {
+    const printWindow = window.open("", "_blank", "width=850,height=900");
+    if (!printWindow) {
+      return;
+    }
+    const categorized = new Map<string, Service[]>();
+    for (const s of services) {
+      if (!s.active) continue;
+      const cat = s.menuCategory?.trim() || "Outros Itens";
+      const list = categorized.get(cat) || [];
+      list.push(s);
+      categorized.set(cat, list);
+    }
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Cardápio - ${business?.name || "ELLO"}</title>
+        <style>
+          @page { size: A4; margin: 15mm; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #222; margin: 0; padding: 20px; }
+          .header { text-align: center; border-bottom: 2px solid #586341; padding-bottom: 15px; margin-bottom: 25px; }
+          .logo { max-width: 90px; border-radius: 50%; margin-bottom: 8px; }
+          .title { font-size: 26px; font-weight: 800; color: #1f211b; margin: 0; }
+          .desc { font-size: 13px; color: #666; margin-top: 5px; }
+          .category { margin-top: 25px; page-break-inside: avoid; }
+          .cat-title { font-size: 16px; font-weight: 800; color: #586341; border-bottom: 1px solid #ddd; padding-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+          .item { display: flex; justify-content: space-between; border-bottom: 1px dotted #ccc; padding-bottom: 6px; }
+          .item-name { font-weight: 700; font-size: 13px; color: #111; }
+          .item-desc { font-size: 11px; color: #777; margin-top: 2px; }
+          .item-price { font-weight: 800; font-size: 13px; color: #292b25; white-space: nowrap; margin-left: 10px; }
+          .promo-price { color: #dc2626; }
+          .footer { margin-top: 35px; text-align: center; font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          ${business?.logoUrl ? `<img src="${business.logoUrl}" class="logo" />` : ""}
+          <h1 class="title">${business?.name || "CARDÁPIO"}</h1>
+          <div class="desc">${business?.description || "Cardápio Oficial"}</div>
+          <div style="font-size: 11px; color: #999; margin-top: 4px;">Peça também online em: https://ello.app.br/loja/${business?.slug || ""}</div>
+        </div>
+        ${Array.from(categorized.entries())
+          .map(
+            ([cat, items]) => `
+            <div class="category">
+              <div class="cat-title">${cat}</div>
+              <div class="grid">
+                ${items
+                  .map(
+                    (it) => `
+                  <div class="item">
+                    <div>
+                      <div class="item-name">${it.name}</div>
+                      ${it.description ? `<div class="item-desc">${it.description}</div>` : ""}
+                    </div>
+                    <div class="item-price ${it.promotionalPrice ? "promo-price" : ""}">
+                      ${money(it.promotionalPrice || it.price)}
+                    </div>
+                  </div>
+                `,
+                  )
+                  .join("")}
+              </div>
+            </div>
+          `,
+          )
+          .join("")}
+        <div class="footer">
+          ${business?.address ? `${business.address} · ` : ""}${business?.city || ""} · Telefone: ${business?.phone || ""}
+        </div>
+        <script>
+          window.onload = function() { window.print(); }
+        </script>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   return (
     <>
       <PageTitle
@@ -218,19 +323,30 @@ function CatalogPage() {
         action={
           <div className="flex flex-wrap items-center gap-2">
             {business?.category === "alimentacao" && (
-              <button
-                type="button"
-                onClick={() => setShowCategoryManager((prev) => !prev)}
-                className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition ${
-                  showCategoryManager
-                    ? "border-[#778253] bg-[#edf0e5] text-[#4d5735]"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-                title="Definir a ordem que os grupos aparecem para os clientes no cardápio"
-              >
-                <Layers size={15} />
-                Grupos do Cardápio ({existingCategories.length})
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={handlePrintMenuPdf}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
+                  title="Gerar cardápio em PDF pronto para imprimir"
+                >
+                  <Printer size={15} />
+                  Cardápio em PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryManager((prev) => !prev)}
+                  className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition ${
+                    showCategoryManager
+                      ? "border-[#778253] bg-[#edf0e5] text-[#4d5735]"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                  title="Definir a ordem que os grupos aparecem para os clientes no cardápio"
+                >
+                  <Layers size={15} />
+                  Grupos ({existingCategories.length})
+                </button>
+              </>
             )}
             <button
               onClick={() => {
@@ -653,9 +769,35 @@ function ServiceEditor({
   const [isPromotion, setIsPromotion] = useState(initial?.isPromotion ?? false);
   const [promotionalPrice, setPromotionalPrice] = useState<number | undefined>(initial?.promotionalPrice);
   const [promotionBadge, setPromotionBadge] = useState(initial?.promotionBadge ?? "");
+  const [showStockPhotos, setShowStockPhotos] = useState(false);
   const { business, user } = useLocalHub();
   const copy = getBusinessCopy(category);
   const hasAppointments = supportsAppointments(category);
+
+  const generateAiDescription = () => {
+    if (!name.trim()) {
+      toast.error("Informe o nome do item primeiro para a IA gerar a descrição.");
+      return;
+    }
+    const cleanName = name.trim().toLowerCase();
+    const cleanCategory = menuCategory.trim().toLowerCase();
+    let text = "";
+    if (cleanCategory.includes("hamburg") || cleanName.includes("burger") || cleanName.includes("lanche")) {
+      text = "Suculento hambúrguer artesanal preparado no ponto perfeito, com queijo derretido de alta cremosidade, ingredientes frescos selecionados e o molho especial exclusivo da casa em um pão macio e selado na manteiga.";
+    } else if (cleanCategory.includes("pizza") || cleanName.includes("pizza")) {
+      text = "Massa artesanal de fermentação natural leve e crocante, coberta com molho de tomate pelado, generosa camada de queijo premium derretido e finalizada com orégano fresco e azeite extra virgem.";
+    } else if (cleanCategory.includes("bebida") || cleanName.includes("suco") || cleanName.includes("refrigerante") || cleanName.includes("chopp") || cleanName.includes("cerveja")) {
+      text = "Refrescante e servida bem gelada. O acompanhamento ideal para harmonizar com sua refeição.";
+    } else if (cleanCategory.includes("sobremesa") || cleanName.includes("doce") || cleanName.includes("pudim") || cleanName.includes("brownie") || cleanName.includes("acai")) {
+      text = "Receita artesanal deliciosa e irresistível, com textura cremosa e equilíbrio perfeito para fechar sua refeição com chave de ouro.";
+    } else if (cleanCategory.includes("porcao") || cleanCategory.includes("acompanhamento") || cleanName.includes("batata") || cleanName.includes("frita")) {
+      text = "Porção generosa e crocante por fora, macia por dentro. Perfeita para compartilhar com os amigos.";
+    } else {
+      text = "Preparado artesanalmente com ingredientes de primeira qualidade e temperos especiais da casa. Uma experiência de sabor inesquecível.";
+    }
+    setDescription(text);
+    toast.success("Descrição gastronômica gerada com IA!");
+  };
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isUploadingImage) {
@@ -755,11 +897,27 @@ function ServiceEditor({
             className={inputClass}
           />
         </Field>
-        <Field label={copy.offerDescriptionLabel}>
+        <Field
+          label={
+            <div className="flex items-center justify-between">
+              <span>{copy.offerDescriptionLabel}</span>
+              {category === "alimentacao" && (
+                <button
+                  type="button"
+                  onClick={generateAiDescription}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#586341] hover:underline"
+                >
+                  <Sparkles size={12} className="text-amber-500" />
+                  Gerar com IA
+                </button>
+              )}
+            </div>
+          }
+        >
           <input
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder="Uma breve descrição"
+            placeholder="Uma breve descrição que dê água na boca"
             className={inputClass}
           />
         </Field>
@@ -818,71 +976,142 @@ function ServiceEditor({
               <p className="mt-1 text-xs leading-5 text-slate-500">
                 JPG, PNG ou WebP, até 5 MB. A foto será exibida no cardápio público.
               </p>
-              <label className="mt-3 inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#667448]">
-                {isUploadingImage ? (
-                  <LoaderCircle size={15} className="animate-spin" />
-                ) : (
-                  <ImagePlus size={15} />
-                )}
-                {isUploadingImage ? "Enviando foto…" : imageUrl ? "Trocar foto" : "Enviar foto"}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  disabled={isUploadingImage}
-                  className="sr-only"
-                  onChange={async (event) => {
-                    const file = event.currentTarget.files?.[0];
-                    event.currentTarget.value = "";
-                    if (!file) return;
-                    setImageError("");
-                    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
-                      setImageError("Escolha uma imagem JPG, PNG ou WebP.");
-                      return;
-                    }
-                    if (file.size > 5 * 1024 * 1024) {
-                      setImageError("A imagem deve ter no máximo 5 MB.");
-                      return;
-                    }
-                    if (!business?.id || !user?.id) {
-                      setImageError("Não foi possível validar o acesso ao negócio.");
-                      return;
-                    }
-                    const client = getSupabaseBrowserClient();
-                    if (!client) {
-                      setImageError("O envio de imagens está temporariamente indisponível.");
-                      return;
-                    }
-                    setIsUploadingImage(true);
-                    try {
-                      const extension = file.type === "image/jpeg" ? "jpg" : file.type.slice(6);
-                      const path = `${user.id}/${business.id}/${crypto.randomUUID()}.${extension}`;
-                      const { error: uploadError } = await client.storage
-                        .from("localhub-products")
-                        .upload(path, file, {
-                          cacheControl: "3600",
-                          contentType: file.type,
-                          upsert: false,
-                        });
-                      if (uploadError) throw uploadError;
-                      setImageUrl(
-                        client.storage.from("localhub-products").getPublicUrl(path).data.publicUrl,
-                      );
-                    } catch {
-                      setImageError("Não foi possível enviar a imagem. Tente novamente.");
-                    } finally {
-                      setIsUploadingImage(false);
-                    }
-                  }}
-                />
-              </label>
-              {imageUrl && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#667448]">
+                  {isUploadingImage ? (
+                    <LoaderCircle size={15} className="animate-spin" />
+                  ) : (
+                    <ImagePlus size={15} />
+                  )}
+                  {isUploadingImage ? "Enviando foto…" : imageUrl ? "Trocar foto" : "Enviar foto"}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    disabled={isUploadingImage}
+                    className="sr-only"
+                    onChange={async (event) => {
+                      const file = event.currentTarget.files?.[0];
+                      event.currentTarget.value = "";
+                      if (!file) return;
+                      setImageError("");
+                      if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+                        setImageError("Escolha uma imagem JPG, PNG ou WebP.");
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        setImageError("A imagem deve ter no máximo 5 MB.");
+                        return;
+                      }
+                      if (!business?.id || !user?.id) {
+                        setImageError("Não foi possível validar o acesso ao negócio.");
+                        return;
+                      }
+                      const client = getSupabaseBrowserClient();
+                      if (!client) {
+                        setImageError("O envio de imagens está temporariamente indisponível.");
+                        return;
+                      }
+                      setIsUploadingImage(true);
+                      try {
+                        const extension = file.type === "image/jpeg" ? "jpg" : file.type.slice(6);
+                        const path = `${user.id}/${business.id}/${crypto.randomUUID()}.${extension}`;
+                        const { error: uploadError } = await client.storage
+                          .from("localhub-products")
+                          .upload(path, file, {
+                            cacheControl: "3600",
+                            contentType: file.type,
+                            upsert: false,
+                          });
+                        if (uploadError) throw uploadError;
+                        setImageUrl(
+                          client.storage.from("localhub-products").getPublicUrl(path).data.publicUrl,
+                        );
+                      } catch {
+                        setImageError("Não foi possível enviar a imagem. Tente novamente.");
+                      } finally {
+                        setIsUploadingImage(false);
+                      }
+                    }}
+                  />
+                </label>
                 <button
                   type="button"
-                  onClick={() => setImageUrl("")}
-                  className="ml-3 min-h-10 px-2 text-xs font-semibold text-slate-500 hover:text-red-700"
+                  onClick={() => setShowStockPhotos(true)}
+                  className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50/80 px-3.5 text-xs font-bold text-amber-900 transition hover:bg-amber-100"
                 >
-                  Remover foto
+                  <ImageIcon size={15} className="text-amber-700" />
+                  Banco de Imagens Grátis
                 </button>
+                {imageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl("")}
+                    className="min-h-10 px-2 text-xs font-semibold text-slate-500 hover:text-red-700"
+                  >
+                    Remover foto
+                  </button>
+                )}
+              </div>
+
+              {/* Modal do Banco de Imagens Gastronômicas */}
+              {showStockPhotos && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                  <div className="w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-3xl bg-white p-6 shadow-2xl flex flex-col">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-display text-lg font-black text-[#292b25]">
+                          Banco de Imagens Gastronômicas
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Escolha uma foto profissional pronta para o seu prato.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowStockPhotos(false)}
+                        className="rounded-xl border border-slate-200 p-2 text-slate-400 hover:text-slate-700"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto p-1">
+                      {FOOD_STOCK_PHOTOS.map((photo) => (
+                        <div
+                          key={photo.url}
+                          onClick={() => {
+                            setImageUrl(photo.url);
+                            setShowStockPhotos(false);
+                            toast.success(`Foto "${photo.label}" selecionada!`);
+                          }}
+                          className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 hover:border-[#586341] transition"
+                        >
+                          <img
+                            src={photo.url}
+                            alt={photo.label}
+                            className="aspect-square w-full object-cover transition group-hover:scale-105"
+                          />
+                          <div className="p-2 text-center">
+                            <span className="block text-[11px] font-bold text-[#292b25] truncate">
+                              {photo.label}
+                            </span>
+                            <span className="text-[10px] text-slate-400">{photo.category}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowStockPhotos(false)}
+                        className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700"
+                      >
+                        Fechar
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>

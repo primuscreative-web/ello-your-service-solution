@@ -14,6 +14,7 @@ import {
   UsersRound,
   HeartHandshake,
   WalletCards,
+  Utensils,
 } from "lucide-react";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -44,7 +45,8 @@ export function StudioLayout() {
     ...(isFoodBusiness
       ? [
           { to: "/studio/crm" as const, label: "Clientes e promoções", icon: HeartHandshake },
-          { to: "/studio/caixa" as const, label: "Frente de caixa", icon: WalletCards },
+          { to: "/studio/mesas" as const, label: "Mesas e Salão", icon: Utensils },
+          { to: "/studio/caixa" as const, label: "Frente de caixa / PDV", icon: WalletCards },
         ]
       : []),
     { to: "/studio/financeiro" as const, label: "Financeiro e carteira", icon: WalletCards },

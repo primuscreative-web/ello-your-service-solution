@@ -435,6 +435,17 @@ function FoodCrmPage() {
                       ? "Ocultar histórico"
                       : "Ver compras"}
                 </button>
+                {customer.segment === "inactive" && (
+                  <a
+                    href={`https://wa.me/${customer.phone_e164.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${customer.full_name}! Sentimos sua falta aqui no ${business?.name ?? "nosso restaurante"}! ❤️ Preparamos um presente especial para você matar a vontade. Acesse nosso cardápio online com novidades: https://ello.app.br/loja/${business?.slug ?? ""}`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                    title="Enviar mensagem amigável no WhatsApp convidando o cliente de volta"
+                  >
+                    💬 WhatsApp de Volta
+                  </a>
+                )}
                 {customer.marketing_consent && customer.segment === "inactive" && (
                   <button
                     type="button"
@@ -743,29 +754,155 @@ function FoodCrmPage() {
             <div className="mt-3 divide-y divide-slate-100">
               {coupons
                 .filter((coupon) => coupon.is_active)
-                .map((coupon) => (
-                  <div key={coupon.id} className="flex justify-between gap-3 py-3 text-sm">
-                    <div>
-                      <strong>{coupon.code}</strong>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Mínimo {formatMoney(coupon.minimum_order)}
-                        {coupon.first_order_only ? " · primeira compra" : ""}
-                        {coupon.per_customer_limit
-                          ? ` · ${coupon.per_customer_limit} por cliente`
-                          : ""}
-                        {coupon.usage_limit ? ` · ${coupon.usage_limit} usos totais` : ""}
-                      </p>
+                .map((coupon) => {
+                  const couponDirectLink = `https://ello.app.br/loja/${business?.slug ?? ""}?cupom=${coupon.code}`;
+                  return (
+                    <div key={coupon.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <strong>{coupon.code}</strong>
+                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-800">
+                            {coupon.discount_type === "percent"
+                              ? `${coupon.discount_value}% OFF`
+                              : `${formatMoney(coupon.discount_value)} OFF`}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Mínimo {formatMoney(coupon.minimum_order)}
+                          {coupon.first_order_only ? " · primeira compra" : ""}
+                          {coupon.per_customer_limit
+                            ? ` · ${coupon.per_customer_limit} por cliente`
+                            : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void navigator.clipboard.writeText(couponDirectLink);
+                            setNotice(`Link do cupom ${coupon.code} copiado com sucesso!`);
+                          }}
+                          className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                          title="Copiar link com o cupom aplicado"
+                        >
+                          <Copy size={12} /> Copiar Link
+                        </button>
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(`Aproveite o cupom *${coupon.code}* com desconto exclusivo no ${business?.name ?? "nosso restaurante"}! Peça agora pelo cardápio: ${couponDirectLink}`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                        >
+                          WhatsApp
+                        </a>
+                      </div>
                     </div>
-                    <span className="shrink-0 text-slate-500">
-                      {coupon.discount_type === "percent"
-                        ? `${coupon.discount_value}%`
-                        : formatMoney(coupon.discount_value)}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               {!coupons.some((coupon) => coupon.is_active) && (
                 <p className="py-4 text-xs text-slate-500">As promoções criadas aparecem aqui.</p>
               )}
+            </div>
+          </section>
+
+          {/* Programa de Embaixadores */}
+          <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50/70 to-white p-5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="grid size-8 place-items-center rounded-xl bg-amber-200 text-amber-900 font-bold text-sm">
+                  ★
+                </span>
+                <h2 className="font-bold text-amber-950">Programa de Embaixadores</h2>
+              </div>
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-900">
+                Indicação Premiada
+              </span>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-amber-900">
+              Transforme seus melhores clientes em divulgadores da sua marca. A cada amigo que pedir pelo link deles, o amigo ganha desconto e o embaixador ganha créditos!
+            </p>
+            <div className="mt-4 rounded-xl border border-amber-200 bg-white p-3 text-xs">
+              <span className="text-slate-400 block text-[11px] font-semibold">Link de Indicação da Loja:</span>
+              <p className="font-mono font-bold text-slate-800 truncate mt-0.5">
+                https://ello.app.br/loja/{business?.slug ?? ""}?ref=embaixador
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(`https://ello.app.br/loja/${business?.slug ?? ""}?ref=embaixador`);
+                    setNotice("Link de embaixador copiado!");
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100"
+                >
+                  <Copy size={12} /> Copiar Link de Embaixador
+                </button>
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`Seja um Embaixador do ${business?.name ?? "nosso restaurante"}! Indique seus amigos e ganhe créditos a cada pedido deles. Cadastre-se ou acesse pelo link: https://ello.app.br/loja/${business?.slug ?? ""}?ref=embaixador`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                >
+                  Convidar VIPs no WhatsApp
+                </a>
+              </div>
+            </div>
+          </section>
+
+          {/* Agendador de Postagens Instagram & Facebook */}
+          <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/70 to-white p-5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="grid size-8 place-items-center rounded-xl bg-violet-200 text-violet-900 font-bold text-sm">
+                  📱
+                </span>
+                <h2 className="font-bold text-violet-950">Agendador de Postagens</h2>
+              </div>
+              <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-[10px] font-bold text-violet-900">
+                Instagram & Facebook
+              </span>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-violet-900">
+              Textos persuasivos prontos com gatilhos gastronômicos para bombar as vendas no feed e stories.
+            </p>
+
+            <div className="mt-4 space-y-3">
+              {[
+                {
+                  day: "Quarta-feira",
+                  title: "🔥 Promoção do Meio de Semana",
+                  copy: `Bateu aquela preguiça de cozinhar no meio da semana? 😋 Peça o seu combo favorito no ${business?.name ?? "nosso cardápio"} com entrega quentinha na sua porta! Peça pelo link da bio ou acesse: https://ello.app.br/loja/${business?.slug ?? ""} #delivery #delicia #gastronomia`,
+                },
+                {
+                  day: "Sexta-feira",
+                  title: "🎉 Sextou com o Melhor Sabor!",
+                  copy: `O sextou perfeito já tem endereço certo! 🍕🍔 Reúna a galera e faça seu pedido direto pelo nosso cardápio online sem taxas extras: https://ello.app.br/loja/${business?.slug ?? ""} #sextou #comidaboa #fome`,
+                },
+                {
+                  day: "Domingo",
+                  title: "❤️ Almoço em Família",
+                  copy: `Domingo é dia de descanso e prato especial na mesa! Peça no conforto de casa sem pegar filas: https://ello.app.br/loja/${business?.slug ?? ""} #domingo #almocoemfamilia`,
+                },
+              ].map((post, i) => (
+                <div key={i} className="rounded-xl border border-slate-200 bg-white p-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-800">{post.day} · {post.title}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(post.copy);
+                        setNotice(`Legenda de ${post.day} copiada!`);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                      <Copy size={11} /> Copiar Legenda
+                    </button>
+                  </div>
+                  <p className="mt-1.5 text-slate-600 leading-relaxed font-sans text-[11px] italic">
+                    "{post.copy}"
+                  </p>
+                </div>
+              ))}
             </div>
           </section>
           <p className="rounded-xl bg-[#f0f1e9] p-4 text-xs leading-5 text-slate-600">

@@ -1,7 +1,7 @@
 import { money } from "@/components/localhub/ui";
 import type { FoodOrder, DeliveryDriver, Business } from "@/lib/localhub-context";
 
-export type ReceiptType = "bag_tag" | "kitchen" | "complete";
+export type ReceiptType = "bag_tag" | "kitchen" | "bar" | "complete";
 export type ReceiptWidth = "58mm" | "80mm";
 
 interface PrintReceiptOptions {
@@ -83,14 +83,44 @@ export function printThermalReceipt({
     ? `https://ello.app.br/pedido/${order.publicTrackingToken}`
     : "";
 
-  const itemsHtml = order.items
+  // Segmentação de itens para Cozinha vs Bar
+  const isBeverage = (name: string) => {
+    const lower = name.toLowerCase();
+    return (
+      lower.includes("bebida") ||
+      lower.includes("refrigerante") ||
+      lower.includes("coca") ||
+      lower.includes("suco") ||
+      lower.includes("cerveja") ||
+      lower.includes("chopp") ||
+      lower.includes("água") ||
+      lower.includes("agua") ||
+      lower.includes("drink") ||
+      lower.includes("vinho") ||
+      lower.includes("lata") ||
+      lower.includes("600ml") ||
+      lower.includes("2l") ||
+      lower.includes("long neck")
+    );
+  };
+
+  const filteredItems = order.items.filter((item) => {
+    if (type === "bar") return isBeverage(item.name);
+    if (type === "kitchen") return !isBeverage(item.name);
+    return true;
+  });
+
+  // Se filtrou tudo (ex: pediu pra imprimir bar mas não tem bebida), mostra todos com aviso
+  const itemsToPrint = filteredItems.length > 0 ? filteredItems : order.items;
+
+  const itemsHtml = itemsToPrint
     .map(
       (item) => `
       <div class="item-row">
         <div class="item-name">
           <span class="item-qty">${item.quantity}×</span> ${escapeHtml(item.name)}
         </div>
-        ${type !== "kitchen" ? `<div class="item-price">${money(item.price * item.quantity)}</div>` : ""}
+        ${type !== "kitchen" && type !== "bar" ? `<div class="item-price">${money(item.price * item.quantity)}</div>` : ""}
       </div>
     `,
     )
@@ -118,6 +148,14 @@ export function printThermalReceipt({
     headerHtml = `
       <div class="center-header">
         <div class="receipt-badge kitchen-badge">VIA DA COZINHA · PREPARO</div>
+        <div class="order-huge">PEDIDO #${order.number}</div>
+        <div class="order-time">${formattedDate} · ${escapeHtml(order.customerName)}</div>
+      </div>
+    `;
+  } else if (type === "bar") {
+    headerHtml = `
+      <div class="center-header">
+        <div class="receipt-badge bar-badge" style="background:#2563eb;color:#fff;font-weight:bold;padding:4px 8px;border-radius:4px;display:inline-block;margin-bottom:6px;">VIA DO BAR · BEBIDAS 🍺</div>
         <div class="order-huge">PEDIDO #${order.number}</div>
         <div class="order-time">${formattedDate} · ${escapeHtml(order.customerName)}</div>
       </div>

@@ -32,6 +32,7 @@ export const Route = createFileRoute("/loja/$slug")({
     servico: z.string().optional(),
     campanha: z.string().optional(),
     cupom: z.string().max(40).optional(),
+    mesa: z.string().max(10).optional(),
   }),
   component: PublicBusinessPage,
 });
@@ -61,6 +62,7 @@ function PublicBusinessPage() {
     servico: requestedServiceId,
     campanha: requestedCampaign,
     cupom: requestedCoupon,
+    mesa: requestedTable,
   } = Route.useSearch();
   const {
     getPublicStore,
@@ -120,7 +122,9 @@ function PublicBusinessPage() {
   const savedRecoveryPhone = useRef("");
   const [deliveryAreaId, setDeliveryAreaId] = useState("");
   const [orderNotes, setOrderNotes] = useState("");
-  const [fulfillment, setFulfillment] = useState<"delivery" | "pickup" | "dine_in">("delivery");
+  const [fulfillment, setFulfillment] = useState<"delivery" | "pickup" | "dine_in">(
+    requestedTable ? "dine_in" : "delivery",
+  );
   const [paymentMethod, setPaymentMethod] = useState<
     "cash" | "pix" | "card" | "online_pix" | "online_card"
   >("cash");
@@ -903,6 +907,11 @@ function PublicBusinessPage() {
                     <Clock3 size={13} className="text-slate-500" />
                     35 – 50 min
                   </span>
+                  {requestedTable && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-purple-300 bg-purple-50 px-3 py-1 text-xs font-bold text-purple-900 shadow-2xs">
+                      🍽️ Mesa {requestedTable}
+                    </span>
+                  )}
                   {business.acceptsDelivery && (
                     <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">
                       Entrega

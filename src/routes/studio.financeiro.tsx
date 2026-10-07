@@ -1,24 +1,45 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertCircle,
   ArrowDownToLine,
   ArrowUpRight,
   Banknote,
+  BarChart3,
+  Calendar,
+  Check,
   CheckCircle2,
   Clock3,
   Copy,
+  DollarSign,
+  FileText,
   Landmark,
+  Plus,
   QrCode,
   RefreshCw,
   ShieldCheck,
   Store,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
   WalletCards,
   XCircle,
 } from "lucide-react";
 import { money } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+
+export type LocalBill = {
+  id: string;
+  bill_type: "payable" | "receivable";
+  title: string;
+  category: string;
+  amount: number;
+  due_date: string;
+  paid_at: string | null;
+  status: "pending" | "paid" | "cancelled";
+  notes?: string | null;
+};
 
 type AsaasAccountData = {
   salesEnabled: boolean;
@@ -64,7 +85,17 @@ export const Route = createFileRoute("/studio/financeiro")({
 });
 
 function BusinessFinancePage() {
-  const { business, saveBusiness } = useLocalHub();
+  const { business, saveBusiness, orders } = useLocalHub();
+  const [activeTab, setActiveTab] = useState<"wallet" | "bills" | "reports">("wallet");
+  const [bills, setBills] = useState<LocalBill[]>([]);
+  const [newBillTitle, setNewBillTitle] = useState("");
+  const [newBillAmount, setNewBillAmount] = useState("");
+  const [newBillType, setNewBillType] = useState<"payable" | "receivable">("payable");
+  const [newBillCategory, setNewBillCategory] = useState("Ingredientes / Insumos");
+  const [newBillDueDate, setNewBillDueDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [newBillNotes, setNewBillNotes] = useState("");
+  const [reportPeriod, setReportPeriod] = useState<"weekly" | "monthly">("monthly");
+
   const [account, setAccount] = useState<AsaasAccountData | null>(null);
   const [balance, setBalance] = useState<BalanceData>({
     balance: 0,
@@ -156,6 +187,16 @@ function BusinessFinancePage() {
       setRecentPayments((paymentsRes.data as AsaasPaymentItem[]) || []);
       setWalletTransactions((transactionsRes.data as WalletTransaction[]) || []);
 
+      // Busca contas a pagar e receber locais
+      const { data: billsData } = await supabase
+        .from("localhub_bills")
+        .select("*")
+        .eq("business_id", business.id)
+        .order("due_date", { ascending: true });
+      if (billsData) {
+        setBills(billsData as LocalBill[]);
+      }
+
       if (apiAccount) {
         setFormData((prev) => ({
           ...prev,
@@ -179,6 +220,130 @@ function BusinessFinancePage() {
   useEffect(() => {
     void loadFinancialData();
   }, [loadFinancialData]);
+
+  async function handleCreateBill(e: React.FormEvent) {
+    e.preventDefault();
+    if (!business?.id || !newBillTitle.trim() || !newBillAmount) return;
+    const supabase = getSupabaseBrowserClient();
+    const createdBill: LocalBill = {
+      id: crypto.randomUUID(),
+      bill_type: newBillType,
+      title: newBillTitle.trim(),
+      category: newBillCategory,
+      amount: Number(newBillAmount),
+      due_date: newBillDueDate,
+      paid_at: null,
+      status: "pending",
+      notes: newBillNotes.trim() || null,
+    };
+    setBills((prev) => [createdBill, ...prev]);
+    if (supabase) {
+      await supabase
+        .from("localhub_bills")
+        .insert({
+          business_id: business.id,
+          bill_type: createdBill.bill_type,
+          title: createdBill.title,
+          category: createdBill.category,
+          amount: createdBill.amount,
+          due_date: createdBill.due_date,
+          status: createdBill.status,
+          notes: createdBill.notes,
+        })
+        .catch(() => {});
+    }
+    setNewBillTitle("");
+    setNewBillAmount("");
+    setNewBillNotes("");
+    setFeedbackMessage({ type: "success", text: "Lançamento adicionado com sucesso!" });
+  }
+
+  async function handleToggleBillPaid(billId: string) {
+    const supabase = getSupabaseBrowserClient();
+    setBills((prev) =>
+      prev.map((b) => {
+        if (b.id !== billId) return b;
+        const nextStatus = b.status === "paid" ? "pending" : "paid";
+        const paidAt = nextStatus === "paid" ? new Date().toISOString() : null;
+        if (supabase) {
+          void supabase
+            .from("localhub_bills")
+            .update({ status: nextStatus, paid_at: paidAt })
+            .eq("id", billId);
+        }
+        return { ...b, status: nextStatus, paid_at: paidAt };
+      }),
+    );
+  }
+
+  async function handleDeleteBill(billId: string) {
+    const supabase = getSupabaseBrowserClient();
+    setBills((prev) => prev.filter((b) => b.id !== billId));
+    if (supabase) {
+      await supabase.from("localhub_bills").delete().eq("id", billId).catch(() => {});
+    }
+  }
+
+  const reportsData = useMemo(() => {
+    const now = new Date();
+    let startDate: Date;
+    if (reportPeriod === "weekly") {
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const filteredOrders = orders.filter((o) => {
+      if (o.status !== "completed") return false;
+      const orderDate = new Date(o.createdAt);
+      return orderDate >= startDate;
+    });
+
+    const ordersRevenue = filteredOrders.reduce((sum, o) => sum + o.total, 0);
+
+    const filteredBills = bills.filter((b) => {
+      const billDate = new Date(b.due_date);
+      return billDate >= startDate;
+    });
+
+    const extraRevenuePaid = filteredBills
+      .filter((b) => b.bill_type === "receivable" && b.status === "paid")
+      .reduce((sum, b) => sum + Number(b.amount), 0);
+
+    const totalGrossRevenue = ordersRevenue + extraRevenuePaid;
+
+    const operatingExpensesPaid = filteredBills
+      .filter((b) => b.bill_type === "payable" && b.status === "paid")
+      .reduce((sum, b) => sum + Number(b.amount), 0);
+
+    const pendingExpenses = filteredBills
+      .filter((b) => b.bill_type === "payable" && b.status === "pending")
+      .reduce((sum, b) => sum + Number(b.amount), 0);
+
+    const netOperatingProfit = totalGrossRevenue - operatingExpensesPaid;
+    const profitMargin =
+      totalGrossRevenue > 0 ? (netOperatingProfit / totalGrossRevenue) * 100 : 0;
+
+    const categoryExpenses: Record<string, number> = {};
+    for (const b of filteredBills) {
+      if (b.bill_type === "payable" && b.status === "paid") {
+        categoryExpenses[b.category] =
+          (categoryExpenses[b.category] ?? 0) + Number(b.amount);
+      }
+    }
+
+    return {
+      ordersCount: filteredOrders.length,
+      ordersRevenue,
+      extraRevenuePaid,
+      totalGrossRevenue,
+      operatingExpensesPaid,
+      pendingExpenses,
+      netOperatingProfit,
+      profitMargin,
+      categoryExpenses,
+    };
+  }, [bills, orders, reportPeriod]);
 
   async function handleToggleSales() {
     if (!business?.id) return;
@@ -367,8 +532,47 @@ function BusinessFinancePage() {
         </div>
       )}
 
-      {/* Cartões de Saldo da Subconta */}
-      <section className="grid gap-4 sm:grid-cols-3">
+      {/* Navegação entre Abas */}
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab("wallet")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+            activeTab === "wallet"
+              ? "bg-[#292b25] text-white shadow-xs"
+              : "bg-white text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <WalletCards size={15} /> Carteira & Asaas
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("bills")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+            activeTab === "bills"
+              ? "bg-[#292b25] text-white shadow-xs"
+              : "bg-white text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <FileText size={15} /> Contas a Pagar e Receber
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("reports")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+            activeTab === "reports"
+              ? "bg-[#292b25] text-white shadow-xs"
+              : "bg-white text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <BarChart3 size={15} /> Relatórios Financeiros (DRE)
+        </button>
+      </div>
+
+      {activeTab === "wallet" && (
+        <div className="space-y-6">
+          {/* Cartões de Saldo da Subconta */}
+          <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 to-white p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
@@ -619,6 +823,380 @@ function BusinessFinancePage() {
           )}
         </div>
       </section>
+        </div>
+      )}
+
+      {/* ABA 2: Contas a Pagar e Receber */}
+      {activeTab === "bills" && (
+        <div className="space-y-6">
+          {/* Resumo de Contas */}
+          <section className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-4 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-rose-800">
+                A Pagar (Pendente)
+              </span>
+              <p className="mt-2 text-2xl font-extrabold text-rose-950">
+                {money(
+                  bills
+                    .filter((b) => b.bill_type === "payable" && b.status === "pending")
+                    .reduce((sum, b) => sum + Number(b.amount), 0),
+                )}
+              </p>
+              <span className="text-[11px] text-rose-700">Contas e fornecedores a quitar</span>
+            </div>
+
+            <div className="rounded-2xl border border-sky-200 bg-sky-50/50 p-4 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-sky-800">
+                A Receber (Pendente)
+              </span>
+              <p className="mt-2 text-2xl font-extrabold text-sky-950">
+                {money(
+                  bills
+                    .filter((b) => b.bill_type === "receivable" && b.status === "pending")
+                    .reduce((sum, b) => sum + Number(b.amount), 0),
+                )}
+              </p>
+              <span className="text-[11px] text-sky-700">Valores a faturar / receber</span>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                Despesas Pagas (Total)
+              </span>
+              <p className="mt-2 text-2xl font-extrabold text-emerald-950">
+                {money(
+                  bills
+                    .filter((b) => b.bill_type === "payable" && b.status === "paid")
+                    .reduce((sum, b) => sum + Number(b.amount), 0),
+                )}
+              </p>
+              <span className="text-[11px] text-emerald-700">Já quitadas no sistema</span>
+            </div>
+          </section>
+
+          {/* Formulário de Novo Lançamento */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+            <h2 className="text-base font-bold text-slate-900">Novo Lançamento Financeiro</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Cadastre contas de fornecedores, compras de ingredientes, salários, aluguel ou receitas extras.
+            </p>
+
+            <form onSubmit={handleCreateBill} className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Tipo de Conta</label>
+                <select
+                  value={newBillType}
+                  onChange={(e) => setNewBillType(e.target.value as any)}
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold outline-none"
+                >
+                  <option value="payable">Conta a Pagar (Despesa)</option>
+                  <option value="receivable">Conta a Receber (Receita)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Descrição / Fornecedor *</label>
+                <input
+                  required
+                  value={newBillTitle}
+                  onChange={(e) => setNewBillTitle(e.target.value)}
+                  placeholder="Ex: Distribuidora de Carnes Silva"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Categoria</label>
+                <select
+                  value={newBillCategory}
+                  onChange={(e) => setNewBillCategory(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none"
+                >
+                  <option value="Ingredientes / Insumos">Ingredientes / Insumos</option>
+                  <option value="Embalagens & Sacolas">Embalagens & Sacolas</option>
+                  <option value="Aluguel & Condomínio">Aluguel & Condomínio</option>
+                  <option value="Energia, Água & Gás">Energia, Água & Gás</option>
+                  <option value="Equipe & Diárias Motoboy">Equipe & Diárias Motoboy</option>
+                  <option value="Marketing & Anúncios">Marketing & Anúncios</option>
+                  <option value="Sistemas & Softwares">Sistemas & Softwares</option>
+                  <option value="Impostos & Taxas">Impostos & Taxas</option>
+                  <option value="Outras Despesas">Outras Despesas</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Valor (R$) *</label>
+                <input
+                  required
+                  type="number"
+                  step="0.01"
+                  value={newBillAmount}
+                  onChange={(e) => setNewBillAmount(e.target.value)}
+                  placeholder="0,00"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Vencimento *</label>
+                <input
+                  required
+                  type="date"
+                  value={newBillDueDate}
+                  onChange={(e) => setNewBillDueDate(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none"
+                />
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-[#292b25] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#3f4137]"
+                >
+                  <Plus size={15} /> Adicionar Lançamento
+                </button>
+              </div>
+            </form>
+          </section>
+
+          {/* Tabela de Contas Cadastradas */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+            <h2 className="text-base font-bold text-slate-900">Lista de Contas</h2>
+            <div className="mt-4 divide-y divide-slate-100">
+              {bills.length > 0 ? (
+                bills.map((bill) => (
+                  <div key={bill.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-xs">
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleBillPaid(bill.id)}
+                        className={`grid size-7 place-items-center rounded-lg border transition ${
+                          bill.status === "paid"
+                            ? "border-emerald-500 bg-emerald-500 text-white"
+                            : "border-slate-300 bg-white text-transparent hover:border-slate-400"
+                        }`}
+                        title={bill.status === "paid" ? "Marcar como pendente" : "Marcar como pago"}
+                      >
+                        <Check size={14} />
+                      </button>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900">{bill.title}</span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              bill.bill_type === "payable"
+                                ? "bg-rose-100 text-rose-800"
+                                : "bg-sky-100 text-sky-800"
+                            }`}
+                          >
+                            {bill.bill_type === "payable" ? "Pagar" : "Receber"}
+                          </span>
+                        </div>
+                        <span className="text-slate-500">
+                          {bill.category} · Vence em {new Date(bill.due_date).toLocaleDateString("pt-BR")}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`font-mono text-sm font-bold ${
+                          bill.bill_type === "payable" ? "text-rose-700" : "text-sky-700"
+                        }`}
+                      >
+                        {bill.bill_type === "payable" ? "−" : "+"}
+                        {money(bill.amount)}
+                      </span>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                          bill.status === "paid"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {bill.status === "paid" ? "Pago" : "Pendente"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteBill(bill.id)}
+                        className="grid size-7 place-items-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                        title="Excluir lançamento"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="py-8 text-center text-xs text-slate-400">
+                  Nenhuma conta cadastrada. Use o formulário acima para registrar fornecedores ou receitas.
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* ABA 3: Relatórios Financeiros (DRE) */}
+      {activeTab === "reports" && (
+        <div className="space-y-6">
+          {/* Seletor de Período */}
+          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Demonstrativo de Resultado (DRE)</h2>
+              <p className="text-xs text-slate-500">
+                Acompanhe o faturamento bruto dos pedidos, despesas operacionais e o lucro líquido real.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setReportPeriod("weekly")}
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                  reportPeriod === "weekly"
+                    ? "bg-[#292b25] text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                Últimos 7 dias
+              </button>
+              <button
+                type="button"
+                onClick={() => setReportPeriod("monthly")}
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                  reportPeriod === "monthly"
+                    ? "bg-[#292b25] text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                Este mês
+              </button>
+            </div>
+          </div>
+
+          {/* Cards Principais do DRE */}
+          <section className="grid gap-4 sm:grid-cols-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <span className="text-xs font-semibold text-slate-500">Receita Bruta Total</span>
+              <p className="mt-2 text-2xl font-extrabold text-slate-900">
+                {money(reportsData.totalGrossRevenue)}
+              </p>
+              <span className="text-[11px] text-emerald-700">
+                {reportsData.ordersCount} pedidos concluídos
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <span className="text-xs font-semibold text-slate-500">Despesas Pagas</span>
+              <p className="mt-2 text-2xl font-extrabold text-rose-700">
+                {money(reportsData.operatingExpensesPaid)}
+              </p>
+              <span className="text-[11px] text-slate-400">
+                Pendente: {money(reportsData.pendingExpenses)}
+              </span>
+            </div>
+
+            <div
+              className={`rounded-2xl border p-4 shadow-xs ${
+                reportsData.netOperatingProfit >= 0
+                  ? "border-emerald-200 bg-emerald-50/70"
+                  : "border-rose-200 bg-rose-50/70"
+              }`}
+            >
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Lucro Operacional
+              </span>
+              <p
+                className={`mt-2 text-2xl font-extrabold ${
+                  reportsData.netOperatingProfit >= 0 ? "text-emerald-950" : "text-rose-950"
+                }`}
+              >
+                {money(reportsData.netOperatingProfit)}
+              </p>
+              <span className="text-[11px] font-semibold text-slate-600">
+                {reportsData.netOperatingProfit >= 0 ? "Superávit no período" : "Déficit no período"}
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <span className="text-xs font-semibold text-slate-500">Margem Operacional</span>
+              <p className="mt-2 text-2xl font-extrabold text-slate-900">
+                {reportsData.profitMargin.toFixed(1)}%
+              </p>
+              <span className="text-[11px] text-slate-500">Lucro sobre receita</span>
+            </div>
+          </section>
+
+          {/* DRE Estruturado em Tabela e Despesas por Categoria */}
+          <div className="grid gap-5 md:grid-cols-2">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+              <h3 className="text-sm font-bold text-slate-900">Estrutura do DRE</h3>
+              <div className="mt-3 space-y-2 text-xs">
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-600">(+) Vendas do Cardápio</span>
+                  <b className="text-slate-900">{money(reportsData.ordersRevenue)}</b>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-600">(+) Outras Receitas Pagas</span>
+                  <b className="text-slate-900">{money(reportsData.extraRevenuePaid)}</b>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-200 font-bold bg-slate-50 px-2 rounded-lg">
+                  <span className="text-slate-800">(=) Faturamento Bruto</span>
+                  <span className="text-slate-900">{money(reportsData.totalGrossRevenue)}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-100 text-rose-700">
+                  <span>(−) Despesas Operacionais Pagas</span>
+                  <b>−{money(reportsData.operatingExpensesPaid)}</b>
+                </div>
+                <div className="flex justify-between py-2 border-t-2 border-slate-800 text-sm font-extrabold">
+                  <span>(=) Resultado Operacional Líquido</span>
+                  <span
+                    className={
+                      reportsData.netOperatingProfit >= 0 ? "text-emerald-700" : "text-rose-700"
+                    }
+                  >
+                    {money(reportsData.netOperatingProfit)}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+              <h3 className="text-sm font-bold text-slate-900">Despesas por Categoria</h3>
+              <div className="mt-3 space-y-3">
+                {Object.keys(reportsData.categoryExpenses).length > 0 ? (
+                  Object.entries(reportsData.categoryExpenses).map(([category, val]) => {
+                    const pct =
+                      reportsData.operatingExpensesPaid > 0
+                        ? (val / reportsData.operatingExpensesPaid) * 100
+                        : 0;
+                    return (
+                      <div key={category} className="text-xs">
+                        <div className="flex justify-between text-slate-700 font-medium">
+                          <span>{category}</span>
+                          <span>
+                            {money(val)} ({pct.toFixed(0)}%)
+                          </span>
+                        </div>
+                        <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-[#778253]"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="py-6 text-center text-xs text-slate-400">
+                    Nenhuma despesa paga registrada neste período.
+                  </p>
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
 
       {/* Modal / Diálogo de Configuração de Subconta */}
       {showSetupModal && (

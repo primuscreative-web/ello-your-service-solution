@@ -1320,6 +1320,125 @@ function SettingsPage() {
                       </button>
                     </form>
                   </div>
+
+                  {/* Integração iFood */}
+                  <div className="mt-5 rounded-2xl border border-red-200 bg-red-50/40 p-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="grid size-8 place-items-center rounded-xl bg-red-600 text-white font-black text-xs">
+                          iF
+                        </span>
+                        <div>
+                          <h3 className="text-sm font-bold text-red-950">Integração iFood</h3>
+                          <p className="text-xs text-red-800">
+                            Receba pedidos do iFood diretamente no seu KDS da ELLO.
+                          </p>
+                        </div>
+                      </div>
+                      <label className="flex items-center gap-2 text-xs font-bold text-red-900 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Boolean((form as any).ifoodConnected)}
+                          onChange={(e) => {
+                            setSaved(false);
+                            setForm((prev) => ({ ...prev, ifoodConnected: e.target.checked } as any));
+                          }}
+                          className="size-4 accent-red-600"
+                        />
+                        {(form as any).ifoodConnected ? "Conectado" : "Desconectado"}
+                      </label>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 text-xs">
+                      <div>
+                        <label className="font-semibold text-slate-700">Merchant ID (iFood)</label>
+                        <input
+                          value={(form as any).ifoodMerchantId ?? ""}
+                          onChange={(e) => {
+                            setSaved(false);
+                            setForm((prev) => ({ ...prev, ifoodMerchantId: e.target.value } as any));
+                          }}
+                          placeholder="Ex: 1a2b3c4d-5e6f-..."
+                          className="mt-1 w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-mono outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-semibold text-slate-700">Webhook ELLO (para configurar no Portal iFood)</label>
+                        <div className="mt-1 flex items-center justify-between rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-mono text-slate-600">
+                          <span className="truncate">https://ello.app.br/api/v1/orders/external</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void navigator.clipboard.writeText("https://ello.app.br/api/v1/orders/external");
+                              alert("URL do Webhook copiada!");
+                            }}
+                            className="ml-2 font-bold text-red-700 hover:underline"
+                          >
+                            Copiar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Avaliações Google (Google Meu Negócio) */}
+                  <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/40 p-5">
+                    <div className="flex items-center gap-2">
+                      <span className="grid size-8 place-items-center rounded-xl bg-blue-600 text-white font-bold text-sm">
+                        G
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-bold text-blue-950">Avaliações Google (Google Meu Negócio)</h3>
+                        <p className="text-xs text-blue-800">
+                          Aumente sua nota no Google enviando o link de avaliação 5 estrelas após cada entrega.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 text-xs">
+                      <label className="font-semibold text-slate-700">Link direto de Avaliação Google</label>
+                      <input
+                        value={(form as any).googleReviewsUrl ?? ""}
+                        onChange={(e) => {
+                          setSaved(false);
+                          setForm((prev) => ({ ...prev, googleReviewsUrl: e.target.value } as any));
+                        }}
+                        placeholder="https://g.page/r/SUA_EMPRESA/review"
+                        className="mt-1 w-full rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs outline-none"
+                      />
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        O ELLO incluirá um botão "⭐ Avaliar no Google" na página de rastreamento e na mensagem de entrega concluída.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Totem & Modo Autoatendimento */}
+                  <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="grid size-8 place-items-center rounded-xl bg-emerald-600 text-white font-bold text-sm">
+                          📱
+                        </span>
+                        <div>
+                          <h3 className="text-sm font-bold text-emerald-950">Totem & Autoatendimento no Tablet</h3>
+                          <p className="text-xs text-emerald-800">
+                            Transforme qualquer tablet ou tela touch num totem interativo de pedidos para seus clientes.
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={`/totem/${form.slug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-800"
+                      >
+                        Abrir Totem <ExternalLink size={12} />
+                      </a>
+                    </div>
+                    <p className="mt-2 text-xs font-mono text-emerald-900 bg-white p-2 rounded-lg border border-emerald-200">
+                      https://ello.app.br/totem/{form.slug}
+                    </p>
+                  </div>
                 </section>
               )}
               <section className="border-t border-slate-100 pt-5">

@@ -39,11 +39,13 @@ import { Route as StudioCatalogRouteImport } from './routes/studio.catalog'
 import { Route as StudioCrmRouteImport } from './routes/studio.crm'
 import { Route as StudioEntregasRouteImport } from './routes/studio.entregas'
 import { Route as StudioFinanceiroRouteImport } from './routes/studio.financeiro'
+import { Route as StudioMesasRouteImport } from './routes/studio.mesas'
 import { Route as StudioMetricasRouteImport } from './routes/studio.metricas'
 import { Route as StudioPedidosRouteImport } from './routes/studio.pedidos'
 import { Route as StudioPrecificacaoRouteImport } from './routes/studio.precificacao'
 import { Route as StudioProfissionaisRouteImport } from './routes/studio.profissionais'
 import { Route as StudioSettingsRouteImport } from './routes/studio.settings'
+import { Route as TotemSlugRouteImport } from './routes/totem.$slug'
 import { Route as ApiAsaasChargeRouteImport } from './routes/api.asaas.charge'
 import { Route as ApiAsaasSubaccountRouteImport } from './routes/api.asaas.subaccount'
 import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas.webhook'
@@ -213,6 +215,11 @@ const StudioFinanceiroRoute = StudioFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => StudioRoute,
 } as any)
+const StudioMesasRoute = StudioMesasRouteImport.update({
+  id: '/mesas',
+  path: '/mesas',
+  getParentRoute: () => StudioRoute,
+} as any)
 const StudioMetricasRoute = StudioMetricasRouteImport.update({
   id: '/metricas',
   path: '/metricas',
@@ -237,6 +244,11 @@ const StudioSettingsRoute = StudioSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => StudioRoute,
+} as any)
+const TotemSlugRoute = TotemSlugRouteImport.update({
+  id: '/totem/$slug',
+  path: '/totem/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAsaasChargeRoute = ApiAsaasChargeRouteImport.update({
   id: '/api/asaas/charge',
@@ -362,11 +374,13 @@ export interface FileRoutesByFullPath {
   '/studio/crm': typeof StudioCrmRoute
   '/studio/entregas': typeof StudioEntregasRoute
   '/studio/financeiro': typeof StudioFinanceiroRoute
+  '/studio/mesas': typeof StudioMesasRoute
   '/studio/metricas': typeof StudioMetricasRoute
   '/studio/pedidos': typeof StudioPedidosRoute
   '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
+  '/totem/$slug': typeof TotemSlugRoute
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
@@ -415,11 +429,13 @@ export interface FileRoutesByTo {
   '/studio/crm': typeof StudioCrmRoute
   '/studio/entregas': typeof StudioEntregasRoute
   '/studio/financeiro': typeof StudioFinanceiroRoute
+  '/studio/mesas': typeof StudioMesasRoute
   '/studio/metricas': typeof StudioMetricasRoute
   '/studio/pedidos': typeof StudioPedidosRoute
   '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
+  '/totem/$slug': typeof TotemSlugRoute
   '/app': typeof AppIndexRoute
   '/studio': typeof StudioIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
@@ -471,11 +487,13 @@ export interface FileRoutesById {
   '/studio/crm': typeof StudioCrmRoute
   '/studio/entregas': typeof StudioEntregasRoute
   '/studio/financeiro': typeof StudioFinanceiroRoute
+  '/studio/mesas': typeof StudioMesasRoute
   '/studio/metricas': typeof StudioMetricasRoute
   '/studio/pedidos': typeof StudioPedidosRoute
   '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
+  '/totem/$slug': typeof TotemSlugRoute
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
@@ -528,11 +546,13 @@ export interface FileRouteTypes {
     | '/studio/crm'
     | '/studio/entregas'
     | '/studio/financeiro'
+    | '/studio/mesas'
     | '/studio/metricas'
     | '/studio/pedidos'
     | '/studio/precificacao'
     | '/studio/profissionais'
     | '/studio/settings'
+    | '/totem/$slug'
     | '/app/'
     | '/studio/'
     | '/api/asaas/charge'
@@ -581,11 +601,13 @@ export interface FileRouteTypes {
     | '/studio/crm'
     | '/studio/entregas'
     | '/studio/financeiro'
+    | '/studio/mesas'
     | '/studio/metricas'
     | '/studio/pedidos'
     | '/studio/precificacao'
     | '/studio/profissionais'
     | '/studio/settings'
+    | '/totem/$slug'
     | '/app'
     | '/studio'
     | '/api/asaas/charge'
@@ -636,11 +658,13 @@ export interface FileRouteTypes {
     | '/studio/crm'
     | '/studio/entregas'
     | '/studio/financeiro'
+    | '/studio/mesas'
     | '/studio/metricas'
     | '/studio/pedidos'
     | '/studio/precificacao'
     | '/studio/profissionais'
     | '/studio/settings'
+    | '/totem/$slug'
     | '/app/'
     | '/studio/'
     | '/api/asaas/charge'
@@ -673,6 +697,7 @@ export interface RootRouteChildren {
   LojaSlugRoute: typeof LojaSlugRoute
   PSlugRoute: typeof PSlugRoute
   PedidoTokenRoute: typeof PedidoTokenRoute
+  TotemSlugRoute: typeof TotemSlugRoute
   ApiAsaasChargeRoute: typeof ApiAsaasChargeRoute
   ApiAsaasSubaccountRoute: typeof ApiAsaasSubaccountRoute
   ApiAsaasWebhookRoute: typeof ApiAsaasWebhookRoute
@@ -897,6 +922,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioFinanceiroRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/studio/mesas': {
+      id: '/studio/mesas'
+      path: '/mesas'
+      fullPath: '/studio/mesas'
+      preLoaderRoute: typeof StudioMesasRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/studio/metricas': {
       id: '/studio/metricas'
       path: '/metricas'
@@ -931,6 +963,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/studio/settings'
       preLoaderRoute: typeof StudioSettingsRouteImport
       parentRoute: typeof StudioRoute
+    }
+    '/totem/$slug': {
+      id: '/totem/$slug'
+      path: '/totem/$slug'
+      fullPath: '/totem/$slug'
+      preLoaderRoute: typeof TotemSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/asaas/charge': {
       id: '/api/asaas/charge'
@@ -1130,6 +1169,7 @@ interface StudioRouteChildren {
   StudioCrmRoute: typeof StudioCrmRoute
   StudioEntregasRoute: typeof StudioEntregasRoute
   StudioFinanceiroRoute: typeof StudioFinanceiroRoute
+  StudioMesasRoute: typeof StudioMesasRoute
   StudioMetricasRoute: typeof StudioMetricasRoute
   StudioPedidosRoute: typeof StudioPedidosRoute
   StudioPrecificacaoRoute: typeof StudioPrecificacaoRoute
@@ -1145,6 +1185,7 @@ const StudioRouteChildren: StudioRouteChildren = {
   StudioCrmRoute: StudioCrmRoute,
   StudioEntregasRoute: StudioEntregasRoute,
   StudioFinanceiroRoute: StudioFinanceiroRoute,
+  StudioMesasRoute: StudioMesasRoute,
   StudioMetricasRoute: StudioMetricasRoute,
   StudioPedidosRoute: StudioPedidosRoute,
   StudioPrecificacaoRoute: StudioPrecificacaoRoute,
@@ -1166,6 +1207,7 @@ const rootRouteChildren: RootRouteChildren = {
   LojaSlugRoute: LojaSlugRoute,
   PSlugRoute: PSlugRoute,
   PedidoTokenRoute: PedidoTokenRoute,
+  TotemSlugRoute: TotemSlugRoute,
   ApiAsaasChargeRoute: ApiAsaasChargeRoute,
   ApiAsaasSubaccountRoute: ApiAsaasSubaccountRoute,
   ApiAsaasWebhookRoute: ApiAsaasWebhookRoute,

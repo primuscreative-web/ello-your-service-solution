@@ -58,6 +58,10 @@ function OrdersPage() {
   const [query, setQuery] = useState("");
   const [receiptWidth, setReceiptWidth] = useState<"58mm" | "80mm">("80mm");
   const [kdsMode, setKdsMode] = useState(false);
+  const [autoPrintEnabled, setAutoPrintEnabled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("ello_auto_print_enabled") === "true";
+  });
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("ello_order_sound_enabled") !== "false";
@@ -67,6 +71,16 @@ function OrdersPage() {
     return Notification.permission === "granted";
   });
   const knownOrderIds = useRef<Set<string> | null>(null);
+
+  function toggleAutoPrint() {
+    setAutoPrintEnabled((curr) => {
+      const nextVal = !curr;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("ello_auto_print_enabled", String(nextVal));
+      }
+      return nextVal;
+    });
+  }
 
   async function requestNotificationPermission() {
     if (typeof window === "undefined" || !("Notification" in window)) return;
@@ -181,20 +195,36 @@ function OrdersPage() {
       const newOrders = orders.filter(
         (o) => !knownOrderIds.current!.has(o.id) && o.status === "received",
       );
-      if (
-        newOrders.length > 0 &&
-        typeof window !== "undefined" &&
-        "Notification" in window &&
-        Notification.permission === "granted"
-      ) {
-        for (const order of newOrders) {
-          try {
-            new Notification(`🔔 Novo Pedido #${order.number}!`, {
-              body: `${order.customerName} · ${money(order.total)} (${order.fulfillment === "delivery" ? "Entrega" : "Retirada"})`,
-              icon: "/favicon.ico",
-              tag: `order-${order.id}`,
-            });
-          } catch {}
+      if (newOrders.length > 0) {
+        if (
+          typeof window !== "undefined" &&
+          "Notification" in window &&
+          Notification.permission === "granted"
+        ) {
+          for (const order of newOrders) {
+            try {
+              new Notification(`🔔 Novo Pedido #${order.number}!`, {
+                body: `${order.customerName} · ${money(order.total)} (${order.fulfillment === "delivery" ? "Entrega" : "Retirada"})`,
+                icon: "/favicon.ico",
+                tag: `order-${order.id}`,
+              });
+            } catch {}
+          }
+        }
+
+        // Impressão automática se ativada
+        if (autoPrintEnabled) {
+          for (const order of newOrders) {
+            try {
+              printThermalReceipt({
+                order,
+                business,
+                drivers,
+                type: "bag_tag",
+                width: receiptWidth,
+              });
+            } catch {}
+          }
         }
       }
     }
@@ -367,6 +397,24 @@ function OrdersPage() {
               {kdsMode ? "KDS Cozinha Ativo" : "Modo Cozinha (KDS)"}
             </button>
 
+            <button
+              type="button"
+              onClick={toggleAutoPrint}
+              className={`inline-flex min-h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
+                autoPrintEnabled
+                  ? "border-violet-300 bg-violet-50 text-violet-800"
+                  : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+              }`}
+              title={
+                autoPrintEnabled
+                  ? "Impressão automática ativada: imprime ao chegar novo pedido"
+                  : "Impressão automática desativada"
+              }
+            >
+              <Printer size={14} className={autoPrintEnabled ? "text-violet-600 animate-bounce" : ""} />
+              <span>{autoPrintEnabled ? "Auto-Imprimir: Ligado" : "Auto-Imprimir: Desligado"}</span>
+            </button>
+
             <label className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600">
               <Printer size={14} className="text-slate-500" />
               <span>Bobina:</span>
@@ -490,6 +538,16 @@ function OrdersPage() {
                   </a>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  {order.tableNumber && (
+                    <span className="rounded-full bg-amber-500 px-2.5 py-1 text-xs font-bold text-white shadow-2xs">
+                      🍽️ Mesa {order.tableNumber}
+                    </span>
+                  )}
+                  {order.externalPlatform === "ifood" && (
+                    <span className="rounded-full bg-red-600 px-2.5 py-1 text-xs font-black text-white shadow-2xs">
+                      iFood
+                    </span>
+                  )}
                   {order.paymentStatus === "paid" || order.paymentMethod === "online_pix" ? (
                     <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">
                       <Zap size={12} /> Pago Pix Online
@@ -592,6 +650,22 @@ function OrdersPage() {
                   >
                     <UtensilsCrossed size={13} /> Cozinha
                   </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      printThermalReceipt({
+                        order,
+                        business,
+                        drivers,
+                        type: "bar",
+                        width: receiptWidth,
+                      })
+                    }
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-bold text-blue-800 hover:bg-blue-100 transition"
+                    title="Imprimir comanda de bebidas/drinks para o bar"
+                  >
+                    🍺 Bar
+                  </button>
                   <a
                     href={getCustomerWhatsAppLink(order)}
                     target="_blank"
@@ -633,6 +707,15 @@ function OrdersPage() {
                             </a>
                           ) : null;
                         })()}
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.address)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                        title="Abrir rota no Google Maps para o entregador"
+                      >
+                        <MapPin size={13} className="text-rose-500" /> Rota GPS
+                      </a>
                     </>
                   )}
                   {next(order) && (
