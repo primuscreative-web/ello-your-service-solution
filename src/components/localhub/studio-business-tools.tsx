@@ -26,8 +26,7 @@ type BusinessSegment = "beleza" | "pet" | "saude" | "alimentacao" | "servicos" |
 
 export function StudioBusinessTools() {
   const { business } = useLocalHub();
-  const defaultSegment = mapCategoryToSegment(business?.category);
-  const [activeSegment, setActiveSegment] = useState<BusinessSegment>(defaultSegment);
+  const activeSegment: BusinessSegment = mapCategoryToSegment(business?.category);
 
   // Estados dos utilitários interativos rápidos
   // 1. Calculadora de Comissão (Beleza / Prestadores)
@@ -89,30 +88,22 @@ export function StudioBusinessTools() {
           </p>
         </div>
 
-        {/* SELETOR DE NICHOS */}
-        <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1 text-xs font-semibold">
-          {[
-            { id: "beleza", label: "Beleza & Salão", icon: Scissors },
-            { id: "pet", label: "Pet Shop", icon: Dog },
-            { id: "saude", label: "Saúde & Clínicas", icon: Stethoscope },
-            { id: "alimentacao", label: "Gastronomia", icon: UtensilsCrossed },
-            { id: "servicos", label: "Serviços Locais", icon: Wrench },
-            { id: "varejo", label: "Lojas & Varejo", icon: ShoppingBag },
-          ].map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActiveSegment(id as BusinessSegment)}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition ${
-                activeSegment === id
-                  ? "bg-white text-[#292b25] shadow-2xs font-bold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Icon size={13} />
-              <span>{label}</span>
-            </button>
-          ))}
+        {/* INDICADOR EXCLUSIVO DO NICHO DO NEGÓCIO */}
+        <div className="flex items-center gap-2 rounded-xl bg-[#edf0e5] px-3.5 py-1.5 text-xs font-bold text-[#586341] border border-[#d9ddcf]">
+          {activeSegment === "beleza" && <Scissors size={14} />}
+          {activeSegment === "pet" && <Dog size={14} />}
+          {activeSegment === "saude" && <Stethoscope size={14} />}
+          {activeSegment === "alimentacao" && <UtensilsCrossed size={14} />}
+          {activeSegment === "servicos" && <Wrench size={14} />}
+          {activeSegment === "varejo" && <ShoppingBag size={14} />}
+          <span>
+            {activeSegment === "beleza" && "Beleza, Barbearia & Estética"}
+            {activeSegment === "pet" && "Pet Shop & Banho e Tosa"}
+            {activeSegment === "saude" && "Saúde, Clínicas & Bem-Estar"}
+            {activeSegment === "alimentacao" && "Gastronomia & Delivery"}
+            {activeSegment === "servicos" && "Serviços, Oficinas & Atendimentos"}
+            {activeSegment === "varejo" && "Lojas & Varejo"}
+          </span>
         </div>
       </div>
 

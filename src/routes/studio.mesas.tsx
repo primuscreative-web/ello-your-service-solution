@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Utensils,
   Plus,
@@ -41,6 +41,30 @@ type OrderItemDraft = {
 
 function StudioMesasPage() {
   const { business, services } = useLocalHub();
+
+  if (business && business.category !== "alimentacao") {
+    return (
+      <div className="mx-auto max-w-xl text-center py-16 px-4">
+        <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-amber-100 text-amber-800 font-bold mb-4">
+          <Utensils size={32} />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Módulo exclusivo de Gastronomia</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          O controle de Mesas e Salão é exclusivo para restaurantes, bares e lanchonetes.
+          Para o segmento <b>{business.category}</b>, utilize a <b>Agenda de Atendimentos</b> ou a <b>Frente de Caixa / PDV</b>.
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Link to="/studio" className="rounded-xl bg-[#292b25] px-4 py-2 text-xs font-bold text-white hover:bg-[#3d3f37]">
+            Voltar para o Painel
+          </Link>
+          <Link to="/studio/agenda" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
+            Ir para a Agenda
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const [tables, setTables] = useState<TableItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTable, setSelectedTable] = useState<TableItem | null>(null);

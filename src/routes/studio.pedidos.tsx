@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
@@ -52,6 +52,11 @@ type OrderFilter = (typeof orderFilters)[number]["id"];
 
 function OrdersPage() {
   const { business, orders, drivers, setOrderStatus, refresh } = useLocalHub();
+
+  if (business && business.category !== "alimentacao") {
+    return <Navigate to="/studio/agenda" replace />;
+  }
+
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [filter, setFilter] = useState<OrderFilter>("active");

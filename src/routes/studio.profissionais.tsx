@@ -63,6 +63,29 @@ const defaultStaffHours: BusinessOpeningHours = {
 function StudioProfissionaisPage() {
   const { business, staff, saveStaff, removeStaff, bookings } = useLocalHub();
 
+  if (business && business.category === "alimentacao") {
+    return (
+      <div className="mx-auto max-w-xl text-center py-16 px-4">
+        <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-amber-100 text-amber-800 font-bold mb-4">
+          <Users size={32} />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Módulo de Equipe para Serviços & Agendamentos</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          O cadastro de profissionais por cadeira/horário é voltado para barbearias, clínicas, salões e consultórios.
+          Em estabelecimentos de alimentação, sua equipe opera pelo <b>Painel de Pedidos (KDS)</b> e <b>Gestão de Motoboys</b>.
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Link to="/studio/pedidos" className="rounded-xl bg-[#292b25] px-4 py-2 text-xs font-bold text-white hover:bg-[#3d3f37]">
+            Abrir Pedidos (KDS)
+          </Link>
+          <Link to="/studio/entregas" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
+            Gerenciar Motoboys
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused" | "access">("all");
   const [modalOpen, setModalOpen] = useState(false);

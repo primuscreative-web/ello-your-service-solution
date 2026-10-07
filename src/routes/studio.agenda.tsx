@@ -54,6 +54,10 @@ function AgendaPage() {
     refresh,
   } = useLocalHub();
 
+  if (business && business.category === "alimentacao") {
+    return <Navigate to="/studio/pedidos" replace />;
+  }
+
   useEffect(() => {
     if (!business?.id) return;
     const client = getSupabaseBrowserClient();

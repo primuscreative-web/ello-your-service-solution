@@ -1367,109 +1367,153 @@ function SettingsPage() {
                       </button>
                     </form>
                   </div>
+                </section>
+              )}
 
-                  {/* Conexão de WhatsApp Automático (Evolution API) */}
-                  <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <span className="grid size-10 place-items-center rounded-xl bg-emerald-600 text-white font-black">
-                          <MessageCircle size={20} />
-                        </span>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-bold text-emerald-950">
-                              WhatsApp da Loja (Disparos Automáticos)
-                            </h3>
-                            {waState === "open" ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold text-white">
-                                <span className="size-1.5 rounded-full bg-white animate-pulse" /> Conectado
-                              </span>
-                            ) : waState === "connecting" ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white">
-                                <span className="size-1.5 rounded-full bg-white animate-ping" /> Aguardando Leitura
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-slate-400 px-2.5 py-0.5 text-[10px] font-bold text-white">
-                                Desconectado
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-emerald-800">
-                            Envie status de pedidos, rastreamento de motoboy e lembretes de agendamento do seu próprio número.
-                          </p>
+              {/* Conexão de WhatsApp Automático (Evolution API) - UNIVERSAL PARA TODOS OS NICHOS */}
+              <section className="border-t border-slate-100 pt-5">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="grid size-10 place-items-center rounded-xl bg-emerald-600 text-white font-black">
+                        <MessageCircle size={20} />
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-emerald-950">
+                            WhatsApp do Negócio (Disparos Automáticos)
+                          </h3>
+                          {waState === "open" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold text-white">
+                              <span className="size-1.5 rounded-full bg-white animate-pulse" /> Conectado
+                            </span>
+                          ) : waState === "connecting" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white">
+                              <span className="size-1.5 rounded-full bg-white animate-ping" /> Aguardando Leitura
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-400 px-2.5 py-0.5 text-[10px] font-bold text-white">
+                              Desconectado
+                            </span>
+                          )}
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void fetchWhatsAppStatus()}
-                          disabled={waLoading}
-                          className="rounded-xl border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50"
-                        >
-                          {waLoading ? "Atualizando..." : "Atualizar QR Code"}
-                        </button>
-                        {waState === "open" && (
-                          <button
-                            type="button"
-                            onClick={() => void handleDisconnectWhatsApp()}
-                            className="rounded-xl border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm hover:bg-red-50"
-                          >
-                            Desconectar
-                          </button>
-                        )}
+                        <p className="text-xs text-emerald-800">
+                          {isFoodBusiness
+                            ? "Envie status de pedidos, rastreamento de motoboy e confirmações do seu próprio número."
+                            : "Envie confirmações de agendamento, lembretes de horário e orçamentos do seu próprio número."}
+                        </p>
                       </div>
                     </div>
 
-                    {waState === "open" ? (
-                      <div className="mt-4 rounded-xl border border-emerald-200 bg-white p-4 text-xs text-emerald-900 flex items-center gap-3">
-                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700 font-bold">
-                          ✓
-                        </span>
-                        <div>
-                          <p className="font-bold">Seu WhatsApp está conectado e operando 100% automático!</p>
-                          <p className="text-emerald-700">
-                            Todos os pedidos feitos no cardápio, saídas para entrega e agendamentos serão notificados aos clientes a partir deste número.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-4 grid gap-4 rounded-xl border border-emerald-200 bg-white p-5 sm:grid-cols-[auto_1fr] sm:items-center">
-                        <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-50 border border-slate-200">
-                          {waQrCode ? (
-                            <img
-                              src={waQrCode.startsWith("data:") ? waQrCode : `data:image/png;base64,${waQrCode}`}
-                              alt="QR Code WhatsApp"
-                              className="size-48 rounded-lg shadow-sm"
-                            />
-                          ) : (
-                            <div className="size-48 grid place-items-center text-center text-xs text-slate-400 p-4">
-                              {waLoading ? "Gerando QR Code..." : "Clique em 'Atualizar QR Code' para carregar"}
-                            </div>
-                          )}
-                          <span className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                            Aponte a câmera do WhatsApp
-                          </span>
-                        </div>
-
-                        <div className="space-y-2.5 text-xs text-slate-700">
-                          <h4 className="font-bold text-sm text-slate-900">Como conectar o WhatsApp da sua loja:</h4>
-                          <ol className="list-decimal pl-4 space-y-1.5 text-slate-600">
-                            <li>Abra o aplicativo do <b>WhatsApp</b> no celular do seu negócio.</li>
-                            <li>Acesse <b>Configurações</b> (ou os 3 pontinhos) ➜ <b>Aparelhos Conectados</b>.</li>
-                            <li>Toque no botão <b>Conectar um aparelho</b>.</li>
-                            <li>Aponte a câmera do celular para este QR Code ao lado.</li>
-                          </ol>
-                          <div className="rounded-lg bg-emerald-50 p-2.5 text-[11px] text-emerald-800 border border-emerald-200">
-                            💡 <b>Dica:</b> O sistema reconhece a leitura em tempo real e muda o status para Conectado sozinho!
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void fetchWhatsAppStatus()}
+                        disabled={waLoading}
+                        className="rounded-xl border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50"
+                      >
+                        {waLoading ? "Atualizando..." : "Atualizar QR Code"}
+                      </button>
+                      {waState === "open" && (
+                        <button
+                          type="button"
+                          onClick={() => void handleDisconnectWhatsApp()}
+                          className="rounded-xl border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm hover:bg-red-50"
+                        >
+                          Desconectar
+                        </button>
+                      )}
+                    </div>
                   </div>
 
+                  {waState === "open" ? (
+                    <div className="mt-4 rounded-xl border border-emerald-200 bg-white p-4 text-xs text-emerald-900 flex items-center gap-3">
+                      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700 font-bold">
+                        ✓
+                      </span>
+                      <div>
+                        <p className="font-bold">Seu WhatsApp está conectado e operando 100% automático!</p>
+                        <p className="text-emerald-700">
+                          {isFoodBusiness
+                            ? "Todos os pedidos feitos no cardápio, saídas para entrega e avisos serão notificados aos clientes a partir deste número."
+                            : "Todas as confirmações de atendimento, lembretes e avisos serão enviados automaticamente aos clientes a partir deste número."}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 grid gap-4 rounded-xl border border-emerald-200 bg-white p-5 sm:grid-cols-[auto_1fr] sm:items-center">
+                      <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        {waQrCode ? (
+                          <img
+                            src={waQrCode.startsWith("data:") ? waQrCode : `data:image/png;base64,${waQrCode}`}
+                            alt="QR Code WhatsApp"
+                            className="size-48 rounded-lg shadow-sm"
+                          />
+                        ) : (
+                          <div className="size-48 grid place-items-center text-center text-xs text-slate-400 p-4">
+                            {waLoading ? "Gerando QR Code..." : "Clique em 'Atualizar QR Code' para carregar"}
+                          </div>
+                        )}
+                        <span className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                          Aponte a câmera do WhatsApp
+                        </span>
+                      </div>
+
+                      <div className="space-y-2.5 text-xs text-slate-700">
+                        <h4 className="font-bold text-sm text-slate-900">Como conectar o WhatsApp do seu negócio:</h4>
+                        <ol className="list-decimal pl-4 space-y-1.5 text-slate-600">
+                          <li>Abra o aplicativo do <b>WhatsApp</b> no celular do seu negócio.</li>
+                          <li>Acesse <b>Configurações</b> (ou os 3 pontinhos) ➜ <b>Aparelhos Conectados</b>.</li>
+                          <li>Toque no botão <b>Conectar um aparelho</b>.</li>
+                          <li>Aponte a câmera do celular para este QR Code ao lado.</li>
+                        </ol>
+                        <div className="rounded-lg bg-emerald-50 p-2.5 text-[11px] text-emerald-800 border border-emerald-200">
+                          💡 <b>Dica:</b> O sistema reconhece a leitura em tempo real e muda o status para Conectado sozinho!
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Avaliações Google (Google Meu Negócio) - UNIVERSAL PARA TODOS OS NICHOS */}
+              <section className="border-t border-slate-100 pt-5">
+                <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-5">
+                  <div className="flex items-center gap-2">
+                    <span className="grid size-8 place-items-center rounded-xl bg-blue-600 text-white font-bold text-sm">
+                      G
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-bold text-blue-950">Avaliações Google (Google Meu Negócio)</h3>
+                      <p className="text-xs text-blue-800">
+                        Aumente sua nota no Google enviando o link de avaliação 5 estrelas após cada atendimento ou pedido.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-xs">
+                    <label className="font-semibold text-slate-700">Link direto de Avaliação Google</label>
+                    <input
+                      value={(form as any).googleReviewsUrl ?? ""}
+                      onChange={(e) => {
+                        setSaved(false);
+                        setForm((prev) => ({ ...prev, googleReviewsUrl: e.target.value } as any));
+                      }}
+                      placeholder="https://g.page/r/SUA_EMPRESA/review"
+                      className="mt-1 w-full rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs outline-none"
+                    />
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      O ELLO incluirá um botão "⭐ Avaliar no Google" na página de confirmação e nas mensagens automáticas.
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              {/* MÓDULOS ESPECÍFICOS DE RESTAURANTE / GASTRONOMIA */}
+              {isFoodBusiness && (
+                <section className="border-t border-slate-100 pt-5 space-y-5">
                   {/* Integração iFood */}
-                  <div className="mt-5 rounded-2xl border border-red-200 bg-red-50/40 p-5">
+                  <div className="rounded-2xl border border-red-200 bg-red-50/40 p-5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="grid size-8 place-items-center rounded-xl bg-red-600 text-white font-black text-xs">
@@ -1528,39 +1572,8 @@ function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Avaliações Google (Google Meu Negócio) */}
-                  <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/40 p-5">
-                    <div className="flex items-center gap-2">
-                      <span className="grid size-8 place-items-center rounded-xl bg-blue-600 text-white font-bold text-sm">
-                        G
-                      </span>
-                      <div>
-                        <h3 className="text-sm font-bold text-blue-950">Avaliações Google (Google Meu Negócio)</h3>
-                        <p className="text-xs text-blue-800">
-                          Aumente sua nota no Google enviando o link de avaliação 5 estrelas após cada entrega.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 text-xs">
-                      <label className="font-semibold text-slate-700">Link direto de Avaliação Google</label>
-                      <input
-                        value={(form as any).googleReviewsUrl ?? ""}
-                        onChange={(e) => {
-                          setSaved(false);
-                          setForm((prev) => ({ ...prev, googleReviewsUrl: e.target.value } as any));
-                        }}
-                        placeholder="https://g.page/r/SUA_EMPRESA/review"
-                        className="mt-1 w-full rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs outline-none"
-                      />
-                      <p className="mt-1 text-[11px] text-slate-500">
-                        O ELLO incluirá um botão "⭐ Avaliar no Google" na página de rastreamento e na mensagem de entrega concluída.
-                      </p>
-                    </div>
-                  </div>
-
                   {/* Totem & Modo Autoatendimento */}
-                  <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5">
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="grid size-8 place-items-center rounded-xl bg-emerald-600 text-white font-bold text-sm">
