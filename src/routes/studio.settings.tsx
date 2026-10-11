@@ -113,13 +113,16 @@ function SettingsPage() {
           authorization: session?.access_token ? `Bearer ${session.access_token}` : "",
         },
       });
-      if (res.status === 401) {
-        setWaState("close");
-        return;
+      const data = await res.json().catch(() => ({}));
+      if (data.qrcode) {
+        setWaQrCode(data.qrcode);
+        setWaState(data.state === "open" ? "open" : "connecting");
+      } else if (data.state === "open") {
+        setWaState("open");
+        setWaQrCode(null);
+      } else {
+        setWaState(data.state || "connecting");
       }
-      const data = await res.json();
-      setWaState(data.state || "connecting");
-      setWaQrCode(data.qrcode || null);
     } catch {
       setWaState("close");
     } finally {

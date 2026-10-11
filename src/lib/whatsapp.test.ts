@@ -96,8 +96,15 @@ test("rejeita envio se número for inválido", async () => {
 });
 
 test("opera em modo simulado/contingência quando provedor de API não configurado", async () => {
-  const result = await sendWhatsAppMessage({ phone: "11987654321", text: "Mensagem teste" });
-  assert.equal(result.success, true);
-  assert.equal(result.simulated, true);
-  assert.match(result.directLink, /wa\.me\/5511987654321/);
+  const prevProvider = process.env.WHATSAPP_PROVIDER;
+  process.env.WHATSAPP_PROVIDER = "none";
+  try {
+    const result = await sendWhatsAppMessage({ phone: "11987654321", text: "Mensagem teste" });
+    assert.equal(result.success, true);
+    assert.equal(result.simulated, true);
+    assert.match(result.directLink, /wa\.me\/5511987654321/);
+  } finally {
+    if (prevProvider !== undefined) process.env.WHATSAPP_PROVIDER = prevProvider;
+    else delete process.env.WHATSAPP_PROVIDER;
+  }
 });

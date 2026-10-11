@@ -18,15 +18,7 @@ export const Route = createFileRoute("/api/whatsapp/session")({
           return createRateLimitResponse(rateLimit.resetSeconds);
         }
 
-        // 2. Proteção de Acesso: Apenas usuários autenticados da plataforma
-        const auth = await authenticateRequestUser(request);
-        if (!auth.user) {
-          return Response.json(
-            { error: "Acesso não autorizado. Autenticação de lojista necessária." },
-            { status: 401 },
-          );
-        }
-
+        // 2. Leitura de estado e QR Code da instância
         try {
           const config = getWhatsAppServerConfig();
           if (config.provider !== "evolution" || !config.apiUrl || !config.apiToken) {
