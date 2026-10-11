@@ -142,14 +142,14 @@ export function StudioLayout() {
                 Abrir prévia <ExternalLink size={13} />
               </Link>
               {isFoodBusiness && (
-                <Link
-                  to="/totem/$slug"
-                  params={{ slug: business.slug }}
+                <a
+                  href={`/totem/${business.slug || "maniello"}`}
                   target="_blank"
+                  rel="noreferrer"
                   className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-900/60"
                 >
                   📱 Totem <ExternalLink size={12} />
-                </Link>
+                </a>
               )}
             </div>
           )}

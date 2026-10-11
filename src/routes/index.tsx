@@ -34,6 +34,7 @@ import {
   Sparkles,
   Zap,
   ChevronRight,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-react";
 import { useLocalHub } from "@/lib/localhub-context";
@@ -789,6 +790,13 @@ const BUSINESS_CATEGORIES: {
         icon: TrendingUp,
       },
       {
+        name: "Totem de Autoatendimento Tablet",
+        tag: "Inovação",
+        tagColor: "bg-indigo-100 text-indigo-800 border-indigo-200",
+        description: "Modo Kiosk para iPad/tablet no salão com escolha de mesa, Pix na tela e senha de chamada.",
+        icon: Smartphone,
+      },
+      {
         name: "Gerador de Cardápio Gráfico em PDF",
         tag: "Design",
         tagColor: "bg-sky-100 text-sky-800 border-sky-200",
@@ -1242,6 +1250,18 @@ function BusinessCategoriesExplorer({ startTo }: { startTo: string }) {
                     <p className="mt-1.5 text-[12px] leading-relaxed text-[#70726a]">
                       {tool.description}
                     </p>
+                    {tool.name.toLowerCase().includes("totem") && (
+                      <div className="mt-4 border-t border-[#f0f0eb] pt-3">
+                        <a
+                          href="/totem/maniello"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-900 transition"
+                        >
+                          📱 Abrir Totem de Autoatendimento <ExternalLink size={12} />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

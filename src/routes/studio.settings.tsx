@@ -1605,7 +1605,7 @@ function SettingsPage() {
                         </div>
                       </div>
                       <a
-                        href={`/totem/${form.slug}`}
+                        href={`/totem/${form.slug || business?.slug || "maniello"}`}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-800"
@@ -1614,7 +1614,7 @@ function SettingsPage() {
                       </a>
                     </div>
                     <p className="mt-2 text-xs font-mono text-emerald-900 bg-white p-2 rounded-lg border border-emerald-200">
-                      https://ello.app.br/totem/{form.slug}
+                      https://ello.app.br/totem/{form.slug || business?.slug || "maniello"}
                     </p>
                   </div>
                 </section>

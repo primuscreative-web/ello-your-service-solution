@@ -81,6 +81,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       location.pathname.startsWith("/studio/") ||
       location.pathname.startsWith("/loja/") ||
       location.pathname.startsWith("/pedido/") ||
+      location.pathname === "/totem" ||
       location.pathname.startsWith("/totem/") ||
       location.pathname.startsWith("/c/");
     if (!allowed) {

@@ -45,6 +45,7 @@ import { Route as StudioPedidosRouteImport } from './routes/studio.pedidos'
 import { Route as StudioPrecificacaoRouteImport } from './routes/studio.precificacao'
 import { Route as StudioProfissionaisRouteImport } from './routes/studio.profissionais'
 import { Route as StudioSettingsRouteImport } from './routes/studio.settings'
+import { Route as TotemIndexRouteImport } from './routes/totem.index'
 import { Route as TotemSlugRouteImport } from './routes/totem.$slug'
 import { Route as ApiAsaasChargeRouteImport } from './routes/api.asaas.charge'
 import { Route as ApiAsaasSubaccountRouteImport } from './routes/api.asaas.subaccount'
@@ -246,6 +247,11 @@ const StudioSettingsRoute = StudioSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => StudioRoute,
 } as any)
+const TotemIndexRoute = TotemIndexRouteImport.update({
+  id: '/totem/',
+  path: '/totem/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TotemSlugRoute = TotemSlugRouteImport.update({
   id: '/totem/$slug',
   path: '/totem/$slug',
@@ -389,6 +395,7 @@ export interface FileRoutesByFullPath {
   '/totem/$slug': typeof TotemSlugRoute
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
+  '/totem/': typeof TotemIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
@@ -445,6 +452,7 @@ export interface FileRoutesByTo {
   '/totem/$slug': typeof TotemSlugRoute
   '/app': typeof AppIndexRoute
   '/studio': typeof StudioIndexRoute
+  '/totem': typeof TotemIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
@@ -504,6 +512,7 @@ export interface FileRoutesById {
   '/totem/$slug': typeof TotemSlugRoute
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
+  '/totem/': typeof TotemIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
@@ -564,6 +573,7 @@ export interface FileRouteTypes {
     | '/totem/$slug'
     | '/app/'
     | '/studio/'
+    | '/totem/'
     | '/api/asaas/charge'
     | '/api/asaas/subaccount'
     | '/api/asaas/webhook'
@@ -620,6 +630,7 @@ export interface FileRouteTypes {
     | '/totem/$slug'
     | '/app'
     | '/studio'
+    | '/totem'
     | '/api/asaas/charge'
     | '/api/asaas/subaccount'
     | '/api/asaas/webhook'
@@ -678,6 +689,7 @@ export interface FileRouteTypes {
     | '/totem/$slug'
     | '/app/'
     | '/studio/'
+    | '/totem/'
     | '/api/asaas/charge'
     | '/api/asaas/subaccount'
     | '/api/asaas/webhook'
@@ -710,6 +722,7 @@ export interface RootRouteChildren {
   PSlugRoute: typeof PSlugRoute
   PedidoTokenRoute: typeof PedidoTokenRoute
   TotemSlugRoute: typeof TotemSlugRoute
+  TotemIndexRoute: typeof TotemIndexRoute
   ApiAsaasChargeRoute: typeof ApiAsaasChargeRoute
   ApiAsaasSubaccountRoute: typeof ApiAsaasSubaccountRoute
   ApiAsaasWebhookRoute: typeof ApiAsaasWebhookRoute
@@ -977,6 +990,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioSettingsRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/totem/': {
+      id: '/totem/'
+      path: '/totem'
+      fullPath: '/totem/'
+      preLoaderRoute: typeof TotemIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/totem/$slug': {
       id: '/totem/$slug'
       path: '/totem/$slug'
@@ -1228,6 +1248,7 @@ const rootRouteChildren: RootRouteChildren = {
   PSlugRoute: PSlugRoute,
   PedidoTokenRoute: PedidoTokenRoute,
   TotemSlugRoute: TotemSlugRoute,
+  TotemIndexRoute: TotemIndexRoute,
   ApiAsaasChargeRoute: ApiAsaasChargeRoute,
   ApiAsaasSubaccountRoute: ApiAsaasSubaccountRoute,
   ApiAsaasWebhookRoute: ApiAsaasWebhookRoute,

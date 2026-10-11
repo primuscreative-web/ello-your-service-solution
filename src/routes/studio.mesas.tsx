@@ -368,16 +368,14 @@ function StudioMesasPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {business?.slug && (
-            <a
-              href={`/totem/${business.slug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 shadow-2xs hover:bg-emerald-100"
-            >
-              📱 Abrir Totem Tablet <ExternalLink size={13} />
-            </a>
-          )}
+          <a
+            href={`/totem/${business?.slug || "maniello"}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 shadow-2xs hover:bg-emerald-100"
+          >
+            📱 Abrir Totem Tablet <ExternalLink size={13} />
+          </a>
           <button
             type="button"
             onClick={() => handleCreateQuickTables(5)}

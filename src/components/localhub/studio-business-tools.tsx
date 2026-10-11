@@ -18,6 +18,8 @@ import {
   Copy,
   Receipt,
   Share2,
+  Smartphone,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocalHub } from "@/lib/localhub-context";
@@ -375,17 +377,17 @@ export function StudioBusinessTools() {
           <div className="grid gap-5 lg:grid-cols-2">
             <div className="space-y-3">
               <h3 className="text-sm font-bold text-slate-900">Operação Gastronômica Completa</h3>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-3">
                 <Link
                   to="/studio/pedidos"
                   className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 transition hover:border-[#b8d648] hover:bg-white hover:shadow-xs"
                 >
                   <div className="flex items-center gap-2 text-slate-700">
                     <Receipt size={16} className="text-[#586341]" />
-                    <span className="text-xs font-bold">Painel de Pedidos (KDS)</span>
+                    <span className="text-xs font-bold">Painel KDS</span>
                   </div>
                   <p className="mt-2 text-[11px] text-slate-500">
-                    Acompanhe preparo na cozinha, retiradas no balcão e delivery.
+                    Preparo e despachos.
                   </p>
                 </Link>
 
@@ -395,30 +397,53 @@ export function StudioBusinessTools() {
                 >
                   <div className="flex items-center gap-2 text-slate-700">
                     <UtensilsCrossed size={16} className="text-[#586341]" />
-                    <span className="text-xs font-bold">Mesas & Salão com QR Code</span>
+                    <span className="text-xs font-bold">Mesas & Salão</span>
                   </div>
                   <p className="mt-2 text-[11px] text-slate-500">
-                    Clientes pedem direto da mesa pelo celular sem garçom demorado.
+                    Comandas e QR Codes.
                   </p>
                 </Link>
+
+                <a
+                  href={`/totem/${business?.slug || "maniello"}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex flex-col justify-between rounded-xl border border-emerald-300 bg-emerald-50/70 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-100/70 hover:shadow-xs"
+                >
+                  <div className="flex items-center gap-2 text-emerald-900">
+                    <Smartphone size={16} className="text-emerald-700" />
+                    <span className="text-xs font-bold">Totem Tablet</span>
+                  </div>
+                  <p className="mt-2 text-[11px] text-emerald-800">
+                    Autoatendimento touch.
+                  </p>
+                </a>
               </div>
             </div>
 
             <div className="rounded-xl border border-[#dfe3d3] bg-[#f5f7ee] p-4">
               <div className="flex items-center gap-2 text-[#465130] font-bold text-xs uppercase tracking-wider">
                 <Share2 size={15} />
-                <span>Cardápio Digital no WhatsApp</span>
+                <span>Cardápio Digital no WhatsApp & Totem</span>
               </div>
               <p className="mt-1 text-xs text-slate-600">
-                Seus clientes visualizam fotos nítidas dos pratos e fecham a conta no Pix com cálculo automático de taxa de entrega.
+                Seus clientes visualizam fotos nítidas dos pratos, pedem na mesa ou no totem touch e pagam no Pix.
               </p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <Link
                   to="/studio/catalog"
                   className="inline-flex items-center gap-1.5 rounded-lg bg-[#292b25] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#3f4239]"
                 >
                   Gerenciar Cardápio <ArrowRight size={12} />
                 </Link>
+                <a
+                  href={`/totem/${business?.slug || "maniello"}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-600 bg-emerald-100/80 px-3 py-1.5 text-xs font-bold text-emerald-900 transition hover:bg-emerald-200"
+                >
+                  📱 Abrir Totem <ExternalLink size={12} />
+                </a>
               </div>
             </div>
           </div>
