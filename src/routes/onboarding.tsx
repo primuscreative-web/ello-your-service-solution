@@ -466,7 +466,7 @@ function OnboardingPage() {
       />
       <header className="relative mx-auto flex max-w-5xl items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <ElloLogo tone="dark" className="h-7 w-auto" />
+          <ElloLogo tone="dark" height={24} />
         </Link>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5" aria-hidden="true">

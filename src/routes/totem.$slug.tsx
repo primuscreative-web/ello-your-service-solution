@@ -261,7 +261,7 @@ export function TotemPage() {
             <span className="rounded-full border border-[#2d3323] bg-[#24281c] px-3 py-1 text-xs font-semibold text-slate-300">
               Toque nos itens para adicionar
             </span>
-            <ElloLogo tone="white" className="h-5 w-auto opacity-75 hidden sm:inline-block" />
+            <ElloLogo tone="white" height={20} className="opacity-75 hidden sm:inline-block" />
           </div>
         </header>
 

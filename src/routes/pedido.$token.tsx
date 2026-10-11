@@ -294,7 +294,7 @@ function PublicOrderTrackingPage() {
     <main className="min-h-screen bg-[#f8f7f4] px-4 py-8 text-[#292b25] sm:py-16">
       <section className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
         <Link to="/" className="inline-flex items-center gap-2">
-          <ElloLogo tone="dark" className="h-6 w-auto" />
+          <ElloLogo tone="dark" height={22} />
         </Link>
         {loading ? (
           <p className="py-16 text-center text-sm text-slate-500">Carregando seu pedido…</p>

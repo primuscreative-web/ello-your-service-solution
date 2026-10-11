@@ -158,7 +158,7 @@ function AuthPage() {
           className="auth-wordmark relative z-10"
           aria-label="ELLO — voltar para o início"
         >
-          <ElloLogo tone="white" className="h-9 w-auto" />
+          <ElloLogo tone="white" height={28} />
         </Link>
         <div className="relative z-10 max-w-lg">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/60">
@@ -177,7 +177,7 @@ function AuthPage() {
         <AuthParticles />
         <section className="auth-card relative z-10 w-full max-w-md rounded-2xl border border-[#e6e5dd] bg-[#fbfaf7] p-7 text-[#292b25] sm:p-9">
           <Link to="/" className="mx-auto block w-fit" aria-label="Voltar para o início">
-            <ElloLogo tone="dark" className="h-9 w-auto" />
+            <ElloLogo tone="dark" height={26} />
           </Link>
           <h1 className="mt-6 text-center text-2xl font-extrabold">
             {mode === "login" && "Acesse seu espaço"}

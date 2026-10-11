@@ -155,9 +155,9 @@ function LandingPage() {
           <Link
             to="/"
             aria-label="ELLO, início"
-            className="ello-wordmark flex items-center gap-2 text-white"
+            className="ello-wordmark flex items-center"
           >
-            <ElloLogo tone="white" className="h-8 w-auto" />
+            <ElloLogo tone="white" height={26} />
           </Link>
           <nav className="hidden items-center gap-9 text-[13px] font-medium text-white/75 md:flex">
             <a href="#segmentos" className="ello-nav-link">
@@ -359,8 +359,8 @@ function LandingPage() {
       </main>
 
       <footer className="ello-footer mx-auto flex max-w-[1440px] flex-col justify-between gap-4 px-5 py-7 text-[11px] text-[#85877e] sm:flex-row sm:px-10 lg:px-16">
-        <Link to="/" className="flex items-center gap-2 font-semibold text-[#242620]">
-          <ElloLogo tone="dark" className="h-6 w-auto" />
+        <Link to="/" className="flex items-center font-semibold text-[#242620]">
+          <ElloLogo tone="dark" height={22} />
         </Link>
         <span>Cardápio digital e operação de pedidos para restaurantes locais.</span>
         <span>© {new Date().getFullYear()} ELLO</span>

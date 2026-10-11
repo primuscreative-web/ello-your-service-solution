@@ -91,8 +91,8 @@ export function StudioLayout() {
       <StudioOnboardingTour />
 
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-[252px] flex-col border-r border-[#34352f] bg-[#292b25] px-5 py-7 text-[#f7f6ef] lg:flex">
-        <Link to="/" className="mb-10 flex items-center gap-3 px-2">
-          <ElloLogo tone="white" className="h-7 w-auto" />
+        <Link to="/" className="mb-10 flex items-center px-2">
+          <ElloLogo tone="white" height={24} />
         </Link>
         <div className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#b7b9ac]">
           Seu espaço
@@ -158,8 +158,8 @@ export function StudioLayout() {
 
       <div className="lg:pl-[252px]">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[#e8e6df] bg-[#fbfaf7]/95 px-5 backdrop-blur-md sm:px-8">
-          <div className="flex items-center gap-2 lg:hidden">
-            <ElloLogo tone="dark" className="h-6 w-auto" />
+          <div className="flex items-center lg:hidden">
+            <ElloLogo tone="dark" height={22} />
           </div>
           <div className="hidden text-sm text-slate-500 lg:block">Painel do negócio</div>
           <div className="flex items-center gap-3">

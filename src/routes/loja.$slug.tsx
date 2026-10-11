@@ -808,7 +808,7 @@ function PublicBusinessPage() {
               </button>
             )}
             <Link to="/" className="flex items-center gap-1.5 opacity-80 hover:opacity-100 transition" aria-label="ELLO">
-              <ElloLogo tone="dark" className="h-5 w-auto" />
+              <ElloLogo tone="dark" height={20} />
             </Link>
           </div>
 
