@@ -18,6 +18,7 @@ import {
 import { money } from "@/components/localhub/ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ElloLogo } from "@/components/ello/logo";
+import { ElloAtomLoader } from "@/components/ello/atom-loader";
 
 export const Route = createFileRoute("/pedido/$token")({ component: PublicOrderTrackingPage });
 
@@ -297,7 +298,9 @@ function PublicOrderTrackingPage() {
           <ElloLogo tone="dark" height={22} />
         </Link>
         {loading ? (
-          <p className="py-16 text-center text-sm text-slate-500">Carregando seu pedido…</p>
+          <div className="py-16 flex justify-center">
+            <ElloAtomLoader size={52} label="Carregando seu pedido…" />
+          </div>
         ) : error ? (
           <div role="alert" className="py-14 text-center">
             <XCircle className="mx-auto text-red-500" />

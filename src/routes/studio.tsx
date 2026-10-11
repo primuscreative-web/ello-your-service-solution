@@ -1,7 +1,7 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { LoaderCircle } from "lucide-react";
 import { StudioLayout } from "@/components/localhub/studio-layout";
 import { useLocalHub } from "@/lib/localhub-context";
+import { ElloAtomLoader } from "@/components/ello/atom-loader";
 
 export const Route = createFileRoute("/studio")({ component: StudioGate });
 
@@ -9,8 +9,8 @@ function StudioGate() {
   const { business, ready, user, error } = useLocalHub();
   if (!ready)
     return (
-      <div className="grid min-h-screen place-items-center text-[#667448]">
-        <LoaderCircle className="animate-spin" />
+      <div className="grid min-h-screen place-items-center bg-[#13150d]">
+        <ElloAtomLoader size={56} label="Carregando Studio..." />
       </div>
     );
   if (error)

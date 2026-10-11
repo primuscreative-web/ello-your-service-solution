@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { formatCep, fetchAddressFromCep } from "@/lib/cities";
+import { ElloAtomLoader } from "@/components/ello/atom-loader";
 import {
   Field,
   inputClass,
@@ -744,8 +745,8 @@ function SettingsPage() {
                     <MapPin size={13} className="text-[#687847]" /> Preencher por CEP (opcional)
                   </span>
                   {cepLoading && (
-                    <span className="flex items-center gap-1 text-[11px] font-medium text-amber-700">
-                      <Loader2 size={11} className="animate-spin" /> Buscando endereço...
+                    <span className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-800">
+                      <ElloAtomLoader size={14} /> Buscando endereço...
                     </span>
                   )}
                 </div>

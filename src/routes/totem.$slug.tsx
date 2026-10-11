@@ -15,6 +15,7 @@ import {
 import { money } from "@/components/localhub/ui";
 import { useLocalHub, type Business, type Service } from "@/lib/localhub-context";
 import { ElloLogo } from "@/components/ello/logo";
+import { ElloAtomLoader } from "@/components/ello/atom-loader";
 
 export const Route = createFileRoute("/totem/$slug")({
   component: TotemPage,
@@ -168,9 +169,9 @@ export function TotemPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#1a1c16] text-[#f2f4ec]">
-        <div className="flex flex-col items-center gap-3">
-          <UtensilsCrossed size={36} className="animate-spin text-[#d0f25a]" />
-          <p className="text-sm font-semibold tracking-wider">Iniciando Autoatendimento…</p>
+        <div className="flex flex-col items-center gap-4">
+          <ElloAtomLoader size={56} />
+          <p className="text-sm font-semibold tracking-wider text-slate-300">Iniciando Autoatendimento…</p>
         </div>
       </div>
     );

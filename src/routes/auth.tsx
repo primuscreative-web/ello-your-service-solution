@@ -6,6 +6,7 @@ import { useLocalHub } from "@/lib/localhub-context";
 import { primaryButtonClass } from "@/components/localhub/ui";
 import { AuthAmbientCanvas } from "@/components/generative/auth-ambient-canvas";
 import { ElloLogo } from "@/components/ello/logo";
+import { ElloAtomLoader } from "@/components/ello/atom-loader";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
 
@@ -334,7 +335,7 @@ function AuthPage() {
             <button disabled={busy} className={`${primaryButtonClass} w-full justify-center mt-2`}>
               {busy ? (
                 <>
-                  <LoaderCircle size={16} className="animate-spin" />
+                  <ElloAtomLoader size={18} />
                   Aguarde...
                 </>
               ) : mode === "login" ? (

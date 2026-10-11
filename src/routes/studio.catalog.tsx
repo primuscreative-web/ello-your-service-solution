@@ -39,6 +39,7 @@ import {
 } from "@/lib/localhub-context";
 import { getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { ElloAtomLoader } from "@/components/ello/atom-loader";
 
 export const Route = createFileRoute("/studio/catalog")({ component: CatalogPage });
 
@@ -372,8 +373,8 @@ function CatalogPage() {
               </p>
             </div>
             {savingCategoryOrder && (
-              <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
-                <LoaderCircle size={13} className="animate-spin" /> Salvando ordem...
+              <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1.5">
+                <ElloAtomLoader size={14} /> Salvando ordem...
               </span>
             )}
           </div>
@@ -1021,7 +1022,7 @@ function ServiceEditor({
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#667448]">
                   {isUploadingImage ? (
-                    <LoaderCircle size={15} className="animate-spin" />
+                    <ElloAtomLoader size={16} />
                   ) : (
                     <ImagePlus size={15} />
                   )}

@@ -24,6 +24,7 @@ import {
 import { useLocalHub, createSlug, type BusinessOnboardingDetails } from "@/lib/localhub-context";
 import { Field, inputClass, primaryButtonClass } from "@/components/localhub/ui";
 import { ElloLogo } from "@/components/ello/logo";
+import { ElloAtomLoader } from "@/components/ello/atom-loader";
 import {
   formatCep,
   fetchAddressFromCep,
@@ -427,7 +428,12 @@ function OnboardingPage() {
     }
   }
 
-  if (!ready) return <div className="grid min-h-screen place-items-center">Carregando...</div>;
+  if (!ready)
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#fbfdf7]">
+        <ElloAtomLoader size={56} label="Carregando..." />
+      </div>
+    );
   if (!user) return <Navigate to="/auth" />;
 
   const heading = creationCompleted
@@ -688,8 +694,8 @@ function OnboardingPage() {
                     </div>
                   </div>
                   {cepLoading && (
-                    <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-700">
-                      <Loader2 size={13} className="animate-spin" /> Buscando...
+                    <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800">
+                      <ElloAtomLoader size={16} /> Buscando...
                     </span>
                   )}
                 </div>

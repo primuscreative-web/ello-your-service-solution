@@ -13,6 +13,7 @@ import {
   Star,
 } from "lucide-react";
 import { ProPhoto, ServicePhoto } from "@/components/ello/mobile-ui";
+import { ElloAtomLoader } from "@/components/ello/atom-loader";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   createElloLinkBooking,
@@ -111,8 +112,8 @@ function PublicProfessionalPage() {
 
   if (profileQuery.isPending) {
     return (
-      <div className="grid min-h-screen place-items-center ello-mesh-bg p-6 text-center text-sm font-bold text-muted-foreground">
-        Carregando ELLO Link...
+      <div className="grid min-h-screen place-items-center bg-[#0e1009] p-6 text-center">
+        <ElloAtomLoader size={56} label="Carregando ELLO Link..." />
       </div>
     );
   }

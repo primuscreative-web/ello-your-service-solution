@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { ElloAtomLoader } from "./atom-loader";
 
 interface ImageUploadProps {
   onUpload: (fileBase64: string, fileName: string) => Promise<{ success: boolean; url?: string; error?: string }>;
@@ -111,7 +112,7 @@ export function ImageUpload({ onUpload, maxSize = 5, multiple = false, label = "
       >
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <ElloAtomLoader size={16} className="mr-2" />
             Enviando...
           </>
         ) : preview ? (
