@@ -132,13 +132,26 @@ export function StudioLayout() {
             Confira como sua página aparece para os clientes em tempo real.
           </p>
           {business && (
-            <Link
-              to="/loja/$slug"
-              params={{ slug: business.slug }}
-              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg bg-[#40433a] px-3 py-1.5 text-xs font-semibold text-[#d0f25a] transition hover:bg-[#4d5045]"
-            >
-              Abrir prévia <ExternalLink size={13} />
-            </Link>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link
+                to="/loja/$slug"
+                params={{ slug: business.slug }}
+                target="_blank"
+                className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-[#40433a] px-3 py-1.5 text-xs font-semibold text-[#d0f25a] transition hover:bg-[#4d5045]"
+              >
+                Abrir prévia <ExternalLink size={13} />
+              </Link>
+              {isFoodBusiness && (
+                <Link
+                  to="/totem/$slug"
+                  params={{ slug: business.slug }}
+                  target="_blank"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-900/60"
+                >
+                  📱 Totem <ExternalLink size={12} />
+                </Link>
+              )}
+            </div>
           )}
         </div>
       </aside>
