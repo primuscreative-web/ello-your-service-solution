@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { money } from "@/components/localhub/ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { ElloLogo } from "@/components/ello/logo";
 
 export const Route = createFileRoute("/pedido/$token")({ component: PublicOrderTrackingPage });
 
@@ -292,8 +293,8 @@ function PublicOrderTrackingPage() {
   return (
     <main className="min-h-screen bg-[#f8f7f4] px-4 py-8 text-[#292b25] sm:py-16">
       <section className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm font-extrabold">
-          <span className="ello-brand-mark ello-brand-mark-small">e</span>ello
+        <Link to="/" className="inline-flex items-center gap-2">
+          <ElloLogo tone="dark" className="h-6 w-auto" />
         </Link>
         {loading ? (
           <p className="py-16 text-center text-sm text-slate-500">Carregando seu pedido…</p>

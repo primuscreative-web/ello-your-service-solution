@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useLocalHub, createSlug, type BusinessOnboardingDetails } from "@/lib/localhub-context";
 import { Field, inputClass, primaryButtonClass } from "@/components/localhub/ui";
+import { ElloLogo } from "@/components/ello/logo";
 import {
   formatCep,
   fetchAddressFromCep,
@@ -464,9 +465,8 @@ function OnboardingPage() {
         }}
       />
       <header className="relative mx-auto flex max-w-5xl items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-semibold tracking-[-.04em]">
-          <span className="ello-brand-mark ello-brand-mark-small">e</span>
-          ello
+        <Link to="/" className="flex items-center gap-2">
+          <ElloLogo tone="dark" className="h-7 w-auto" />
         </Link>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5" aria-hidden="true">

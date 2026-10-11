@@ -5,6 +5,7 @@ import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/c
 import { useLocalHub } from "@/lib/localhub-context";
 import { primaryButtonClass } from "@/components/localhub/ui";
 import { AuthAmbientCanvas } from "@/components/generative/auth-ambient-canvas";
+import { ElloLogo } from "@/components/ello/logo";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
 
@@ -157,8 +158,7 @@ function AuthPage() {
           className="auth-wordmark relative z-10"
           aria-label="ELLO — voltar para o início"
         >
-          <AuthMark tone="light" />
-          <span>ello</span>
+          <ElloLogo tone="white" className="h-9 w-auto" />
         </Link>
         <div className="relative z-10 max-w-lg">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/60">
@@ -176,8 +176,8 @@ function AuthPage() {
       <div className="auth-panel relative isolate grid min-h-screen place-items-center overflow-hidden px-4 py-10 text-white sm:px-8">
         <AuthParticles />
         <section className="auth-card relative z-10 w-full max-w-md rounded-2xl border border-[#e6e5dd] bg-[#fbfaf7] p-7 text-[#292b25] sm:p-9">
-          <Link to="/" className="auth-card-mark mx-auto" aria-label="Voltar para o início">
-            <AuthMark tone="dark" />
+          <Link to="/" className="mx-auto block w-fit" aria-label="Voltar para o início">
+            <ElloLogo tone="dark" className="h-9 w-auto" />
           </Link>
           <h1 className="mt-6 text-center text-2xl font-extrabold">
             {mode === "login" && "Acesse seu espaço"}

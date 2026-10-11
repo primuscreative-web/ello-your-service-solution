@@ -38,6 +38,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useLocalHub } from "@/lib/localhub-context";
+import { ElloLogo, ElloSymbol } from "@/components/ello/logo";
 
 export const Route = createFileRoute("/")({ component: LandingPage });
 
@@ -154,10 +155,9 @@ function LandingPage() {
           <Link
             to="/"
             aria-label="ELLO, início"
-            className="ello-wordmark flex items-center gap-2.5 text-white"
+            className="ello-wordmark flex items-center gap-2 text-white"
           >
-            <BrandMark />
-            <span className="text-[21px] font-semibold tracking-[-.06em]">ello</span>
+            <ElloLogo tone="white" className="h-8 w-auto" />
           </Link>
           <nav className="hidden items-center gap-9 text-[13px] font-medium text-white/75 md:flex">
             <a href="#segmentos" className="ello-nav-link">
@@ -360,7 +360,7 @@ function LandingPage() {
 
       <footer className="ello-footer mx-auto flex max-w-[1440px] flex-col justify-between gap-4 px-5 py-7 text-[11px] text-[#85877e] sm:flex-row sm:px-10 lg:px-16">
         <Link to="/" className="flex items-center gap-2 font-semibold text-[#242620]">
-          <BrandMark small /> ello
+          <ElloLogo tone="dark" className="h-6 w-auto" />
         </Link>
         <span>Cardápio digital e operação de pedidos para restaurantes locais.</span>
         <span>© {new Date().getFullYear()} ELLO</span>
@@ -467,14 +467,7 @@ function BusinessShowcase({
 }
 
 function BrandMark({ small = false }: { small?: boolean }) {
-  return (
-    <span className={`ello-brand-mark${small ? " ello-brand-mark-small" : ""}`} aria-hidden="true">
-      <svg viewBox="0 0 32 32" fill="none" className="ello-brand-symbol">
-        <path d="M23.5 15.8H10.1a6.1 6.1 0 0 1 11.8-1.9" />
-        <path d="M10.1 16.1a6.1 6.1 0 0 0 11.8 1.9" />
-      </svg>
-    </span>
-  );
+  return <ElloSymbol size={small ? 22 : 30} />;
 }
 
 function ScrollVideoBackground() {

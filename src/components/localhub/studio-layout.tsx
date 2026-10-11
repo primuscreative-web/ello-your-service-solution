@@ -20,6 +20,7 @@ import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getBusinessCopy } from "@/lib/localhub-business";
 import { StudioOnboardingTour } from "@/components/localhub/studio-onboarding-tour";
+import { ElloLogo } from "@/components/ello/logo";
 
 export function StudioLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -91,8 +92,7 @@ export function StudioLayout() {
 
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-[252px] flex-col border-r border-[#34352f] bg-[#292b25] px-5 py-7 text-[#f7f6ef] lg:flex">
         <Link to="/" className="mb-10 flex items-center gap-3 px-2">
-          <span className="ello-brand-mark">e</span>
-          <span className="text-xl font-semibold tracking-[-.06em]">ello</span>
+          <ElloLogo tone="white" className="h-7 w-auto" />
         </Link>
         <div className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#b7b9ac]">
           Seu espaço
@@ -159,8 +159,7 @@ export function StudioLayout() {
       <div className="lg:pl-[252px]">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[#e8e6df] bg-[#fbfaf7]/95 px-5 backdrop-blur-md sm:px-8">
           <div className="flex items-center gap-2 lg:hidden">
-            <span className="ello-brand-mark ello-brand-mark-small">e</span>
-            <b className="font-semibold tracking-[-.04em]">ello</b>
+            <ElloLogo tone="dark" className="h-6 w-auto" />
           </div>
           <div className="hidden text-sm text-slate-500 lg:block">Painel do negócio</div>
           <div className="flex items-center gap-3">

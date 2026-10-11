@@ -23,6 +23,7 @@ import {
 import { z } from "zod";
 import { toast } from "sonner";
 import { money } from "@/components/localhub/ui";
+import { ElloLogo } from "@/components/ello/logo";
 import { useLocalHub, type Booking, type Service } from "@/lib/localhub-context";
 import { formatSetupChoice, getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -806,9 +807,8 @@ function PublicBusinessPage() {
                 )}
               </button>
             )}
-            <Link to="/" className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800">
-              <span className="ello-brand-mark ello-brand-mark-small">e</span>
-              <span className="hidden sm:inline">ello</span>
+            <Link to="/" className="flex items-center gap-1.5 opacity-80 hover:opacity-100 transition" aria-label="ELLO">
+              <ElloLogo tone="dark" className="h-5 w-auto" />
             </Link>
           </div>
 

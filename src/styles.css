@@ -1636,26 +1636,17 @@
   }
 
   .ello-brand-mark {
-    display: grid;
-    width: 34px;
-    height: 34px;
-    place-items: center;
-    border-radius: 12px;
-    background: #262720;
-    color: #d5ec9a;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.15),
-      0 3px 9px rgba(35, 37, 28, 0.14);
-  }
-  .ello-brand-symbol {
-    width: 25px;
-    height: 25px;
-    overflow: visible;
-  }
-  .ello-brand-symbol path {
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-width: 2.7;
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    background-image: url("/images/ello/ello-symbol.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    text-indent: -9999px;
+    overflow: hidden;
   }
   .ello-wordmark {
     transition: opacity 160ms ease;
@@ -1667,11 +1658,6 @@
   .ello-brand-mark-small {
     width: 24px;
     height: 24px;
-    border-radius: 8px;
-  }
-  .ello-brand-mark-small .ello-brand-symbol {
-    width: 18px;
-    height: 18px;
   }
   .ello-nav-link {
     transition: color 160ms cubic-bezier(0.23, 1, 0.32, 1);

@@ -11,15 +11,15 @@
   "categories": ["business", "food", "lifestyle", "productivity"],
   "icons": [
     {
-      "src": "/images/showcase/hamburgueria.jpg",
+      "src": "/favicon-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
-      "purpose": "any"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/images/showcase/manicure.jpg",
+      "src": "/favicon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

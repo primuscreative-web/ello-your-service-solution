@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { money } from "@/components/localhub/ui";
 import { useLocalHub, type Business, type Service } from "@/lib/localhub-context";
+import { ElloLogo } from "@/components/ello/logo";
 
 export const Route = createFileRoute("/totem/$slug")({
   component: TotemPage,
@@ -256,10 +257,11 @@ export function TotemPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <span className="rounded-full border border-[#2d3323] bg-[#24281c] px-3 py-1 text-xs font-semibold text-slate-300">
               Toque nos itens para adicionar
             </span>
+            <ElloLogo tone="white" className="h-5 w-auto opacity-75 hidden sm:inline-block" />
           </div>
         </header>
 
