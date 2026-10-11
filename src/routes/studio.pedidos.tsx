@@ -304,9 +304,15 @@ function OrdersPage() {
       setError("");
 
       // Dispara atualização em tempo real para o WhatsApp do cliente
+      const supabase = getSupabaseBrowserClient();
+      const session = (await supabase?.auth.getSession())?.data.session;
+
       void fetch("/api/notifications/whatsapp", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          ...(session?.access_token ? { authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           type: "order",
           order: {

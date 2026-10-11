@@ -131,10 +131,10 @@ function SettingsPage() {
     void fetchWhatsAppStatus();
     const interval = setInterval(() => {
       // Polling automático enquanto aguarda leitura do QR Code
-      if (waState === "connecting") {
+      if (waState === "connecting" || waState === "close") {
         void fetchWhatsAppStatus();
       }
-    }, 6000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [waState]);
 

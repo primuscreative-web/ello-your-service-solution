@@ -76,6 +76,11 @@ export const Route = createFileRoute("/api/whatsapp/session")({
             qrcode = qrData?.base64 || qrData?.qrcode?.base64 || null;
           }
 
+          // Se houver QR code pronto para escaneamento, marca o estado como aguardando leitura
+          if (state !== "open" && qrcode) {
+            state = "connecting";
+          }
+
           return Response.json({
             configured: true,
             provider: "evolution",

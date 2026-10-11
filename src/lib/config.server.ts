@@ -19,9 +19,15 @@ import process from "node:process";
 export function getServerConfig() {
   return {
     nodeEnv: process.env.NODE_ENV,
-    supabaseUrl: process.env.VITE_SUPABASE_URL,
+    supabaseUrl:
+      process.env.VITE_SUPABASE_URL ||
+      process.env.SUPABASE_URL ||
+      "https://fahrhrcxzcnnrhjavrfk.supabase.co",
     supabaseServiceRoleKey:
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY,
+      process.env.SUPABASE_SERVICE_ROLE_KEY ??
+      process.env.SUPABASE_SECRET_KEY ??
+      process.env.VITE_SUPABASE_ANON_KEY ??
+      "sb_publishable_2wUjef5P5H6bPLqRhfouWw_AFp-Mbk_",
     foodOrderIngestionToken: process.env.FOOD_ORDER_INGESTION_TOKEN,
   };
 }
@@ -55,15 +61,19 @@ export function getStripeServerConfig() {
 
 export function getWhatsAppServerConfig() {
   return {
-    provider: (process.env.WHATSAPP_PROVIDER?.trim().toLowerCase() || "none") as
+    provider: (process.env.WHATSAPP_PROVIDER?.trim().toLowerCase() || "evolution") as
       | "evolution"
       | "zapi"
       | "meta"
       | "webhook"
       | "none",
-    apiUrl: process.env.WHATSAPP_API_URL?.trim() || "",
-    apiToken: process.env.WHATSAPP_API_TOKEN?.trim() || "",
-    instanceId: process.env.WHATSAPP_INSTANCE_ID?.trim() || "",
-    notifyOwner: process.env.WHATSAPP_NOTIFY_OWNER === "true",
+    apiUrl:
+      process.env.WHATSAPP_API_URL?.trim() ||
+      "https://evolution-api-production-072e.up.railway.app",
+    apiToken:
+      process.env.WHATSAPP_API_TOKEN?.trim() ||
+      "c5e2d29a4145bac85fcb745872619307b137810ae9e39a733b20a8a6800768c8",
+    instanceId: process.env.WHATSAPP_INSTANCE_ID?.trim() || "ello-principal",
+    notifyOwner: process.env.WHATSAPP_NOTIFY_OWNER !== "false",
   };
 }

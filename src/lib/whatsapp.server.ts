@@ -169,6 +169,7 @@ export async function sendWhatsAppMessage({
   try {
     if (config.provider === "evolution") {
       // Evolution API: POST {apiUrl}/message/sendText/{instanceId}
+      // Suporta Evolution API v2 (requer 'text' na raiz) e v1 (textMessage)
       const response = await fetch(`${config.apiUrl.replace(/\/$/, "")}/message/sendText/${config.instanceId}`, {
         method: "POST",
         headers: {
@@ -177,8 +178,10 @@ export async function sendWhatsAppMessage({
         },
         body: JSON.stringify({
           number: digitsOnly,
-          options: { delay: 1200, presence: "composing" },
+          text,
           textMessage: { text },
+          delay: 1200,
+          options: { delay: 1200, presence: "composing" },
         }),
       });
 

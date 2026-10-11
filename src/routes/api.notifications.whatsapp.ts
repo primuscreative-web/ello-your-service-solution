@@ -15,6 +15,7 @@ import {
   createRateLimitResponse,
   getSecurityAdminSupabase,
 } from "@/lib/security.server";
+import { normalizePhoneE164 } from "@/lib/coupons";
 
 const notifyOrderSchema = z.object({
   type: z.literal("order"),
@@ -135,11 +136,11 @@ export const Route = createFileRoute("/api/notifications/whatsapp")({
                 );
               }
 
-              // Valida se o destinatário bate estritamente com os dados reais do pedido
-              const cleanDbPhone = dbOrder.customer_phone.replace(/\D/g, "");
-              const cleanPayloadPhone = orderPayload.customerPhone.replace(/\D/g, "");
+              // Valida se o destinatário bate estritamente com os dados reais do pedido (usando E.164)
+              const normDbPhone = normalizePhoneE164(dbOrder.customer_phone);
+              const normPayloadPhone = normalizePhoneE164(orderPayload.customerPhone);
 
-              if (data.target === "customer" && cleanDbPhone !== cleanPayloadPhone) {
+              if (data.target === "customer" && normDbPhone !== normPayloadPhone) {
                 return Response.json(
                   { error: "Número de telefone divergente do cadastro do pedido." },
                   { status: 403 },
@@ -153,10 +154,10 @@ export const Route = createFileRoute("/api/notifications/whatsapp")({
                   .eq("id", dbOrder.business_id)
                   .maybeSingle();
 
-                const expectedOwnerPhone = (business?.phone || "").replace(/\D/g, "");
-                const givenOwnerPhone = (data.ownerPhone || "").replace(/\D/g, "");
+                const expectedOwnerNorm = normalizePhoneE164(business?.phone || "");
+                const givenOwnerNorm = normalizePhoneE164(data.ownerPhone || "");
 
-                if (expectedOwnerPhone && givenOwnerPhone && expectedOwnerPhone !== givenOwnerPhone) {
+                if (expectedOwnerNorm && givenOwnerNorm && expectedOwnerNorm !== givenOwnerNorm) {
                   return Response.json(
                     { error: "Telefone do estabelecimento divergente do cadastro." },
                     { status: 403 },

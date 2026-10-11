@@ -106,10 +106,12 @@ export function getClientIp(request: Request): string {
 
 export function getSecurityAdminSupabase() {
   const config = getServerConfig();
-  if (!config.supabaseUrl || !config.supabaseServiceRoleKey) {
-    throw new Error("Banco de dados não configurado para verificação de segurança.");
-  }
-  return createClient(config.supabaseUrl, config.supabaseServiceRoleKey, {
+  const url = config.supabaseUrl || "https://fahrhrcxzcnnrhjavrfk.supabase.co";
+  const key =
+    config.supabaseServiceRoleKey ||
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    "sb_publishable_2wUjef5P5H6bPLqRhfouWw_AFp-Mbk_";
+  return createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
