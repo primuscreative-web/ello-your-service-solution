@@ -1,17 +1,23 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
+  ArrowLeft,
   Bell,
   Check,
+  CheckCircle2,
+  ChefHat,
   Clock3,
+  Flame,
   MapPin,
+  Maximize2,
   MessageSquare,
-  Moon,
+  Minimize2,
   Phone,
   Printer,
   Search,
-  Sun,
   Tag,
+  Timer,
   UtensilsCrossed,
   Volume2,
   VolumeX,
@@ -21,6 +27,7 @@ import { PageTitle, primaryButtonClass, money } from "@/components/localhub/ui";
 import { useLocalHub, type FoodOrder } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { printThermalReceipt } from "@/lib/thermal-receipt";
+import { ElloAtomLoader } from "@/components/ello/atom-loader";
 
 export const Route = createFileRoute("/studio/pedidos")({ component: OrdersPage });
 
@@ -75,7 +82,35 @@ function OrdersPage() {
     if (typeof window === "undefined" || !("Notification" in window)) return false;
     return Notification.permission === "granted";
   });
+  const [clock, setClock] = useState(() => new Date());
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [kdsTab, setKdsTab] = useState<"queue" | "preparing" | "received" | "ready" | "all_active">("queue");
   const knownOrderIds = useRef<Set<string> | null>(null);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setClock(new Date());
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  function getElapsedMinutes(createdAt: string) {
+    const created = new Date(createdAt).getTime();
+    const now = clock.getTime();
+    const diffMs = Math.max(0, now - created);
+    return Math.floor(diffMs / 60000);
+  }
+
+  function toggleFullscreen() {
+    if (typeof document === "undefined") return;
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
+    }
+  }
 
   function toggleAutoPrint() {
     setAutoPrintEnabled((curr) => {
@@ -344,14 +379,402 @@ function OrdersPage() {
     return nextStatus[order.status];
   }
 
+  const kitchenQueue = useMemo(
+    () => orders.filter((o) => ["received", "accepted", "preparing"].includes(o.status)),
+    [orders],
+  );
+  const preparingOrders = useMemo(
+    () => orders.filter((o) => ["accepted", "preparing"].includes(o.status)),
+    [orders],
+  );
+  const receivedOnlyOrders = useMemo(
+    () => orders.filter((o) => o.status === "received"),
+    [orders],
+  );
+  const readyOrders = useMemo(
+    () => orders.filter((o) => o.status === "ready"),
+    [orders],
+  );
+
+  const kdsVisibleOrders = useMemo(() => {
+    switch (kdsTab) {
+      case "queue":
+        return kitchenQueue;
+      case "preparing":
+        return preparingOrders;
+      case "received":
+        return receivedOnlyOrders;
+      case "ready":
+        return readyOrders;
+      case "all_active":
+      default:
+        return activeOrders;
+    }
+  }, [kdsTab, kitchenQueue, preparingOrders, receivedOnlyOrders, readyOrders, activeOrders]);
+
+  if (kdsMode) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-[#0c0e09] text-[#f8faf2] overflow-hidden select-none">
+        {/* Top Header do KDS */}
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[#141710] px-4 py-3 shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setKdsMode(false)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-white/10 active:scale-[0.98] transition"
+              title="Voltar ao modo gerencial completo"
+            >
+              <ArrowLeft size={15} />
+              <span>Sair do KDS</span>
+            </button>
+            <div className="flex items-center gap-2.5">
+              <div className="grid size-9 place-items-center rounded-xl bg-amber-400 text-slate-950 font-black shadow-sm">
+                <ChefHat size={20} />
+              </div>
+              <div>
+                <h1 className="text-base font-black tracking-tight text-white flex items-center gap-2">
+                  KDS · Cozinha em Tempo Real
+                  <span className="inline-flex size-2 rounded-full bg-emerald-400 animate-ping" />
+                </h1>
+                <p className="text-xs text-slate-400 font-medium">
+                  {business?.name ?? "ELLO Studio"} · Tela de Preparo
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Relógio ao vivo e Status */}
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-1.5 text-xs font-mono font-bold text-white tracking-widest">
+              <Clock3 size={14} className="text-amber-400" />
+              <span>{clock.toLocaleTimeString("pt-BR")}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleSound}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition ${
+                soundEnabled
+                  ? "border-emerald-500/40 bg-emerald-500/20 text-emerald-300"
+                  : "border-white/10 bg-white/5 text-slate-400"
+              }`}
+              title={soundEnabled ? "Campainha ativada" : "Campainha silenciada"}
+            >
+              {soundEnabled ? <Volume2 size={15} className="animate-pulse" /> : <VolumeX size={15} />}
+              <span className="hidden sm:inline">{soundEnabled ? "Alarme: Ativo" : "Alarme: Mudo"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-white/10 transition"
+              title="Alternar tela cheia"
+            >
+              {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+              <span className="hidden md:inline">{isFullscreen ? "Minimizar" : "Tela Cheia"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-white/10 transition"
+              title="Atualizar pedidos manualmente"
+            >
+              <RotateCcw size={14} />
+              <span className="hidden sm:inline">Atualizar</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Abas de Filtro da Cozinha */}
+        <div className="flex items-center gap-2 border-b border-white/10 bg-[#10130d] px-4 py-2.5 overflow-x-auto shrink-0">
+          <button
+            type="button"
+            onClick={() => setKdsTab("queue")}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition shrink-0 ${
+              kdsTab === "queue"
+                ? "bg-amber-400 text-slate-950 shadow-sm"
+                : "bg-white/5 text-slate-300 hover:bg-white/10"
+            }`}
+          >
+            <Flame size={14} />
+            <span>Fila da Cozinha</span>
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[11px] font-black ${
+                kdsTab === "queue" ? "bg-slate-950 text-amber-300" : "bg-white/10 text-white"
+              }`}
+            >
+              {kitchenQueue.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setKdsTab("received")}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition shrink-0 ${
+              kdsTab === "received"
+                ? "bg-amber-500 text-slate-950 shadow-sm"
+                : "bg-white/5 text-slate-300 hover:bg-white/10"
+            }`}
+          >
+            <Bell size={14} />
+            <span>Novos</span>
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[11px] font-black ${
+                kdsTab === "received" ? "bg-slate-950 text-amber-300" : "bg-white/10 text-white"
+              }`}
+            >
+              {receivedOnlyOrders.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setKdsTab("preparing")}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition shrink-0 ${
+              kdsTab === "preparing"
+                ? "bg-sky-400 text-slate-950 shadow-sm"
+                : "bg-white/5 text-slate-300 hover:bg-white/10"
+            }`}
+          >
+            <ChefHat size={14} />
+            <span>Em Preparo</span>
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[11px] font-black ${
+                kdsTab === "preparing" ? "bg-slate-950 text-sky-300" : "bg-white/10 text-white"
+              }`}
+            >
+              {preparingOrders.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setKdsTab("ready")}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition shrink-0 ${
+              kdsTab === "ready"
+                ? "bg-emerald-400 text-slate-950 shadow-sm"
+                : "bg-white/5 text-slate-300 hover:bg-white/10"
+            }`}
+          >
+            <CheckCircle2 size={14} />
+            <span>Prontos</span>
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[11px] font-black ${
+                kdsTab === "ready" ? "bg-slate-950 text-emerald-300" : "bg-white/10 text-white"
+              }`}
+            >
+              {readyOrders.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setKdsTab("all_active")}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition shrink-0 ${
+              kdsTab === "all_active"
+                ? "bg-white text-slate-950 shadow-sm"
+                : "bg-white/5 text-slate-300 hover:bg-white/10"
+            }`}
+          >
+            <span>Todos Ativos</span>
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[11px] font-black ${
+                kdsTab === "all_active" ? "bg-slate-950 text-white" : "bg-white/10 text-white"
+              }`}
+            >
+              {activeOrders.length}
+            </span>
+          </button>
+        </div>
+
+        {/* Grid de Comandas KDS */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-5">
+          {kdsVisibleOrders.length === 0 ? (
+            <div className="flex h-full min-h-[400px] flex-col items-center justify-center text-center">
+              <div className="mb-4 rounded-3xl border border-[#2e3722] bg-[#1a1f14] p-5">
+                <ElloAtomLoader size={60} />
+              </div>
+              <h2 className="text-xl font-black text-white">Cozinha em dia!</h2>
+              <p className="mt-1 text-sm text-slate-400 max-w-sm">
+                Nenhum pedido aguardando preparo nesta etapa. O alarme sonoro tocará automaticamente assim que entrar um novo pedido.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+              {kdsVisibleOrders.map((order) => {
+                const elapsed = getElapsedMinutes(order.createdAt);
+                const isUrgent = elapsed >= 20;
+                const isWarning = elapsed >= 12;
+
+                return (
+                  <article
+                    key={order.id}
+                    className={`flex flex-col justify-between rounded-2xl border-2 p-4 transition-all shadow-lg ${
+                      order.status === "received"
+                        ? "border-amber-400/90 bg-[#1c180e] shadow-amber-950/30"
+                        : order.status === "accepted" || order.status === "preparing"
+                          ? "border-sky-400/90 bg-[#0e1722] shadow-sky-950/30"
+                          : order.status === "ready"
+                            ? "border-emerald-400/90 bg-[#0c1c13] shadow-emerald-950/30"
+                            : "border-white/15 bg-[#151812]"
+                    }`}
+                  >
+                    <div>
+                      {/* Topo do Card KDS */}
+                      <div className="flex items-start justify-between gap-2 border-b border-white/10 pb-3">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-2xl font-black text-white tracking-tight">
+                              #{order.number}
+                            </span>
+                            {order.tableNumber ? (
+                              <span className="rounded-lg bg-amber-400 px-2.5 py-0.5 text-xs font-black text-slate-950">
+                                🍽️ MESA {order.tableNumber}
+                              </span>
+                            ) : order.fulfillment === "delivery" ? (
+                              <span className="rounded-lg bg-sky-400 px-2.5 py-0.5 text-xs font-black text-slate-950">
+                                🛵 DELIVERY
+                              </span>
+                            ) : (
+                              <span className="rounded-lg bg-purple-400 px-2.5 py-0.5 text-xs font-black text-slate-950">
+                                🥡 RETIRADA
+                              </span>
+                            )}
+                            {order.externalPlatform === "ifood" && (
+                              <span className="rounded-lg bg-red-600 px-2 py-0.5 text-[11px] font-black text-white">
+                                iFood
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-sm font-semibold text-slate-300 truncate max-w-[200px]">
+                            {order.customerName}
+                          </p>
+                        </div>
+
+                        {/* Cronômetro de Preparo */}
+                        <div
+                          className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-black tracking-wide shrink-0 ${
+                            isUrgent
+                              ? "bg-rose-600 text-white animate-pulse"
+                              : isWarning
+                                ? "bg-amber-400 text-slate-950"
+                                : "border border-emerald-500/50 bg-emerald-500/20 text-emerald-300"
+                          }`}
+                          title={`Pedido recebido há ${elapsed} minutos`}
+                        >
+                          <Timer size={14} />
+                          <span>{elapsed}m</span>
+                        </div>
+                      </div>
+
+                      {/* Observações da Cozinha (Destaque Máximo em Amarelo) */}
+                      {order.notes && (
+                        <div className="mt-3 rounded-xl border-2 border-amber-400 bg-amber-400/20 p-3 text-amber-200">
+                          <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-300">
+                            <AlertTriangle size={15} /> Atenção Cozinha:
+                          </div>
+                          <p className="mt-1 text-sm font-black text-white leading-snug">
+                            {order.notes}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Lista de Itens do Pedido */}
+                      <div className="mt-3.5 space-y-2.5 divide-y divide-white/10">
+                        {order.items.map((item, idx) => (
+                          <div key={`${item.serviceId}-${idx}`} className="pt-2.5 first:pt-0">
+                            <div className="flex items-start gap-2.5">
+                              <span className="shrink-0 rounded-lg bg-[#d5ec9a] px-2.5 py-0.5 text-sm font-black text-slate-950">
+                                {item.quantity}×
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-base font-bold text-white leading-snug">
+                                  {item.name}
+                                </p>
+                                {item.options && item.options.length > 0 && (
+                                  <p className="mt-1 text-xs font-semibold text-emerald-300">
+                                    {item.options.join(" • ")}
+                                  </p>
+                                )}
+                                {item.notes && (
+                                  <p className="mt-1 text-xs font-bold text-amber-300">
+                                    Obs: {item.notes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Ações Rápidas de Preparo */}
+                    <div className="mt-5 space-y-2 border-t border-white/10 pt-3">
+                      {order.status === "received" ? (
+                        <button
+                          disabled={busy === order.id}
+                          onClick={() => void update(order, "preparing")}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 py-3 text-sm font-black text-slate-950 shadow-md transition hover:bg-amber-300 active:scale-[0.98]"
+                        >
+                          <Flame size={17} />
+                          {busy === order.id ? "Salvando..." : "🍳 Começar Preparo"}
+                        </button>
+                      ) : order.status === "accepted" || order.status === "preparing" ? (
+                        <button
+                          disabled={busy === order.id}
+                          onClick={() => void update(order, "ready")}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 py-3 text-sm font-black text-slate-950 shadow-md transition hover:bg-emerald-300 active:scale-[0.98]"
+                        >
+                          <CheckCircle2 size={17} />
+                          {busy === order.id ? "Salvando..." : "✨ Pronto p/ Entrega/Mesa"}
+                        </button>
+                      ) : order.status === "ready" ? (
+                        <button
+                          disabled={busy === order.id}
+                          onClick={() => void update(order, "completed")}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-400/50 bg-emerald-500/20 py-2.5 text-xs font-black text-emerald-300 transition hover:bg-emerald-500/30"
+                        >
+                          <Check size={15} />
+                          {busy === order.id ? "Salvando..." : "✔️ Despachado / Concluir"}
+                        </button>
+                      ) : null}
+
+                      <div className="flex items-center justify-between gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            printThermalReceipt({
+                              order,
+                              business,
+                              drivers,
+                              type: "kitchen",
+                              width: receiptWidth,
+                            })
+                          }
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/20 bg-white/5 py-2 text-xs font-bold text-slate-200 transition hover:bg-white/10"
+                        >
+                          <Printer size={13} /> Ticket Cozinha
+                        </button>
+                        {order.fulfillment === "delivery" && order.deliveryAreaName && (
+                          <span className="text-[11px] font-semibold text-slate-400 truncate max-w-[140px]">
+                            📍 {order.deliveryAreaName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={
-        kdsMode
-          ? "-m-4 sm:-m-6 rounded-3xl bg-[#121410] p-4 sm:p-6 text-[#f2f4ec] transition-colors duration-300"
-          : ""
-      }
-    >
+    <div>
       <PageTitle
         eyebrow="Operação do restaurante"
         title="Pedidos & KDS"
@@ -397,15 +820,12 @@ function OrdersPage() {
 
             <button
               type="button"
-              onClick={() => setKdsMode((prev) => !prev)}
-              className={`inline-flex min-h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
-                kdsMode
-                  ? "border-[#d5ec9a]/30 bg-[#292b25] text-[#d5ec9a]"
-                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-              }`}
+              onClick={() => setKdsMode(true)}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#758455] bg-[#292b25] px-3.5 text-xs font-bold text-[#d5ec9a] shadow-sm hover:bg-[#383a32] active:scale-[0.98] transition"
+              title="Abrir tela de alta visibilidade dedicada à equipe da cozinha"
             >
-              {kdsMode ? <Sun size={14} /> : <Moon size={14} />}
-              {kdsMode ? "KDS Cozinha Ativo" : "Modo Cozinha (KDS)"}
+              <ChefHat size={16} />
+              <span>Modo Cozinha (KDS)</span>
             </button>
 
             <button
@@ -527,11 +947,7 @@ function OrdersPage() {
           {visibleOrders.map((order) => (
             <article
               key={order.id}
-              className={`rounded-2xl border p-5 shadow-sm transition-colors ${
-                kdsMode
-                  ? "border-[#2d3323] bg-[#1a1d15] text-[#f2f4ec]"
-                  : "border-slate-200 bg-white"
-              }`}
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
