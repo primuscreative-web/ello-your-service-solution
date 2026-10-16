@@ -84,14 +84,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     const allowed =
       location.pathname === "/" ||
       location.pathname === "/auth" ||
+      location.pathname === "/planos" ||
+      location.pathname.startsWith("/planos") ||
       location.pathname === "/onboarding" ||
       location.pathname === "/studio" ||
       location.pathname.startsWith("/studio/") ||
       location.pathname.startsWith("/loja/") ||
       location.pathname.startsWith("/pedido/") ||
+      location.pathname.startsWith("/p/") ||
+      location.pathname === "/role" ||
+      location.pathname === "/app" ||
+      location.pathname.startsWith("/app/") ||
       location.pathname === "/totem" ||
       location.pathname.startsWith("/totem/") ||
-      location.pathname.startsWith("/c/");
+      location.pathname.startsWith("/c/") ||
+      location.pathname.startsWith("/api/");
     if (!allowed) {
       throw redirect({ href: "/" });
     }

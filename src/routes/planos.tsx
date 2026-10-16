@@ -22,7 +22,19 @@ import {
 import { ElloLogo } from "@/components/ello/logo";
 import { useLocalHub } from "@/lib/localhub-context";
 
-export const Route = createFileRoute("/planos")({ component: PricingPlansPage });
+export const Route = createFileRoute("/planos")({
+  head: () => ({
+    meta: [
+      { title: "Planos & Preços | ELLO — Gestão e Vendas Sem Taxa de Comissão" },
+      {
+        name: "description",
+        content:
+          "Conheça os planos da ELLO para seu negócio local. Catálogo digital, cardápio QR Code, agendamento online e painel Studio com taxa ZERO sobre suas vendas.",
+      },
+    ],
+  }),
+  component: PricingPlansPage,
+});
 
 export function PricingPlansPage() {
   const { business } = useLocalHub();

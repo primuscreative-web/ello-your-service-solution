@@ -359,11 +359,24 @@ function LandingPage() {
         </section>
       </main>
 
-      <footer className="ello-footer mx-auto flex max-w-[1440px] flex-col justify-between gap-4 px-5 py-7 text-[11px] text-[#85877e] sm:flex-row sm:px-10 lg:px-16">
+      <footer className="ello-footer mx-auto flex max-w-[1440px] flex-col justify-between items-center gap-4 px-5 py-7 text-[11px] text-[#85877e] sm:flex-row sm:px-10 lg:px-16">
         <Link to="/" className="flex items-center font-semibold text-[#242620]">
           <ElloLogo tone="dark" height={22} />
         </Link>
-        <span>Cardápio digital e operação de pedidos para restaurantes locais.</span>
+        <div className="flex flex-wrap items-center justify-center gap-6">
+          <Link to="/planos" className="hover:text-[#20221f] transition font-semibold text-[#687348]">
+            Planos & Preços
+          </Link>
+          <a href="/#segmentos" className="hover:text-[#20221f] transition">
+            Segmentos
+          </a>
+          <a href="/#solucao" className="hover:text-[#20221f] transition">
+            A Plataforma
+          </a>
+          <Link to="/auth" className="hover:text-[#20221f] transition">
+            Entrar
+          </Link>
+        </div>
         <span>© {new Date().getFullYear()} ELLO</span>
       </footer>
     </div>
