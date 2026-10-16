@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Sparkles,
   Calculator,
+  Car,
   MessageCircle,
   CalendarDays,
   WalletCards,
@@ -23,8 +24,18 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocalHub } from "@/lib/localhub-context";
+import { StudioPetHub } from "@/components/localhub/studio-pet-hub";
+import { StudioHealthHub } from "@/components/localhub/studio-health-hub";
+import { StudioAutomotiveHub } from "@/components/localhub/studio-automotive-hub";
 
-type BusinessSegment = "beleza" | "pet" | "saude" | "alimentacao" | "servicos" | "varejo";
+type BusinessSegment =
+  | "beleza"
+  | "pet"
+  | "saude"
+  | "alimentacao"
+  | "automotivo"
+  | "servicos"
+  | "varejo";
 
 export function StudioBusinessTools() {
   const { business } = useLocalHub();
@@ -95,6 +106,7 @@ export function StudioBusinessTools() {
           {activeSegment === "beleza" && <Scissors size={14} />}
           {activeSegment === "pet" && <Dog size={14} />}
           {activeSegment === "saude" && <Stethoscope size={14} />}
+          {activeSegment === "automotivo" && <Car size={14} />}
           {activeSegment === "alimentacao" && <UtensilsCrossed size={14} />}
           {activeSegment === "servicos" && <Wrench size={14} />}
           {activeSegment === "varejo" && <ShoppingBag size={14} />}
@@ -102,8 +114,9 @@ export function StudioBusinessTools() {
             {activeSegment === "beleza" && "Beleza, Barbearia & Estética"}
             {activeSegment === "pet" && "Pet Shop & Banho e Tosa"}
             {activeSegment === "saude" && "Saúde, Clínicas & Bem-Estar"}
+            {activeSegment === "automotivo" && "Automotivo, Mecânica & Detalhamento"}
             {activeSegment === "alimentacao" && "Gastronomia & Delivery"}
-            {activeSegment === "servicos" && "Serviços, Oficinas & Atendimentos"}
+            {activeSegment === "servicos" && "Serviços, Reformas & Atendimentos"}
             {activeSegment === "varejo" && "Lojas & Varejo"}
           </span>
         </div>
@@ -241,136 +254,14 @@ export function StudioBusinessTools() {
           </div>
         )}
 
-        {/* SEGMENTO 2: PET SHOP & VETERINÁRIA */}
-        {activeSegment === "pet" && (
-          <div className="grid gap-5 lg:grid-cols-2">
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-900">Atalhos rápidos para Banho & Tosa e Pet Care</h3>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Link
-                  to="/studio/agenda"
-                  className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 transition hover:border-[#b8d648] hover:bg-white hover:shadow-xs"
-                >
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <CalendarDays size={16} className="text-[#586341]" />
-                    <span className="text-xs font-bold">Banho & Tosa do Dia</span>
-                  </div>
-                  <p className="mt-2 text-[11px] text-slate-500">
-                    Controle entradas, cães aguardando e animais prontos para entrega.
-                  </p>
-                </Link>
-
-                <Link
-                  to="/studio/caixa"
-                  className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 transition hover:border-[#b8d648] hover:bg-white hover:shadow-xs"
-                >
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <WalletCards size={16} className="text-[#586341]" />
-                    <span className="text-xs font-bold">Venda de Rações & Serviços</span>
-                  </div>
-                  <p className="mt-2 text-[11px] text-slate-500">
-                    PDV rápido de balcão para produtos pet e serviços executados.
-                  </p>
-                </Link>
-              </div>
-            </div>
-
-            {/* UTILITÁRIO PRÁTICO: AVISO PET PRONTO NO WHATSAPP */}
-            <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4">
-              <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
-                <Dog size={15} />
-                <span>Disparo Rápido: "Pet Pronto para Retirada 🐾"</span>
-              </div>
-              <p className="mt-1 text-xs text-slate-600">
-                Avise o tutor no WhatsApp que o animalzinho finalizou o procedimento e já pode ser buscado.
-              </p>
-
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder="Nome do pet (ex: Thor)"
-                  value={petName}
-                  onChange={(e) => setPetName(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800"
-                />
-                <input
-                  type="tel"
-                  placeholder="WhatsApp do tutor (DDD + número)"
-                  value={tutorPhone}
-                  onChange={(e) => setTutorPhone(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800"
-                />
-              </div>
-
-              <div className="mt-3 flex justify-end">
-                <a
-                  href={getPetReadyUrl()}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700 active:scale-95"
-                >
-                  <MessageCircle size={14} />
-                  <span>Chamar Tutor no WhatsApp</span>
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* SEGMENTO 2: PET CARE, BANHO & TOSA E PET SHOP */}
+        {activeSegment === "pet" && <StudioPetHub />}
 
         {/* SEGMENTO 3: SAÚDE, CLÍNICAS & BEM-ESTAR */}
-        {activeSegment === "saude" && (
-          <div className="grid gap-5 lg:grid-cols-2">
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-900">Gestão de Consultas e Atendimentos</h3>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Link
-                  to="/studio/agenda"
-                  className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 transition hover:border-[#b8d648] hover:bg-white hover:shadow-xs"
-                >
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <CalendarDays size={16} className="text-[#586341]" />
-                    <span className="text-xs font-bold">Consultas Marcadas</span>
-                  </div>
-                  <p className="mt-2 text-[11px] text-slate-500">
-                    Confirmações com antecedência e controle de faltas e presenças.
-                  </p>
-                </Link>
+        {activeSegment === "saude" && <StudioHealthHub />}
 
-                <Link
-                  to="/studio/crm"
-                  className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 transition hover:border-[#b8d648] hover:bg-white hover:shadow-xs"
-                >
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <HeartHandshake size={16} className="text-[#586341]" />
-                    <span className="text-xs font-bold">Ficha de Pacientes</span>
-                  </div>
-                  <p className="mt-2 text-[11px] text-slate-500">
-                    Histórico de sessões, retornos e contatos dos pacientes.
-                  </p>
-                </Link>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-sky-200 bg-sky-50/40 p-4">
-              <div className="flex items-center gap-2 text-sky-900 font-bold text-xs uppercase tracking-wider">
-                <Receipt size={15} />
-                <span>Comprovante de Atendimento / Consulta</span>
-              </div>
-              <p className="mt-1 text-xs text-slate-600">
-                Seus pacientes podem pagar via Pix direto no balcão e receber o recibo no WhatsApp com o valor declarado.
-              </p>
-              <div className="mt-3 flex items-center justify-between rounded-lg bg-white p-3 border border-sky-100">
-                <span className="text-xs text-slate-600 font-medium">Use a Frente de Caixa para emitir recibos rápidos</span>
-                <Link
-                  to="/studio/caixa"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-sky-700"
-                >
-                  Abrir Caixa <ArrowRight size={12} />
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* SEGMENTO AUTOMOTIVO: OFICINAS, MECÂNICAS & ESTÉTICA AUTOMOTIVA */}
+        {activeSegment === "automotivo" && <StudioAutomotiveHub />}
 
         {/* SEGMENTO 4: ALIMENTAÇÃO & GASTRONOMIA */}
         {activeSegment === "alimentacao" && (
@@ -543,5 +434,6 @@ function mapCategoryToSegment(category?: string | null): BusinessSegment {
   if (category === "beleza" || category === "barbearia") return "beleza";
   if (category === "pet") return "pet";
   if (category === "saude") return "saude";
+  if (category === "automotivo") return "automotivo";
   return "servicos";
 }

@@ -15,6 +15,8 @@ import {
   Trash2,
   HelpCircle,
   Sparkles,
+  Gift,
+  Plus,
 } from "lucide-react";
 import { formatCep, fetchAddressFromCep } from "@/lib/cities";
 import { ElloAtomLoader } from "@/components/ello/atom-loader";
@@ -37,6 +39,12 @@ import {
 } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { formatSetupChoice, getBusinessCopy } from "@/lib/localhub-business";
+import {
+  LuckyWheel,
+  type LuckyWheelSettings,
+  type LuckyWheelPrize,
+  defaultNichePrizes,
+} from "@/components/localhub/lucky-wheel";
 
 export const Route = createFileRoute("/studio/settings")({ component: SettingsPage });
 
@@ -321,6 +329,29 @@ function SettingsPage() {
     updateOnboardingDetails({ ...details, [field]: [...values, choice] });
     if (field === "specialties") setSpecialtyDraft("");
     else setServiceModeDraft("");
+  }
+
+  const wheelSettings: LuckyWheelSettings = form.onboardingDetails?.wheelSettings ?? form.wheelSettings ?? {
+    enabled: true,
+    trigger: "both",
+    minOrderValue: 20,
+    title: "Roleta de Prêmios da Casa 🎰",
+    subtitle: "Gire e ganhe um presente para seu próximo pedido!",
+    prizes: defaultNichePrizes[form.category] || defaultNichePrizes.alimentacao,
+  };
+
+  function updateWheelSettings(next: Partial<LuckyWheelSettings>) {
+    setSaved(false);
+    const updated: LuckyWheelSettings = { ...wheelSettings, ...next };
+    const nextDetails: BusinessOnboardingDetails = {
+      ...(form.onboardingDetails ?? { specialties: [], serviceModes: [] }),
+      wheelSettings: updated,
+    };
+    setForm((current) => ({
+      ...current,
+      onboardingDetails: nextDetails,
+      wheelSettings: updated,
+    }));
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -1525,6 +1556,330 @@ function SettingsPage() {
                       O ELLO incluirá um botão "⭐ Avaliar no Google" na página de confirmação e nas mensagens automáticas.
                     </p>
                   </div>
+                </div>
+              </section>
+
+              {/* Roleta Premiada & Gamificação Pós-Compra - UNIVERSAL PARA TODOS OS NICHOS */}
+              <section className="border-t border-slate-100 pt-5">
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 text-white shadow-xs">
+                        <Gift size={18} />
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-amber-950">
+                            Roleta Premiada & Gamificação Pós-Compra
+                          </h3>
+                          <span className="rounded-full bg-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-900">
+                            Retenção & Recompra
+                          </span>
+                        </div>
+                        <p className="text-xs text-amber-800">
+                          Aumente suas vendas recorrentes! O cliente gira uma roleta animada logo após o pedido ou agendamento para ganhar mimos e cupons.
+                        </p>
+                      </div>
+                    </div>
+
+                    <label className="flex items-center gap-2 text-xs font-bold text-amber-950 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={wheelSettings.enabled}
+                        onChange={(e) => updateWheelSettings({ enabled: e.target.checked })}
+                        className="size-4 rounded accent-amber-600"
+                      />
+                      <span>Ativar Roleta</span>
+                    </label>
+                  </div>
+
+                  {wheelSettings.enabled && (
+                    <div className="mt-5 space-y-4 border-t border-amber-200/60 pt-4">
+                      {/* Momento de Exibição / Estratégia de Vendas */}
+                      <div>
+                        <label className="text-xs font-bold text-slate-800">
+                          Quando a Roleta deve aparecer para o cliente?
+                        </label>
+                        <p className="mt-0.5 text-[11px] text-slate-500">
+                          Escolha o momento estratégico ideal para o seu modelo de vendas:
+                        </p>
+                        <div className="mt-2 grid gap-2.5 sm:grid-cols-3">
+                          <button
+                            type="button"
+                            onClick={() => updateWheelSettings({ trigger: "welcome" })}
+                            className={`flex flex-col text-left rounded-xl border p-3 transition ${
+                              (wheelSettings.trigger ?? "both") === "welcome"
+                                ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-400/50"
+                                : "border-slate-200 bg-white hover:border-amber-300"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-slate-900">1. No Início (Cardápio)</span>
+                              {(wheelSettings.trigger ?? "both") === "welcome" && (
+                                <Check size={14} className="text-amber-600" />
+                              )}
+                            </div>
+                            <p className="mt-1 text-[11px] text-slate-600 leading-snug">
+                              Aparece ao abrir a loja. O cliente ganha um cupom e aplica na hora no carrinho.
+                            </p>
+                            <span className="mt-2 inline-block text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md self-start">
+                              🎯 Converte Visitantes
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => updateWheelSettings({ trigger: "post_purchase" })}
+                            className={`flex flex-col text-left rounded-xl border p-3 transition ${
+                              (wheelSettings.trigger ?? "both") === "post_purchase"
+                                ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-400/50"
+                                : "border-slate-200 bg-white hover:border-amber-300"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-slate-900">2. No Pós-Pagamento (Upsell)</span>
+                              {(wheelSettings.trigger ?? "both") === "post_purchase" && (
+                                <Check size={14} className="text-amber-600" />
+                              )}
+                            </div>
+                            <p className="mt-1 text-[11px] text-slate-600 leading-snug">
+                              Aparece no rastreamento após pagar o pedido. Ganha voucher para a próxima compra.
+                            </p>
+                            <span className="mt-2 inline-block text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md self-start">
+                              🔁 Retenção & Recompra
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => updateWheelSettings({ trigger: "both" })}
+                            className={`flex flex-col text-left rounded-xl border p-3 transition ${
+                              (wheelSettings.trigger ?? "both") === "both"
+                                ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-400/50"
+                                : "border-slate-200 bg-white hover:border-amber-300"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-slate-900">3. Em Ambos (Recomendado)</span>
+                              {(wheelSettings.trigger ?? "both") === "both" && (
+                                <Check size={14} className="text-amber-600" />
+                              )}
+                            </div>
+                            <p className="mt-1 text-[11px] text-slate-600 leading-snug">
+                              Boas-vindas para novos clientes fecharem pedido + Roleta de fidelização no pagamento.
+                            </p>
+                            <span className="mt-2 inline-block text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md self-start">
+                              ⭐ Máximo Engajamento
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Presets Rápidos por Nicho */}
+                      <div>
+                        <label className="text-xs font-bold text-slate-700">
+                          Carregar sugestões prontas por nicho:
+                        </label>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateWheelSettings({
+                                prizes: defaultNichePrizes.alimentacao,
+                                title: "Roleta de Prêmios da Casa 🎰",
+                                subtitle: "Gire e ganhe um presente para seu próximo pedido!",
+                              })
+                            }
+                            className="rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-950 hover:bg-amber-100/50"
+                          >
+                            🍽️ Gastronomia / Delivery
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateWheelSettings({
+                                prizes: defaultNichePrizes.pet,
+                                title: "Roleta Pet Premiada 🐶",
+                                subtitle: "Gire e ganhe mimos exclusivos para o seu pet!",
+                              })
+                            }
+                            className="rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-950 hover:bg-amber-100/50"
+                          >
+                            🐾 Pet Shop & Banho
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateWheelSettings({
+                                prizes: defaultNichePrizes.saude,
+                                title: "Roleta Bem-Estar & Saúde ✨",
+                                subtitle: "Gire para ganhar benefícios no seu autocuidado!",
+                              })
+                            }
+                            className="rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-950 hover:bg-amber-100/50"
+                          >
+                            🩺 Saúde & Estética
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateWheelSettings({
+                                prizes: defaultNichePrizes.automotivo,
+                                title: "Roleta Garagem Premiada 🚗",
+                                subtitle: "Gire e ganhe descontos e cortesias para seu veículo!",
+                              })
+                            }
+                            className="rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-950 hover:bg-amber-100/50"
+                          >
+                            🚗 Automotivo
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Configurações de Título e Valor Mínimo */}
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <label className="text-xs font-semibold text-slate-700">Título da Roleta</label>
+                          <input
+                            type="text"
+                            value={wheelSettings.title || ""}
+                            onChange={(e) => updateWheelSettings({ title: e.target.value })}
+                            placeholder="Ex: Roleta Premiada da Casa 🎰"
+                            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-slate-700">
+                            Valor mínimo do pedido para liberar o giro (R$)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="5"
+                            value={wheelSettings.minOrderValue ?? 20}
+                            onChange={(e) =>
+                              updateWheelSettings({ minOrderValue: Number(e.target.value) })
+                            }
+                            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Prêmios da Roleta */}
+                      <div className="rounded-xl border border-amber-200/80 bg-white p-4">
+                        <div className="flex items-center justify-between pb-2">
+                          <span className="text-xs font-bold text-slate-800">
+                            Fatias / Prêmios da Roleta ({wheelSettings.prizes.length})
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newPrize: LuckyWheelPrize = {
+                                id: String(Date.now()),
+                                label: "Novo Prêmio",
+                                description: "Cortesia especial",
+                                couponCode: "NOVO" + Math.floor(Math.random() * 90 + 10),
+                                discountType: "percent",
+                                discountValue: 10,
+                                color: "#10b981",
+                                probability: 20,
+                              };
+                              updateWheelSettings({
+                                prizes: [...wheelSettings.prizes, newPrize],
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-900 hover:bg-amber-200"
+                          >
+                            <Plus size={13} /> Adicionar Fatia
+                          </button>
+                        </div>
+
+                        <div className="mt-2 space-y-2">
+                          {wheelSettings.prizes.map((prize, idx) => (
+                            <div
+                              key={prize.id || idx}
+                              className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/70 p-2 text-xs"
+                            >
+                              <input
+                                type="color"
+                                value={prize.color || "#10b981"}
+                                onChange={(e) => {
+                                  const updated = [...wheelSettings.prizes];
+                                  updated[idx] = { ...prize, color: e.target.value };
+                                  updateWheelSettings({ prizes: updated });
+                                }}
+                                className="size-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                                title="Cor da fatia"
+                              />
+                              <input
+                                type="text"
+                                value={prize.label}
+                                onChange={(e) => {
+                                  const updated = [...wheelSettings.prizes];
+                                  updated[idx] = { ...prize, label: e.target.value };
+                                  updateWheelSettings({ prizes: updated });
+                                }}
+                                placeholder="Texto na fatia (ex: 10% OFF)"
+                                className="w-28 rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-bold outline-none"
+                              />
+                              <input
+                                type="text"
+                                value={prize.couponCode || ""}
+                                onChange={(e) => {
+                                  const updated = [...wheelSettings.prizes];
+                                  updated[idx] = {
+                                    ...prize,
+                                    couponCode: e.target.value.toUpperCase().replace(/\s/g, ""),
+                                  };
+                                  updateWheelSettings({ prizes: updated });
+                                }}
+                                placeholder="Cupom (ex: SORTE10)"
+                                className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-mono text-[11px] outline-none"
+                              />
+                              <input
+                                type="text"
+                                value={prize.description || ""}
+                                onChange={(e) => {
+                                  const updated = [...wheelSettings.prizes];
+                                  updated[idx] = { ...prize, description: e.target.value };
+                                  updateWheelSettings({ prizes: updated });
+                                }}
+                                placeholder="Descrição (ex: Válido no próximo pedido)"
+                                className="min-w-36 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-slate-600 outline-none"
+                              />
+                              <button
+                                type="button"
+                                disabled={wheelSettings.prizes.length <= 2}
+                                onClick={() => {
+                                  const updated = wheelSettings.prizes.filter((_, i) => i !== idx);
+                                  updateWheelSettings({ prizes: updated });
+                                }}
+                                className="grid size-7 place-items-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-20"
+                                title="Remover fatia"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Prévia Interativa da Roleta */}
+                      <div className="pt-2">
+                        <label className="text-xs font-bold text-slate-700">
+                          Pré-visualização Interativa (Você pode girar para testar):
+                        </label>
+                        <div className="mt-2">
+                          <LuckyWheel
+                            settings={wheelSettings}
+                            businessName={form.name}
+                            businessCategory={form.category}
+                            previewMode={true}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </section>
 

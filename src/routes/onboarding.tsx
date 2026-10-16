@@ -135,44 +135,59 @@ const setupProfiles: Record<string, SetupProfile> = {
     ],
   },
   saude: {
-    specialtyTitle: "Qual é sua área de saúde?",
-    specialtyDescription: "Selecione as especialidades que você atende.",
+    specialtyTitle: "Quais especialidades ou serviços de saúde você oferece?",
+    specialtyDescription: "Selecione as áreas de atuação que seus pacientes encontrarão na sua página.",
     specialties: [
-      { id: "medicina", label: "Medicina" },
-      { id: "odontologia", label: "Odontologia" },
-      { id: "fisioterapia", label: "Fisioterapia" },
-      { id: "psicologia", label: "Psicologia" },
-      { id: "psicanalista", label: "Psicanalista" },
-      { id: "nutricao", label: "Nutrição" },
-      { id: "terapias", label: "Terapias e bem-estar" },
+      { id: "consultas-medicas", label: "Consultas & Avaliação Médica" },
+      { id: "nutricao-clinica", label: "Nutrição Clínica & Esportiva" },
+      { id: "psicologia-terapia", label: "Psicologia & Psicoterapia" },
+      { id: "fisioterapia-reabilitacao", label: "Fisioterapia & Reabilitação" },
+      { id: "odontologia-estetica", label: "Odontologia & Procedimentos" },
+      { id: "terapias-integrativas", label: "Terapias Integrativas & Bem-Estar" },
+      { id: "fonoaudiologia", label: "Fonoaudiologia" },
+      { id: "pilates-postura", label: "Pilates Clínico & Postura" },
+      { id: "estetica-avancada", label: "Estética Avançada & Corporal" },
+      { id: "exames-diagnosticos", label: "Exames & Check-ups Rápidos" },
     ],
-    serviceModeTitle: "Como funciona o atendimento?",
-    serviceModeDescription: "Marque os formatos que você oferece aos pacientes.",
+    serviceModeTitle: "Como funciona o atendimento clínico?",
+    serviceModeDescription: "Marque os formatos e políticas de atendimento disponíveis aos pacientes.",
     serviceModes: [
-      { id: "consultorio", label: "No consultório" },
-      { id: "online", label: "Teleatendimento" },
-      { id: "domiciliar", label: "Atendimento domiciliar" },
-      { id: "com-horario", label: "Com hora marcada" },
+      { id: "consultorio", label: "No Consultório / Clínica Física" },
+      { id: "online", label: "Teleatendimento / Consulta Online" },
+      { id: "domiciliar", label: "Atendimento em Domicílio" },
+      { id: "com-horario", label: "Com Hora Marcada" },
+      { id: "pacotes-sessoes", label: "Pacotes & Planos de Tratamento" },
+      { id: "retorno-incluso", label: "Consultas com Retorno Incluso" },
+      { id: "reembolso-convenio", label: "Emite Recibo para Reembolso" },
+      { id: "urgencia-encaixe", label: "Atendimento com Encaixe / Urgência" },
     ],
   },
   automotivo: {
-    specialtyTitle: "Quais serviços automotivos você realiza?",
-    specialtyDescription: "Marque os tipos de serviço que sua equipe oferece.",
+    specialtyTitle: "Quais serviços automotivos sua equipe realiza?",
+    specialtyDescription: "Marque os tipos de serviço e manutenção que os motoristas podem agendar.",
     specialties: [
-      { id: "mecanica", label: "Mecânica" },
-      { id: "eletrica", label: "Elétrica automotiva" },
-      { id: "pneus", label: "Pneus e alinhamento" },
-      { id: "lavagem", label: "Lavagem e estética" },
-      { id: "funilaria", label: "Funilaria e pintura" },
-      { id: "som-acessorios", label: "Som e acessórios" },
+      { id: "mecanica-geral", label: "Mecânica Geral & Preventiva" },
+      { id: "estetica-detail", label: "Estética Automotiva & Polimento" },
+      { id: "troca-oleo-filtros", label: "Troca de Óleo & Lubrificantes" },
+      { id: "eletrica-diagnostico", label: "Auto Elétrica & Injeção Eletrônica" },
+      { id: "freios-suspensao", label: "Freios, Suspensão & Amortecedores" },
+      { id: "pneus-alinhamento", label: "Pneus, Alinhamento & Balanceamento" },
+      { id: "ar-condicionado", label: "Higienização & Ar Condicionado" },
+      { id: "lavagem-tecnica", label: "Lavagem Técnica & Higienização" },
+      { id: "funilaria-martelinho", label: "Funilaria & Martelinho de Ouro" },
+      { id: "auto-socorro", label: "Socorro & Atendimento Rápido" },
     ],
-    serviceModeTitle: "Como você recebe os veículos?",
-    serviceModeDescription: "Escolha as formas de atendimento da sua oficina.",
+    serviceModeTitle: "Como você recebe e atende os veículos?",
+    serviceModeDescription: "Escolha as facilidades e formas de atendimento da sua oficina.",
     serviceModes: [
-      { id: "na-oficina", label: "Na oficina" },
-      { id: "agendamento", label: "Com agendamento" },
-      { id: "orcamento", label: "Orçamento antes do serviço" },
-      { id: "socorro", label: "Socorro no local" },
+      { id: "na-oficina", label: "Na Oficina / Box Físico" },
+      { id: "com-agendamento", label: "Com Agendamento Prévio" },
+      { id: "leva-traz-auto", label: "Serviço de Leva e Traz do Carro" },
+      { id: "orcamento", label: "Orçamento com Aprovação WhatsApp" },
+      { id: "socorro", label: "Atendimento Rápido no Local" },
+      { id: "garantia-pecas", label: "Garantia de Peças e Mão de Obra" },
+      { id: "faturamento-empresas", label: "Atende Frotas e Empresas" },
+      { id: "espera-climatizada", label: "Sala de Espera Climatizada c/ Wi-Fi" },
     ],
   },
   casa: {
@@ -216,23 +231,31 @@ const setupProfiles: Record<string, SetupProfile> = {
     ],
   },
   pet: {
-    specialtyTitle: "Como você cuida dos pets?",
-    specialtyDescription: "Selecione os serviços que tutores podem encontrar.",
+    specialtyTitle: "Quais cuidados e serviços pet você oferece?",
+    specialtyDescription: "Selecione todos os serviços que os tutores encontrarão na sua página.",
     specialties: [
-      { id: "veterinaria", label: "Veterinária" },
-      { id: "banho-tosa", label: "Banho e tosa" },
-      { id: "creche-hotel", label: "Creche e hospedagem" },
-      { id: "passeio", label: "Passeio" },
-      { id: "adestramento", label: "Adestramento" },
-      { id: "produtos-pet", label: "Produtos para pets" },
+      { id: "banho-tosa", label: "Banho & Tosa Completo" },
+      { id: "tosa-higienica", label: "Tosa Higiênica & Desembolo" },
+      { id: "banho-terapeutico", label: "Banhos Terapêuticos & Hidratação" },
+      { id: "veterinaria", label: "Consultas & Vacinas Veterinárias" },
+      { id: "creche-daycare", label: "Daycare & Creche Diária" },
+      { id: "hotel-hospedagem", label: "Hotelzinho & Hospedagem Pet" },
+      { id: "dog-walker", label: "Dog Walker & Passeios" },
+      { id: "adestramento", label: "Adestramento & Comportamento" },
+      { id: "taxi-pet", label: "Táxi Pet (Leva e Traz)" },
+      { id: "produtos-pet", label: "Farmácia, Rações & Pet Shop" },
     ],
-    serviceModeTitle: "Onde o atendimento acontece?",
-    serviceModeDescription: "Marque como você recebe os pets e seus tutores.",
+    serviceModeTitle: "Como é a estrutura e atendimento dos pets?",
+    serviceModeDescription: "Marque como os animais e tutores são recebidos.",
     serviceModes: [
-      { id: "loja-clinica", label: "Na loja ou clínica" },
-      { id: "a-domicilio", label: "A domicílio" },
-      { id: "agendamento", label: "Com agendamento" },
-      { id: "hospedagem", label: "Hospedagem" },
+      { id: "loja-clinica", label: "No espaço físico / Loja Pet" },
+      { id: "taxi-pet", label: "Com Leva e Traz (Táxi Pet)" },
+      { id: "a-domicilio", label: "Atendimento a Domicílio" },
+      { id: "com-horario", label: "Com Hora Marcada" },
+      { id: "pacotes-mensais", label: "Planos & Pacotes Recorrentes" },
+      { id: "cat-friendly", label: "Espaço Cat Friendly (Gatos)" },
+      { id: "todos-portes", label: "Todos os portes (P, M, G, GG)" },
+      { id: "portes-pequenos", label: "Especialista em Pequeno Porte" },
     ],
   },
   "servicos-domesticos": {
@@ -605,7 +628,17 @@ function OnboardingPage() {
                     update("name", name);
                     if (!slugEdited) update("slug", createSlug(name));
                   }}
-                  placeholder="Ex.: Studio Bella"
+                  placeholder={
+                    form.category === "pet"
+                      ? "Ex.: Pet Love Estética & Banho"
+                      : form.category === "barbearia"
+                        ? "Ex.: Barbearia Dom Pedro"
+                        : form.category === "alimentacao"
+                          ? "Ex.: Brasa Burger & Cia"
+                          : form.category === "saude"
+                            ? "Ex.: Clínica Bem Estar"
+                            : "Ex.: Studio Bella"
+                  }
                   className={inputClass}
                 />
               </Field>
@@ -658,13 +691,80 @@ function OnboardingPage() {
                     onChange={(event) => update("description", event.target.value)}
                     rows={4}
                     maxLength={1000}
-                    placeholder="Conte o que seus clientes encontram por aqui..."
+                    placeholder={
+                      form.category === "pet"
+                        ? "Ex.: Especialistas em banho e tosa humanizado com amor aos animais. Ambiente seguro e serviço de Táxi Pet."
+                        : "Conte o que seus clientes encontram por aqui..."
+                    }
                     className={`${inputClass} resize-none pb-6`}
                   />
                   <span className="pointer-events-none absolute bottom-2 right-3 text-[11px] font-medium text-slate-400">
                     {form.description.length}/1000
                   </span>
                 </div>
+                {form.category === "pet" && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                      💡 Sugestões rápidas:
+                    </span>
+                    {[
+                      "Banho, tosa higiênica e estética animal com carinho, produtos hipoalergênicos e Táxi Pet.",
+                      "Daycare, creche e hotelzinho pet com monitoramento e atividades recreativas diárias.",
+                      "Clínica veterinária, vacinas e consultas com atendimento humanizado para seu pet.",
+                    ].map((suggestion, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => update("description", suggestion)}
+                        className="rounded-lg border border-[#cfd4be] bg-[#edf0e5] px-2.5 py-1 text-[11px] font-medium text-[#4c5832] transition hover:bg-[#e2e7d7] text-left"
+                      >
+                        "{suggestion.slice(0, 48)}..."
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {form.category === "saude" && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                      💡 Sugestões rápidas:
+                    </span>
+                    {[
+                      "Atendimento clínico humanizado, com pontualidade, escuta ativa e emissão de recibo para reembolso.",
+                      "Consultas presenciais e teleatendimento com planos de acompanhamento contínuo e retornos.",
+                      "Fisioterapia e reabilitação postural com avaliação personalizada e pacotes de sessões.",
+                    ].map((suggestion, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => update("description", suggestion)}
+                        className="rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-medium text-teal-800 transition hover:bg-teal-100 text-left"
+                      >
+                        "{suggestion.slice(0, 48)}..."
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {form.category === "automotivo" && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                      💡 Sugestões rápidas:
+                    </span>
+                    {[
+                      "Oficina mecânica especializada em manutenção preventiva, freios, suspensão e injeção eletrônica com garantia.",
+                      "Estética automotiva de alta precisão, polimento técnico, vitrificação e higienização interna completa.",
+                      "Centro automotivo completo com troca de óleo rápida, pneus, alinhamento e peças originais.",
+                    ].map((suggestion, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => update("description", suggestion)}
+                        className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-900 transition hover:bg-amber-100 text-left"
+                      >
+                        "{suggestion.slice(0, 48)}..."
+                      </button>
+                    ))}
+                  </div>
+                )}
               </Field>
               <button
                 type="button"

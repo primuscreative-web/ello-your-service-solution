@@ -7,14 +7,18 @@ import {
   Clock3,
   Copy,
   ExternalLink,
-  Eye,
   Package,
   Plus,
   Sparkles,
   TrendingUp,
+  WalletCards,
+  ShoppingBag,
+  MessageCircle,
+  Store,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { PageTitle, money, primaryButtonClass } from "@/components/localhub/ui";
+import { PageTitle, money, primaryButtonClass, accentButtonClass, secondaryButtonClass } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
 import { StudioBusinessTools } from "@/components/localhub/studio-business-tools";
@@ -27,10 +31,12 @@ function DashboardPage() {
   const hasAppointments = supportsAppointments(business?.category);
   const isFoodBusiness = business?.category === "alimentacao";
   const today = new Date().toISOString().slice(0, 10);
+
   const todayBookings = bookings.filter(
     (booking) => booking.date === today && booking.status !== "cancelled",
   );
   const serviceMap = useMemo(() => new Map(services.map((s) => [s.id, s.price])), [services]);
+
   const todayRevenue = isFoodBusiness
     ? orders
         .filter(
@@ -47,75 +53,110 @@ function DashboardPage() {
             order.status !== "cancelled",
         )
         .reduce((sum, order) => sum + order.total, 0);
+
   const upcoming = [...bookings]
     .filter((booking) => booking.status !== "cancelled")
     .sort((a, b) => (a.date + " " + a.time).localeCompare(b.date + " " + b.time))
-    .slice(0, 4);
+    .slice(0, 5);
 
   const [copied, setCopied] = useState(false);
   const copyLink = async () => {
     if (!business?.slug) return;
     try {
-      await navigator.clipboard.writeText(window.location.origin + "/loja/" + business.slug);
+      await navigator.clipboard.writeText(`${window.location.origin}/loja/${business.slug}`);
       setCopied(true);
-      toast.success("Link da sua página copiado para a área de transferência!");
+      toast.success("Link público copiado para a área de transferência!");
       setTimeout(() => setCopied(false), 2200);
     } catch {
       toast.error("Não foi possível copiar o link.");
     }
   };
 
+  const activeServicesCount = services.filter((item) => item.active).length;
+  const pendingOrdersCount = isFoodBusiness
+    ? orders.filter((order) => !["completed", "cancelled"].includes(order.status)).length
+    : bookings.filter((item) => item.status === "pending").length;
+
   return (
-    <>
+    <div className="space-y-7">
+      {/* CABEÇALHO DO DASHBOARD COM IDENTIDADE EDITORIAL */}
       <PageTitle
-        eyebrow="Seu negócio em movimento"
-        title={"Olá, " + business?.name + "!"}
-        description="Aqui está um resumo do que acontece com sua página em tempo real."
+        eyebrow="Painel Operacional"
+        title={`Olá, ${business?.name || "Parceiro"}!`}
+        description="Acompanhe suas operações, pedidos ao vivo e faturamento em tempo real."
         action={
-          <Link to="/studio/catalog" className={primaryButtonClass}>
-            <Plus size={16} />
-            {copy.addOffer}
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link to="/studio/caixa" className={secondaryButtonClass}>
+              <WalletCards size={15} />
+              <span>Frente de Caixa</span>
+            </Link>
+            <Link to="/studio/catalog" className={primaryButtonClass}>
+              <Plus size={15} />
+              <span>{copy.addOffer}</span>
+            </Link>
+          </div>
         }
       />
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e1e3d8] bg-gradient-to-r from-[#edf0e5] via-[#f7f8f2] to-[#fbfaf7] p-4 shadow-xs sm:px-5">
-        <div className="flex items-center gap-3.5">
-          <span className="grid size-10.5 place-items-center rounded-xl bg-white text-[#586341] shadow-xs">
-            <Sparkles size={18} />
-          </span>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-[#292b25]">Sua página está no ar</span>
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                Ativa
+
+      {/* HERO COMMAND CARD: COMANDO DA LOJA AO VIVO */}
+      <div className="relative overflow-hidden rounded-3xl border border-[#2e3128] bg-gradient-to-br from-[#181a14] via-[#20231b] to-[#151712] p-6 text-white shadow-xl sm:p-7">
+        {/* Efeito de luz ambiente e textura */}
+        <div className="pointer-events-none absolute -right-16 -top-16 size-72 rounded-full bg-[#d4f455]/10 blur-3xl" />
+        <div className="pointer-events-none absolute -left-16 -bottom-16 size-72 rounded-full bg-[#768452]/20 blur-3xl" />
+
+        <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-center">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-400">
+                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                Loja Ao Vivo
+              </span>
+              <span className="text-xs font-semibold text-[#a5a999]">
+                {business?.city ? `📍 ${business.city}` : "Negócio Local"}
               </span>
             </div>
-            <div className="mt-0.5 text-xs text-slate-500">ello.app.br/loja/{business?.slug}</div>
+
+            <h2 className="font-display text-xl sm:text-2xl font-black tracking-tight text-[#f7f6ef]">
+              Seu canal de vendas direto está pronto para atender.
+            </h2>
+
+            <p className="text-xs sm:text-sm text-[#b2b5a7] font-mono">
+              ello.app.br/loja/{business?.slug}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => void copyLink()}
+              type="button"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-xs font-bold text-white shadow-sm backdrop-blur-md transition hover:bg-white/20 active:scale-95"
+            >
+              {copied ? <Check size={14} className="text-[#d4f455]" /> : <Copy size={14} />}
+              <span>{copied ? "Link copiado!" : "Copiar link público"}</span>
+            </button>
+
+            {business?.slug && (
+              <Link
+                to="/loja/$slug"
+                params={{ slug: business.slug }}
+                target="_blank"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#d4f455] px-4 py-2.5 text-xs font-black text-[#151712] shadow-md transition hover:bg-[#dff96b] active:scale-95"
+              >
+                <Store size={15} />
+                <span>Abrir Cardápio</span>
+                <ExternalLink size={12} className="opacity-70" />
+              </Link>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => void copyLink()}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#dedfd6] bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:border-[#c7c9bc] hover:bg-[#fafaf7] active:scale-[0.98]"
-          >
-            {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-            {copied ? "Link copiado!" : "Copiar link"}
-          </button>
-          <Link
-            to="/loja/$slug"
-            params={{ slug: business!.slug }}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#292b25] px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[#414338] active:scale-[0.98]"
-          >
-            <ExternalLink size={14} />
-            Abrir página
-          </Link>
-        </div>
       </div>
+
+      {/* MÉTRICAS PRINCIPAIS (KPIS) COM DESIGN EDITORIAL TÁTIL */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
             label: isFoodBusiness
-              ? "Pedidos recebidos"
+              ? "Pedidos hoje"
               : hasAppointments
                 ? `${capitalize(copy.bookings)} hoje`
                 : "Agendamentos hoje",
@@ -125,225 +166,253 @@ function DashboardPage() {
                 ).length
               : todayBookings.length,
             icon: CalendarDays,
-            note: "Recebidos hoje",
-            color: "text-[#586341]",
-            bg: "bg-[#edf0e5]",
-          },
-          {
-            label: `${capitalize(copy.offers)} ativos`,
-            value: services.filter((item) => item.active).length,
-            icon: Package,
-            note: "Visíveis na página",
-            color: "text-emerald-700",
-            bg: "bg-emerald-50",
+            note: "Recebidos no dia",
+            accent: "text-[#5e6940] bg-[#edf0e5]",
+            badge: "Hoje",
           },
           {
             label: isFoodBusiness
-              ? "Pedidos em andamento"
+              ? "Pedidos pendentes"
               : hasAppointments
                 ? `${capitalize(copy.bookings)} pendentes`
-                : "Atendimentos aguardando",
-            value: isFoodBusiness
-              ? orders.filter((order) => !["completed", "cancelled"].includes(order.status)).length
-              : bookings.filter((item) => item.status === "pending").length,
+                : "Aguardando confirmação",
+            value: pendingOrdersCount,
             icon: Clock3,
-            note: "Precisam de atenção",
-            color: "text-amber-700",
-            bg: "bg-amber-50",
+            note: pendingOrdersCount > 0 ? "Precisam de atenção rápida" : "Tudo em dia",
+            accent: pendingOrdersCount > 0 ? "text-amber-800 bg-amber-100" : "text-emerald-800 bg-emerald-100",
+            badge: pendingOrdersCount > 0 ? "Atenção" : "Em dia",
+          },
+          {
+            label: `${capitalize(copy.offers)} no catálogo`,
+            value: activeServicesCount,
+            icon: Package,
+            note: "Itens ativos para venda",
+            accent: "text-blue-800 bg-blue-100",
+            badge: "Catálogo",
           },
           {
             label: "Faturamento hoje",
             value: money(todayRevenue),
             icon: TrendingUp,
-            note: "Vendas e atendimentos",
-            color: "text-indigo-700",
-            bg: "bg-indigo-50",
+            note: "Total de vendas e serviços",
+            accent: "text-emerald-900 bg-[#d4f455]/40",
+            badge: "Em tempo real",
           },
-        ].map(({ label, value, icon: Icon, note, color, bg }) => (
-          <div key={label} className="group rounded-2xl border border-[#e8e6df] bg-white p-5 shadow-xs transition duration-150 hover:border-[#dedfd6] hover:shadow-md">
+        ].map(({ label, value, icon: Icon, note, accent, badge }) => (
+          <div
+            key={label}
+            className="group relative overflow-hidden rounded-2xl border border-[#dedfd6]/80 bg-white p-5 shadow-[0_1px_2px_rgba(20,24,15,0.02),0_4px_16px_-2px_rgba(20,24,15,0.03)] transition duration-200 hover:-translate-y-0.5 hover:border-[#c7c9bc] hover:shadow-[0_4px_14px_rgba(20,24,15,0.06)]"
+          >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</span>
-              <span className={`grid size-8 place-items-center rounded-lg ${bg} ${color} transition-transform group-hover:scale-105`}>
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#63665a]">
+                {label}
+              </span>
+              <span className={`grid size-8 place-items-center rounded-lg ${accent} transition-transform group-hover:scale-105`}>
                 <Icon size={16} />
               </span>
             </div>
-            <div className="mt-3.5 text-2xl font-black tracking-tight text-[#292b25]">{value}</div>
-            <div className="mt-1 text-xs text-slate-400">{note}</div>
+
+            <div className="mt-3.5 font-display text-2xl sm:text-3xl font-black tracking-[-0.03em] text-[#171914] tabular-nums">
+              {value}
+            </div>
+
+            <div className="mt-1.5 flex items-center justify-between text-xs text-[#7e8275]">
+              <span>{note}</span>
+              <span className="rounded-md bg-[#f2f1ea] px-1.5 py-0.5 text-[10px] font-bold text-[#55584d]">
+                {badge}
+              </span>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="mt-6">
+      {/* HUB DE FERRAMENTAS DO NEGÓCIO */}
+      <div className="rounded-3xl border border-[#dedfd6] bg-white p-5 sm:p-6 shadow-sm">
         <StudioBusinessTools />
       </div>
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-[1.45fr_.85fr]">
-        <section className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6">
-          <div className="flex items-center justify-between">
+      {/* FEED DE PEDIDOS / AGENDAMENTOS E CHECKLIST */}
+      <div className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
+        {/* PAINEL OPERACIONAL ESQUERDO: PEDIDOS / AGENDAMENTOS RECENTES */}
+        <section className="rounded-3xl border border-[#dedfd6] bg-white p-5 sm:p-6 shadow-sm">
+          <div className="flex items-center justify-between border-b border-[#e8e6df] pb-4">
             <div>
-              <h2 className="font-bold">
+              <h2 className="font-display text-base sm:text-lg font-black tracking-tight text-[#171914]">
                 {isFoodBusiness
-                  ? "Pedidos recentes"
+                  ? "Pedidos recentes ao vivo"
                   : hasAppointments
-                    ? `${["consulta", "aula"].includes(copy.booking) ? "Próximas" : "Próximos"} ${copy.bookings}`
+                    ? `Próximos atendimentos de ${copy.bookings}`
                     : "Próximos agendamentos"}
               </h2>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-0.5 text-xs text-[#76796d]">
                 {isFoodBusiness
-                  ? "Acompanhe preparo, retirada e entregas."
-                  : "Pedidos feitos pelos clientes na sua página"}
+                  ? "Fluxo de preparo, retirada e despacho em tempo real."
+                  : "Clientes agendados pela sua página pública ELLO."}
               </p>
             </div>
             <Link
               to={isFoodBusiness ? "/studio/pedidos" : "/studio/agenda"}
-              className="text-xs font-bold text-[#667448]"
+              className="inline-flex items-center gap-1 rounded-xl bg-[#edf0e5] px-3 py-1.5 text-xs font-bold text-[#4e5834] transition hover:bg-[#e0e5d5]"
             >
-              {isFoodBusiness ? "Ver pedidos" : "Ver agenda"}{" "}
-              <ArrowUpRight size={14} className="inline" />
+              <span>{isFoodBusiness ? "Ver todos" : "Ver agenda"}</span>
+              <ArrowUpRight size={13} />
             </Link>
           </div>
+
           {isFoodBusiness ? (
-            orders.slice(0, 4).length ? (
-              <div className="mt-5 divide-y divide-slate-100">
-                {orders.slice(0, 4).map((order) => (
+            orders.slice(0, 5).length ? (
+              <div className="mt-4 divide-y divide-[#f0efe9]">
+                {orders.slice(0, 5).map((order) => (
                   <div
                     key={order.id}
-                    className="flex items-center justify-between gap-3 py-4 first:pt-0"
+                    className="flex flex-wrap items-center justify-between gap-3 py-3.5 first:pt-1"
                   >
-                    <div>
-                      <div className="text-sm font-bold">
-                        #{order.number} · {order.customerName}
+                    <div className="flex items-center gap-3">
+                      <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#edf0e5] text-xs font-black text-[#586341]">
+                        #{order.number}
                       </div>
-                      <div className="mt-1 text-xs text-slate-400">
-                        {order.items.length} itens ·{" "}
-                        {new Date(order.createdAt).toLocaleTimeString("pt-BR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                      <div>
+                        <div className="text-xs font-black text-[#171914]">
+                          {order.customerName || "Cliente"}
+                        </div>
+                        <div className="text-[11px] text-[#76796d]">
+                          {order.items.length} itens · {money(order.total)} ·{" "}
+                          {new Date(order.createdAt).toLocaleTimeString("pt-BR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
                       </div>
                     </div>
-                    <span className="text-xs font-bold text-[#667448]">{order.status}</span>
+                    <span className="rounded-full bg-[#f2f1ea] px-2.5 py-1 text-[11px] font-bold text-[#4c5042] uppercase tracking-wider">
+                      {order.status}
+                    </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="mt-5 rounded-xl bg-slate-50 px-5 py-8 text-center">
-                <Package className="mx-auto text-slate-300" size={26} />
-                <p className="mt-3 text-sm font-semibold text-slate-600">
-                  Aguardando seu primeiro pedido
+              <div className="mt-6 rounded-2xl border border-dashed border-[#d8d6cc] bg-[#fbfbf8] px-5 py-9 text-center">
+                <ShoppingBag className="mx-auto text-[#9fa295]" size={30} />
+                <h3 className="mt-2 text-sm font-bold text-[#2d3027]">Aguardando novos pedidos</h3>
+                <p className="mt-1 text-xs text-[#7d8173]">
+                  Compartilhe seu link público nas redes para começar a receber pedidos!
                 </p>
               </div>
             )
           ) : upcoming.length ? (
-            <div className="mt-5 divide-y divide-slate-100">
+            <div className="mt-4 divide-y divide-[#f0efe9]">
               {upcoming.map((booking) => (
                 <div
                   key={booking.id}
-                  className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
+                  className="flex flex-wrap items-center justify-between gap-3 py-3.5 first:pt-1"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="grid size-10 place-items-center rounded-full bg-[#edf0e5] text-sm font-bold text-[#586341]">
+                    <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[#edf0e5] text-xs font-black text-[#586341]">
                       {booking.customerName.slice(0, 1).toUpperCase()}
                     </div>
                     <div>
-                      <div className="text-sm font-bold">{booking.customerName}</div>
-                      <div className="mt-1 text-xs text-slate-400">
-                        {services.find((item) => item.id === booking.serviceId)?.name ??
-                          "Serviço removido"}{" "}
-                        ·{" "}
-                        {new Date(booking.date + "T12:00:00").toLocaleDateString("pt-BR", {
-                          day: "numeric",
-                          month: "short",
-                        })}{" "}
-                        às {booking.time}
+                      <div className="text-xs font-black text-[#171914]">{booking.customerName}</div>
+                      <div className="text-[11px] text-[#76796d]">
+                        {services.find((item) => item.id === booking.serviceId)?.name ?? "Serviço"} ·{" "}
+                        {booking.date} às {booking.time}
                       </div>
                     </div>
                   </div>
                   <span
-                    className={
-                      "rounded-full px-2.5 py-1 text-[10px] font-bold " +
-                      (booking.status === "pending"
-                        ? "bg-amber-50 text-amber-700"
-                        : booking.status === "confirmed"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-slate-100 text-slate-500")
-                    }
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                      booking.status === "confirmed"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-amber-100 text-amber-800"
+                    }`}
                   >
-                    {booking.status === "pending"
-                      ? "Aguardando"
-                      : booking.status === "confirmed"
-                        ? "Confirmado"
-                        : "Cancelado"}
+                    {booking.status === "confirmed" ? "Confirmado" : "Pendente"}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="mt-5 rounded-xl bg-slate-50 px-5 py-8 text-center">
-              <CalendarDays className="mx-auto text-slate-300" size={26} />
-              <p className="mt-3 text-sm font-semibold text-slate-600">Sua agenda está livre</p>
-              <p className="mt-1 text-xs text-slate-400">
-                Os novos pedidos de horário vão aparecer aqui.
+            <div className="mt-6 rounded-2xl border border-dashed border-[#d8d6cc] bg-[#fbfbf8] px-5 py-9 text-center">
+              <CalendarDays className="mx-auto text-[#9fa295]" size={30} />
+              <h3 className="mt-2 text-sm font-bold text-[#2d3027]">Sua agenda está livre</h3>
+              <p className="mt-1 text-xs text-[#7d8173]">
+                Os novos agendamentos feitos pelos seus clientes aparecerão aqui.
               </p>
             </div>
           )}
         </section>
-        <section className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6">
-          <h2 className="font-bold">Próximos passos</h2>
-          <p className="mt-1 text-xs text-slate-400">
-            Deixe sua página pronta para receber clientes.
-          </p>
-          <div className="mt-5 space-y-3">
-            {[
-              {
-                label: `Adicione ${copy.offers}`,
-                to: "/studio/catalog",
-                icon: Package,
-                done: services.length > 0,
-              },
-              { label: "Confira sua página", to: "/studio/settings", icon: Eye, done: false },
-              {
-                label: hasAppointments
-                  ? "Receba seu primeiro horário"
-                  : "Receba seu primeiro pedido",
-                to: isFoodBusiness ? "/studio/pedidos" : "/studio/agenda",
-                icon: TrendingUp,
-                done: isFoodBusiness ? orders.length > 0 : bookings.length > 0,
-              },
-            ].map(({ label, to, icon: Icon, done }) => (
-              <Link
-                key={label}
-                to={to}
-                className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition hover:border-[#d2d7c3] hover:bg-[#f4f5ef]"
-              >
-                <span
-                  className={
-                    "grid size-9 place-items-center rounded-xl " +
-                    (done ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-500")
-                  }
-                >
-                  {done ? <span className="text-sm font-bold">✓</span> : <Icon size={17} />}
-                </span>
-                <span className="flex-1 text-xs font-bold text-slate-700">{label}</span>
-                <ArrowUpRight size={14} className="text-slate-300" />
-              </Link>
-            ))}
-          </div>
-          <div className="mt-5 rounded-xl bg-[#292b25] p-4 text-white">
-            <div className="text-sm font-bold">Acompanhe seu negócio</div>
-            <p className="mt-1 text-xs leading-5 text-white/70">
-              Confira sua página e mantenha seus serviços atualizados.
+
+        {/* PAINEL DIREITO: ATALHOS RÁPIDOS & CANAIS DE EXPANSÃO */}
+        <section className="space-y-4">
+          <div className="rounded-3xl border border-[#dedfd6] bg-white p-5 sm:p-6 shadow-sm">
+            <h2 className="font-display text-base font-black tracking-tight text-[#171914]">
+              Próximos Passos
+            </h2>
+            <p className="mt-0.5 text-xs text-[#76796d]">
+              Complete para potencializar suas vendas locais.
             </p>
-            <Link
-              to="/studio/settings"
-              className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#d5ec9a]"
+
+            <div className="mt-4 space-y-2.5">
+              {[
+                {
+                  label: `Cadastrar ${copy.offers}`,
+                  to: "/studio/catalog",
+                  icon: Package,
+                  done: services.length > 0,
+                },
+                {
+                  label: "Personalizar página e WhatsApp",
+                  to: "/studio/settings",
+                  icon: MessageCircle,
+                  done: Boolean(business?.phone),
+                },
+                {
+                  label: "Configurar frente de caixa (PDV)",
+                  to: "/studio/caixa",
+                  icon: WalletCards,
+                  done: true,
+                },
+              ].map(({ label, to, icon: Icon, done }) => (
+                <Link
+                  key={label}
+                  to={to}
+                  className="flex items-center gap-3 rounded-xl border border-[#e8e6df] p-3 transition hover:border-[#c7c9bc] hover:bg-[#fafaf6]"
+                >
+                  <span
+                    className={`grid size-8 place-items-center rounded-lg text-xs font-black ${
+                      done ? "bg-emerald-100 text-emerald-800" : "bg-[#f2f1ea] text-[#6d7164]"
+                    }`}
+                  >
+                    {done ? "✓" : <Icon size={15} />}
+                  </span>
+                  <span className="flex-1 text-xs font-bold text-[#2b2e25]">{label}</span>
+                  <ChevronRight size={14} className="text-[#a5a999]" />
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* CARD DE INCENTIVO WHATSAPP */}
+          <div className="rounded-3xl border border-[#2e3128] bg-[#1a1c16] p-5 text-white shadow-lg">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#d4f455]">
+              <Sparkles size={14} />
+              <span>Dica de Crescimento</span>
+            </div>
+            <h3 className="mt-2 text-sm font-black">Divulgue no seu status do WhatsApp</h3>
+            <p className="mt-1 text-xs text-[#b8bcaf] leading-relaxed">
+              Negócios que compartilham o link da ELLO nos stories e no status têm até 3.4x mais pedidos diretos sem pagar comissão.
+            </p>
+            <button
+              onClick={() => void copyLink()}
+              type="button"
+              className="mt-3.5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#d4f455] py-2.5 text-xs font-black text-[#151712] transition hover:bg-[#dff96b]"
             >
-              Ver minha página <ArrowUpRight size={13} />
-            </Link>
+              <Copy size={13} />
+              <span>Copiar link para o WhatsApp</span>
+            </button>
           </div>
         </section>
       </div>
-    </>
+    </div>
   );
 }
 

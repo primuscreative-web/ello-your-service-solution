@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
+import type { LuckyWheelSettings } from "@/components/localhub/lucky-wheel";
+
 export type ProductSupply = {
   id: string;
   name: string;
@@ -24,6 +26,22 @@ export type StaffCommissionSetting = {
   deductSupplies?: boolean; // se deduz o custo de insumos antes de calcular comissao
 };
 
+export type PortfolioItem = {
+  id: string;
+  title: string;
+  description?: string;
+  mediaType: "image" | "video" | "before_after";
+  mediaUrl: string;
+  thumbnailUrl?: string;
+  beforeUrl?: string;
+  afterUrl?: string;
+  serviceId?: string;
+  serviceName?: string;
+  tag?: string;
+  featured?: boolean;
+  createdAt?: string;
+};
+
 export type BusinessOnboardingDetails = {
   specialties: string[];
   serviceModes: string[];
@@ -31,6 +49,8 @@ export type BusinessOnboardingDetails = {
   serviceSupplyFormulas?: Record<string, ServiceSupplyUsage[]>;
   customerNotes?: Record<string, string>;
   staffCommissions?: Record<string, StaffCommissionSetting>;
+  wheelSettings?: LuckyWheelSettings;
+  portfolioItems?: PortfolioItem[];
 };
 
 export type BusinessDayHours = {
@@ -78,6 +98,8 @@ export type Business = {
   deliveryFee?: number;
   logoUrl?: string | null;
   menuCategoriesOrder?: string[];
+  wheelSettings?: LuckyWheelSettings;
+  portfolioItems?: PortfolioItem[];
 };
 
 export type Service = {
@@ -346,6 +368,8 @@ const businessFromRow = (row: BusinessRow): Business => {
     deliveryFee: Number(row.delivery_fee ?? 0),
     logoUrl: row.logo_url ?? null,
     menuCategoriesOrder: Array.isArray(row.menu_categories_order) ? row.menu_categories_order : [],
+    wheelSettings: (onboarding_details as BusinessOnboardingDetails | undefined)?.wheelSettings ?? row.wheelSettings,
+    portfolioItems: (onboarding_details as BusinessOnboardingDetails | undefined)?.portfolioItems ?? [],
   };
 };
 
@@ -891,6 +915,23 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
   }, [business?.category, business?.id, refresh]);
 
   const getPublicStore = useCallback(async (slug: string) => {
+    try {
+      const apiRes = await fetch(`/api/store/${encodeURIComponent(slug)}`);
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        if (json?.business) {
+          return {
+            business: json.business as Business,
+            deliveryAreas: (json.deliveryAreas || []) as DeliveryArea[],
+            services: (json.services || []) as Service[],
+            staff: (json.staff || []) as StaffMember[],
+          };
+        }
+      }
+    } catch {
+      // Continua para o cliente direto em caso de falha de rede
+    }
+
     const supabase = getSupabaseBrowserClient();
     if (!supabase) throw new Error("O serviço está temporariamente indisponível.");
     const initialStoreRes = await supabase
@@ -1095,8 +1136,17 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         description: item.description.trim(),
         address: item.address.trim(),
         banner_url: item.bannerUrl?.trim() || null,
-        onboarding_details:
-          item.onboardingDetails ?? business.onboardingDetails ?? emptyOnboardingDetails,
+        onboarding_details: {
+          ...(item.onboardingDetails ?? business.onboardingDetails ?? emptyOnboardingDetails),
+          portfolioItems:
+            item.portfolioItems !== undefined
+              ? item.portfolioItems
+              : (item.onboardingDetails?.portfolioItems ?? business.portfolioItems ?? []),
+          wheelSettings:
+            item.wheelSettings !== undefined
+              ? item.wheelSettings
+              : (item.onboardingDetails?.wheelSettings ?? business.wheelSettings),
+        },
         gallery_urls: item.galleryUrls ?? business.galleryUrls ?? [],
         booking_policy: item.bookingPolicy?.trim() ?? business.bookingPolicy ?? "",
         opening_hours: item.openingHours ?? business.openingHours ?? defaultOpeningHours,
@@ -1125,8 +1175,17 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
             description: item.description.trim(),
             address: item.address.trim(),
             banner_url: item.bannerUrl?.trim() || null,
-            onboarding_details:
-              item.onboardingDetails ?? business.onboardingDetails ?? emptyOnboardingDetails,
+            onboarding_details: {
+              ...(item.onboardingDetails ?? business.onboardingDetails ?? emptyOnboardingDetails),
+              portfolioItems:
+                item.portfolioItems !== undefined
+                  ? item.portfolioItems
+                  : (item.onboardingDetails?.portfolioItems ?? business.portfolioItems ?? []),
+              wheelSettings:
+                item.wheelSettings !== undefined
+                  ? item.wheelSettings
+                  : (item.onboardingDetails?.wheelSettings ?? business.wheelSettings),
+            },
             gallery_urls: item.galleryUrls ?? business.galleryUrls ?? [],
             booking_policy: item.bookingPolicy?.trim() ?? business.bookingPolicy ?? "",
             opening_hours: item.openingHours ?? business.openingHours ?? defaultOpeningHours,

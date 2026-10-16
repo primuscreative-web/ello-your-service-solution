@@ -19,6 +19,7 @@ import { money } from "@/components/localhub/ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ElloLogo } from "@/components/ello/logo";
 import { ElloAtomLoader } from "@/components/ello/atom-loader";
+import { LuckyWheel } from "@/components/localhub/lucky-wheel";
 
 export const Route = createFileRoute("/pedido/$token")({ component: PublicOrderTrackingPage });
 
@@ -686,6 +687,18 @@ function PublicOrderTrackingPage() {
                     })}
                 </ol>
               )}
+
+              {/* Roleta Premiada Pós-Compra (Gamificação de Retenção) */}
+              {tracking.status !== "cancelled" && (
+                <div className="mt-8 border-t border-slate-100 pt-6">
+                  <LuckyWheel
+                    businessName={tracking.business_name}
+                    orderToken={token}
+                    orderTotal={Number(paymentInfo?.total || 0)}
+                  />
+                </div>
+              )}
+
               <p className="mt-8 text-center text-xs text-slate-400">
                 Esta página é atualizada automaticamente
               </p>

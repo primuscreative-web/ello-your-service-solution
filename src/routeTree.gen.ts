@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as RoleRouteImport } from './routes/role'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as AppIndexRouteImport } from './routes/app.index'
@@ -42,6 +43,7 @@ import { Route as StudioFinanceiroRouteImport } from './routes/studio.financeiro
 import { Route as StudioMesasRouteImport } from './routes/studio.mesas'
 import { Route as StudioMetricasRouteImport } from './routes/studio.metricas'
 import { Route as StudioPedidosRouteImport } from './routes/studio.pedidos'
+import { Route as StudioPortfolioRouteImport } from './routes/studio.portfolio'
 import { Route as StudioPrecificacaoRouteImport } from './routes/studio.precificacao'
 import { Route as StudioProfissionaisRouteImport } from './routes/studio.profissionais'
 import { Route as StudioSettingsRouteImport } from './routes/studio.settings'
@@ -52,6 +54,7 @@ import { Route as ApiAsaasSubaccountRouteImport } from './routes/api.asaas.subac
 import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas.webhook'
 import { Route as ApiAsaasWithdrawRouteImport } from './routes/api.asaas.withdraw'
 import { Route as ApiNotificationsWhatsappRouteImport } from './routes/api.notifications.whatsapp'
+import { Route as ApiStoreSlugRouteImport } from './routes/api.store.$slug'
 import { Route as ApiStripeCheckoutRouteImport } from './routes/api.stripe.checkout'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as ApiWhatsappSessionRouteImport } from './routes/api.whatsapp.session'
@@ -85,6 +88,11 @@ const AuthRoute = AuthRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanosRoute = PlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoleRoute = RoleRouteImport.update({
@@ -232,6 +240,11 @@ const StudioPedidosRoute = StudioPedidosRouteImport.update({
   path: '/pedidos',
   getParentRoute: () => StudioRoute,
 } as any)
+const StudioPortfolioRoute = StudioPortfolioRouteImport.update({
+  id: '/portfolio',
+  path: '/portfolio',
+  getParentRoute: () => StudioRoute,
+} as any)
 const StudioPrecificacaoRoute = StudioPrecificacaoRouteImport.update({
   id: '/precificacao',
   path: '/precificacao',
@@ -283,6 +296,11 @@ const ApiNotificationsWhatsappRoute =
     path: '/api/notifications/whatsapp',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiStoreSlugRoute = ApiStoreSlugRouteImport.update({
+  id: '/api/store/$slug',
+  path: '/api/store/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStripeCheckoutRoute = ApiStripeCheckoutRouteImport.update({
   id: '/api/stripe/checkout',
   path: '/api/stripe/checkout',
@@ -362,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/planos': typeof PlanosRoute
   '/role': typeof RoleRoute
   '/studio': typeof StudioRouteWithChildren
   '/app/admin': typeof AppAdminRoute
@@ -389,6 +408,7 @@ export interface FileRoutesByFullPath {
   '/studio/mesas': typeof StudioMesasRoute
   '/studio/metricas': typeof StudioMetricasRoute
   '/studio/pedidos': typeof StudioPedidosRoute
+  '/studio/portfolio': typeof StudioPortfolioRoute
   '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
@@ -401,6 +421,7 @@ export interface FileRoutesByFullPath {
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
   '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
   '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
+  '/api/store/$slug': typeof ApiStoreSlugRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
@@ -420,6 +441,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/planos': typeof PlanosRoute
   '/role': typeof RoleRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
@@ -446,6 +468,7 @@ export interface FileRoutesByTo {
   '/studio/mesas': typeof StudioMesasRoute
   '/studio/metricas': typeof StudioMetricasRoute
   '/studio/pedidos': typeof StudioPedidosRoute
+  '/studio/portfolio': typeof StudioPortfolioRoute
   '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
@@ -458,6 +481,7 @@ export interface FileRoutesByTo {
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
   '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
   '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
+  '/api/store/$slug': typeof ApiStoreSlugRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
@@ -479,6 +503,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/planos': typeof PlanosRoute
   '/role': typeof RoleRoute
   '/studio': typeof StudioRouteWithChildren
   '/app/admin': typeof AppAdminRoute
@@ -506,6 +531,7 @@ export interface FileRoutesById {
   '/studio/mesas': typeof StudioMesasRoute
   '/studio/metricas': typeof StudioMetricasRoute
   '/studio/pedidos': typeof StudioPedidosRoute
+  '/studio/portfolio': typeof StudioPortfolioRoute
   '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
@@ -518,6 +544,7 @@ export interface FileRoutesById {
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
   '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
   '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
+  '/api/store/$slug': typeof ApiStoreSlugRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
@@ -540,6 +567,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/onboarding'
+    | '/planos'
     | '/role'
     | '/studio'
     | '/app/admin'
@@ -567,6 +595,7 @@ export interface FileRouteTypes {
     | '/studio/mesas'
     | '/studio/metricas'
     | '/studio/pedidos'
+    | '/studio/portfolio'
     | '/studio/precificacao'
     | '/studio/profissionais'
     | '/studio/settings'
@@ -579,6 +608,7 @@ export interface FileRouteTypes {
     | '/api/asaas/webhook'
     | '/api/asaas/withdraw'
     | '/api/notifications/whatsapp'
+    | '/api/store/$slug'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
     | '/api/whatsapp/session'
@@ -598,6 +628,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/onboarding'
+    | '/planos'
     | '/role'
     | '/app/admin'
     | '/app/agenda'
@@ -624,6 +655,7 @@ export interface FileRouteTypes {
     | '/studio/mesas'
     | '/studio/metricas'
     | '/studio/pedidos'
+    | '/studio/portfolio'
     | '/studio/precificacao'
     | '/studio/profissionais'
     | '/studio/settings'
@@ -636,6 +668,7 @@ export interface FileRouteTypes {
     | '/api/asaas/webhook'
     | '/api/asaas/withdraw'
     | '/api/notifications/whatsapp'
+    | '/api/store/$slug'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
     | '/api/whatsapp/session'
@@ -656,6 +689,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/onboarding'
+    | '/planos'
     | '/role'
     | '/studio'
     | '/app/admin'
@@ -683,6 +717,7 @@ export interface FileRouteTypes {
     | '/studio/mesas'
     | '/studio/metricas'
     | '/studio/pedidos'
+    | '/studio/portfolio'
     | '/studio/precificacao'
     | '/studio/profissionais'
     | '/studio/settings'
@@ -695,6 +730,7 @@ export interface FileRouteTypes {
     | '/api/asaas/webhook'
     | '/api/asaas/withdraw'
     | '/api/notifications/whatsapp'
+    | '/api/store/$slug'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
     | '/api/whatsapp/session'
@@ -716,6 +752,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
+  PlanosRoute: typeof PlanosRoute
   RoleRoute: typeof RoleRoute
   StudioRoute: typeof StudioRouteWithChildren
   LojaSlugRoute: typeof LojaSlugRoute
@@ -728,6 +765,7 @@ export interface RootRouteChildren {
   ApiAsaasWebhookRoute: typeof ApiAsaasWebhookRoute
   ApiAsaasWithdrawRoute: typeof ApiAsaasWithdrawRoute
   ApiNotificationsWhatsappRoute: typeof ApiNotificationsWhatsappRoute
+  ApiStoreSlugRoute: typeof ApiStoreSlugRoute
   ApiStripeCheckoutRoute: typeof ApiStripeCheckoutRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiWhatsappSessionRoute: typeof ApiWhatsappSessionRoute
@@ -764,6 +802,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planos': {
+      id: '/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof PlanosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/role': {
@@ -969,6 +1014,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioPedidosRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/studio/portfolio': {
+      id: '/studio/portfolio'
+      path: '/portfolio'
+      fullPath: '/studio/portfolio'
+      preLoaderRoute: typeof StudioPortfolioRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/studio/precificacao': {
       id: '/studio/precificacao'
       path: '/precificacao'
@@ -1037,6 +1089,13 @@ declare module '@tanstack/react-router' {
       path: '/api/notifications/whatsapp'
       fullPath: '/api/notifications/whatsapp'
       preLoaderRoute: typeof ApiNotificationsWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/store/$slug': {
+      id: '/api/store/$slug'
+      path: '/api/store/$slug'
+      fullPath: '/api/store/$slug'
+      preLoaderRoute: typeof ApiStoreSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/stripe/checkout': {
@@ -1212,6 +1271,7 @@ interface StudioRouteChildren {
   StudioMesasRoute: typeof StudioMesasRoute
   StudioMetricasRoute: typeof StudioMetricasRoute
   StudioPedidosRoute: typeof StudioPedidosRoute
+  StudioPortfolioRoute: typeof StudioPortfolioRoute
   StudioPrecificacaoRoute: typeof StudioPrecificacaoRoute
   StudioProfissionaisRoute: typeof StudioProfissionaisRoute
   StudioSettingsRoute: typeof StudioSettingsRoute
@@ -1228,6 +1288,7 @@ const StudioRouteChildren: StudioRouteChildren = {
   StudioMesasRoute: StudioMesasRoute,
   StudioMetricasRoute: StudioMetricasRoute,
   StudioPedidosRoute: StudioPedidosRoute,
+  StudioPortfolioRoute: StudioPortfolioRoute,
   StudioPrecificacaoRoute: StudioPrecificacaoRoute,
   StudioProfissionaisRoute: StudioProfissionaisRoute,
   StudioSettingsRoute: StudioSettingsRoute,
@@ -1242,6 +1303,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
+  PlanosRoute: PlanosRoute,
   RoleRoute: RoleRoute,
   StudioRoute: StudioRouteWithChildren,
   LojaSlugRoute: LojaSlugRoute,
@@ -1254,6 +1316,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAsaasWebhookRoute: ApiAsaasWebhookRoute,
   ApiAsaasWithdrawRoute: ApiAsaasWithdrawRoute,
   ApiNotificationsWhatsappRoute: ApiNotificationsWhatsappRoute,
+  ApiStoreSlugRoute: ApiStoreSlugRoute,
   ApiStripeCheckoutRoute: ApiStripeCheckoutRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiWhatsappSessionRoute: ApiWhatsappSessionRoute,

@@ -49,6 +49,14 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
         <p className="mt-2 text-sm text-muted-foreground">
           Algo saiu do eixo por aqui. Tente novamente ou volte para o início.
         </p>
+        {error instanceof Error && error.message && (
+          <details className="mt-4 rounded-lg border border-border/60 bg-muted/40 p-2.5 text-left text-xs text-muted-foreground">
+            <summary className="cursor-pointer font-medium hover:text-foreground">
+              Detalhes do erro
+            </summary>
+            <p className="mt-1 font-mono break-all text-[11px] select-all">{error.message}</p>
+          </details>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {

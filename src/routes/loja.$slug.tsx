@@ -1,19 +1,28 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  Calendar,
   CalendarDays,
   Check,
+  CheckCircle2,
   ChevronRight,
   Clock3,
+  Copy,
+  ExternalLink,
+  Gift,
+  Loader2,
   MapPin,
   MessageCircle,
   Minus,
+  Moon,
   Package,
   Plus,
   Share2,
   ShoppingBag,
   Sparkles,
   Store,
+  Sun,
+  Sunrise,
   ThumbsUp,
   Star,
   UtensilsCrossed,
@@ -24,9 +33,12 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { money } from "@/components/localhub/ui";
 import { ElloLogo } from "@/components/ello/logo";
-import { useLocalHub, type Booking, type Service } from "@/lib/localhub-context";
+import { useLocalHub, type Booking, type Service, type PortfolioItem } from "@/lib/localhub-context";
 import { formatSetupChoice, getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { fetchAddressFromCep, formatCep } from "@/lib/cities";
+import { LuckyWheelModal } from "@/components/localhub/lucky-wheel";
+import { PortfolioCard, PortfolioLightbox } from "@/components/localhub/portfolio-view";
 
 export const Route = createFileRoute("/loja/$slug")({
   validateSearch: z.object({
@@ -108,6 +120,13 @@ function PublicBusinessPage() {
   const [orderName, setOrderName] = useState("");
   const [orderPhone, setOrderPhone] = useState("");
   const [orderAddress, setOrderAddress] = useState("");
+  const [orderCep, setOrderCep] = useState("");
+  const [cepSearching, setCepSearching] = useState(false);
+  const [needsCashChange, setNeedsCashChange] = useState<"no" | "yes" | "">("");
+  const [cashChangeFor, setCashChangeFor] = useState("");
+  const [slotPeriodFilter, setSlotPeriodFilter] = useState<"all" | "morning" | "afternoon" | "evening">("all");
+  const [customDatePicker, setCustomDatePicker] = useState(false);
+  const [customerMemoryLoaded, setCustomerMemoryLoaded] = useState(false);
   const [couponCode, setCouponCode] = useState(requestedCoupon?.toUpperCase() ?? "");
   const [couponPreview, setCouponPreview] = useState<{
     code: string;
@@ -136,6 +155,71 @@ function PublicBusinessPage() {
     total: number;
     trackingToken: string;
   } | null>(null);
+  const [welcomeWheelOpen, setWelcomeWheelOpen] = useState(false);
+  const [lightboxItem, setLightboxItem] = useState<PortfolioItem | null>(null);
+  const [portfolioTagFilter, setPortfolioTagFilter] = useState("all");
+
+  const business = store?.business ?? null;
+  const deliveryAreas = store?.deliveryAreas ?? noDeliveryAreas;
+  const services = store?.services ?? noServices;
+  const activeStaff = (store?.staff ?? []).filter((member) => member.active);
+  const galleryUrls = business?.galleryUrls ?? [];
+
+  // Auto-exibição inteligente da Roleta de Boas-Vindas (Welcome Wheel)
+  useEffect(() => {
+    if (!business || typeof window === "undefined") return;
+    const settings = business.wheelSettings;
+    const isEnabled = settings?.enabled ?? true;
+    const allowsWelcome =
+      settings?.trigger === "welcome" ||
+      settings?.trigger === "both" ||
+      !settings?.trigger;
+
+    if (!isEnabled || !allowsWelcome) return;
+
+    try {
+      const storageKey = `ello_wheel_welcome_${business.slug}`;
+      const hasSpun = localStorage.getItem(storageKey);
+      if (!hasSpun) {
+        const timer = window.setTimeout(() => {
+          setWelcomeWheelOpen(true);
+        }, 1200);
+        return () => window.clearTimeout(timer);
+      }
+    } catch {
+      // ignore
+    }
+  }, [business]);
+
+  // Auto-preenchimento inteligente com memória do cliente (localStorage)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const savedName = localStorage.getItem("ello_customer_name");
+      const savedPhone = localStorage.getItem("ello_customer_phone");
+      const savedAddress = localStorage.getItem("ello_customer_address");
+      const savedCep = localStorage.getItem("ello_customer_cep");
+      if (savedName) {
+        setCustomerName((prev) => prev || savedName);
+        setOrderName((prev) => prev || savedName);
+      }
+      if (savedPhone) {
+        setPhone((prev) => prev || savedPhone);
+        setOrderPhone((prev) => prev || savedPhone);
+      }
+      if (savedAddress) {
+        setOrderAddress((prev) => prev || savedAddress);
+      }
+      if (savedCep) {
+        setOrderCep((prev) => prev || savedCep);
+      }
+      if (savedName || savedPhone || savedAddress) {
+        setCustomerMemoryLoaded(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -161,11 +245,6 @@ function PublicBusinessPage() {
     }
   }, [store?.business?.name]);
 
-  const business = store?.business ?? null;
-  const deliveryAreas = store?.deliveryAreas ?? noDeliveryAreas;
-  const services = store?.services ?? noServices;
-  const activeStaff = (store?.staff ?? []).filter((member) => member.active);
-  const galleryUrls = business?.galleryUrls ?? [];
   const activeServices = useMemo(() => services.filter((service) => service.active), [services]);
   const isFoodBusiness = business?.category === "alimentacao";
   const otherSuggestions = useMemo(() => {
@@ -180,7 +259,7 @@ function PublicBusinessPage() {
     { key: "consultorio", value: "in_person" as const, label: "No consultório" },
     { key: "online", value: "online" as const, label: "Teleconsulta" },
     { key: "domiciliar", value: "home_visit" as const, label: "Atendimento domiciliar" },
-  ].filter((mode) => business?.onboardingDetails?.serviceModes.includes(mode.key));
+  ].filter((mode) => business?.onboardingDetails?.serviceModes?.includes(mode.key));
   const availableHealthModes = healthModeChoices.length
     ? healthModeChoices
     : [{ key: "consultorio", value: "in_person" as const, label: "Presencial" }];
@@ -303,6 +382,146 @@ function PublicBusinessPage() {
       ? (selectedDeliveryArea?.fee ?? (deliveryAreas.length ? 0 : (business?.deliveryFee ?? 0)))
       : 0;
 
+  const orderTotalToPay = useMemo(() => {
+    return Math.max(0, cartSubtotal + deliveryFee - (appliedCoupon?.discountAmount ?? 0));
+  }, [cartSubtotal, deliveryFee, appliedCoupon]);
+
+  const suggestedCashValues = useMemo(() => {
+    const rounded = Math.ceil(orderTotalToPay);
+    const options: number[] = [];
+    const next50 = Math.ceil((rounded + 1) / 50) * 50;
+    const next100 = Math.ceil((rounded + 1) / 100) * 100;
+    if (next50 > rounded) options.push(next50);
+    if (next100 > rounded && next100 !== next50) options.push(next100);
+    if (options.length < 2) {
+      options.push(rounded + 10, rounded + 20);
+    }
+    return [...new Set(options)].sort((a, b) => a - b).slice(0, 3);
+  }, [orderTotalToPay]);
+
+  const upcomingDays = useMemo(() => {
+    const days: {
+      key: string;
+      weekday: string;
+      dayNum: string;
+      month: string;
+      isToday: boolean;
+      isTomorrow: boolean;
+    }[] = [];
+    const base = new Date();
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
+      const key = localDateKey(d);
+      const dayNum = String(d.getDate()).padStart(2, "0");
+      const month = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+      const isToday = i === 0;
+      const isTomorrow = i === 1;
+      const weekday = isToday
+        ? "Hoje"
+        : isTomorrow
+          ? "Amanhã"
+          : d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+      days.push({ key, weekday, dayNum, month, isToday, isTomorrow });
+    }
+    return days;
+  }, []);
+
+  const filteredSlots = useMemo(() => {
+    if (slotPeriodFilter === "all") return availableSlots;
+    return availableSlots.filter((slot) => {
+      const hour = parseInt(slot.split(":")[0], 10);
+      if (isNaN(hour)) return true;
+      if (slotPeriodFilter === "morning") return hour < 12;
+      if (slotPeriodFilter === "afternoon") return hour >= 12 && hour < 18;
+      if (slotPeriodFilter === "evening") return hour >= 18;
+      return true;
+    });
+  }, [availableSlots, slotPeriodFilter]);
+
+  const morningCount = useMemo(
+    () => availableSlots.filter((s) => parseInt(s.split(":")[0], 10) < 12).length,
+    [availableSlots],
+  );
+  const afternoonCount = useMemo(
+    () =>
+      availableSlots.filter((s) => {
+        const h = parseInt(s.split(":")[0], 10);
+        return h >= 12 && h < 18;
+      }).length,
+    [availableSlots],
+  );
+  const eveningCount = useMemo(
+    () => availableSlots.filter((s) => parseInt(s.split(":")[0], 10) >= 18).length,
+    [availableSlots],
+  );
+
+  const gcalLink = useMemo(() => {
+    if (!date || !time || !selected || !business) return "";
+    try {
+      const startDate = new Date(`${date}T${time}:00`);
+      if (isNaN(startDate.getTime())) return "";
+      const durationMs = (bookingDuration || 30) * 60 * 1000;
+      const endDate = new Date(startDate.getTime() + durationMs);
+      const formatGCal = (d: Date) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
+      const dates = `${formatGCal(startDate)}/${formatGCal(endDate)}`;
+      const title = encodeURIComponent(`${selected.name} · ${business.name}`);
+      const details = encodeURIComponent(
+        `Agendamento: ${selected.name} (${bookingDuration} min)\n` +
+          `Local: ${business.address ? `${business.address}, ${business.city}` : business.name}\n` +
+          `Cliente: ${customerName}\n` +
+          `WhatsApp: ${phone}\n` +
+          `Agendado via ELLO`,
+      );
+      const location = encodeURIComponent(
+        [business.address, business.city].filter(Boolean).join(", ") || business.name,
+      );
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+    } catch {
+      return "";
+    }
+  }, [date, time, selected, business, bookingDuration, customerName, phone]);
+
+  async function handleCepSearch(rawCep: string) {
+    const formatted = formatCep(rawCep);
+    setOrderCep(formatted);
+    const digits = formatted.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    setCepSearching(true);
+    try {
+      const data = await fetchAddressFromCep(digits);
+      if (data) {
+        const existing = orderAddress.trim();
+        if (!existing || existing.length < 5) {
+          setOrderAddress(
+            data.formattedAddress
+              ? `${data.formattedAddress}, Nº `
+              : `${data.street}, Nº , ${data.neighborhood} - ${data.city}`,
+          );
+        } else if (data.neighborhood && !existing.toLowerCase().includes(data.neighborhood.toLowerCase())) {
+          setOrderAddress(`${existing} - ${data.neighborhood}`);
+        }
+        if (deliveryAreas.length > 0 && data.neighborhood) {
+          const normN = data.neighborhood.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+          const match = deliveryAreas.find((area) => {
+            const normA = area.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            return normN.includes(normA) || normA.includes(normN);
+          });
+          if (match) {
+            setDeliveryAreaId(match.id);
+            toast.success(`Bairro ${match.name} identificado (${money(match.fee)})`);
+          }
+        }
+        toast.success("Endereço preenchido pelo CEP!");
+      } else {
+        toast.error("CEP não localizado. Preencha o endereço manualmente.");
+      }
+    } catch {
+      // ignore
+    } finally {
+      setCepSearching(false);
+    }
+  }
+
   useEffect(() => {
     const client = getSupabaseBrowserClient();
     if (!client || !business?.slug || !cartItems.length) return;
@@ -346,6 +565,17 @@ function PublicBusinessPage() {
     if (!business || !isFoodBusiness) return;
     setOrderBusy(true);
     setOrderError("");
+
+    const trocoInfo =
+      paymentMethod === "cash"
+        ? needsCashChange === "yes" && cashChangeFor
+          ? `[Troco para R$ ${cashChangeFor} · Devolver: ${money(Math.max(0, Number(cashChangeFor) - orderTotalToPay))}]`
+          : needsCashChange === "no"
+            ? "[Não precisa de troco - valor exato]"
+            : ""
+        : "";
+    const effectiveNotes = [orderNotes.trim(), trocoInfo].filter(Boolean).join(" · ");
+
     try {
       const result = await createFoodOrder({
         slug: business.slug,
@@ -354,7 +584,7 @@ function PublicBusinessPage() {
         fulfillment,
         address: orderAddress,
         deliveryAreaId: fulfillment === "delivery" ? (selectedDeliveryArea?.id ?? null) : null,
-        notes: orderNotes,
+        notes: effectiveNotes,
         paymentMethod,
         couponCode: appliedCoupon?.code ?? "",
         campaignSlug: requestedCampaign,
@@ -365,6 +595,17 @@ function PublicBusinessPage() {
           optionIds: line.optionIds,
         })),
       });
+
+      // Salva dados na memória local do cliente para compras futuras
+      try {
+        if (orderName) localStorage.setItem("ello_customer_name", orderName.trim());
+        if (orderPhone) localStorage.setItem("ello_customer_phone", orderPhone.trim());
+        if (orderAddress) localStorage.setItem("ello_customer_address", orderAddress.trim());
+        if (orderCep) localStorage.setItem("ello_customer_cep", orderCep.trim());
+      } catch {
+        // ignore
+      }
+
       // Notificação ativa no WhatsApp (cliente e lojista) para todos os pedidos
       void fetch("/api/notifications/whatsapp", {
         method: "POST",
@@ -669,6 +910,12 @@ function PublicBusinessPage() {
           : "";
       setWhatsappUrlAfterBooking(messageUrl);
       setComplete(true);
+      try {
+        if (customerName) localStorage.setItem("ello_customer_name", customerName.trim());
+        if (phone) localStorage.setItem("ello_customer_phone", phone.trim());
+      } catch {
+        // ignore
+      }
       if (messageUrl && whatsappWindow) {
         whatsappWindow.opener = null;
         whatsappWindow.location.replace(messageUrl);
@@ -776,10 +1023,10 @@ function PublicBusinessPage() {
       encodeURIComponent("Olá! Encontrei sua página " + business.name + " na ELLO.")
     : undefined;
   return (
-    <div className="min-h-screen bg-[#f5f4ef] pb-12 text-[#292b25]">
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+    <div className="min-h-screen bg-[#f5f4ed] pb-12 text-[#171914] antialiased">
+      <header className="sticky top-0 z-40 ello-glass-dock">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3.5">
             {isFoodBusiness && (
               <button
                 type="button"
@@ -788,26 +1035,26 @@ function PublicBusinessPage() {
                   setOrderError("");
                   setCartOpen(true);
                 }}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 shadow-2xs transition hover:bg-slate-100 active:scale-95"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#dedfd6] bg-white px-3.5 py-2 text-xs font-black text-[#171914] shadow-xs transition hover:border-[#b8bcad] hover:bg-[#fbfbf8] active:scale-95"
                 aria-label="Abrir carrinho de compras"
               >
                 <div className="relative">
-                  <ShoppingBag size={16} className="text-[#586341]" />
+                  <ShoppingBag size={15} className="text-[#586341]" />
                   {cartCount > 0 && (
-                    <span className="absolute -right-2 -top-2 flex size-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-black text-white">
+                    <span className="absolute -right-2 -top-2 flex size-4 items-center justify-center rounded-full bg-[#171914] text-[9px] font-black text-[#d4f455]">
                       {cartCount}
                     </span>
                   )}
                 </div>
-                <span className="hidden sm:inline">Carrinho</span>
+                <span className="hidden sm:inline font-bold">Carrinho</span>
                 {cartCount > 0 && (
-                  <span className="font-extrabold text-[#586341]">
+                  <span className="font-mono font-black text-[#586341]">
                     {money(cartSubtotal)}
                   </span>
                 )}
               </button>
             )}
-            <Link to="/" className="flex items-center gap-1.5 opacity-80 hover:opacity-100 transition" aria-label="ELLO">
+            <Link to="/" className="flex items-center gap-1.5 opacity-85 hover:opacity-100 transition" aria-label="ELLO">
               <ElloLogo tone="dark" height={20} />
             </Link>
           </div>
@@ -1006,29 +1253,109 @@ function PublicBusinessPage() {
             </div>
           </section>
         )}
-        {galleryUrls.length > 0 && (
-          <section className="mt-5" aria-label="Portfólio de trabalhos">
-            <div className="mb-3 flex items-end justify-between gap-3">
+        {/* SEÇÃO RICA DE PORTFÓLIO E TRABALHOS (FOTOS, VÍDEOS & ANTES/DEPOIS) */}
+        {((business.portfolioItems && business.portfolioItems.length > 0) || galleryUrls.length > 0) && (
+          <section className="mt-7" aria-label="Portfólio de trabalhos">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#778253]">
-                  Resultados reais
+                <p className="text-[10px] font-black uppercase tracking-[.18em] text-[#768452]">
+                  Resultados Reais & Procedimentos
                 </p>
-                <h2 className="mt-1 font-display text-lg font-bold">Nosso portfólio</h2>
+                <h2 className="mt-1 font-display text-xl sm:text-2xl font-black text-[#171914]">
+                  Galeria & Portfólio de Trabalhos
+                </h2>
               </div>
-              <span className="text-xs text-slate-400">{galleryUrls.length} fotos</span>
+              <span className="text-xs font-bold text-[#727568]">
+                {business.portfolioItems?.length || galleryUrls.length} trabalhos apresentados
+              </span>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-              {galleryUrls.map((imageUrl, index) => (
-                <figure key={imageUrl} className="overflow-hidden rounded-2xl bg-slate-100">
-                  <img
-                    src={imageUrl}
-                    alt={`Trabalho ${index + 1} de ${business.name}`}
-                    loading="lazy"
-                    className="aspect-square w-full object-cover transition duration-300 hover:scale-[1.03]"
-                  />
-                </figure>
-              ))}
-            </div>
+
+            {/* Filtros por Categoria/Mídia se houver itens estruturados */}
+            {business.portfolioItems && business.portfolioItems.length > 1 && (
+              <div className="mb-4 flex flex-wrap gap-1.5">
+                {[
+                  { id: "all", label: "Todos" },
+                  ...(business.portfolioItems.some((i) => i.mediaType === "before_after")
+                    ? [{ id: "before_after", label: "🌓 Antes & Depois" }]
+                    : []),
+                  ...(business.portfolioItems.some((i) => i.mediaType === "video")
+                    ? [{ id: "video", label: "🎥 Vídeos & Reels" }]
+                    : []),
+                  ...(business.portfolioItems.some((i) => i.featured)
+                    ? [{ id: "featured", label: "⭐ Destaques" }]
+                    : []),
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setPortfolioTagFilter(f.id)}
+                    className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                      portfolioTagFilter === f.id
+                        ? "bg-[#171914] text-white shadow-xs"
+                        : "border border-[#dedfd6] bg-white text-[#55584d] hover:bg-[#f6f5ee]"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Grade de Trabalhos Estruturados */}
+            {business.portfolioItems && business.portfolioItems.length > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {business.portfolioItems
+                  .filter((item) => {
+                    if (portfolioTagFilter === "all") return true;
+                    if (portfolioTagFilter === "before_after") return item.mediaType === "before_after";
+                    if (portfolioTagFilter === "video") return item.mediaType === "video";
+                    if (portfolioTagFilter === "featured") return item.featured;
+                    return true;
+                  })
+                  .map((item) => {
+                    const linked = activeServices.find((s) => s.id === item.serviceId);
+                    return (
+                      <PortfolioCard
+                        key={item.id}
+                        item={item}
+                        linkedService={linked}
+                        onOpenLightbox={(selected) => setLightboxItem(selected)}
+                        onSelectService={(service) => {
+                          setSelected(service);
+                          const el = document.getElementById("booking-schedule") || document.getElementById("catalog-section");
+                          el?.scrollIntoView({ behavior: "smooth" });
+                          toast.success(`Serviço "${service.name}" selecionado para agendamento!`);
+                        }}
+                      />
+                    );
+                  })}
+              </div>
+            ) : (
+              /* Fallback para fotos simples em galleryUrls */
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3.5">
+                {galleryUrls.map((imageUrl, index) => (
+                  <figure
+                    key={imageUrl}
+                    onClick={() =>
+                      setLightboxItem({
+                        id: `gal_${index}`,
+                        title: `Trabalho ${index + 1}`,
+                        mediaType: "image",
+                        mediaUrl: imageUrl,
+                      })
+                    }
+                    className="cursor-pointer overflow-hidden rounded-2xl bg-slate-100 group aspect-square"
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={`Trabalho ${index + 1} de ${business.name}`}
+                      loading="lazy"
+                      className="size-full object-cover transition duration-300 group-hover:scale-105"
+                    />
+                  </figure>
+                ))}
+              </div>
+            )}
           </section>
         )}
         {activeStaff.length > 0 && (
@@ -1067,15 +1394,17 @@ function PublicBusinessPage() {
             </ul>
           </section>
         )}
-        {(business.onboardingDetails?.specialties.length ||
-          business.onboardingDetails?.serviceModes.length) && (
+        {Boolean(
+          business.onboardingDetails?.specialties?.length ||
+            business.onboardingDetails?.serviceModes?.length,
+        ) && (
           <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold">Como podemos atender você</h2>
-            {Boolean(business.onboardingDetails?.specialties.length) && (
+            {Boolean(business.onboardingDetails?.specialties?.length) && (
               <div className="mt-4">
                 <h3 className="text-xs font-semibold text-slate-500">Especialidades</h3>
                 <ul className="mt-2 flex flex-wrap gap-2">
-                  {business.onboardingDetails!.specialties.map((specialty) => (
+                  {(business.onboardingDetails?.specialties || []).map((specialty) => (
                     <li
                       key={specialty}
                       className="rounded-full bg-[#edf0e5] px-3 py-1.5 text-xs font-medium text-[#586341]"
@@ -1086,11 +1415,11 @@ function PublicBusinessPage() {
                 </ul>
               </div>
             )}
-            {Boolean(business.onboardingDetails?.serviceModes.length) && (
+            {Boolean(business.onboardingDetails?.serviceModes?.length) && (
               <div className="mt-4">
                 <h3 className="text-xs font-semibold text-slate-500">Formas de atendimento</h3>
                 <ul className="mt-2 flex flex-wrap gap-2">
-                  {business.onboardingDetails!.serviceModes.map((mode) => (
+                  {(business.onboardingDetails?.serviceModes || []).map((mode) => (
                     <li
                       key={mode}
                       className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600"
@@ -1768,9 +2097,10 @@ function PublicBusinessPage() {
                   <Link
                     to="/pedido/$token"
                     params={{ token: placedOrder.trackingToken }}
-                    className="inline-flex min-h-11 items-center justify-center rounded-xl border border-emerald-800/20 bg-white px-4 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100/50"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 px-4 text-sm font-bold text-white shadow-md transition hover:brightness-110 active:scale-98"
                   >
-                    Acompanhar pedido
+                    <Gift size={17} />
+                    Girar Roleta Premiada & Acompanhar Pedido 🎰
                   </Link>
                   <button
                     type="button"
@@ -1916,6 +2246,13 @@ function PublicBusinessPage() {
                       )}
                     </div>
                   </fieldset>
+                  {customerMemoryLoaded && (
+                    <div className="flex items-center gap-1.5 rounded-lg bg-[#edf0e5]/70 px-3 py-1.5 text-[11px] font-medium text-[#586341]">
+                      <Sparkles size={12} className="shrink-0 text-[#778253]" />
+                      <span>Dados preenchidos com seu histórico neste navegador.</span>
+                    </div>
+                  )}
+
                   <label className="block text-sm font-semibold">
                     Seu nome
                     <input
@@ -2005,22 +2342,43 @@ function PublicBusinessPage() {
                   </div>
                   {fulfillment === "delivery" && (
                     <>
-                      <label className="block text-sm font-semibold">
-                        Endereço para entrega
-                        <textarea
-                          required
-                          minLength={8}
-                          autoComplete="street-address"
-                          rows={2}
-                          value={orderAddress}
-                          onChange={(event) => {
-                            setOrderAddress(event.target.value);
-                            setDeliveryAreaId("");
-                          }}
-                          placeholder="Rua, número, bairro e complemento"
-                          className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal"
-                        />
-                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="sm:col-span-1">
+                          <label className="block text-sm font-semibold">
+                            CEP (opcional)
+                            <div className="relative mt-1.5">
+                              <input
+                                type="text"
+                                value={orderCep}
+                                onChange={(e) => void handleCepSearch(e.target.value)}
+                                placeholder="00000-000"
+                                maxLength={9}
+                                className="min-h-11 w-full rounded-xl border border-slate-200 px-3 pr-8 text-sm font-normal"
+                              />
+                              {cepSearching && (
+                                <Loader2 size={16} className="absolute right-2.5 top-3 animate-spin text-slate-400" />
+                              )}
+                            </div>
+                          </label>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-semibold">
+                            Endereço para entrega
+                            <input
+                              required
+                              minLength={6}
+                              autoComplete="street-address"
+                              value={orderAddress}
+                              onChange={(event) => {
+                                setOrderAddress(event.target.value);
+                                setDeliveryAreaId("");
+                              }}
+                              placeholder="Rua, número, complemento"
+                              className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal"
+                            />
+                          </label>
+                        </div>
+                      </div>
                       {deliveryAreas.length > 0 && (
                         <label className="block text-sm font-semibold">
                           Bairro
@@ -2040,8 +2398,7 @@ function PublicBusinessPage() {
                               ))}
                           </select>
                           <span className="mt-1 block text-xs font-normal text-slate-500">
-                            Se o bairro estiver no endereço, vamos sugeri-lo automaticamente.
-                            Confirme a seleção para calcular a entrega.
+                            Ao preencher o CEP ou endereço, seu bairro é selecionado automaticamente.
                           </span>
                         </label>
                       )}
@@ -2054,7 +2411,7 @@ function PublicBusinessPage() {
                       rows={2}
                       value={orderNotes}
                       onChange={(event) => setOrderNotes(event.target.value)}
-                      placeholder="Ex.: sem cebola, ponto da carne…"
+                      placeholder="Ex.: sem cebola, ponto da carne, tocar campainha…"
                       className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal"
                     />
                   </label>
@@ -2089,6 +2446,81 @@ function PublicBusinessPage() {
                       )}
                     </select>
                   </label>
+
+                  {paymentMethod === "cash" && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">Precisa de troco?</span>
+                        <span className="text-xs font-semibold text-slate-500">Total: {money(orderTotalToPay)}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNeedsCashChange("no");
+                            setCashChangeFor("");
+                          }}
+                          className={`min-h-10 rounded-xl border text-xs font-semibold transition ${
+                            needsCashChange === "no"
+                              ? "border-[#292b25] bg-[#292b25] text-white shadow-xs"
+                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                          }`}
+                        >
+                          Não preciso de troco
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNeedsCashChange("yes")}
+                          className={`min-h-10 rounded-xl border text-xs font-semibold transition ${
+                            needsCashChange === "yes"
+                              ? "border-[#292b25] bg-[#292b25] text-white shadow-xs"
+                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                          }`}
+                        >
+                          Sim, preciso de troco
+                        </button>
+                      </div>
+
+                      {needsCashChange === "yes" && (
+                        <div className="space-y-2 pt-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-xs text-slate-600">Troco para:</span>
+                            {suggestedCashValues.map((val) => (
+                              <button
+                                key={val}
+                                type="button"
+                                onClick={() => setCashChangeFor(String(val))}
+                                className={`rounded-lg px-2.5 py-1 text-xs font-semibold border transition ${
+                                  cashChangeFor === String(val)
+                                    ? "border-[#778253] bg-[#edf0e5] text-[#586341]"
+                                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                }`}
+                              >
+                                R$ {val}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-500">Ou digite: R$</span>
+                            <input
+                              type="number"
+                              min={Math.ceil(orderTotalToPay)}
+                              step="1"
+                              placeholder="Ex: 50"
+                              value={cashChangeFor}
+                              onChange={(e) => setCashChangeFor(e.target.value)}
+                              className="min-h-9 w-24 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-800"
+                            />
+                            {Number(cashChangeFor) > orderTotalToPay && (
+                              <span className="text-xs font-bold text-emerald-700">
+                                Troco: {money(Number(cashChangeFor) - orderTotalToPay)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="space-y-1 rounded-xl bg-slate-50 p-3 text-sm">
                     <div className="flex justify-between">
                       <span>Subtotal</span>
@@ -2201,24 +2633,54 @@ function PublicBusinessPage() {
                 <p className="mt-1 text-xs text-emerald-800/70">
                   Envie a mensagem no WhatsApp para confirmar o horário com o negócio.
                 </p>
-                {whatsappUrlAfterBooking && (
-                  <a
-                    href={whatsappUrlAfterBooking}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-5 inline-flex rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white"
+                <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                  {whatsappUrlAfterBooking && (
+                    <a
+                      href={whatsappUrlAfterBooking}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-800"
+                    >
+                      <MessageCircle size={15} />
+                      Abrir WhatsApp
+                    </a>
+                  )}
+                  {gcalLink && (
+                    <a
+                      href={gcalLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-xs font-bold text-emerald-900 shadow-xs transition hover:bg-emerald-50"
+                    >
+                      <Calendar size={15} />
+                      Salvar no Google Agenda
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const summary = [
+                        `Agendamento em ${business?.name}:`,
+                        `Serviço: ${selected?.name}`,
+                        `Data: ${new Date(date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })} às ${time}`,
+                        `Cliente: ${customerName}`,
+                        `WhatsApp: ${phone}`,
+                      ].join("\n");
+                      void navigator.clipboard.writeText(summary);
+                      toast.success("Resumo copiado!");
+                    }}
+                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50"
                   >
-                    Abrir WhatsApp
-                  </a>
-                )}
+                    <Copy size={14} />
+                    Copiar resumo
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={() => setSelected(null)}
-                  className={`mt-5 rounded-xl border border-emerald-200 px-4 py-2.5 text-xs font-bold text-emerald-900 ${
-                    whatsappUrlAfterBooking ? "ml-2" : ""
-                  }`}
+                  className="mt-4 text-xs font-semibold text-slate-500 underline hover:text-slate-800"
                 >
-                  Concluir
+                  Concluir e fechar
                 </button>
               </div>
             ) : (
@@ -2338,6 +2800,12 @@ function PublicBusinessPage() {
                     </div>
                   </fieldset>
                 )}
+                {customerMemoryLoaded && (
+                  <div className="flex items-center gap-1.5 rounded-lg bg-[#edf0e5]/70 px-3 py-1.5 text-[11px] font-medium text-[#586341]">
+                    <Sparkles size={12} className="shrink-0 text-[#778253]" />
+                    <span>Seus dados foram preenchidos com seu histórico.</span>
+                  </div>
+                )}
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-bold text-slate-600">
                     {businessCopy.customerInputLabel}
@@ -2375,9 +2843,22 @@ function PublicBusinessPage() {
                     placeholder="(11) 99999-9999"
                   />
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="block">
-                    <span className="mb-1.5 block text-xs font-bold text-slate-600">Data</span>
+
+                {/* Carrossel de datas ("Pílulas de Dias") */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-600">Escolha o dia</span>
+                    <button
+                      type="button"
+                      onClick={() => setCustomDatePicker(!customDatePicker)}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-[#778253] hover:underline"
+                    >
+                      <Calendar size={12} />
+                      {customDatePicker ? "Ver carrossel" : "Outra data..."}
+                    </button>
+                  </div>
+
+                  {customDatePicker ? (
                     <input
                       required
                       type="date"
@@ -2387,33 +2868,154 @@ function PublicBusinessPage() {
                         setDate(event.target.value);
                         setTime("");
                       }}
-                      className="w-full rounded-xl border border-[#dedfd6] px-3 py-3 text-sm outline-none focus:border-[#8a9668]"
+                      className="w-full rounded-xl border border-[#dedfd6] px-3.5 py-2.5 text-sm outline-none focus:border-[#8a9668]"
                     />
-                  </label>
-                  <label className="block">
-                    <span className="mb-1.5 block text-xs font-bold text-slate-600">Horário</span>
-                    <select
-                      required
-                      value={time}
-                      onChange={(event) => setTime(event.target.value)}
-                      className="w-full rounded-xl border border-[#dedfd6] bg-white px-3 py-3 text-sm outline-none focus:border-[#8a9668]"
-                    >
-                      <option value="">
-                        {!date
-                          ? "Selecione a data"
-                          : availabilityLoading
-                            ? "Buscando..."
-                            : availableSlots.length
-                              ? "Escolha"
-                              : "Sem horários livres"}
-                      </option>
-                      {availableSlots.map((slot) => (
-                        <option key={slot} value={slot}>
-                          {slot}
-                        </option>
+                  ) : (
+                    <div className="flex gap-2 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar">
+                      {upcomingDays.map((day) => {
+                        const isSelected = date === day.key;
+                        return (
+                          <button
+                            key={day.key}
+                            type="button"
+                            onClick={() => {
+                              setDate(day.key);
+                              setTime("");
+                            }}
+                            className={`flex min-w-[70px] shrink-0 flex-col items-center rounded-xl border px-2.5 py-2 text-center transition-all ${
+                              isSelected
+                                ? "border-[#292b25] bg-[#292b25] text-white shadow-md ring-2 ring-[#778253]"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-[#778253] hover:bg-[#edf0e5]/40"
+                            }`}
+                          >
+                            <span
+                              className={`text-[10px] font-bold uppercase tracking-wider ${
+                                isSelected ? "text-[#d0f25a]" : "text-slate-400"
+                              }`}
+                            >
+                              {day.weekday}
+                            </span>
+                            <span className="text-base font-extrabold leading-tight">{day.dayNum}</span>
+                            <span
+                              className={`text-[10px] font-medium ${isSelected ? "text-slate-200" : "text-slate-500"}`}
+                            >
+                              {day.month}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Horários disponíveis com abas de período */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-600">Horário disponível</span>
+                    {availableSlots.length > 0 && (
+                      <span className="text-[11px] font-semibold text-[#778253]">
+                        {availableSlots.length} horário{availableSlots.length > 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Tabs de período */}
+                  {availableSlots.length > 0 && (
+                    <div className="flex gap-1.5 overflow-x-auto pb-1 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setSlotPeriodFilter("all")}
+                        className={`rounded-lg px-2.5 py-1 font-semibold transition ${
+                          slotPeriodFilter === "all"
+                            ? "bg-[#292b25] text-white"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        Todos ({availableSlots.length})
+                      </button>
+                      {morningCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSlotPeriodFilter("morning")}
+                          className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold transition ${
+                            slotPeriodFilter === "morning"
+                              ? "bg-[#292b25] text-white"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
+                        >
+                          <Sunrise size={12} />
+                          Manhã ({morningCount})
+                        </button>
+                      )}
+                      {afternoonCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSlotPeriodFilter("afternoon")}
+                          className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold transition ${
+                            slotPeriodFilter === "afternoon"
+                              ? "bg-[#292b25] text-white"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
+                        >
+                          <Sun size={12} />
+                          Tarde ({afternoonCount})
+                        </button>
+                      )}
+                      {eveningCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSlotPeriodFilter("evening")}
+                          className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold transition ${
+                            slotPeriodFilter === "evening"
+                              ? "bg-[#292b25] text-white"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
+                        >
+                          <Moon size={12} />
+                          Noite ({eveningCount})
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Grade interativa de horários */}
+                  {!date ? (
+                    <div className="rounded-xl border border-dashed border-slate-200 p-3.5 text-center text-xs text-slate-400">
+                      Selecione um dia acima para visualizar os horários disponíveis.
+                    </div>
+                  ) : availabilityLoading ? (
+                    <div className="grid grid-cols-4 gap-2">
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                        <div key={i} className="h-10 animate-pulse rounded-xl bg-slate-100" />
                       ))}
-                    </select>
-                  </label>
+                    </div>
+                  ) : filteredSlots.length > 0 ? (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-44 overflow-y-auto p-0.5">
+                      {filteredSlots.map((slot) => {
+                        const isSelected = time === slot;
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => setTime(slot)}
+                            className={`flex min-h-10 items-center justify-center rounded-xl border text-xs font-bold transition-all ${
+                              isSelected
+                                ? "border-[#292b25] bg-[#292b25] text-white shadow-xs ring-2 ring-[#778253]"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-[#778253] hover:bg-[#edf0e5]/40"
+                            }`}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-amber-200 bg-amber-50/50 p-3 text-center text-xs text-amber-800">
+                      Nenhum horário disponível para o filtro selecionado neste dia.
+                    </div>
+                  )}
+
+                  <input type="hidden" required value={time} />
                 </div>
                 {availabilityError && (
                   <p role="alert" className="text-sm text-red-600">
@@ -2515,6 +3117,57 @@ function PublicBusinessPage() {
           </section>
         </div>
       )}
+      {/* Gatilho Flutuante da Roleta de Boas-Vindas */}
+      {business &&
+        (business.wheelSettings?.enabled ?? true) &&
+        (business.wheelSettings?.trigger === "welcome" ||
+          business.wheelSettings?.trigger === "both" ||
+          !business.wheelSettings?.trigger) && (
+          <button
+            type="button"
+            onClick={() => setWelcomeWheelOpen(true)}
+            aria-label="Abrir roleta de prêmios"
+            className="fixed bottom-24 left-4 z-40 flex items-center gap-2 rounded-full border border-amber-300 bg-gradient-to-r from-amber-500 to-amber-600 px-3.5 py-2 text-xs font-black text-white shadow-lg shadow-amber-900/20 transition-all hover:scale-105 active:scale-95 sm:bottom-6 sm:left-6"
+          >
+            <span className="text-base">🎰</span>
+            <span className="hidden xs:inline sm:inline">Girar Roleta</span>
+            <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold">Prêmios</span>
+          </button>
+        )}
+
+      {/* Modal da Roleta de Boas-Vindas */}
+      {business && (
+        <LuckyWheelModal
+          isOpen={welcomeWheelOpen}
+          onClose={() => setWelcomeWheelOpen(false)}
+          settings={business.wheelSettings}
+          businessName={business.name}
+          businessSlug={business.slug}
+          businessCategory={business.category}
+          mode="welcome"
+          onApplyCoupon={(code) => {
+            setCouponCode(code);
+            toast.success(`🎉 Cupom "${code}" ativado com sucesso! Adicione itens e aproveite seu desconto.`);
+            setWelcomeWheelOpen(false);
+            if (cart.length > 0 && !cartOpen) {
+              setCartOpen(true);
+            }
+          }}
+        />
+      )}
+
+      {/* Modal Lightbox de Visualização em Tela Cheia do Portfólio */}
+      <PortfolioLightbox
+        item={lightboxItem}
+        linkedService={activeServices.find((s) => s.id === lightboxItem?.serviceId)}
+        onClose={() => setLightboxItem(null)}
+        onSelectService={(service) => {
+          setSelected(service);
+          const el = document.getElementById("booking-schedule") || document.getElementById("catalog-section");
+          el?.scrollIntoView({ behavior: "smooth" });
+          toast.success(`Serviço "${service.name}" selecionado para agendamento!`);
+        }}
+      />
     </div>
   );
 }
@@ -2847,6 +3500,7 @@ function StoreReviewsSection({
           </div>
         </div>
       )}
+
     </section>
   );
 }

@@ -169,9 +169,10 @@ function LandingPage() {
             <a href="#passos" className="ello-nav-link">
               Como funciona
             </a>
-            <a href="#sobre" className="ello-nav-link">
-              Para quem é
-            </a>
+            <Link to="/planos" className="ello-nav-link text-[#d0f25a] font-semibold flex items-center gap-1">
+              <span>Planos</span>
+              <span className="size-1 rounded-full bg-[#d0f25a]" />
+            </Link>
           </nav>
           <div className="flex items-center gap-3">
             <Link

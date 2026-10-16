@@ -15,6 +15,7 @@ import {
   Minimize2,
   Phone,
   Printer,
+  RotateCcw,
   Search,
   Tag,
   Timer,
@@ -94,8 +95,10 @@ function OrdersPage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  function getElapsedMinutes(createdAt: string) {
+  function getElapsedMinutes(createdAt?: string | null) {
+    if (!createdAt) return 0;
     const created = new Date(createdAt).getTime();
+    if (Number.isNaN(created)) return 0;
     const now = clock.getTime();
     const diffMs = Math.max(0, now - created);
     return Math.floor(diffMs / 60000);
@@ -669,43 +672,68 @@ function OrdersPage() {
                       </div>
 
                       {/* Observações da Cozinha (Destaque Máximo em Amarelo) */}
-                      {order.notes && (
+                      {Boolean(order.notes) && (
                         <div className="mt-3 rounded-xl border-2 border-amber-400 bg-amber-400/20 p-3 text-amber-200">
                           <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-300">
                             <AlertTriangle size={15} /> Atenção Cozinha:
                           </div>
                           <p className="mt-1 text-sm font-black text-white leading-snug">
-                            {order.notes}
+                            {typeof order.notes === "string"
+                              ? order.notes
+                              : JSON.stringify(order.notes)}
                           </p>
                         </div>
                       )}
 
                       {/* Lista de Itens do Pedido */}
                       <div className="mt-3.5 space-y-2.5 divide-y divide-white/10">
-                        {order.items.map((item, idx) => (
-                          <div key={`${item.serviceId}-${idx}`} className="pt-2.5 first:pt-0">
-                            <div className="flex items-start gap-2.5">
-                              <span className="shrink-0 rounded-lg bg-[#d5ec9a] px-2.5 py-0.5 text-sm font-black text-slate-950">
-                                {item.quantity}×
-                              </span>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-base font-bold text-white leading-snug">
-                                  {item.name}
-                                </p>
-                                {item.options && item.options.length > 0 && (
-                                  <p className="mt-1 text-xs font-semibold text-emerald-300">
-                                    {item.options.join(" • ")}
+                        {(Array.isArray(order.items) ? order.items : []).map((item, idx) => {
+                          const rawOptions = (item as any)?.options;
+                          const formattedOptions = Array.isArray(rawOptions)
+                            ? rawOptions
+                                .map((opt) =>
+                                  typeof opt === "object" && opt !== null
+                                    ? (opt.name ?? JSON.stringify(opt))
+                                    : String(opt),
+                                )
+                                .join(" • ")
+                            : typeof rawOptions === "string" && rawOptions.trim().length > 0
+                              ? rawOptions
+                              : null;
+
+                          const rawNotes = (item as any)?.notes;
+                          const formattedNotes =
+                            typeof rawNotes === "string" && rawNotes.trim().length > 0
+                              ? rawNotes
+                              : rawNotes && typeof rawNotes === "object"
+                                ? JSON.stringify(rawNotes)
+                                : null;
+
+                          return (
+                            <div key={`${item.serviceId ?? "item"}-${idx}`} className="pt-2.5 first:pt-0">
+                              <div className="flex items-start gap-2.5">
+                                <span className="shrink-0 rounded-lg bg-[#d5ec9a] px-2.5 py-0.5 text-sm font-black text-slate-950">
+                                  {item.quantity}×
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-base font-bold text-white leading-snug">
+                                    {item.name}
                                   </p>
-                                )}
-                                {item.notes && (
-                                  <p className="mt-1 text-xs font-bold text-amber-300">
-                                    Obs: {item.notes}
-                                  </p>
-                                )}
+                                  {formattedOptions && (
+                                    <p className="mt-1 text-xs font-semibold text-emerald-300">
+                                      {formattedOptions}
+                                    </p>
+                                  )}
+                                  {formattedNotes && (
+                                    <p className="mt-1 text-xs font-bold text-amber-300">
+                                      Obs: {formattedNotes}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
