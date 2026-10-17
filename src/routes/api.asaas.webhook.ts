@@ -130,6 +130,50 @@ export const Route = createFileRoute("/api/asaas/webhook")({
               orderPayment = fallbackQuery.data;
             }
 
+            // Trata pagamentos de assinatura de planos ELLO
+            if (orderId && orderId.startsWith("sub_")) {
+              if (body.event === "PAYMENT_RECEIVED" || body.event === "PAYMENT_CONFIRMED") {
+                const parts = orderId.split("_");
+                const subPlanId = parts[1];
+                const subCycle = parts[2];
+                const subBizId = parts[3];
+
+                if (subBizId && subBizId !== "new") {
+                  const { data: biz } = await supabase
+                    .from("localhub_businesses")
+                    .select("onboarding_details, phone, name")
+                    .eq("id", subBizId)
+                    .maybeSingle();
+
+                  if (biz) {
+                    await supabase
+                      .from("localhub_businesses")
+                      .update({
+                        onboarding_details: {
+                          ...(biz.onboarding_details || {}),
+                          plan: subPlanId,
+                          planBillingCycle: subCycle,
+                          planActivatedAt: new Date().toISOString(),
+                          lastPaymentId: paymentId,
+                        },
+                      })
+                      .eq("id", subBizId);
+
+                    if (biz.phone) {
+                      void sendWhatsAppMessage({
+                        phone: biz.phone,
+                        text:
+                          `Parabéns, *${biz.name}*! 🎉\n\n` +
+                          `Sua assinatura do *Plano ${subPlanId === "pro" ? "Pro" : "Business"}* na ELLO foi confirmada com sucesso via Asaas!\n\n` +
+                          `Todos os recursos de equipe, relatórios e taxa zero estão 100% liberados no seu painel:\n` +
+                          `👉 https://ello.app.br/studio`,
+                      }).catch(() => {});
+                    }
+                  }
+                }
+              }
+            }
+
             if (orderPayment) {
               const targetOrderId = orderPayment.order_id;
               const businessId = orderPayment.business_id;

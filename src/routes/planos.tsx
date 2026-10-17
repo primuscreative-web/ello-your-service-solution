@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Check,
   Sparkles,
@@ -23,6 +23,10 @@ import {
   CheckCircle2,
   MessageCircle,
   Lock,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ElloLogo } from "@/components/ello/logo";
@@ -42,11 +46,97 @@ export const Route = createFileRoute("/planos")({
   component: PricingPlansPage,
 });
 
+// Funções utilitárias de validação e formatação de CPF/CNPJ e Telefone
+function formatCpfCnpj(val: string): string {
+  const clean = val.replace(/\D/g, "");
+  if (clean.length <= 11) {
+    return clean
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+      .slice(0, 14);
+  }
+  return clean
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d{1,2})$/, "$1-$2")
+    .slice(0, 18);
+}
+
+function formatPhone(val: string): string {
+  const clean = val.replace(/\D/g, "");
+  if (clean.length <= 10) {
+    return clean
+      .replace(/^(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{4})(\d{1,4})$/, "$1-$2")
+      .slice(0, 14);
+  }
+  return clean
+    .replace(/^(\d{2})(\d)/, "($1) $2")
+    .replace(/(\d{5})(\d{1,4})$/, "$1-$2")
+    .slice(0, 15);
+}
+
+function isValidCpfCnpj(val: string): boolean {
+  const clean = val.replace(/\D/g, "");
+  if (clean.length === 11) {
+    if (/^(\d)\1{10}$/.test(clean)) return false;
+    let sum = 0;
+    for (let i = 0; i < 9; i++) sum += parseInt(clean.charAt(i), 10) * (10 - i);
+    let rev = 11 - (sum % 11);
+    if (rev === 10 || rev === 11) rev = 0;
+    if (rev !== parseInt(clean.charAt(9), 10)) return false;
+    sum = 0;
+    for (let i = 0; i < 10; i++) sum += parseInt(clean.charAt(i), 10) * (11 - i);
+    rev = 11 - (sum % 11);
+    if (rev === 10 || rev === 11) rev = 0;
+    return rev === parseInt(clean.charAt(10), 10);
+  } else if (clean.length === 14) {
+    if (/^(\d)\1{13}$/.test(clean)) return false;
+    let size = clean.length - 2;
+    let numbers = clean.substring(0, size);
+    const digits = clean.substring(size);
+    let sum = 0;
+    let pos = size - 7;
+    for (let i = size; i >= 1; i--) {
+      sum += parseInt(numbers.charAt(size - i), 10) * pos--;
+      if (pos < 2) pos = 9;
+    }
+    let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+    if (result !== parseInt(digits.charAt(0), 10)) return false;
+    size = size + 1;
+    numbers = clean.substring(0, size);
+    sum = 0;
+    pos = size - 7;
+    for (let i = size; i >= 1; i--) {
+      sum += parseInt(numbers.charAt(size - i), 10) * pos--;
+      if (pos < 2) pos = 9;
+    }
+    result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+    return result === parseInt(digits.charAt(1), 10);
+  }
+  return false;
+}
+
+type AsaasPixResponseData = {
+  paymentId: string;
+  status: string;
+  value: number;
+  invoiceUrl?: string;
+  bankSlipUrl?: string;
+  pix: {
+    encodedImage: string;
+    payload: string;
+    expirationDate: string;
+  };
+};
+
 export function PricingPlansPage() {
-  const { business, saveBusiness } = useLocalHub();
+  const { business, user, saveBusiness } = useLocalHub();
   const navigate = useNavigate();
 
-  // Período de faturamento: Mensal ou Anual (25% off)
+  // Período de faturamento da landing: Mensal ou Anual (25% off)
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
 
   // Simulador de Economia vs Outras Plataformas
@@ -55,16 +145,42 @@ export function PricingPlansPage() {
   // FAQ Accordion
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Modal de Checkout / Assinatura
+  // Estado do Modal de Checkout Real Asaas
   const [checkoutModalPlan, setCheckoutModalPlan] = useState<"pro" | "business" | null>(null);
   const [modalCycle, setModalCycle] = useState<"monthly" | "yearly">("monthly");
-  const [copiedPixKey, setCopiedPixKey] = useState(false);
-  const [isUpgrading, setIsUpgrading] = useState(false);
-  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
+  const [modalStep, setModalStep] = useState<"form" | "payment" | "success">("form");
 
-  // Form para novos usuários sem negócio cadastrado
-  const [newBizName, setNewBizName] = useState("");
-  const [newBizPhone, setNewBizPhone] = useState("");
+  // Dados do formulário para emissão no Asaas
+  const [payerName, setPayerName] = useState("");
+  const [payerEmail, setPayerEmail] = useState("");
+  const [payerPhone, setPayerPhone] = useState("");
+  const [payerCpfCnpj, setPayerCpfCnpj] = useState("");
+  const [formError, setFormError] = useState("");
+
+  // Estado da Cobrança Asaas
+  const [isGeneratingPayment, setIsGeneratingPayment] = useState(false);
+  const [paymentData, setPaymentData] = useState<AsaasPixResponseData | null>(null);
+  const [copiedPixPayload, setCopiedPixPayload] = useState(false);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+
+  // Polling de pagamento com timer
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Preenche dados padrão se o usuário já tiver dados no LocalHub
+  useEffect(() => {
+    if (business) {
+      if (!payerName) setPayerName(business.name || "");
+      if (!payerPhone) setPayerPhone(formatPhone(business.phone || ""));
+      if (!payerEmail && user?.email) setPayerEmail(user.email);
+    }
+  }, [business, user]);
+
+  // Limpa o polling ao desmontar ou trocar de modal
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -76,93 +192,188 @@ export function PricingPlansPage() {
   const monthlySavings = Math.max(0, traditionalFee - elloProCost);
   const yearlySavings = monthlySavings * 12;
 
-  // Abertura do Checkout
+  // Abertura do Modal de Assinatura
   const handleOpenCheckout = (plan: "pro" | "business") => {
     setCheckoutModalPlan(plan);
     setModalCycle(billingCycle);
-    setUpgradeSuccess(false);
-    setCopiedPixKey(false);
+    setModalStep("form");
+    setPaymentData(null);
+    setFormError("");
+    setCopiedPixPayload(false);
+    if (pollingRef.current) clearInterval(pollingRef.current);
   };
 
-  // Clique em Começar Grátis
-  const handleFreePlanClick = () => {
-    if (business) {
-      toast.info(`Você já possui o espaço "${business.name}" cadastrado! Redirecionando para o Studio...`);
-      void navigate({ to: "/studio" });
-    } else {
-      void navigate({ to: "/onboarding" });
-    }
-  };
-
-  // Preços calculados do modal
+  // Preços calculados do plano
   const planName = checkoutModalPlan === "pro" ? "Plano Pro" : "Plano Business";
   const planPriceMonthly = checkoutModalPlan === "pro" ? 39.9 : 79.9;
   const planPriceYearlyMonthly = checkoutModalPlan === "pro" ? 29.9 : 59.9;
   const planPriceYearlyTotal = checkoutModalPlan === "pro" ? 358.8 : 718.8;
 
-  const currentModalPriceStr =
-    modalCycle === "yearly"
-      ? planPriceYearlyTotal.toFixed(2).replace(".", ",")
-      : planPriceMonthly.toFixed(2).replace(".", ",");
+  const currentPrice = modalCycle === "yearly" ? planPriceYearlyTotal : planPriceMonthly;
+  const currentPriceStr = currentPrice.toFixed(2).replace(".", ",");
 
-  // Código Pix Copia e Cola Dinâmico
-  const pixCopyCode = `00020126580014br.gov.bcb.pix0136pix@ello.app.br520400005303986540${currentModalPriceStr.replace(",", ".")}5802BR5915ELLO TECNOLOGIA6009SAO PAULO62070503***6304`;
+  // Iniciar geração da cobrança real no Asaas
+  const handleGenerateAsaasPix = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setFormError("");
 
-  // Copiar Chave Pix
-  const handleCopyPix = async () => {
+    if (!payerName.trim() || payerName.trim().length < 3) {
+      setFormError("Informe o nome completo do titular ou responsável.");
+      return;
+    }
+
+    if (!payerEmail.trim() || !payerEmail.includes("@")) {
+      setFormError("Informe um e-mail válido para envio da confirmação e nota fiscal.");
+      return;
+    }
+
+    const cleanPhone = payerPhone.replace(/\D/g, "");
+    if (cleanPhone.length < 10) {
+      setFormError("Informe um WhatsApp com DDD válido (10 ou 11 dígitos).");
+      return;
+    }
+
+    const cleanCpfCnpj = payerCpfCnpj.replace(/\D/g, "");
+    if (!isValidCpfCnpj(cleanCpfCnpj)) {
+      setFormError("O CPF ou CNPJ informado é inválido. Digite um documento válido para geração do PIX pelo Banco Central.");
+      return;
+    }
+
+    setIsGeneratingPayment(true);
+
     try {
-      await navigator.clipboard.writeText(pixCopyCode);
-      setCopiedPixKey(true);
-      toast.success("Código Pix Copia e Cola copiado com sucesso!");
-      setTimeout(() => setCopiedPixKey(false), 2500);
-    } catch {
-      toast.error("Não foi possível copiar. Selecione e copie o código manualmente.");
+      const res = await fetch("/api/asaas/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: checkoutModalPlan,
+          billingCycle: modalCycle,
+          customerName: payerName.trim(),
+          customerEmail: payerEmail.trim(),
+          customerPhone: cleanPhone,
+          customerCpfCnpj: cleanCpfCnpj,
+          businessName: business?.name || payerName.trim(),
+          businessId: business?.id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Erro ao conectar com a API do Asaas.");
+      }
+
+      setPaymentData(data);
+      setModalStep("payment");
+      toast.success("Cobrança PIX gerada com sucesso diretamente no Asaas!");
+
+      // Inicia polling a cada 3 segundos para detectar quando o cliente pagar no banco
+      startPaymentPolling(data.paymentId);
+    } catch (err: unknown) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : "Erro ao gerar cobrança no Asaas.";
+      setFormError(msg);
+      toast.error(msg);
+    } finally {
+      setIsGeneratingPayment(false);
     }
   };
 
-  // Upgrade Imediato no Studio
-  const handleConfirmUpgrade = async () => {
-    if (!checkoutModalPlan) return;
-    setIsUpgrading(true);
+  // Polling automático no Asaas
+  const startPaymentPolling = (paymentId: string) => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
 
-    try {
-      if (business) {
-        const updatedDetails = {
-          ...(business.onboardingDetails || { specialties: [], serviceModes: [] }),
-          plan: checkoutModalPlan,
-          planBillingCycle: modalCycle,
-          planActivatedAt: new Date().toISOString(),
-        };
-
-        await saveBusiness({
-          ...business,
-          onboardingDetails: updatedDetails,
+    pollingRef.current = setInterval(async () => {
+      try {
+        const queryParams = new URLSearchParams({
+          paymentId,
+          businessId: business?.id || "",
+          planId: checkoutModalPlan || "",
+          billingCycle: modalCycle,
         });
 
-        setIsUpgrading(false);
-        setUpgradeSuccess(true);
-        toast.success(`🎉 ${planName} ativado com sucesso para ${business.name}!`);
-      } else {
-        // Guarda na sessão para o Onboarding
-        sessionStorage.setItem("ello_pending_plan", checkoutModalPlan);
-        sessionStorage.setItem("ello_pending_cycle", modalCycle);
-        if (newBizName) sessionStorage.setItem("ello_pending_biz_name", newBizName);
-        if (newBizPhone) sessionStorage.setItem("ello_pending_biz_phone", newBizPhone);
+        const res = await fetch(`/api/asaas/subscription-status?${queryParams.toString()}`);
+        const result = await res.json();
 
-        toast.success(`Plano ${planName} selecionado! Vamos concluir seu cadastro rápido.`);
-        void navigate({ to: "/onboarding" });
+        if (result.isPaid) {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          handlePaymentConfirmedSuccess();
+        }
+      } catch {
+        // continua tentando silenciosamente
       }
-    } catch (err) {
-      setIsUpgrading(false);
-      toast.error("Erro ao ativar o plano. Tente novamente ou use a opção via WhatsApp.");
+    }, 3000);
+  };
+
+  // Checagem manual clicando no botão "Já paguei"
+  const handleManualCheckPayment = async () => {
+    if (!paymentData?.paymentId) return;
+    setIsCheckingPayment(true);
+
+    try {
+      const queryParams = new URLSearchParams({
+        paymentId: paymentData.paymentId,
+        businessId: business?.id || "",
+        planId: checkoutModalPlan || "",
+        billingCycle: modalCycle,
+      });
+
+      const res = await fetch(`/api/asaas/subscription-status?${queryParams.toString()}`);
+      const result = await res.json();
+
+      if (result.isPaid) {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        handlePaymentConfirmedSuccess();
+      } else {
+        toast.info("O Asaas ainda está aguardando a compensação do seu banco. Aguarde alguns instantes.");
+      }
+    } catch {
+      toast.error("Não foi possível consultar o Asaas no momento.");
+    } finally {
+      setIsCheckingPayment(false);
     }
   };
 
-  // WhatsApp oficial para assinatura
+  // Confirmação com sucesso
+  const handlePaymentConfirmedSuccess = async () => {
+    setModalStep("success");
+    toast.success(`🎉 Pagamento confirmado no Asaas! ${planName} ativado com sucesso!`);
+
+    if (business && checkoutModalPlan) {
+      try {
+        await saveBusiness({
+          ...business,
+          onboardingDetails: {
+            ...(business.onboardingDetails || { specialties: [], serviceModes: [] }),
+            plan: checkoutModalPlan,
+            planBillingCycle: modalCycle,
+            planActivatedAt: new Date().toISOString(),
+          },
+        });
+      } catch (err) {
+        console.error("Erro ao atualizar contexto local:", err);
+      }
+    }
+  };
+
+  // Copiar código Pix Copia e Cola
+  const handleCopyPix = async () => {
+    if (!paymentData?.pix?.payload) return;
+    try {
+      await navigator.clipboard.writeText(paymentData.pix.payload);
+      setCopiedPixPayload(true);
+      toast.success("Código PIX Copia e Cola copiado com sucesso!");
+      setTimeout(() => setCopiedPixPayload(false), 2500);
+    } catch {
+      toast.error("Não foi possível copiar. Selecione o código manualmente.");
+    }
+  };
+
+  // Link do WhatsApp de suporte
   const getWhatsAppSubscriptionUrl = () => {
     const cycleLabel = modalCycle === "yearly" ? "Anual com 25% OFF" : "Mensal";
-    const bizLabel = business?.name || newBizName || "meu novo negócio";
-    const msg = `Olá equipe ELLO! 👋\n\nQuero ativar o *${planName}* (${cycleLabel} - R$ ${currentModalPriceStr}) para o estabelecimento *${bizLabel}*.\n\nPodem me auxiliar a concluir a assinatura agora?`;
+    const bizLabel = business?.name || payerName || "meu negócio";
+    const msg = `Olá equipe ELLO! 👋\n\nEstou assinando o *${planName}* (${cycleLabel} - R$ ${currentPriceStr}) para o estabelecimento *${bizLabel}*.\n\nCódigo da cobrança Asaas: ${paymentData?.paymentId || "gerando..."}.\n\nPoderiam me auxiliar a confirmar a ativação?`;
     return `https://wa.me/5511987654321?text=${encodeURIComponent(msg)}`;
   };
 
@@ -236,7 +447,7 @@ export function PricingPlansPage() {
               <button
                 type="button"
                 onClick={() => setBillingCycle("monthly")}
-                className={`rounded-full px-5 py-2 text-[13px] font-semibold transition ${
+                className={`rounded-full px-5 py-2 text-[13px] font-semibold transition cursor-pointer ${
                   billingCycle === "monthly"
                     ? "bg-[#20221f] text-white shadow-sm"
                     : "text-[#6d7067] hover:text-[#20221f]"
@@ -247,7 +458,7 @@ export function PricingPlansPage() {
               <button
                 type="button"
                 onClick={() => setBillingCycle("yearly")}
-                className={`flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-semibold transition ${
+                className={`flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-semibold transition cursor-pointer ${
                   billingCycle === "yearly"
                     ? "bg-[#20221f] text-white shadow-sm"
                     : "text-[#6d7067] hover:text-[#20221f]"
@@ -330,13 +541,12 @@ export function PricingPlansPage() {
               </div>
 
               <div className="mt-8 border-t border-[#f0f0ea] pt-6">
-                <button
-                  type="button"
-                  onClick={handleFreePlanClick}
-                  className="ello-cta ello-cta-quiet w-full justify-center text-center font-semibold text-[14px] cursor-pointer"
+                <Link
+                  to={business ? "/studio" : "/onboarding"}
+                  className="ello-cta ello-cta-quiet w-full justify-center text-center font-semibold text-[14px]"
                 >
-                  {business ? "Acessar meu espaço grátis" : "Criar conta grátis"}
-                </button>
+                  {business ? "Meu espaço atual (Grátis)" : "Criar conta grátis"}
+                </Link>
                 <p className="mt-2 text-center text-[11px] text-[#9a9c92]">
                   Sem necessidade de cartão de crédito
                 </p>
@@ -435,7 +645,7 @@ export function PricingPlansPage() {
                   <ArrowRight size={16} />
                 </button>
                 <p className="mt-2 text-center text-[11px] text-white/50">
-                  Liberação instantânea com Chave Pix ou WhatsApp
+                  Liberação automática instantânea via Asaas PIX
                 </p>
               </div>
             </div>
@@ -727,7 +937,7 @@ export function PricingPlansPage() {
                 },
                 {
                   q: "Quais são as formas de pagamento disponíveis para assinar?",
-                  a: "Aceitamos PIX Instantâneo com liberação na hora, além de cartão de crédito. Se optar pelo plano anual, você garante 25% de desconto automático.",
+                  a: "Aceitamos PIX Instantâneo oficial com compensação automática via Asaas em poucos segundos, além de cartão de crédito. Se optar pelo plano anual, você garante 25% de desconto.",
                 },
                 {
                   q: "Posso começar no plano grátis e mudar para o Pro depois?",
@@ -808,7 +1018,7 @@ export function PricingPlansPage() {
       </footer>
 
       {/* ==============================================================
-          9. MODAL DE ASSINATURA E CHECKOUT INTERATIVO
+          9. MODAL DE CHECKOUT REAL VIA ASAAS (PIX AUTOMÁTICO)
          ============================================================== */}
       {checkoutModalPlan && (
         <div
@@ -820,29 +1030,32 @@ export function PricingPlansPage() {
             {/* Botão de Fechar */}
             <button
               type="button"
-              onClick={() => setCheckoutModalPlan(null)}
+              onClick={() => {
+                setCheckoutModalPlan(null);
+                if (pollingRef.current) clearInterval(pollingRef.current);
+              }}
               className="absolute top-5 right-5 grid size-9 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition cursor-pointer"
               aria-label="Fechar"
             >
               <X size={18} />
             </button>
 
-            {upgradeSuccess ? (
-              /* TELA DE SUCESSO DE ATIVAÇÃO */
+            {/* ETAPA 1: SUCESSO DE PAGAMENTO */}
+            {modalStep === "success" && (
               <div className="py-6 text-center space-y-4">
-                <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-[#d0f25a] text-[#181a15] shadow-lg shadow-[#d0f25a]/20">
+                <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-[#d0f25a] text-[#181a15] shadow-lg shadow-[#d0f25a]/20 animate-bounce">
                   <CheckCircle2 size={36} strokeWidth={2.5} />
                 </div>
                 <div>
                   <span className="inline-block rounded-full bg-[#d0f25a]/20 text-[#d0f25a] px-3 py-1 text-xs font-bold uppercase tracking-wider mb-2">
-                    ⚡ Assinatura Confirmada
+                    ⚡ Pagamento Confirmado no Asaas
                   </span>
                   <h3 className="font-display text-2xl font-bold text-white">
-                    Parabéns! O {planName} está ativo!
+                    Parabéns! O {planName} está 100% ativo!
                   </h3>
                   <p className="mt-2 text-sm text-white/70 max-w-sm mx-auto leading-relaxed">
-                    Todos os recursos de equipe, relatórios completos e remoção de marca já foram liberados para{" "}
-                    <strong className="text-white">{business?.name || "seu negócio"}</strong>.
+                    A sua assinatura foi confirmada pelo Banco Central e compensada no Asaas. Todos os recursos, subcontas e relatórios já foram liberados para{" "}
+                    <strong className="text-white">{business?.name || payerName || "seu negócio"}</strong>.
                   </p>
                 </div>
 
@@ -855,31 +1068,128 @@ export function PricingPlansPage() {
                     }}
                     className="ello-cta ello-cta-lime w-full justify-center text-center font-bold text-sm cursor-pointer shadow-lg"
                   >
-                    <span>Ir para o Painel Studio Agora 🚀</span>
+                    <span>Abrir Painel Studio Agora 🚀</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setCheckoutModalPlan(null)}
                     className="text-xs text-white/50 hover:text-white transition py-2"
                   >
-                    Continuar navegando no site
+                    Fechar e continuar no site
                   </button>
                 </div>
               </div>
-            ) : (
-              /* FORMULÁRIO DE CHECKOUT / PAGAMENTO */
-              <div className="space-y-6">
-                {/* TOPO DO MODAL */}
+            )}
+
+            {/* ETAPA 2: TELA DO PIX REAL GERADO PELO ASAAS */}
+            {modalStep === "payment" && paymentData && (
+              <div className="space-y-5">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 rounded-md bg-[#d0f25a]/15 text-[#d0f25a] px-2.5 py-1 text-[11px] font-black uppercase tracking-wider">
+                    <Zap size={13} />
+                    <span>{planName}</span>
+                    <span>·</span>
+                    <span>{modalCycle === "yearly" ? "Anual (25% OFF)" : "Mensal"}</span>
+                  </div>
+                  <h3 className="mt-2 font-display text-2xl font-bold text-white">
+                    Pague com PIX para Ativar
+                  </h3>
+                  <p className="mt-1 text-xs text-white/60">
+                    Cobrança real emitida no Asaas. A aprovação é imediata após a leitura do QR Code.
+                  </p>
+                </div>
+
+                {/* Card com o QR Code Real do Asaas */}
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-center space-y-4">
+                  <div className="flex items-center justify-between text-xs pb-1 border-b border-white/10">
+                    <span className="text-white/60">Valor da Assinatura:</span>
+                    <span className="font-display font-black text-base text-[#d0f25a]">
+                      R$ {paymentData.value.toFixed(2).replace(".", ",")}
+                    </span>
+                  </div>
+
+                  {/* QR Code Oficial em Base64 */}
+                  <div className="flex justify-center">
+                    <div className="bg-white p-3 rounded-2xl shadow-xl inline-block border-4 border-white">
+                      <img
+                        src={`data:image/png;base64,${paymentData.pix.encodedImage}`}
+                        alt="QR Code Pix Oficial Asaas"
+                        className="size-48 sm:size-52 rounded-lg object-contain"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Status Pulsante em Tempo Real */}
+                  <div className="flex items-center justify-center gap-2 text-xs text-[#d0f25a] font-semibold bg-[#d0f25a]/10 py-2 px-3 rounded-xl border border-[#d0f25a]/20">
+                    <span className="size-2 rounded-full bg-[#d0f25a] animate-ping" />
+                    <span>Aguardando pagamento no app do seu banco...</span>
+                  </div>
+
+                  {/* Botão Copiar Chave Pix */}
+                  <div className="space-y-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => void handleCopyPix()}
+                      className="ello-cta ello-cta-lime w-full justify-center text-center font-bold text-sm cursor-pointer shadow-lg py-3"
+                    >
+                      {copiedPixPayload ? (
+                        <>
+                          <Check size={16} />
+                          <span>Código PIX Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={16} />
+                          <span>Copiar Código PIX (Copia e Cola)</span>
+                        </>
+                      )}
+                    </button>
+                    <p className="text-[11px] text-white/40">
+                      Abra o app do seu banco, escolha <strong>Pix Copia e Cola</strong> e cole o código.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Ações Auxiliares: Verificar Status / Fatura Externa */}
+                <div className="flex flex-col gap-2 pt-1">
+                  <button
+                    type="button"
+                    disabled={isCheckingPayment}
+                    onClick={() => void handleManualCheckPayment()}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-2.5 px-3 text-xs font-semibold text-white hover:bg-white/10 transition cursor-pointer"
+                  >
+                    <RefreshCw size={14} className={isCheckingPayment ? "animate-spin" : ""} />
+                    <span>{isCheckingPayment ? "Verificando com o Asaas..." : "Já paguei, verificar agora"}</span>
+                  </button>
+
+                  {paymentData.invoiceUrl && (
+                    <a
+                      href={paymentData.invoiceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center gap-1.5 text-xs text-white/50 hover:text-white py-1 transition"
+                    >
+                      <span>Abrir fatura completa no Asaas</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ETAPA 0: FORMULÁRIO DE DADOS PARA EMISSÃO DO PIX */}
+            {modalStep === "form" && (
+              <form onSubmit={(e) => void handleGenerateAsaasPix(e)} className="space-y-5">
                 <div>
                   <div className="inline-flex items-center gap-1.5 rounded-md bg-[#d0f25a]/15 text-[#d0f25a] px-2.5 py-1 text-[11px] font-black uppercase tracking-wider">
                     <Zap size={13} />
                     <span>{planName}</span>
                   </div>
                   <h3 className="mt-2 font-display text-2xl font-bold text-white">
-                    Concluir Assinatura
+                    Assinar {planName}
                   </h3>
                   <p className="mt-1 text-xs text-white/60">
-                    Ativação imediata das funcionalidades sem taxa de comissão sobre suas vendas.
+                    Preencha os dados do pagador para emissão do PIX oficial registrado pelo Asaas.
                   </p>
                 </div>
 
@@ -923,131 +1233,103 @@ export function PricingPlansPage() {
                   </div>
                 </div>
 
-                {/* IDENTIFICAÇÃO DO NEGÓCIO */}
-                {business ? (
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#d0f25a]">
-                        Estabelecimento Vinculado
-                      </span>
-                      <div className="text-sm font-bold text-white mt-0.5">{business.name}</div>
-                      <div className="text-xs text-white/50">{business.city || "Cidade do estabelecimento"}</div>
+                {/* RESUMO DO VALOR */}
+                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-3.5 flex items-center justify-between">
+                  <span className="text-xs text-white/70">Total a pagar agora via PIX:</span>
+                  <div className="text-right">
+                    <div className="font-display font-black text-xl text-[#d0f25a]">
+                      R$ {currentPriceStr}
                     </div>
-                    <span className="rounded-full bg-emerald-500/20 text-emerald-400 p-1.5">
-                      <Check size={16} />
-                    </span>
-                  </div>
-                ) : (
-                  <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#d0f25a]">
-                      Dados do seu estabelecimento
-                    </span>
-                    <div>
-                      <label className="text-[11px] font-medium text-white/70 block mb-1">
-                        Nome do seu Negócio
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Barbearia Vip, Hamburgueria Grill"
-                        value={newBizName}
-                        onChange={(e) => setNewBizName(e.target.value)}
-                        className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white placeholder-white/30 focus:border-[#d0f25a] focus:outline-hidden"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-medium text-white/70 block mb-1">
-                        Seu WhatsApp (para ativação)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ex: (11) 98765-4321"
-                        value={newBizPhone}
-                        onChange={(e) => setNewBizPhone(e.target.value)}
-                        className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white placeholder-white/30 focus:border-[#d0f25a] focus:outline-hidden"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* ÁREA DE PAGAMENTO PIX */}
-                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <QrCode size={15} className="text-[#d0f25a]" />
-                      <span>Pagamento via PIX Instantâneo</span>
-                    </span>
-                    <span className="font-display font-black text-sm text-[#d0f25a]">
-                      R$ {currentModalPriceStr}
-                    </span>
-                  </div>
-
-                  {/* QR Code Pix Estilizado */}
-                  <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/5 p-3 rounded-xl border border-white/5">
-                    <div className="size-24 shrink-0 rounded-lg bg-white p-1.5 grid place-items-center shadow-md">
-                      {/* SVG representativo do QR Code PIX */}
-                      <svg viewBox="0 0 100 100" className="size-full">
-                        <rect width="100" height="100" fill="white" />
-                        <rect x="10" y="10" width="30" height="30" fill="#181a15" />
-                        <rect x="16" y="16" width="18" height="18" fill="white" />
-                        <rect x="20" y="20" width="10" height="10" fill="#181a15" />
-
-                        <rect x="60" y="10" width="30" height="30" fill="#181a15" />
-                        <rect x="66" y="16" width="18" height="18" fill="white" />
-                        <rect x="70" y="20" width="10" height="10" fill="#181a15" />
-
-                        <rect x="10" y="60" width="30" height="30" fill="#181a15" />
-                        <rect x="16" y="66" width="18" height="18" fill="white" />
-                        <rect x="20" y="70" width="10" height="10" fill="#181a15" />
-
-                        <circle cx="50" cy="50" r="8" fill="#687348" />
-                        <rect x="45" y="20" width="8" height="15" fill="#181a15" />
-                        <rect x="45" y="65" width="8" height="15" fill="#181a15" />
-                        <rect x="65" y="50" width="15" height="8" fill="#181a15" />
-                        <rect x="60" y="65" width="10" height="10" fill="#181a15" />
-                        <rect x="75" y="75" width="15" height="15" fill="#181a15" />
-                      </svg>
-                    </div>
-
-                    <div className="flex-1 w-full text-center sm:text-left space-y-2">
-                      <div className="text-[11px] text-white/60 leading-relaxed">
-                        Abra o aplicativo do seu banco, escolha <strong>Pix Copia e Cola</strong> e cole o código abaixo:
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void handleCopyPix()}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/20 transition cursor-pointer w-full justify-center sm:w-auto"
-                      >
-                        {copiedPixKey ? (
-                          <>
-                            <Check size={13} className="text-[#d0f25a]" />
-                            <span className="text-[#d0f25a]">Código Copiado!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={13} />
-                            <span>Copiar Chave Pix</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
+                    {modalCycle === "yearly" && (
+                      <div className="text-[10px] text-white/40">Pagamento único anual com 25% de desconto</div>
+                    )}
                   </div>
                 </div>
 
-                {/* BOTÕES DE AÇÃO */}
+                {/* FORMULÁRIO DE DADOS */}
+                <div className="space-y-3.5">
+                  {formError && (
+                    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300 flex items-start gap-2">
+                      <AlertCircle size={16} className="shrink-0 text-red-400 mt-0.5" />
+                      <span>{formError}</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-white/80 block mb-1">
+                      Nome Completo do Titular / Responsável *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: João da Silva Santos"
+                      value={payerName}
+                      onChange={(e) => setPayerName(e.target.value)}
+                      className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-white/30 focus:border-[#d0f25a] focus:outline-hidden transition"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-semibold text-white/80 block mb-1">
+                        CPF ou CNPJ (Obrigatório Asaas) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="000.000.000-00"
+                        value={payerCpfCnpj}
+                        onChange={(e) => setPayerCpfCnpj(formatCpfCnpj(e.target.value))}
+                        className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-white/30 focus:border-[#d0f25a] focus:outline-hidden transition font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-white/80 block mb-1">
+                        WhatsApp com DDD *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="(11) 98765-4321"
+                        value={payerPhone}
+                        onChange={(e) => setPayerPhone(formatPhone(e.target.value))}
+                        className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-white/30 focus:border-[#d0f25a] focus:outline-hidden transition"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-white/80 block mb-1">
+                      E-mail para Recibo e Acesso *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="seu.email@exemplo.com"
+                      value={payerEmail}
+                      onChange={(e) => setPayerEmail(e.target.value)}
+                      className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-white/30 focus:border-[#d0f25a] focus:outline-hidden transition"
+                    />
+                  </div>
+                </div>
+
+                {/* BOTÃO PRINCIPAL DE GERAR PIX REAL NO ASAAS */}
                 <div className="space-y-2.5 pt-2">
                   <button
-                    type="button"
-                    disabled={isUpgrading}
-                    onClick={() => void handleConfirmUpgrade()}
-                    className="ello-cta ello-cta-lime w-full justify-center text-center font-bold text-sm shadow-xl hover:scale-[1.01] transition cursor-pointer disabled:opacity-50"
+                    type="submit"
+                    disabled={isGeneratingPayment}
+                    className="ello-cta ello-cta-lime w-full justify-center text-center font-bold text-sm shadow-xl hover:scale-[1.01] transition cursor-pointer disabled:opacity-50 py-3"
                   >
-                    {isUpgrading ? (
-                      <span>Ativando plano...</span>
+                    {isGeneratingPayment ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Gerando PIX Oficial no Asaas...</span>
+                      </span>
                     ) : (
-                      <>
-                        <span>{business ? "Ativar Plano no Painel Agora" : "Criar Negócio e Ativar Plano"}</span>
+                      <span className="flex items-center gap-2">
+                        <span>Gerar PIX Oficial Asaas</span>
                         <ArrowRight size={16} />
-                      </>
+                      </span>
                     )}
                   </button>
 
@@ -1055,18 +1337,18 @@ export function PricingPlansPage() {
                     href={getWhatsAppSubscriptionUrl()}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 py-3 px-4 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition"
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 py-2.5 px-4 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition"
                   >
                     <MessageCircle size={15} />
-                    <span>Finalizar ou Tirar Dúvidas no WhatsApp</span>
+                    <span>Dúvidas? Falar com consultor no WhatsApp</span>
                   </a>
 
                   <p className="text-center text-[10px] text-white/40 pt-1 flex items-center justify-center gap-1">
                     <ShieldCheck size={13} className="text-emerald-400" />
-                    <span>Sem fidelidade · Cancele quando quiser diretamente pelo painel</span>
+                    <span>Ambiente seguro protegido por criptografia e regulado pelo Banco Central</span>
                   </p>
                 </div>
-              </div>
+              </form>
             )}
           </div>
         </div>

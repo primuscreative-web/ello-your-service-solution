@@ -51,6 +51,8 @@ import { Route as TotemIndexRouteImport } from './routes/totem.index'
 import { Route as TotemSlugRouteImport } from './routes/totem.$slug'
 import { Route as ApiAsaasChargeRouteImport } from './routes/api.asaas.charge'
 import { Route as ApiAsaasSubaccountRouteImport } from './routes/api.asaas.subaccount'
+import { Route as ApiAsaasSubscribeRouteImport } from './routes/api.asaas.subscribe'
+import { Route as ApiAsaasSubscriptionStatusRouteImport } from './routes/api.asaas.subscription-status'
 import { Route as ApiAsaasWebhookRouteImport } from './routes/api.asaas.webhook'
 import { Route as ApiAsaasWithdrawRouteImport } from './routes/api.asaas.withdraw'
 import { Route as ApiNotificationsWhatsappRouteImport } from './routes/api.notifications.whatsapp'
@@ -280,6 +282,17 @@ const ApiAsaasSubaccountRoute = ApiAsaasSubaccountRouteImport.update({
   path: '/api/asaas/subaccount',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAsaasSubscribeRoute = ApiAsaasSubscribeRouteImport.update({
+  id: '/api/asaas/subscribe',
+  path: '/api/asaas/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAsaasSubscriptionStatusRoute =
+  ApiAsaasSubscriptionStatusRouteImport.update({
+    id: '/api/asaas/subscription-status',
+    path: '/api/asaas/subscription-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAsaasWebhookRoute = ApiAsaasWebhookRouteImport.update({
   id: '/api/asaas/webhook',
   path: '/api/asaas/webhook',
@@ -418,6 +431,8 @@ export interface FileRoutesByFullPath {
   '/totem/': typeof TotemIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
+  '/api/asaas/subscribe': typeof ApiAsaasSubscribeRoute
+  '/api/asaas/subscription-status': typeof ApiAsaasSubscriptionStatusRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
   '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
   '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
@@ -478,6 +493,8 @@ export interface FileRoutesByTo {
   '/totem': typeof TotemIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
+  '/api/asaas/subscribe': typeof ApiAsaasSubscribeRoute
+  '/api/asaas/subscription-status': typeof ApiAsaasSubscriptionStatusRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
   '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
   '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
@@ -541,6 +558,8 @@ export interface FileRoutesById {
   '/totem/': typeof TotemIndexRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
+  '/api/asaas/subscribe': typeof ApiAsaasSubscribeRoute
+  '/api/asaas/subscription-status': typeof ApiAsaasSubscriptionStatusRoute
   '/api/asaas/webhook': typeof ApiAsaasWebhookRoute
   '/api/asaas/withdraw': typeof ApiAsaasWithdrawRoute
   '/api/notifications/whatsapp': typeof ApiNotificationsWhatsappRoute
@@ -605,6 +624,8 @@ export interface FileRouteTypes {
     | '/totem/'
     | '/api/asaas/charge'
     | '/api/asaas/subaccount'
+    | '/api/asaas/subscribe'
+    | '/api/asaas/subscription-status'
     | '/api/asaas/webhook'
     | '/api/asaas/withdraw'
     | '/api/notifications/whatsapp'
@@ -665,6 +686,8 @@ export interface FileRouteTypes {
     | '/totem'
     | '/api/asaas/charge'
     | '/api/asaas/subaccount'
+    | '/api/asaas/subscribe'
+    | '/api/asaas/subscription-status'
     | '/api/asaas/webhook'
     | '/api/asaas/withdraw'
     | '/api/notifications/whatsapp'
@@ -727,6 +750,8 @@ export interface FileRouteTypes {
     | '/totem/'
     | '/api/asaas/charge'
     | '/api/asaas/subaccount'
+    | '/api/asaas/subscribe'
+    | '/api/asaas/subscription-status'
     | '/api/asaas/webhook'
     | '/api/asaas/withdraw'
     | '/api/notifications/whatsapp'
@@ -762,6 +787,8 @@ export interface RootRouteChildren {
   TotemIndexRoute: typeof TotemIndexRoute
   ApiAsaasChargeRoute: typeof ApiAsaasChargeRoute
   ApiAsaasSubaccountRoute: typeof ApiAsaasSubaccountRoute
+  ApiAsaasSubscribeRoute: typeof ApiAsaasSubscribeRoute
+  ApiAsaasSubscriptionStatusRoute: typeof ApiAsaasSubscriptionStatusRoute
   ApiAsaasWebhookRoute: typeof ApiAsaasWebhookRoute
   ApiAsaasWithdrawRoute: typeof ApiAsaasWithdrawRoute
   ApiNotificationsWhatsappRoute: typeof ApiNotificationsWhatsappRoute
@@ -1070,6 +1097,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAsaasSubaccountRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/asaas/subscribe': {
+      id: '/api/asaas/subscribe'
+      path: '/api/asaas/subscribe'
+      fullPath: '/api/asaas/subscribe'
+      preLoaderRoute: typeof ApiAsaasSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/asaas/subscription-status': {
+      id: '/api/asaas/subscription-status'
+      path: '/api/asaas/subscription-status'
+      fullPath: '/api/asaas/subscription-status'
+      preLoaderRoute: typeof ApiAsaasSubscriptionStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/asaas/webhook': {
       id: '/api/asaas/webhook'
       path: '/api/asaas/webhook'
@@ -1313,6 +1354,8 @@ const rootRouteChildren: RootRouteChildren = {
   TotemIndexRoute: TotemIndexRoute,
   ApiAsaasChargeRoute: ApiAsaasChargeRoute,
   ApiAsaasSubaccountRoute: ApiAsaasSubaccountRoute,
+  ApiAsaasSubscribeRoute: ApiAsaasSubscribeRoute,
+  ApiAsaasSubscriptionStatusRoute: ApiAsaasSubscriptionStatusRoute,
   ApiAsaasWebhookRoute: ApiAsaasWebhookRoute,
   ApiAsaasWithdrawRoute: ApiAsaasWithdrawRoute,
   ApiNotificationsWhatsappRoute: ApiNotificationsWhatsappRoute,
