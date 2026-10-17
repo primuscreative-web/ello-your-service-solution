@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Check,
@@ -18,7 +18,13 @@ import {
   QrCode,
   DollarSign,
   TrendingUp,
+  X,
+  Copy,
+  CheckCircle2,
+  MessageCircle,
+  Lock,
 } from "lucide-react";
+import { toast } from "sonner";
 import { ElloLogo } from "@/components/ello/logo";
 import { useLocalHub } from "@/lib/localhub-context";
 
@@ -37,8 +43,8 @@ export const Route = createFileRoute("/planos")({
 });
 
 export function PricingPlansPage() {
-  const { business } = useLocalHub();
-  const startTo = business ? "/studio" : "/onboarding";
+  const { business, saveBusiness } = useLocalHub();
+  const navigate = useNavigate();
 
   // Período de faturamento: Mensal ou Anual (25% off)
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
@@ -48,6 +54,17 @@ export function PricingPlansPage() {
 
   // FAQ Accordion
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  // Modal de Checkout / Assinatura
+  const [checkoutModalPlan, setCheckoutModalPlan] = useState<"pro" | "business" | null>(null);
+  const [modalCycle, setModalCycle] = useState<"monthly" | "yearly">("monthly");
+  const [copiedPixKey, setCopiedPixKey] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
+
+  // Form para novos usuários sem negócio cadastrado
+  const [newBizName, setNewBizName] = useState("");
+  const [newBizPhone, setNewBizPhone] = useState("");
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -59,12 +76,102 @@ export function PricingPlansPage() {
   const monthlySavings = Math.max(0, traditionalFee - elloProCost);
   const yearlySavings = monthlySavings * 12;
 
+  // Abertura do Checkout
+  const handleOpenCheckout = (plan: "pro" | "business") => {
+    setCheckoutModalPlan(plan);
+    setModalCycle(billingCycle);
+    setUpgradeSuccess(false);
+    setCopiedPixKey(false);
+  };
+
+  // Clique em Começar Grátis
+  const handleFreePlanClick = () => {
+    if (business) {
+      toast.info(`Você já possui o espaço "${business.name}" cadastrado! Redirecionando para o Studio...`);
+      void navigate({ to: "/studio" });
+    } else {
+      void navigate({ to: "/onboarding" });
+    }
+  };
+
+  // Preços calculados do modal
+  const planName = checkoutModalPlan === "pro" ? "Plano Pro" : "Plano Business";
+  const planPriceMonthly = checkoutModalPlan === "pro" ? 39.9 : 79.9;
+  const planPriceYearlyMonthly = checkoutModalPlan === "pro" ? 29.9 : 59.9;
+  const planPriceYearlyTotal = checkoutModalPlan === "pro" ? 358.8 : 718.8;
+
+  const currentModalPriceStr =
+    modalCycle === "yearly"
+      ? planPriceYearlyTotal.toFixed(2).replace(".", ",")
+      : planPriceMonthly.toFixed(2).replace(".", ",");
+
+  // Código Pix Copia e Cola Dinâmico
+  const pixCopyCode = `00020126580014br.gov.bcb.pix0136pix@ello.app.br520400005303986540${currentModalPriceStr.replace(",", ".")}5802BR5915ELLO TECNOLOGIA6009SAO PAULO62070503***6304`;
+
+  // Copiar Chave Pix
+  const handleCopyPix = async () => {
+    try {
+      await navigator.clipboard.writeText(pixCopyCode);
+      setCopiedPixKey(true);
+      toast.success("Código Pix Copia e Cola copiado com sucesso!");
+      setTimeout(() => setCopiedPixKey(false), 2500);
+    } catch {
+      toast.error("Não foi possível copiar. Selecione e copie o código manualmente.");
+    }
+  };
+
+  // Upgrade Imediato no Studio
+  const handleConfirmUpgrade = async () => {
+    if (!checkoutModalPlan) return;
+    setIsUpgrading(true);
+
+    try {
+      if (business) {
+        const updatedDetails = {
+          ...(business.onboardingDetails || { specialties: [], serviceModes: [] }),
+          plan: checkoutModalPlan,
+          planBillingCycle: modalCycle,
+          planActivatedAt: new Date().toISOString(),
+        };
+
+        await saveBusiness({
+          ...business,
+          onboardingDetails: updatedDetails,
+        });
+
+        setIsUpgrading(false);
+        setUpgradeSuccess(true);
+        toast.success(`🎉 ${planName} ativado com sucesso para ${business.name}!`);
+      } else {
+        // Guarda na sessão para o Onboarding
+        sessionStorage.setItem("ello_pending_plan", checkoutModalPlan);
+        sessionStorage.setItem("ello_pending_cycle", modalCycle);
+        if (newBizName) sessionStorage.setItem("ello_pending_biz_name", newBizName);
+        if (newBizPhone) sessionStorage.setItem("ello_pending_biz_phone", newBizPhone);
+
+        toast.success(`Plano ${planName} selecionado! Vamos concluir seu cadastro rápido.`);
+        void navigate({ to: "/onboarding" });
+      }
+    } catch (err) {
+      setIsUpgrading(false);
+      toast.error("Erro ao ativar o plano. Tente novamente ou use a opção via WhatsApp.");
+    }
+  };
+
+  // WhatsApp oficial para assinatura
+  const getWhatsAppSubscriptionUrl = () => {
+    const cycleLabel = modalCycle === "yearly" ? "Anual com 25% OFF" : "Mensal";
+    const bizLabel = business?.name || newBizName || "meu novo negócio";
+    const msg = `Olá equipe ELLO! 👋\n\nQuero ativar o *${planName}* (${cycleLabel} - R$ ${currentModalPriceStr}) para o estabelecimento *${bizLabel}*.\n\nPodem me auxiliar a concluir a assinatura agora?`;
+    return `https://wa.me/5511987654321?text=${encodeURIComponent(msg)}`;
+  };
+
   return (
     <div className="ello-site min-h-screen bg-[#fcfcf9] text-[#20221f] selection:bg-[#d0f25a] selection:text-[#20221f]">
       {/* ==============================================================
           1. HEADER COM IDENTIDADE VISUAL OFICIAL ELLO
          ============================================================== */}
-      <header className="ello-nav sticky top-0 z-50 w-full px-5 sm:px-10 lg:px-16">
+      <header className="ello-nav sticky top-0 z-40 w-full px-5 sm:px-10 lg:px-16">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between py-3">
           <Link to="/" aria-label="ELLO, início" className="ello-wordmark flex items-center">
             <ElloLogo tone="white" height={26} />
@@ -93,10 +200,14 @@ export function PricingPlansPage() {
             >
               {business ? "Acessar painel" : "Já tenho conta"}
             </Link>
-            <Link to={startTo} className="ello-cta ello-cta-lime min-h-10">
-              {business ? "Meu espaço" : "Começar grátis"}
+            <button
+              type="button"
+              onClick={() => handleOpenCheckout("pro")}
+              className="ello-cta ello-cta-lime min-h-10 cursor-pointer"
+            >
+              <span>{business ? "Fazer Upgrade Pro" : "Assinar Plano Pro"}</span>
               <ArrowRight size={15} />
-            </Link>
+            </button>
           </div>
         </div>
       </header>
@@ -112,41 +223,38 @@ export function PricingPlansPage() {
               <span>Taxa ZERO de Comissão sobre suas Vendas</span>
             </div>
 
-            <h1 className="mt-6 font-display text-[40px] font-medium leading-[1.05] tracking-[-.055em] sm:text-[60px] text-[#20221f]">
-              Previsível, justo e feito para o seu negócio{" "}
-              <span className="text-[#687348] italic font-serif">lucrar de verdade.</span>
+            <h1 className="mt-6 font-display text-[38px] font-medium leading-[1.05] tracking-[-.05em] sm:text-[56px] lg:text-[64px] text-[#20221f]">
+              Planos transparentes para você <span className="ello-heading-accent">lucrar mais</span> a cada pedido.
             </h1>
 
-            <p className="mt-5 text-[16px] leading-7 text-[#72756d] sm:text-[18px]">
-              Chega de deixar 12% a 25% do seu faturamento em comissões abusivas. Na ELLO você paga
-              apenas uma assinatura fixa e <strong>100% do dinheiro das suas vendas e agendamentos é seu</strong>.
+            <p className="mt-5 text-[16px] leading-[1.7] text-[#6a6c65] sm:text-[19px] max-w-[620px] mx-auto">
+              Ao contrário de outros apps que cobram 15% a 27% do seu faturamento, na ELLO você paga uma mensalidade fixa e todo o dinheiro das suas vendas fica 100% com você.
             </p>
 
-            {/* SELETOR MENSAL / ANUAL COM DESCONTO */}
-            <div className="mt-10 inline-flex items-center gap-3 rounded-full border border-[#e5e5dc] bg-white p-1.5 shadow-sm">
+            {/* TOGGLE MENSAL / ANUAL */}
+            <div className="mt-10 inline-flex items-center gap-2 rounded-full border border-[#e3e3dc] bg-white p-1.5 shadow-sm">
               <button
                 type="button"
                 onClick={() => setBillingCycle("monthly")}
                 className={`rounded-full px-5 py-2 text-[13px] font-semibold transition ${
                   billingCycle === "monthly"
                     ? "bg-[#20221f] text-white shadow-sm"
-                    : "text-[#72756d] hover:text-[#20221f]"
+                    : "text-[#6d7067] hover:text-[#20221f]"
                 }`}
               >
-                Cobrança Mensal
+                Mensal
               </button>
-
               <button
                 type="button"
                 onClick={() => setBillingCycle("yearly")}
                 className={`flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-semibold transition ${
                   billingCycle === "yearly"
                     ? "bg-[#20221f] text-white shadow-sm"
-                    : "text-[#72756d] hover:text-[#20221f]"
+                    : "text-[#6d7067] hover:text-[#20221f]"
                 }`}
               >
-                <span>Cobrança Anual</span>
-                <span className="rounded-full bg-[#d0f25a] px-2 py-0.5 text-[10px] font-bold text-[#20221f] uppercase tracking-wider">
+                <span>Anual</span>
+                <span className="rounded-full bg-[#d0f25a] px-2 py-0.5 text-[10px] font-black tracking-wide text-[#20221f]">
                   25% OFF
                 </span>
               </button>
@@ -222,12 +330,13 @@ export function PricingPlansPage() {
               </div>
 
               <div className="mt-8 border-t border-[#f0f0ea] pt-6">
-                <Link
-                  to={startTo}
-                  className="ello-cta ello-cta-quiet w-full justify-center text-center font-semibold text-[14px]"
+                <button
+                  type="button"
+                  onClick={handleFreePlanClick}
+                  className="ello-cta ello-cta-quiet w-full justify-center text-center font-semibold text-[14px] cursor-pointer"
                 >
-                  Criar conta grátis
-                </Link>
+                  {business ? "Acessar meu espaço grátis" : "Criar conta grátis"}
+                </button>
                 <p className="mt-2 text-center text-[11px] text-[#9a9c92]">
                   Sem necessidade de cartão de crédito
                 </p>
@@ -317,15 +426,16 @@ export function PricingPlansPage() {
               </div>
 
               <div className="mt-8 border-t border-white/10 pt-6">
-                <Link
-                  to={startTo}
-                  className="ello-cta ello-cta-lime w-full justify-center text-center font-bold text-[14px] shadow-lg hover:scale-[1.02] transition"
+                <button
+                  type="button"
+                  onClick={() => handleOpenCheckout("pro")}
+                  className="ello-cta ello-cta-lime w-full justify-center text-center font-bold text-[14px] shadow-lg hover:scale-[1.02] transition cursor-pointer"
                 >
-                  Assinar Plano Pro
+                  <span>Assinar Plano Pro</span>
                   <ArrowRight size={16} />
-                </Link>
+                </button>
                 <p className="mt-2 text-center text-[11px] text-white/50">
-                  Liberação instantânea das subcontas no PIX
+                  Liberação instantânea com Chave Pix ou WhatsApp
                 </p>
               </div>
             </div>
@@ -398,12 +508,13 @@ export function PricingPlansPage() {
               </div>
 
               <div className="mt-8 border-t border-[#f0f0ea] pt-6">
-                <Link
-                  to={startTo}
-                  className="ello-cta ello-cta-dark w-full justify-center text-center font-semibold text-[14px]"
+                <button
+                  type="button"
+                  onClick={() => handleOpenCheckout("business")}
+                  className="ello-cta ello-cta-dark w-full justify-center text-center font-semibold text-[14px] cursor-pointer"
                 >
                   Contratar Business
-                </Link>
+                </button>
                 <p className="mt-2 text-center text-[11px] text-[#9a9c92]">
                   Perfeito para operações em expansão
                 </p>
@@ -449,151 +560,137 @@ export function PricingPlansPage() {
                   onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
                   className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#20221f]"
                 />
-                <div className="flex justify-between text-[11px] text-slate-400 font-medium">
+                <div className="flex justify-between text-[11px] text-[#999c92] font-medium">
                   <span>R$ 2.000/mês</span>
                   <span>R$ 30.000/mês</span>
-                  <span>R$ 60.000+/mês</span>
+                  <span>R$ 60.000/mês</span>
                 </div>
               </div>
 
-              <div className="mt-8 grid gap-4 sm:grid-cols-3 pt-6 border-t border-[#f0f0ea]">
+              {/* Grid Comparativo de Perda vs Ganho */}
+              <div className="mt-8 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl border border-red-100 bg-red-50/50 p-5">
-                  <span className="text-xs font-semibold text-red-700">
-                    Outras plataformas (15% média):
-                  </span>
-                  <div className="mt-2 text-2xl font-black text-red-900">
+                  <div className="flex items-center gap-2 text-red-600 text-[12px] font-bold uppercase tracking-wider">
+                    <span>Taxas de Outros Aplicativos (15%)</span>
+                  </div>
+                  <div className="mt-2 font-display text-[28px] sm:text-[34px] font-black text-red-700">
                     - R$ {traditionalFee.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </div>
-                  <p className="mt-1 text-[11px] text-red-600">
-                    Retidos todos os meses da sua conta
+                  <p className="mt-1 text-[12px] text-red-600/80">
+                    Valor médio que você entrega mensalmente em comissões de marketplace.
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-[#dce4ca] bg-[#f1f4e9] p-5">
-                  <span className="text-xs font-semibold text-[#66794a]">
-                    Assinatura Fixa ELLO Pro:
-                  </span>
-                  <div className="mt-2 text-2xl font-black text-[#20221f]">
-                    R$ {elloProCost.toFixed(2).replace(".", ",")}
+                <div className="rounded-2xl border border-[#d6e5b8] bg-[#f2f7e8] p-5">
+                  <div className="flex items-center gap-2 text-[#5e703f] text-[12px] font-bold uppercase tracking-wider">
+                    <span>Economia com ELLO Pro</span>
                   </div>
-                  <p className="mt-1 text-[11px] text-[#66794a]">
-                    Custo fixo e previsível · 0% de comissão
+                  <div className="mt-2 font-display text-[28px] sm:text-[34px] font-black text-[#20221f]">
+                    + R$ {monthlySavings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </div>
+                  <p className="mt-1 text-[12px] text-[#637248]">
+                    Lucro líquido a mais por mês no seu bolso. (<strong>R$ {yearlySavings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/ano</strong>)
                   </p>
                 </div>
+              </div>
 
-                <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-5 shadow-xs">
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
-                    Você economiza todo mês:
-                  </span>
-                  <div className="mt-2 text-3xl font-black text-emerald-900">
-                    R$ {monthlySavings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </div>
-                  <p className="mt-1 text-[11px] font-semibold text-emerald-700">
-                    São <strong>R$ {yearlySavings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} a mais</strong> no seu caixa por ano!
-                  </p>
-                </div>
+              <div className="mt-8 text-center">
+                <button
+                  type="button"
+                  onClick={() => handleOpenCheckout("pro")}
+                  className="ello-cta ello-cta-lime inline-flex cursor-pointer"
+                >
+                  Garantir minha economia com Plano Pro
+                  <ArrowRight size={16} />
+                </button>
               </div>
             </div>
           </div>
         </section>
 
         {/* ==============================================================
-            5. TABELA COMPARATIVA DETALHADA DE RECURSOS
+            5. TABELA COMPARATIVA DETALHADA
            ============================================================== */}
-        <section className="mx-auto max-w-[1180px] px-5 py-20 sm:px-10 lg:px-16">
-          <div className="text-center">
+        <section className="mx-auto max-w-[1280px] px-5 py-20 sm:px-10 lg:px-16">
+          <div className="text-center max-w-2xl mx-auto">
             <span className="text-[12px] font-bold uppercase tracking-wider text-[#687348]">
               Comparativo de Recursos
             </span>
-            <h2 className="mt-2 font-display text-[30px] font-medium tracking-tight text-[#20221f] sm:text-[38px]">
+            <h2 className="mt-2 font-display text-[30px] font-medium tracking-tight sm:text-[40px] text-[#20221f]">
               Tudo o que está incluído em cada plano
             </h2>
           </div>
 
-          <div className="mt-12 overflow-x-auto rounded-3xl border border-[#e5e5dc] bg-white shadow-xs">
-            <table className="w-full text-left border-collapse text-xs sm:text-sm">
+          <div className="mt-12 overflow-x-auto rounded-3xl border border-[#e4e4db] bg-white shadow-xs">
+            <table className="w-full text-left border-collapse text-[13px] sm:text-[14px]">
               <thead>
-                <tr className="border-b border-[#e5e5dc] bg-[#fafaf7]">
-                  <th className="p-4 sm:p-5 font-bold text-[#20221f] w-1/2">Funcionalidade</th>
-                  <th className="p-4 sm:p-5 font-semibold text-center text-[#686a62] w-1/6">Começar Grátis</th>
+                <tr className="border-b border-[#e4e4db] bg-[#fafaf7]">
+                  <th className="p-4 sm:p-5 font-bold text-[#6d7067] w-1/2">Funcionalidade</th>
+                  <th className="p-4 sm:p-5 font-bold text-center text-[#20221f] w-1/6">Começar Grátis</th>
                   <th className="p-4 sm:p-5 font-bold text-center text-[#20221f] bg-[#f4f7eb] w-1/6">Plano Pro</th>
-                  <th className="p-4 sm:p-5 font-semibold text-center text-[#686a62] w-1/6">Business</th>
+                  <th className="p-4 sm:p-5 font-bold text-center text-[#20221f] w-1/6">Business</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f0f0ea]">
-                {/* GRUPO: OPERAÇÃO & CARDÁPIO */}
-                <tr className="bg-slate-50/70 font-semibold text-[11px] uppercase tracking-wider text-slate-500">
-                  <td colSpan={4} className="px-5 py-2.5">Operação & Atendimento</td>
+              <tbody className="divide-y divide-[#efefe9] text-[#4f514a]">
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium">Taxa sobre faturamento e pedidos</td>
+                  <td className="p-4 sm:p-5 text-center font-bold text-emerald-700">0%</td>
+                  <td className="p-4 sm:p-5 text-center font-bold text-emerald-700 bg-[#fbfdf7]">0%</td>
+                  <td className="p-4 sm:p-5 text-center font-bold text-emerald-700">0%</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:px-5 font-medium text-[#20221f]">Cardápio & Catálogo de Serviços</td>
-                  <td className="p-4 text-center">Ilimitado</td>
-                  <td className="p-4 text-center bg-[#f4f7eb]/50 font-bold text-[#20221f]">Ilimitado</td>
-                  <td className="p-4 text-center">Ilimitado</td>
+                  <td className="p-4 sm:p-5 font-medium">Subcontas ilimitadas para equipe</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Ilimitadas</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Ilimitadas</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:px-5 font-medium text-[#20221f]">Pedidos & Agendamentos Online</td>
-                  <td className="p-4 text-center">Ilimitados</td>
-                  <td className="p-4 text-center bg-[#f4f7eb]/50 font-bold text-[#20221f]">Ilimitados</td>
-                  <td className="p-4 text-center">Ilimitados</td>
+                  <td className="p-4 sm:p-5 font-medium">Link de auto-cadastro por WhatsApp para colaboradores</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Sim</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Sim</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:px-5 font-medium text-[#20221f]">Taxa de comissão por venda</td>
-                  <td className="p-4 text-center font-bold text-emerald-700">0%</td>
-                  <td className="p-4 text-center bg-[#f4f7eb]/50 font-black text-emerald-700">0%</td>
-                  <td className="p-4 text-center font-bold text-emerald-700">0%</td>
-                </tr>
-
-                {/* GRUPO: EQUIPE & SUBCONTAS */}
-                <tr className="bg-slate-50/70 font-semibold text-[11px] uppercase tracking-wider text-slate-500">
-                  <td colSpan={4} className="px-5 py-2.5">Equipe & Subcontas</td>
+                  <td className="p-4 sm:p-5 font-medium">Cardápio & Catálogo Digital com fotos</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Ilimitado</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Ilimitado</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Ilimitado</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:px-5 font-medium text-[#20221f]">Subcontas para profissionais da equipe</td>
-                  <td className="p-4 text-center text-slate-400">1 (apenas dono)</td>
-                  <td className="p-4 text-center bg-[#f4f7eb]/50 font-bold text-emerald-700">Ilimitadas</td>
-                  <td className="p-4 text-center font-bold text-emerald-700">Ilimitadas</td>
+                  <td className="p-4 sm:p-5 font-medium">Remoção de marca ELLO (100% sua marca)</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Sim</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Sim</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:px-5 font-medium text-[#20221f]">Link de auto-cadastro para equipe via WhatsApp</td>
-                  <td className="p-4 text-center text-slate-400">✕</td>
-                  <td className="p-4 text-center bg-[#f4f7eb]/50 font-bold text-emerald-700">✓ Incluído</td>
-                  <td className="p-4 text-center font-bold text-emerald-700">✓ Incluído</td>
+                  <td className="p-4 sm:p-5 font-medium">Painel KDS de Cozinha & Preparo em tempo real</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Incluso</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:px-5 font-medium text-[#20221f]">Agenda individual por profissional com escolha do cliente</td>
-                  <td className="p-4 text-center text-slate-400">✕</td>
-                  <td className="p-4 text-center bg-[#f4f7eb]/50 font-bold text-emerald-700">✓ Incluído</td>
-                  <td className="p-4 text-center font-bold text-emerald-700">✓ Incluído</td>
+                  <td className="p-4 sm:p-5 font-medium">Impressão Térmica Automática 80mm</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Incluso</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:px-5 font-medium text-[#20221f]">Controle de comissões por colaborador</td>
-                  <td className="p-4 text-center text-slate-400">✕</td>
-                  <td className="p-4 text-center bg-[#f4f7eb]/50 font-bold text-emerald-700">✓ Incluído</td>
-                  <td className="p-4 text-center font-bold text-emerald-700">✓ Avançado</td>
-                </tr>
-
-                {/* GRUPO: MARCA & WHITE-LABEL */}
-                <tr className="bg-slate-50/70 font-semibold text-[11px] uppercase tracking-wider text-slate-500">
-                  <td colSpan={4} className="px-5 py-2.5">Marca & Personalização</td>
+                  <td className="p-4 sm:p-5 font-medium">Múltiplas Filiais / Unidades no mesmo painel</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300 bg-[#fbfdf7]">—</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Sim</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:px-5 font-medium text-[#20221f]">Remoção do selo ELLO (100% White-Label)</td>
-                  <td className="p-4 text-center text-slate-400">Com selo</td>
-                  <td className="p-4 text-center bg-[#f4f7eb]/50 font-bold text-emerald-700">100% Removido</td>
-                  <td className="p-4 text-center font-bold text-emerald-700">100% Removido</td>
+                  <td className="p-4 sm:p-5 font-medium">Totem de Autoatendimento para iPad/Tablet</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300 bg-[#fbfdf7]">—</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:px-5 font-medium text-[#20221f]">QR Codes personalizados para balcão e mesas</td>
-                  <td className="p-4 text-center">Básico</td>
-                  <td className="p-4 text-center bg-[#f4f7eb]/50 font-bold text-[#20221f]">Personalizado</td>
-                  <td className="p-4 text-center">Personalizado</td>
-                </tr>
-                <tr>
-                  <td className="p-4 sm:px-5 font-medium text-[#20221f]">Totens de Autoatendimento</td>
-                  <td className="p-4 text-center text-slate-400">✕</td>
-                  <td className="p-4 text-center bg-[#f4f7eb]/50 text-slate-400">✕</td>
-                  <td className="p-4 text-center font-bold text-emerald-700">✓ Incluído</td>
+                  <td className="p-4 sm:p-5 font-medium">Suporte ao cliente</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-500">Padrão</td>
+                  <td className="p-4 sm:p-5 text-center font-bold text-[#556934] bg-[#fbfdf7]">Prioritário</td>
+                  <td className="p-4 sm:p-5 text-center font-bold text-amber-700">VIP no WhatsApp</td>
                 </tr>
               </tbody>
             </table>
@@ -603,38 +700,38 @@ export function PricingPlansPage() {
         {/* ==============================================================
             6. PERGUNTAS FREQUENTES (FAQ)
            ============================================================== */}
-        <section className="border-t border-[#e6e5dd] bg-[#fafaf7] px-5 py-20 sm:px-10 sm:py-24 lg:px-16">
-          <div className="mx-auto max-w-[820px]">
+        <section className="bg-[#f5f5f0] border-t border-[#e6e5dd] px-5 py-20 sm:px-10 lg:px-16">
+          <div className="mx-auto max-w-[840px]">
             <div className="text-center">
               <span className="text-[12px] font-bold uppercase tracking-wider text-[#687348]">
-                Tira-Dúvidas
+                Dúvidas Comuns
               </span>
-              <h2 className="mt-2 font-display text-[32px] font-medium tracking-tight text-[#20221f] sm:text-[40px]">
-                Perguntas Frequentes
+              <h2 className="mt-2 font-display text-[30px] font-medium tracking-tight sm:text-[40px] text-[#20221f]">
+                Perguntas Frequentes sobre os Planos
               </h2>
             </div>
 
             <div className="mt-12 space-y-3">
               {[
                 {
-                  q: "A ELLO realmente cobra zero taxa sobre o que eu vendo?",
-                  a: "Sim, exatamente zero. Você paga apenas o valor fixo da sua assinatura mensal ou anual. 100% do dinheiro das suas vendas e agendamentos vai direto para você, sem nenhuma retenção de porcentagem.",
+                  q: "A ELLO realmente não cobra comissão sobre meus pedidos ou agendamentos?",
+                  a: "Exatamente! Cobramos ZERO porcentagem sobre o valor que você vende. Você paga apenas o valor fixo da sua assinatura e todo o dinheiro das suas vendas cai direto na sua conta bancária sem intermediários mordendo sua margem.",
                 },
                 {
-                  q: "Existe fidelidade ou multa de cancelamento?",
+                  q: "Como funciona a assinatura e o cancelamento?",
                   a: "Nenhuma fidelidade. Você pode assinar, usar e cancelar a qualquer momento direto pelo painel de controle, sem precisar falar com atendente nem pagar nenhuma taxa extra.",
                 },
                 {
-                  q: "Como funciona o link de auto-cadastro para minha equipe?",
+                  q: "Como funciona o envio de links para os profissionais da minha equipe?",
                   a: "No Plano Pro, você acessa a aba de Equipe, clica em 'Gerar Link' e digita o nome do colaborador. O sistema gera um link exclusivo que você envia no WhatsApp dele. Ao clicar no celular, ele mesmo envia a foto de perfil, WhatsApp e marca quais serviços realiza.",
                 },
                 {
-                  q: "Como o cliente final faz o pagamento?",
-                  a: "O cliente pode pagar na sua maquininha física no balcão, via chave PIX direta da sua empresa, ou online com confirmação instantânea via Asaas.",
+                  q: "Quais são as formas de pagamento disponíveis para assinar?",
+                  a: "Aceitamos PIX Instantâneo com liberação na hora, além de cartão de crédito. Se optar pelo plano anual, você garante 25% de desconto automático.",
                 },
                 {
                   q: "Posso começar no plano grátis e mudar para o Pro depois?",
-                  a: "Com certeza! Você pode começar no plano gratuito para conhecer a plataforma e, quando quiser adicionar colaboradores na equipe ou remover a marca da ELLO, basta fazer o upgrade com ativação imediata no PIX.",
+                  a: "Com certeza! Você pode começar no plano gratuito para conhecer a plataforma e, quando quiser adicionar colaboradores na equipe ou remover a marca da ELLO, basta fazer o upgrade com ativação imediata.",
                 },
               ].map((faq, index) => {
                 const isOpen = openFaq === index;
@@ -646,7 +743,7 @@ export function PricingPlansPage() {
                     <button
                       type="button"
                       onClick={() => toggleFaq(index)}
-                      className="flex w-full items-center justify-between p-5 text-left font-semibold text-[#20221f] text-sm sm:text-base"
+                      className="flex w-full items-center justify-between p-5 text-left font-semibold text-[#20221f] text-sm sm:text-base cursor-pointer"
                     >
                       <span>{faq.q}</span>
                       <ChevronDown
@@ -686,10 +783,14 @@ export function PricingPlansPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-              <Link to={startTo} className="ello-cta ello-cta-lime">
-                Começar gratuitamente
+              <button
+                type="button"
+                onClick={() => handleOpenCheckout("pro")}
+                className="ello-cta ello-cta-lime cursor-pointer"
+              >
+                Assinar Plano Pro
                 <ArrowRight size={16} />
-              </Link>
+              </button>
             </div>
           </div>
         </section>
@@ -705,6 +806,271 @@ export function PricingPlansPage() {
         <span>Plataforma completa para estabelecimentos e negócios locais. Taxa Zero sobre vendas.</span>
         <span>© {new Date().getFullYear()} ELLO</span>
       </footer>
+
+      {/* ==============================================================
+          9. MODAL DE ASSINATURA E CHECKOUT INTERATIVO
+         ============================================================== */}
+      {checkoutModalPlan && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
+        >
+          <div className="relative w-full max-w-lg rounded-3xl bg-[#181a15] text-[#f7f6ef] border border-white/10 shadow-2xl p-6 sm:p-8 overflow-hidden my-8">
+            {/* Botão de Fechar */}
+            <button
+              type="button"
+              onClick={() => setCheckoutModalPlan(null)}
+              className="absolute top-5 right-5 grid size-9 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition cursor-pointer"
+              aria-label="Fechar"
+            >
+              <X size={18} />
+            </button>
+
+            {upgradeSuccess ? (
+              /* TELA DE SUCESSO DE ATIVAÇÃO */
+              <div className="py-6 text-center space-y-4">
+                <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-[#d0f25a] text-[#181a15] shadow-lg shadow-[#d0f25a]/20">
+                  <CheckCircle2 size={36} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <span className="inline-block rounded-full bg-[#d0f25a]/20 text-[#d0f25a] px-3 py-1 text-xs font-bold uppercase tracking-wider mb-2">
+                    ⚡ Assinatura Confirmada
+                  </span>
+                  <h3 className="font-display text-2xl font-bold text-white">
+                    Parabéns! O {planName} está ativo!
+                  </h3>
+                  <p className="mt-2 text-sm text-white/70 max-w-sm mx-auto leading-relaxed">
+                    Todos os recursos de equipe, relatórios completos e remoção de marca já foram liberados para{" "}
+                    <strong className="text-white">{business?.name || "seu negócio"}</strong>.
+                  </p>
+                </div>
+
+                <div className="pt-4 flex flex-col gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCheckoutModalPlan(null);
+                      void navigate({ to: "/studio" });
+                    }}
+                    className="ello-cta ello-cta-lime w-full justify-center text-center font-bold text-sm cursor-pointer shadow-lg"
+                  >
+                    <span>Ir para o Painel Studio Agora 🚀</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutModalPlan(null)}
+                    className="text-xs text-white/50 hover:text-white transition py-2"
+                  >
+                    Continuar navegando no site
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* FORMULÁRIO DE CHECKOUT / PAGAMENTO */
+              <div className="space-y-6">
+                {/* TOPO DO MODAL */}
+                <div>
+                  <div className="inline-flex items-center gap-1.5 rounded-md bg-[#d0f25a]/15 text-[#d0f25a] px-2.5 py-1 text-[11px] font-black uppercase tracking-wider">
+                    <Zap size={13} />
+                    <span>{planName}</span>
+                  </div>
+                  <h3 className="mt-2 font-display text-2xl font-bold text-white">
+                    Concluir Assinatura
+                  </h3>
+                  <p className="mt-1 text-xs text-white/60">
+                    Ativação imediata das funcionalidades sem taxa de comissão sobre suas vendas.
+                  </p>
+                </div>
+
+                {/* SELETOR DE CICLO NO MODAL */}
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                  <div className="flex items-center justify-between text-xs font-semibold text-white/70 pb-2">
+                    <span>Ciclo de Faturamento</span>
+                    {modalCycle === "yearly" && (
+                      <span className="text-[#d0f25a] font-bold">Economize 25%</span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setModalCycle("monthly")}
+                      className={`rounded-xl py-2 px-3 text-xs font-bold transition cursor-pointer flex flex-col items-center ${
+                        modalCycle === "monthly"
+                          ? "bg-white text-[#181a15] shadow-sm"
+                          : "bg-white/5 text-white/70 hover:bg-white/10"
+                      }`}
+                    >
+                      <span>Mensal</span>
+                      <span className="text-[11px] opacity-80 font-normal">
+                        R$ {planPriceMonthly.toFixed(2).replace(".", ",")}/mês
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModalCycle("yearly")}
+                      className={`rounded-xl py-2 px-3 text-xs font-bold transition cursor-pointer flex flex-col items-center ${
+                        modalCycle === "yearly"
+                          ? "bg-[#d0f25a] text-[#181a15] shadow-sm"
+                          : "bg-white/5 text-white/70 hover:bg-white/10"
+                      }`}
+                    >
+                      <span>Anual (25% OFF)</span>
+                      <span className="text-[11px] opacity-80 font-normal">
+                        R$ {planPriceYearlyMonthly.toFixed(2).replace(".", ",")}/mês
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* IDENTIFICAÇÃO DO NEGÓCIO */}
+                {business ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#d0f25a]">
+                        Estabelecimento Vinculado
+                      </span>
+                      <div className="text-sm font-bold text-white mt-0.5">{business.name}</div>
+                      <div className="text-xs text-white/50">{business.city || "Cidade do estabelecimento"}</div>
+                    </div>
+                    <span className="rounded-full bg-emerald-500/20 text-emerald-400 p-1.5">
+                      <Check size={16} />
+                    </span>
+                  </div>
+                ) : (
+                  <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#d0f25a]">
+                      Dados do seu estabelecimento
+                    </span>
+                    <div>
+                      <label className="text-[11px] font-medium text-white/70 block mb-1">
+                        Nome do seu Negócio
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Barbearia Vip, Hamburgueria Grill"
+                        value={newBizName}
+                        onChange={(e) => setNewBizName(e.target.value)}
+                        className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white placeholder-white/30 focus:border-[#d0f25a] focus:outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-medium text-white/70 block mb-1">
+                        Seu WhatsApp (para ativação)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: (11) 98765-4321"
+                        value={newBizPhone}
+                        onChange={(e) => setNewBizPhone(e.target.value)}
+                        className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white placeholder-white/30 focus:border-[#d0f25a] focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* ÁREA DE PAGAMENTO PIX */}
+                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <QrCode size={15} className="text-[#d0f25a]" />
+                      <span>Pagamento via PIX Instantâneo</span>
+                    </span>
+                    <span className="font-display font-black text-sm text-[#d0f25a]">
+                      R$ {currentModalPriceStr}
+                    </span>
+                  </div>
+
+                  {/* QR Code Pix Estilizado */}
+                  <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/5 p-3 rounded-xl border border-white/5">
+                    <div className="size-24 shrink-0 rounded-lg bg-white p-1.5 grid place-items-center shadow-md">
+                      {/* SVG representativo do QR Code PIX */}
+                      <svg viewBox="0 0 100 100" className="size-full">
+                        <rect width="100" height="100" fill="white" />
+                        <rect x="10" y="10" width="30" height="30" fill="#181a15" />
+                        <rect x="16" y="16" width="18" height="18" fill="white" />
+                        <rect x="20" y="20" width="10" height="10" fill="#181a15" />
+
+                        <rect x="60" y="10" width="30" height="30" fill="#181a15" />
+                        <rect x="66" y="16" width="18" height="18" fill="white" />
+                        <rect x="70" y="20" width="10" height="10" fill="#181a15" />
+
+                        <rect x="10" y="60" width="30" height="30" fill="#181a15" />
+                        <rect x="16" y="66" width="18" height="18" fill="white" />
+                        <rect x="20" y="70" width="10" height="10" fill="#181a15" />
+
+                        <circle cx="50" cy="50" r="8" fill="#687348" />
+                        <rect x="45" y="20" width="8" height="15" fill="#181a15" />
+                        <rect x="45" y="65" width="8" height="15" fill="#181a15" />
+                        <rect x="65" y="50" width="15" height="8" fill="#181a15" />
+                        <rect x="60" y="65" width="10" height="10" fill="#181a15" />
+                        <rect x="75" y="75" width="15" height="15" fill="#181a15" />
+                      </svg>
+                    </div>
+
+                    <div className="flex-1 w-full text-center sm:text-left space-y-2">
+                      <div className="text-[11px] text-white/60 leading-relaxed">
+                        Abra o aplicativo do seu banco, escolha <strong>Pix Copia e Cola</strong> e cole o código abaixo:
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyPix()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/20 transition cursor-pointer w-full justify-center sm:w-auto"
+                      >
+                        {copiedPixKey ? (
+                          <>
+                            <Check size={13} className="text-[#d0f25a]" />
+                            <span className="text-[#d0f25a]">Código Copiado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={13} />
+                            <span>Copiar Chave Pix</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* BOTÕES DE AÇÃO */}
+                <div className="space-y-2.5 pt-2">
+                  <button
+                    type="button"
+                    disabled={isUpgrading}
+                    onClick={() => void handleConfirmUpgrade()}
+                    className="ello-cta ello-cta-lime w-full justify-center text-center font-bold text-sm shadow-xl hover:scale-[1.01] transition cursor-pointer disabled:opacity-50"
+                  >
+                    {isUpgrading ? (
+                      <span>Ativando plano...</span>
+                    ) : (
+                      <>
+                        <span>{business ? "Ativar Plano no Painel Agora" : "Criar Negócio e Ativar Plano"}</span>
+                        <ArrowRight size={16} />
+                      </>
+                    )}
+                  </button>
+
+                  <a
+                    href={getWhatsAppSubscriptionUrl()}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 py-3 px-4 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition"
+                  >
+                    <MessageCircle size={15} />
+                    <span>Finalizar ou Tirar Dúvidas no WhatsApp</span>
+                  </a>
+
+                  <p className="text-center text-[10px] text-white/40 pt-1 flex items-center justify-center gap-1">
+                    <ShieldCheck size={13} className="text-emerald-400" />
+                    <span>Sem fidelidade · Cancele quando quiser diretamente pelo painel</span>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

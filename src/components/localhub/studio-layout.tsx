@@ -96,6 +96,7 @@ export function StudioLayout() {
       title: "CONFIGURAÇÕES",
       items: [
         { to: "/studio/settings", label: "Minha Página & WhatsApp", icon: Settings2, id: "tour-nav-settings" },
+        { to: "/planos", label: "Planos & Assinatura", icon: Sparkles, id: "tour-nav-planos" },
       ],
     },
   ];
@@ -164,10 +165,20 @@ export function StudioLayout() {
                 {business.name.slice(0, 1).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between gap-1.5">
                   <h3 className="truncate text-xs font-black text-white">{business.name}</h3>
+                  <Link
+                    to="/planos"
+                    className="shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider transition bg-[#d4f455]/15 text-[#d4f455] hover:bg-[#d4f455]/25 border border-[#d4f455]/30"
+                  >
+                    {business.onboardingDetails?.plan === "pro"
+                      ? "⚡ PRO"
+                      : business.onboardingDetails?.plan === "business"
+                      ? "🏢 BUSINESS"
+                      : "GRÁTIS"}
+                  </Link>
                 </div>
-                <div className="flex items-center gap-1.5 text-[11px] text-[#9a9d90]">
+                <div className="flex items-center gap-1.5 text-[11px] text-[#9a9d90] mt-0.5">
                   <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="truncate">Loja Online Ativa</span>
                 </div>

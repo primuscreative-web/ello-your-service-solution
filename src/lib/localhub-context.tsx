@@ -43,6 +43,9 @@ export type PortfolioItem = {
 };
 
 export type BusinessOnboardingDetails = {
+  plan?: "free" | "pro" | "business";
+  planBillingCycle?: "monthly" | "yearly";
+  planActivatedAt?: string;
   specialties: string[];
   serviceModes: string[];
   supplies?: ProductSupply[];
