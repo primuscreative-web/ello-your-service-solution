@@ -22,6 +22,7 @@ import { PageTitle, money, primaryButtonClass, accentButtonClass, secondaryButto
 import { useLocalHub } from "@/lib/localhub-context";
 import { getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
 import { StudioBusinessTools } from "@/components/localhub/studio-business-tools";
+import { HeroCommandCard } from "@/components/localhub/hero-command-card";
 
 export const Route = createFileRoute("/studio/")({ component: DashboardPage });
 
@@ -99,57 +100,12 @@ function DashboardPage() {
       />
 
       {/* HERO COMMAND CARD: COMANDO DA LOJA AO VIVO */}
-      <div className="relative overflow-hidden rounded-3xl border border-[#2e3128] bg-gradient-to-br from-[#181a14] via-[#20231b] to-[#151712] p-6 text-white shadow-xl sm:p-7">
-        {/* Efeito de luz ambiente e textura */}
-        <div className="pointer-events-none absolute -right-16 -top-16 size-72 rounded-full bg-[#d4f455]/10 blur-3xl" />
-        <div className="pointer-events-none absolute -left-16 -bottom-16 size-72 rounded-full bg-[#768452]/20 blur-3xl" />
-
-        <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-center">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-400">
-                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                Loja Ao Vivo
-              </span>
-              <span className="text-xs font-semibold text-[#a5a999]">
-                {business?.city ? `📍 ${business.city}` : "Negócio Local"}
-              </span>
-            </div>
-
-            <h2 className="font-display text-xl sm:text-2xl font-black tracking-tight text-[#f7f6ef]">
-              Seu canal de vendas direto está pronto para atender.
-            </h2>
-
-            <p className="text-xs sm:text-sm text-[#b2b5a7] font-mono">
-              ello.app.br/loja/{business?.slug}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={() => void copyLink()}
-              type="button"
-              className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-xs font-bold text-white shadow-sm backdrop-blur-md transition hover:bg-white/20 active:scale-95"
-            >
-              {copied ? <Check size={14} className="text-[#d4f455]" /> : <Copy size={14} />}
-              <span>{copied ? "Link copiado!" : "Copiar link público"}</span>
-            </button>
-
-            {business?.slug && (
-              <Link
-                to="/loja/$slug"
-                params={{ slug: business.slug }}
-                target="_blank"
-                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#d4f455] px-4 py-2.5 text-xs font-black text-[#151712] shadow-md transition hover:bg-[#dff96b] active:scale-95"
-              >
-                <Store size={15} />
-                <span>Abrir Cardápio</span>
-                <ExternalLink size={12} className="opacity-70" />
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
+      <HeroCommandCard
+        storeName={business?.name || "Meu Negócio"}
+        storeSlug={business?.slug || ""}
+        cityName={business?.city || "Negócio Local"}
+        isLive={true}
+      />
 
       {/* MÉTRICAS PRINCIPAIS (KPIS) COM DESIGN EDITORIAL TÁTIL */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

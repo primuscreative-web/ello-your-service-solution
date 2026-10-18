@@ -28,6 +28,10 @@ import {
   UtensilsCrossed,
   X,
   Zap,
+  QrCode,
+  RefreshCw,
+  ShieldCheck,
+  ArrowRight,
 } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -1276,13 +1280,13 @@ function PublicBusinessPage() {
                 {[
                   { id: "all", label: "Todos" },
                   ...(business.portfolioItems.some((i) => i.mediaType === "before_after")
-                    ? [{ id: "before_after", label: "🌓 Antes & Depois" }]
+                    ? [{ id: "before_after", label: "Antes & Depois" }]
                     : []),
                   ...(business.portfolioItems.some((i) => i.mediaType === "video")
-                    ? [{ id: "video", label: "🎥 Vídeos & Reels" }]
+                    ? [{ id: "video", label: "Vídeos & Reels" }]
                     : []),
                   ...(business.portfolioItems.some((i) => i.featured)
-                    ? [{ id: "featured", label: "⭐ Destaques" }]
+                    ? [{ id: "featured", label: "Destaques" }]
                     : []),
                 ].map((f) => (
                   <button
@@ -1549,7 +1553,7 @@ function PublicBusinessPage() {
                             <div className="min-w-0 flex-1">
                               <div className="mb-1 flex flex-wrap items-center gap-1.5">
                                 <span className="inline-flex items-center gap-1 rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-rose-800">
-                                  {service.promotionBadge || (isPromo ? "🔥 Oferta do Dia" : "⭐ Destaque")}
+                                  {service.promotionBadge || (isPromo ? "Oferta do Dia" : "Destaque")}
                                 </span>
                               </div>
                               <h4 className="font-bold text-[#292b25] sm:text-base">{service.name}</h4>
@@ -2020,558 +2024,568 @@ function PublicBusinessPage() {
       {isFoodBusiness && cartOpen && (
         <div
           role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !orderBusy) setCartOpen(false);
-          }}
-          className="fixed inset-0 z-50 grid place-items-end bg-slate-950/55 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
+          className="fixed inset-0 z-50 overflow-hidden"
         >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="food-checkout-title"
-            className="max-h-[94dvh] w-full max-w-xl overflow-y-auto rounded-t-[26px] bg-white p-5 shadow-2xl sm:rounded-[26px] sm:p-7"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#778253]">
-                  {placedOrder ? "Pedido recebido" : "Seu pedido"}
-                </p>
-                <h2 id="food-checkout-title" className="mt-1 text-xl font-bold">
-                  {placedOrder ? `Pedido #${placedOrder.number} enviado` : "Finalizar pedido"}
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCartOpen(false)}
-                aria-label="Fechar"
-                className="grid size-9 place-items-center rounded-full bg-slate-100 text-slate-500"
-              >
-                <X size={17} />
-              </button>
-            </div>
-            {placedOrder ? (
-              <div className="mt-5 rounded-2xl bg-emerald-50 p-5 text-center">
-                <span className="mx-auto grid size-11 place-items-center rounded-full bg-emerald-100 text-emerald-700">
-                  <Check size={22} />
-                </span>
-                <p className="mt-3 font-bold text-emerald-950">
-                  Seu pedido foi enviado para {business?.name}.
-                </p>
-                <p className="mt-1 text-sm text-emerald-900">
-                  Total: {money(placedOrder.total)} · pagamento{" "}
-                  {fulfillment === "delivery"
-                    ? "na entrega"
-                    : fulfillment === "pickup"
-                      ? "na retirada"
-                      : "no estabelecimento"}
-                  .
-                </p>
-                <div className="mt-4 flex flex-col gap-2">
-                  {business?.phone && (() => {
-                    const rawPhone = business.phone.replace(/\D/g, "");
-                    const cleanPhone = rawPhone.startsWith("55") ? rawPhone : `55${rawPhone}`;
-                    const trackingUrl =
-                      typeof window !== "undefined"
-                        ? `${window.location.origin}/pedido/${placedOrder.trackingToken}`
-                        : `https://ello.app.br/pedido/${placedOrder.trackingToken}`;
-                    const message = encodeURIComponent(
-                      `Olá! Acabei de fazer o Pedido #${placedOrder.number} pelo cardápio ELLO.\n\n` +
-                        `*Cliente:* ${orderName.trim() || "Cliente"}\n` +
-                        `*Tipo:* ${fulfillment === "delivery" ? `Entrega em ${orderAddress.trim()}` : fulfillment === "pickup" ? "Retirada no local" : "Consumo no local"}\n` +
-                        `*Pagamento:* ${paymentMethod === "pix" ? "Pix" : paymentMethod === "card" ? "Cartão" : paymentMethod === "cash" ? "Dinheiro" : "Online"}\n` +
-                        `*Total:* ${money(placedOrder.total)}\n\n` +
-                        `Acompanhar status em tempo real:\n${trackingUrl}`,
-                    );
-                    return (
-                      <a
-                        href={`https://wa.me/${cleanPhone}?text=${message}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
-                      >
-                        <MessageCircle size={18} />
-                        Enviar comprovante no WhatsApp da loja
-                      </a>
-                    );
-                  })()}
-                  <Link
-                    to="/pedido/$token"
-                    params={{ token: placedOrder.trackingToken }}
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 px-4 text-sm font-bold text-white shadow-md transition hover:brightness-110 active:scale-98"
-                  >
-                    <Gift size={17} />
-                    Girar Roleta Premiada & Acompanhar Pedido 🎰
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => setCartOpen(false)}
-                    className="rounded-xl bg-[#292b25] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#34352f]"
-                  >
-                    Voltar ao cardápio
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-100 px-4">
-                  {cartItems.map((line) => {
-                    const service = line.service;
-                    const variant = service.productVariants?.find(
-                      (item) => item.id === line.variantId,
-                    );
-                    const chosenOptions = (service.optionGroups ?? [])
-                      .flatMap((group) => group.options)
-                      .filter((option) => line.optionIds.includes(option.id ?? ""));
-                    const unitPrice =
-                      service.price +
-                      (variant?.priceDelta ?? 0) +
-                      chosenOptions.reduce((sum, option) => sum + option.priceDelta, 0);
-                    return (
-                      <div key={line.key} className="flex items-center justify-between gap-3 py-3">
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold">{service.name}</div>
-                          <div className="text-xs text-slate-500">
-                            {[variant?.name, ...chosenOptions.map((item) => item.name)]
-                              .filter(Boolean)
-                              .join(" · ") || "Padrão"}{" "}
-                            · {money(unitPrice)} cada
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            aria-label={`Diminuir ${service.name}`}
-                            onClick={() => setFoodCartQuantity(line.key, line.quantity - 1)}
-                            className="grid size-8 place-items-center rounded-full border border-slate-200"
-                          >
-                            <Minus size={13} />
-                          </button>
-                          <span className="min-w-5 text-center text-sm font-bold">
-                            {line.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            aria-label={`Aumentar ${service.name}`}
-                            onClick={() => setFoodCartQuantity(line.key, line.quantity + 1)}
-                            className="grid size-8 place-items-center rounded-full border border-slate-200"
-                          >
-                            <Plus size={13} />
-                          </button>
-                        </div>
-                        <b className="text-sm">{money(unitPrice * line.quantity)}</b>
-                      </div>
-                    );
-                  })}
-                </div>
+          {/* Overlay escurecido com blur */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => !orderBusy && setCartOpen(false)}
+          />
 
-                {otherSuggestions.length > 0 && (
-                  <div className="mt-4 border-t border-slate-100 pt-3">
-                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-                      <Sparkles size={13} className="text-amber-500" />
-                      <span>Peça também</span>
+          <div className="absolute inset-y-0 right-0 flex max-w-full pl-4 sm:pl-10">
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="food-checkout-title"
+              className="w-screen max-w-md bg-[#181a15] border-l border-white/10 shadow-2xl flex flex-col text-white"
+            >
+              {/* Header da Gaveta */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#141611]">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-[#d0f25a]/10 text-[#d0f25a]">
+                    <ShoppingBag className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 id="food-checkout-title" className="text-base font-bold text-white font-display">
+                      {placedOrder ? "Pedido Recebido" : "Sua Sacola"}
+                    </h3>
+                    <p className="text-xs text-white/50">
+                      {placedOrder ? `Pedido #${placedOrder.number}` : `${cartCount} itens adicionados`}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCartOpen(false)}
+                  aria-label="Fechar"
+                  className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-white/70 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {placedOrder ? (
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-center space-y-3">
+                    <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      <CheckCircle2 size={26} />
+                    </span>
+                    <div>
+                      <span className="inline-block rounded-full bg-emerald-500/20 text-emerald-300 px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider mb-1">
+                        Pedido Confirmado
+                      </span>
+                      <h4 className="font-display text-lg font-bold text-white">
+                        Seu pedido foi enviado para {business?.name}
+                      </h4>
+                      <p className="text-xs text-white/70 mt-1">
+                        Total: <span className="font-mono text-[#d0f25a] font-bold">{money(placedOrder.total)}</span> · pagamento{" "}
+                        {fulfillment === "delivery"
+                          ? "na entrega"
+                          : fulfillment === "pickup"
+                            ? "na retirada"
+                            : "no estabelecimento"}
+                      </p>
                     </div>
-                    <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
-                      {otherSuggestions.slice(0, 4).map((suggested) => (
-                        <button
-                          key={suggested.id}
-                          type="button"
-                          onClick={() => {
-                            if (suggested.productVariants?.length || suggested.optionGroups?.length) {
-                              setConfiguringProduct(suggested);
-                            } else {
-                              addFoodCartItem(suggested, null, []);
-                            }
-                          }}
-                          className="flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 text-left transition hover:border-[#778253] hover:bg-slate-50"
+                  </div>
+
+                  <div className="flex flex-col gap-2.5">
+                    {business?.phone && (() => {
+                      const rawPhone = business.phone.replace(/\D/g, "");
+                      const cleanPhone = rawPhone.startsWith("55") ? rawPhone : `55${rawPhone}`;
+                      const trackingUrl =
+                        typeof window !== "undefined"
+                          ? `${window.location.origin}/pedido/${placedOrder.trackingToken}`
+                          : `https://ello.app.br/pedido/${placedOrder.trackingToken}`;
+                      const message = encodeURIComponent(
+                        `Olá! Acabei de fazer o Pedido #${placedOrder.number} pelo cardápio ELLO.\n\n` +
+                          `*Cliente:* ${orderName.trim() || "Cliente"}\n` +
+                          `*Tipo:* ${fulfillment === "delivery" ? `Entrega em ${orderAddress.trim()}` : fulfillment === "pickup" ? "Retirada no local" : "Consumo no local"}\n` +
+                          `*Pagamento:* ${paymentMethod === "pix" ? "Pix" : paymentMethod === "card" ? "Cartão" : paymentMethod === "cash" ? "Dinheiro" : "Online"}\n` +
+                          `*Total:* ${money(placedOrder.total)}\n\n` +
+                          `Acompanhar status em tempo real:\n${trackingUrl}`,
+                      );
+                      return (
+                        <a
+                          href={`https://wa.me/${cleanPhone}?text=${message}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 text-xs font-bold text-white shadow-sm transition cursor-pointer"
                         >
-                          {suggested.imageUrl ? (
-                            <img
-                              src={suggested.imageUrl}
-                              alt=""
-                              className="size-9 rounded-lg object-cover"
-                            />
-                          ) : (
-                            <div className="grid size-9 place-items-center rounded-lg bg-slate-100 text-slate-400">
-                              <UtensilsCrossed size={14} />
+                          <MessageCircle size={16} />
+                          <span>Enviar comprovante no WhatsApp da loja</span>
+                        </a>
+                      );
+                    })()}
+
+                    <Link
+                      to="/pedido/$token"
+                      params={{ token: placedOrder.trackingToken }}
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/15 px-4 text-xs font-bold text-white transition border border-white/10 cursor-pointer"
+                    >
+                      <Gift size={16} className="text-amber-400" />
+                      <span>Acompanhar Pedido ao Vivo</span>
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => setCartOpen(false)}
+                      className="rounded-xl bg-white/5 hover:bg-white/10 px-5 py-3 text-xs font-semibold text-white/70 hover:text-white transition cursor-pointer"
+                    >
+                      Voltar ao cardápio
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    {/* Lista de Itens */}
+                    <div className="space-y-2.5">
+                      {cartItems.map((line) => {
+                        const service = line.service;
+                        const variant = service.productVariants?.find((item) => item.id === line.variantId);
+                        const chosenOptions = (service.optionGroups ?? [])
+                          .flatMap((group) => group.options)
+                          .filter((option) => line.optionIds.includes(option.id ?? ""));
+                        const unitPrice =
+                          service.price +
+                          (variant?.priceDelta ?? 0) +
+                          chosenOptions.reduce((sum, option) => sum + option.priceDelta, 0);
+                        return (
+                          <div
+                            key={line.key}
+                            className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-xs font-semibold text-white">{service.name}</h4>
+                              <p className="text-[11px] text-white/50">
+                                {[variant?.name, ...chosenOptions.map((item) => item.name)].filter(Boolean).join(" · ") || "Padrão"}
+                              </p>
+                              <span className="text-xs font-bold text-[#d0f25a] font-mono mt-0.5 block">
+                                {money(unitPrice * line.quantity)}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                aria-label={`Diminuir ${service.name}`}
+                                onClick={() => setFoodCartQuantity(line.key, line.quantity - 1)}
+                                className="grid size-7 place-items-center rounded-lg border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition cursor-pointer"
+                              >
+                                <Minus size={12} />
+                              </button>
+                              <span className="min-w-5 text-center text-xs font-bold font-mono">
+                                {line.quantity}
+                              </span>
+                              <button
+                                type="button"
+                                aria-label={`Aumentar ${service.name}`}
+                                onClick={() => setFoodCartQuantity(line.key, line.quantity + 1)}
+                                className="grid size-7 place-items-center rounded-lg border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition cursor-pointer"
+                              >
+                                <Plus size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Sugestões de Adicionais (Cross-sell) */}
+                    {otherSuggestions.length > 0 && (
+                      <div className="border-t border-white/10 pt-3">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/50">
+                          <Sparkles size={12} className="text-[#d0f25a]" />
+                          <span>Peça também</span>
+                        </div>
+                        <div className="mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                          {otherSuggestions.slice(0, 4).map((suggested) => (
+                            <button
+                              key={suggested.id}
+                              type="button"
+                              onClick={() => {
+                                if (suggested.productVariants?.length || suggested.optionGroups?.length) {
+                                  setConfiguringProduct(suggested);
+                                } else {
+                                  addFoodCartItem(suggested, null, []);
+                                }
+                              }}
+                              className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-2 text-left transition hover:border-[#d0f25a]/30 hover:bg-white/[0.05] cursor-pointer"
+                            >
+                              {suggested.imageUrl ? (
+                                <img src={suggested.imageUrl} alt="" className="size-8 rounded-lg object-cover" />
+                              ) : (
+                                <div className="grid size-8 place-items-center rounded-lg bg-white/5 text-white/40">
+                                  <UtensilsCrossed size={12} />
+                                </div>
+                              )}
+                              <div className="max-w-[100px]">
+                                <p className="truncate text-[11px] font-semibold text-white">{suggested.name}</p>
+                                <p className="text-[10px] font-mono text-[#d0f25a]">+{money(suggested.price)}</p>
+                              </div>
+                              <span className="grid size-5 place-items-center rounded-full bg-[#d0f25a]/20 text-[#d0f25a] text-[10px] font-bold">
+                                +
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Formulário de Dados */}
+                    <form id="food-checkout-form" onSubmit={(event) => void placeFoodOrder(event)} className="space-y-4 border-t border-white/10 pt-4">
+                      {/* Como receber */}
+                      <div>
+                        <label className="mb-1.5 text-xs font-semibold text-white/80 block">Como receber?</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {business?.acceptsDelivery !== false && (
+                            <button
+                              type="button"
+                              onClick={() => setFulfillment("delivery")}
+                              className={`min-h-10 rounded-xl border text-xs font-semibold transition cursor-pointer ${
+                                fulfillment === "delivery"
+                                  ? "border-[#d0f25a] bg-[#d0f25a] text-[#141611] font-bold shadow-xs"
+                                  : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+                              }`}
+                            >
+                              Entrega
+                            </button>
+                          )}
+                          {business?.acceptsPickup !== false && (
+                            <button
+                              type="button"
+                              onClick={() => setFulfillment("pickup")}
+                              className={`min-h-10 rounded-xl border text-xs font-semibold transition cursor-pointer ${
+                                fulfillment === "pickup"
+                                  ? "border-[#d0f25a] bg-[#d0f25a] text-[#141611] font-bold shadow-xs"
+                                  : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+                              }`}
+                            >
+                              Retirada
+                            </button>
+                          )}
+                          {business?.acceptsDineIn && (
+                            <button
+                              type="button"
+                              onClick={() => setFulfillment("dine_in")}
+                              className={`min-h-10 rounded-xl border text-xs font-semibold transition cursor-pointer ${
+                                fulfillment === "dine_in"
+                                  ? "border-[#d0f25a] bg-[#d0f25a] text-[#141611] font-bold shadow-xs"
+                                  : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+                              }`}
+                            >
+                              Consumir no local
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Nome e WhatsApp */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[11px] font-semibold text-white/80 block mb-1">Seu nome *</label>
+                          <input
+                            required
+                            minLength={2}
+                            maxLength={100}
+                            autoComplete="name"
+                            value={orderName}
+                            onChange={(event) => setOrderName(event.target.value)}
+                            placeholder="Nome completo"
+                            className="w-full min-h-10 rounded-xl border border-white/15 bg-white/5 px-3 text-xs text-white placeholder-white/40 focus:border-[#d0f25a] focus:outline-hidden transition"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-white/80 block mb-1">WhatsApp *</label>
+                          <input
+                            required
+                            type="tel"
+                            autoComplete="tel"
+                            value={orderPhone}
+                            onChange={(event) => {
+                              if (event.target.value !== orderPhone && recoveryConsent) setRecoveryConsent(false);
+                              setOrderPhone(event.target.value);
+                              setCouponMessage("");
+                            }}
+                            placeholder="(00) 00000-0000"
+                            className="w-full min-h-10 rounded-xl border border-white/15 bg-white/5 px-3 text-xs text-white placeholder-white/40 focus:border-[#d0f25a] focus:outline-hidden transition"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Endereço se entrega */}
+                      {fulfillment === "delivery" && (
+                        <div className="space-y-2.5">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div className="sm:col-span-1">
+                              <label className="text-[11px] font-semibold text-white/80 block mb-1">CEP (opcional)</label>
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  value={orderCep}
+                                  onChange={(e) => void handleCepSearch(e.target.value)}
+                                  placeholder="00000-000"
+                                  maxLength={9}
+                                  className="w-full min-h-10 rounded-xl border border-white/15 bg-white/5 px-3 pr-8 text-xs text-white placeholder-white/40 focus:border-[#d0f25a] focus:outline-hidden transition font-mono"
+                                />
+                                {cepSearching && (
+                                  <Loader2 size={14} className="absolute right-2.5 top-3 animate-spin text-white/50" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="text-[11px] font-semibold text-white/80 block mb-1">Endereço e Número *</label>
+                              <input
+                                required
+                                minLength={6}
+                                autoComplete="street-address"
+                                value={orderAddress}
+                                onChange={(event) => {
+                                  setOrderAddress(event.target.value);
+                                  setDeliveryAreaId("");
+                                }}
+                                placeholder="Rua, número, complemento"
+                                className="w-full min-h-10 rounded-xl border border-white/15 bg-white/5 px-3 text-xs text-white placeholder-white/40 focus:border-[#d0f25a] focus:outline-hidden transition"
+                              />
+                            </div>
+                          </div>
+
+                          {deliveryAreas.length > 0 && (
+                            <div>
+                              <label className="text-[11px] font-semibold text-white/80 block mb-1">Bairro *</label>
+                              <select
+                                required
+                                value={deliveryAreaId}
+                                onChange={(event) => setDeliveryAreaId(event.target.value)}
+                                className="w-full min-h-10 rounded-xl border border-white/15 bg-[#1f221b] px-3 text-xs text-white focus:border-[#d0f25a] focus:outline-hidden transition cursor-pointer"
+                              >
+                                <option value="">Selecione seu bairro</option>
+                                {deliveryAreas
+                                  .filter((area) => area.active)
+                                  .map((area) => (
+                                    <option key={area.id} value={area.id}>
+                                      {area.name} · {money(area.fee)}
+                                    </option>
+                                  ))}
+                              </select>
                             </div>
                           )}
-                          <div className="max-w-[120px]">
-                            <p className="truncate text-xs font-bold text-slate-800">
-                              {suggested.name}
-                            </p>
-                            <p className="text-[11px] font-semibold text-[#778253]">
-                              +{money(suggested.price)}
-                            </p>
-                          </div>
-                          <span className="grid size-6 place-items-center rounded-full bg-[#edf0e5] text-xs font-bold text-[#586341]">
-                            +
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <form onSubmit={(event) => void placeFoodOrder(event)} className="mt-5 space-y-4">
-                  <fieldset>
-                    <legend className="mb-2 text-sm font-semibold">Como receber?</legend>
-                    <div className="grid grid-cols-2 gap-2">
-                      {business?.acceptsDelivery !== false && (
-                        <button
-                          type="button"
-                          onClick={() => setFulfillment("delivery")}
-                          className={`min-h-11 rounded-xl border text-sm font-semibold ${fulfillment === "delivery" ? "border-[#778253] bg-[#edf0e5] text-[#586341]" : "border-slate-200"}`}
-                        >
-                          Entrega
-                        </button>
-                      )}
-                      {business?.acceptsPickup !== false && (
-                        <button
-                          type="button"
-                          onClick={() => setFulfillment("pickup")}
-                          className={`min-h-11 rounded-xl border text-sm font-semibold ${fulfillment === "pickup" ? "border-[#778253] bg-[#edf0e5] text-[#586341]" : "border-slate-200"}`}
-                        >
-                          Retirada
-                        </button>
-                      )}
-                      {business?.acceptsDineIn && (
-                        <button
-                          type="button"
-                          onClick={() => setFulfillment("dine_in")}
-                          aria-pressed={fulfillment === "dine_in"}
-                          className={`min-h-11 rounded-xl border text-sm font-semibold ${fulfillment === "dine_in" ? "border-[#778253] bg-[#edf0e5] text-[#586341]" : "border-slate-200"}`}
-                        >
-                          Consumir no local
-                        </button>
-                      )}
-                    </div>
-                  </fieldset>
-                  {customerMemoryLoaded && (
-                    <div className="flex items-center gap-1.5 rounded-lg bg-[#edf0e5]/70 px-3 py-1.5 text-[11px] font-medium text-[#586341]">
-                      <Sparkles size={12} className="shrink-0 text-[#778253]" />
-                      <span>Dados preenchidos com seu histórico neste navegador.</span>
-                    </div>
-                  )}
-
-                  <label className="block text-sm font-semibold">
-                    Seu nome
-                    <input
-                      required
-                      minLength={2}
-                      maxLength={100}
-                      autoComplete="name"
-                      value={orderName}
-                      onChange={(event) => setOrderName(event.target.value)}
-                      className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal"
-                    />
-                  </label>
-                  <label className="block text-sm font-semibold">
-                    WhatsApp
-                    <input
-                      required
-                      type="tel"
-                      autoComplete="tel"
-                      value={orderPhone}
-                      onChange={(event) => {
-                        if (event.target.value !== orderPhone && recoveryConsent)
-                          setRecoveryConsent(false);
-                        setOrderPhone(event.target.value);
-                        setCouponMessage("");
-                      }}
-                      placeholder="(11) 99999-9999"
-                      className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal"
-                    />
-                  </label>
-                  <div>
-                    <label className="flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-                      <input
-                        type="checkbox"
-                        checked={recoveryConsent}
-                        onChange={(event) => {
-                          setRecoverySaveError("");
-                          setRecoveryConsent(event.target.checked);
-                        }}
-                        className="mt-1 size-4 shrink-0 accent-[#778253]"
-                      />
-                      <span>
-                        Aceito receber um lembrete único no WhatsApp se eu não concluir este pedido.
-                        Esta autorização não inclui ofertas ou mensagens promocionais.
-                      </span>
-                    </label>
-                    {recoverySaveError && (
-                      <p role="alert" className="mt-1 px-1 text-xs text-red-700">
-                        Não foi possível salvar ou cancelar a autorização: {recoverySaveError}
-                      </p>
-                    )}
-                  </div>
-                  <div className="rounded-xl border border-slate-200 p-3">
-                    <label htmlFor="food-coupon-code" className="text-sm font-semibold">
-                      Cupom de desconto
-                    </label>
-                    <div className="mt-2 flex gap-2">
-                      <input
-                        id="food-coupon-code"
-                        value={couponCode}
-                        onChange={(event) => {
-                          setCouponCode(event.target.value.toUpperCase().replace(/\s/g, ""));
-                          setCouponMessage("");
-                        }}
-                        placeholder="Digite seu cupom"
-                        maxLength={40}
-                        className="min-h-11 min-w-0 flex-1 rounded-xl border border-slate-200 px-3 text-sm font-normal"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => void applyFoodCoupon()}
-                        disabled={
-                          couponBusy || !couponCode.trim() || !orderPhone.trim() || !cartCount
-                        }
-                        className="min-h-11 rounded-xl border border-slate-300 px-3 text-sm font-semibold disabled:opacity-50"
-                      >
-                        {couponBusy ? "Validando…" : appliedCoupon ? "Atualizar" : "Aplicar"}
-                      </button>
-                    </div>
-                    {couponMessage && (!couponPreview || appliedCoupon) && (
-                      <p
-                        role={appliedCoupon ? "status" : "alert"}
-                        className={`mt-2 text-xs ${appliedCoupon ? "text-emerald-700" : "text-red-700"}`}
-                      >
-                        {couponMessage}
-                      </p>
-                    )}
-                  </div>
-                  {fulfillment === "delivery" && (
-                    <>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div className="sm:col-span-1">
-                          <label className="block text-sm font-semibold">
-                            CEP (opcional)
-                            <div className="relative mt-1.5">
-                              <input
-                                type="text"
-                                value={orderCep}
-                                onChange={(e) => void handleCepSearch(e.target.value)}
-                                placeholder="00000-000"
-                                maxLength={9}
-                                className="min-h-11 w-full rounded-xl border border-slate-200 px-3 pr-8 text-sm font-normal"
-                              />
-                              {cepSearching && (
-                                <Loader2 size={16} className="absolute right-2.5 top-3 animate-spin text-slate-400" />
-                              )}
-                            </div>
-                          </label>
                         </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-sm font-semibold">
-                            Endereço para entrega
-                            <input
-                              required
-                              minLength={6}
-                              autoComplete="street-address"
-                              value={orderAddress}
-                              onChange={(event) => {
-                                setOrderAddress(event.target.value);
-                                setDeliveryAreaId("");
+                      )}
+
+                      {/* Cupom de desconto */}
+                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                        <label htmlFor="food-coupon-code" className="text-[11px] font-semibold text-white/80 block mb-1">
+                          Cupom de desconto
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            id="food-coupon-code"
+                            value={couponCode}
+                            onChange={(event) => {
+                              setCouponCode(event.target.value.toUpperCase().replace(/\s/g, ""));
+                              setCouponMessage("");
+                            }}
+                            placeholder="CUPOM"
+                            maxLength={40}
+                            className="min-h-9 flex-1 rounded-xl border border-white/15 bg-white/5 px-3 text-xs text-white placeholder-white/40 font-mono uppercase focus:border-[#d0f25a] focus:outline-hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => void applyFoodCoupon()}
+                            disabled={couponBusy || !couponCode.trim() || !orderPhone.trim() || !cartCount}
+                            className="min-h-9 rounded-xl border border-white/15 bg-white/10 px-3 text-xs font-semibold text-white hover:bg-white/20 disabled:opacity-50 transition cursor-pointer"
+                          >
+                            {couponBusy ? "Validando…" : appliedCoupon ? "Atualizar" : "Aplicar"}
+                          </button>
+                        </div>
+                        {couponMessage && (!couponPreview || appliedCoupon) && (
+                          <p className={`mt-1.5 text-[11px] ${appliedCoupon ? "text-emerald-400" : "text-rose-400"}`}>
+                            {couponMessage}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Observações */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-white/80 block mb-1">Observações (opcional)</label>
+                        <textarea
+                          maxLength={500}
+                          rows={2}
+                          value={orderNotes}
+                          onChange={(event) => setOrderNotes(event.target.value)}
+                          placeholder="Ex.: sem cebola, ponto da carne, interfone…"
+                          className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white placeholder-white/40 focus:border-[#d0f25a] focus:outline-hidden transition"
+                        />
+                      </div>
+
+                      {/* Forma de Pagamento */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-white/80 block mb-1">Forma de Pagamento</label>
+                        <select
+                          value={paymentMethod}
+                          onChange={(event) =>
+                            setPaymentMethod(
+                              event.target.value as "cash" | "pix" | "card" | "online_pix" | "online_card",
+                            )
+                          }
+                          className="w-full min-h-10 rounded-xl border border-white/15 bg-[#1f221b] px-3 text-xs text-white focus:border-[#d0f25a] focus:outline-hidden transition cursor-pointer"
+                        >
+                          <option value="pix">Pix (chave no app ou entrega)</option>
+                          <option value="cash">Dinheiro</option>
+                          <option value="card">Cartão na entrega (Maquininha)</option>
+                          {business?.onlinePaymentEnabled && (
+                            <>
+                              <option value="online_pix">Pix Online Imediato (Asaas QR Code)</option>
+                              <option value="online_card">Cartão de Crédito Online (Asaas)</option>
+                            </>
+                          )}
+                        </select>
+                      </div>
+
+                      {/* Troco se dinheiro */}
+                      {paymentMethod === "cash" && (
+                        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-white/80">Precisa de troco?</span>
+                            <span className="text-xs font-mono text-[#d0f25a]">Total: {money(orderTotalToPay)}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNeedsCashChange("no");
+                                setCashChangeFor("");
                               }}
-                              placeholder="Rua, número, complemento"
-                              className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal"
-                            />
-                          </label>
+                              className={`min-h-9 rounded-xl border text-xs font-semibold transition cursor-pointer ${
+                                needsCashChange === "no"
+                                  ? "border-[#d0f25a] bg-[#d0f25a] text-[#141611] font-bold"
+                                  : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+                              }`}
+                            >
+                              Não preciso de troco
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setNeedsCashChange("yes")}
+                              className={`min-h-9 rounded-xl border text-xs font-semibold transition cursor-pointer ${
+                                needsCashChange === "yes"
+                                  ? "border-[#d0f25a] bg-[#d0f25a] text-[#141611] font-bold"
+                                  : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+                              }`}
+                            >
+                              Sim, preciso de troco
+                            </button>
+                          </div>
+
+                          {needsCashChange === "yes" && (
+                            <div className="space-y-1.5 pt-1">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-[11px] text-white/60">Troco para:</span>
+                                {suggestedCashValues.map((val) => (
+                                  <button
+                                    key={val}
+                                    type="button"
+                                    onClick={() => setCashChangeFor(String(val))}
+                                    className={`rounded-lg px-2.5 py-1 text-xs font-mono font-semibold border transition cursor-pointer ${
+                                      cashChangeFor === String(val)
+                                        ? "border-[#d0f25a] bg-[#d0f25a] text-[#141611]"
+                                        : "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
+                                    }`}
+                                  >
+                                    R$ {val}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="flex items-center gap-2 pt-1">
+                                <span className="text-xs text-white/50">Ou digite: R$</span>
+                                <input
+                                  type="number"
+                                  min={Math.ceil(orderTotalToPay)}
+                                  step="1"
+                                  placeholder="50"
+                                  value={cashChangeFor}
+                                  onChange={(e) => setCashChangeFor(e.target.value)}
+                                  className="min-h-8 w-24 rounded-lg border border-white/15 bg-white/5 px-2.5 text-xs font-mono text-white"
+                                />
+                                {Number(cashChangeFor) > orderTotalToPay && (
+                                  <span className="text-xs font-mono text-emerald-400 font-bold">
+                                    Troco: {money(Number(cashChangeFor) - orderTotalToPay)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Resumo de Valores */}
+                      <div className="rounded-2xl bg-white/[0.02] p-4 border border-white/[0.06] space-y-2">
+                        <div className="flex justify-between text-xs text-white/60">
+                          <span>Subtotal</span>
+                          <span className="font-mono text-white">{money(cartSubtotal)}</span>
+                        </div>
+                        {fulfillment === "delivery" && (
+                          <div className="flex justify-between text-xs text-white/60">
+                            <span>Taxa de Entrega</span>
+                            <span className="font-mono text-white">{deliveryFee ? money(deliveryFee) : "Grátis"}</span>
+                          </div>
+                        )}
+                        {appliedCoupon && (
+                          <div className="flex justify-between text-xs text-emerald-400">
+                            <span>Desconto ({appliedCoupon.code})</span>
+                            <span className="font-mono">−{money(appliedCoupon.discountAmount)}</span>
+                          </div>
+                        )}
+                        <div className="pt-2 border-t border-white/10 flex justify-between text-sm font-bold text-white">
+                          <span>Total a Pagar</span>
+                          <span className="font-mono text-[#d0f25a] text-base">
+                            {money(cartSubtotal + deliveryFee - (appliedCoupon?.discountAmount ?? 0))}
+                          </span>
                         </div>
                       </div>
-                      {deliveryAreas.length > 0 && (
-                        <label className="block text-sm font-semibold">
-                          Bairro
-                          <select
-                            required
-                            value={deliveryAreaId}
-                            onChange={(event) => setDeliveryAreaId(event.target.value)}
-                            className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal"
-                          >
-                            <option value="">Selecione seu bairro</option>
-                            {deliveryAreas
-                              .filter((area) => area.active)
-                              .map((area) => (
-                                <option key={area.id} value={area.id}>
-                                  {area.name} · {money(area.fee)}
-                                </option>
-                              ))}
-                          </select>
-                          <span className="mt-1 block text-xs font-normal text-slate-500">
-                            Ao preencher o CEP ou endereço, seu bairro é selecionado automaticamente.
-                          </span>
-                        </label>
+
+                      {orderError && (
+                        <p role="alert" className="text-xs text-rose-400">
+                          {orderError}
+                        </p>
                       )}
-                    </>
-                  )}
-                  <label className="block text-sm font-semibold">
-                    Observações (opcional)
-                    <textarea
-                      maxLength={500}
-                      rows={2}
-                      value={orderNotes}
-                      onChange={(event) => setOrderNotes(event.target.value)}
-                      placeholder="Ex.: sem cebola, ponto da carne, tocar campainha…"
-                      className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal"
-                    />
-                  </label>
-                  <label className="block text-sm font-semibold">
-                    Pagamento{" "}
-                    {fulfillment === "delivery"
-                      ? "na entrega"
-                      : fulfillment === "pickup"
-                        ? "na retirada"
-                        : "no estabelecimento"}
-                    <select
-                      value={paymentMethod}
-                      onChange={(event) =>
-                        setPaymentMethod(
-                          event.target.value as
-                            | "cash"
-                            | "pix"
-                            | "card"
-                            | "online_pix"
-                            | "online_card",
-                        )
+                    </form>
+                  </div>
+
+                  {/* Footer Fixo da Gaveta */}
+                  <div className="p-5 border-t border-white/10 bg-[#141611]">
+                    <button
+                      type="submit"
+                      form="food-checkout-form"
+                      disabled={
+                        orderBusy ||
+                        !cartCount ||
+                        (fulfillment === "delivery" && deliveryAreas.length > 0 && !selectedDeliveryArea)
                       }
-                      className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal"
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#d0f25a] hover:bg-[#d9f863] active:scale-[0.98] py-3.5 text-sm font-bold text-[#141611] transition-all shadow-lg shadow-[#d0f25a]/20 cursor-pointer disabled:opacity-50"
                     >
-                      <option value="cash">Dinheiro</option>
-                      <option value="pix">Pix</option>
-                      {business?.onlinePaymentEnabled && (
+                      {orderBusy ? (
                         <>
-                          <option value="online_pix">Pix online (aprovação imediata via Asaas)</option>
-                          <option value="online_card">Cartão de crédito online (Asaas)</option>
+                          <Loader2 size={16} className="animate-spin" />
+                          <span>Enviando Pedido...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Confirmar e Enviar Pedido</span>
+                          <ArrowRight size={16} />
                         </>
                       )}
-                    </select>
-                  </label>
-
-                  {paymentMethod === "cash" && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-700">Precisa de troco?</span>
-                        <span className="text-xs font-semibold text-slate-500">Total: {money(orderTotalToPay)}</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNeedsCashChange("no");
-                            setCashChangeFor("");
-                          }}
-                          className={`min-h-10 rounded-xl border text-xs font-semibold transition ${
-                            needsCashChange === "no"
-                              ? "border-[#292b25] bg-[#292b25] text-white shadow-xs"
-                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
-                          }`}
-                        >
-                          Não preciso de troco
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setNeedsCashChange("yes")}
-                          className={`min-h-10 rounded-xl border text-xs font-semibold transition ${
-                            needsCashChange === "yes"
-                              ? "border-[#292b25] bg-[#292b25] text-white shadow-xs"
-                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
-                          }`}
-                        >
-                          Sim, preciso de troco
-                        </button>
-                      </div>
-
-                      {needsCashChange === "yes" && (
-                        <div className="space-y-2 pt-1">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-xs text-slate-600">Troco para:</span>
-                            {suggestedCashValues.map((val) => (
-                              <button
-                                key={val}
-                                type="button"
-                                onClick={() => setCashChangeFor(String(val))}
-                                className={`rounded-lg px-2.5 py-1 text-xs font-semibold border transition ${
-                                  cashChangeFor === String(val)
-                                    ? "border-[#778253] bg-[#edf0e5] text-[#586341]"
-                                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                }`}
-                              >
-                                R$ {val}
-                              </button>
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-500">Ou digite: R$</span>
-                            <input
-                              type="number"
-                              min={Math.ceil(orderTotalToPay)}
-                              step="1"
-                              placeholder="Ex: 50"
-                              value={cashChangeFor}
-                              onChange={(e) => setCashChangeFor(e.target.value)}
-                              className="min-h-9 w-24 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-800"
-                            />
-                            {Number(cashChangeFor) > orderTotalToPay && (
-                              <span className="text-xs font-bold text-emerald-700">
-                                Troco: {money(Number(cashChangeFor) - orderTotalToPay)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <div className="space-y-1 rounded-xl bg-slate-50 p-3 text-sm">
-                    <div className="flex justify-between">
-                      <span>Subtotal</span>
-                      <span>{money(cartSubtotal)}</span>
-                    </div>
-                    {fulfillment === "delivery" && (
-                      <div className="flex justify-between">
-                        <span>Entrega</span>
-                        <span>{deliveryFee ? money(deliveryFee) : "Grátis"}</span>
-                      </div>
-                    )}
-                    {appliedCoupon && (
-                      <div className="flex justify-between text-emerald-700">
-                        <span>Desconto ({appliedCoupon.code})</span>
-                        <span>−{money(appliedCoupon.discountAmount)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-extrabold">
-                      <span>Total</span>
-                      <span>
-                        {money(cartSubtotal + deliveryFee - (appliedCoupon?.discountAmount ?? 0))}
-                      </span>
-                    </div>
-                  </div>
-                  {orderError && (
-                    <p role="alert" className="text-sm text-red-700">
-                      {orderError}
+                    </button>
+                    <p className="text-center text-[10px] text-white/40 pt-2 flex items-center justify-center gap-1">
+                      <ShieldCheck size={12} className="text-emerald-400" />
+                      <span>Pedido direto com o estabelecimento. Sem intermediários.</span>
                     </p>
-                  )}
-                  <button
-                    disabled={
-                      orderBusy ||
-                      !cartCount ||
-                      (fulfillment === "delivery" &&
-                        deliveryAreas.length > 0 &&
-                        !selectedDeliveryArea)
-                    }
-                    className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#292b25] px-4 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_1px_2px_rgba(0,0,0,0.06),0_6px_16px_-4px_rgba(41,43,37,0.28)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#363830] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_4px_8px_rgba(0,0,0,0.08),0_12px_24px_-4px_rgba(41,43,37,0.36)] active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
-                  >
-                    {orderBusy ? "Enviando pedido…" : "Confirmar pedido"}
-                    <Check size={16} />
-                  </button>
-                  <p className="text-center text-[11px] text-slate-400">
-                    {paymentMethod === "online_pix" || paymentMethod === "online_card"
-                      ? "Pagamento processado com segurança pelo Stripe. A confirmação chega após a validação do pagamento."
-                      : "O pagamento é combinado diretamente com o estabelecimento. Sem comissão da ELLO."}
-                  </p>
-                </form>
-              </>
-            )}
-          </section>
+                  </div>
+                </>
+              )}
+            </section>
+          </div>
         </div>
       )}
 
