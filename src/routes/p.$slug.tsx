@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { ProPhoto, ServicePhoto } from "@/components/ello/mobile-ui";
 import { ElloAtomLoader } from "@/components/ello/atom-loader";
+import { ElloLogo } from "@/components/ello/logo";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   createElloLinkBooking,
@@ -120,15 +121,16 @@ function PublicProfessionalPage() {
 
   if (!profile) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_top,_rgba(0,76,255,0.16),_transparent_32%),linear-gradient(180deg,_#f8faff_0%,_#f2f6ff_100%)] p-6 text-center">
-        <div className="max-w-sm rounded-[32px] border border-border/70 bg-white/85 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+      <div className="grid min-h-screen place-items-center bg-[#f8f7f4] p-6 text-center">
+        <div className="max-w-sm rounded-[32px] border border-border/70 bg-white p-6 shadow-xl">
+          <ElloLogo tone="dark" height={28} className="mx-auto mb-4" />
           <h1 className="text-lg font-black">ELLO Link não encontrado</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             O perfil pode estar em rascunho ou o link foi alterado.
           </p>
           <Link
             to="/app/search"
-            className="mt-4 inline-flex h-11 items-center rounded-[16px] bg-primary px-4 text-xs font-black text-white shadow-[0_16px_35px_rgba(0,76,255,0.2)]"
+            className="mt-4 inline-flex h-11 items-center rounded-[16px] bg-[#292b25] px-4 text-xs font-black text-white hover:bg-[#3d4036] transition"
           >
             Buscar profissionais
           </Link>
@@ -140,13 +142,13 @@ function PublicProfessionalPage() {
   const canBook = Boolean(selectedService && selectedSlot);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(0,76,255,0.16),_transparent_32%),linear-gradient(180deg,_#f8faff_0%,_#f2f6ff_100%)] pb-8">
+    <div className="min-h-screen bg-[#f8f7f4] pb-8">
       <header
-        className="relative overflow-hidden bg-[linear-gradient(145deg,_#004cff_0%,_#001f7a_100%)] px-5 pb-20 pt-6 text-white"
+        className="relative overflow-hidden bg-gradient-to-br from-[#171914] via-[#1f221a] to-[#141611] px-5 pb-20 pt-6 text-white"
         style={
           profile.coverUrl
             ? {
-                backgroundImage: `linear-gradient(180deg, rgba(7, 32, 87, 0.72), rgba(7, 32, 87, 0.9)), url(${profile.coverUrl})`,
+                backgroundImage: `linear-gradient(180deg, rgba(20, 22, 17, 0.72), rgba(20, 22, 17, 0.92)), url(${profile.coverUrl})`,
                 backgroundPosition: "center",
                 backgroundSize: "cover",
               }
@@ -154,10 +156,15 @@ function PublicProfessionalPage() {
         }
       >
         <div className="mx-auto flex max-w-md items-center justify-between">
-          <strong className="text-xl tracking-tight">ELLO Link</strong>
+          <div className="flex items-center gap-2">
+            <ElloLogo tone="white" height={24} />
+            <span className="rounded-md border border-[#d0f25a]/30 bg-[#d0f25a]/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#d0f25a]">
+              LINK
+            </span>
+          </div>
           <button
             onClick={handleShare}
-            className="grid size-10 place-items-center rounded-full bg-white/15 backdrop-blur"
+            className="grid size-10 place-items-center rounded-full bg-white/10 hover:bg-white/20 transition cursor-pointer backdrop-blur"
             aria-label="Compartilhar ELLO Link"
           >
             <Share2 className="size-4" />

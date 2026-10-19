@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { ElloSymbol } from "@/components/ello/logo";
 
 export const Route = createFileRoute("/c/$businessSlug/$campaignSlug")({
   component: FoodCampaignRedirect,
@@ -46,9 +47,7 @@ function FoodCampaignRedirect() {
   return (
     <main className="grid min-h-screen place-items-center bg-[#f8f7f4] px-5 text-center">
       <div className="max-w-sm">
-        <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#292b25] text-xl font-bold text-[#d0f25a]">
-          e
-        </span>
+        <ElloSymbol size={48} className="mx-auto" />
         <p className="mt-4 text-sm font-semibold text-slate-700">
           {error || "Abrindo sua campanha…"}
         </p>

@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 
 export function ElloLogo({
   className = "",
-  tone = "white",
+  tone = "dark",
   variant = "full",
   height = 28,
   style,

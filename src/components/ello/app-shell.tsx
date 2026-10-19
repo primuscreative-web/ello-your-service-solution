@@ -13,6 +13,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { getBottomNavigation, type AppMode } from "@/lib/ello-navigation";
+import { ElloLogo } from "@/components/ello/logo";
 
 const ICONS = {
   calendar: CalendarDays,
@@ -50,9 +51,8 @@ export function ElloAppShell({
     >
       {footer ? (
         <aside className="ello-desktop-sidebar">
-          <Link to="/app" className="ello-sidebar-brand" aria-label="ELLO, ir ao início">
-            <span className="ello-sidebar-brand-mark">E</span>
-            <span className="ello-sidebar-brand-word">ELLO</span>
+          <Link to="/app" className="ello-sidebar-brand flex items-center" aria-label="ELLO, ir ao início">
+            <ElloLogo tone="dark" height={28} />
           </Link>
           <div className="ello-sidebar-caption">SEU ESPAÇO</div>
           <nav className="ello-sidebar-nav" aria-label="Navegação principal">

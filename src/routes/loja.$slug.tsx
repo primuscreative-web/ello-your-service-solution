@@ -1004,6 +1004,7 @@ function PublicBusinessPage() {
     return (
       <div className="grid min-h-screen place-items-center bg-[#f5f4ef] px-5 text-center">
         <div>
+          <ElloLogo tone="dark" height={28} className="mx-auto mb-4" />
           <Store className="mx-auto text-[#778253]" size={30} />
           <h1 className="mt-4 text-2xl font-bold">Página não encontrada</h1>
           <p className="mt-2 text-sm text-slate-500">
@@ -1846,12 +1847,14 @@ function PublicBusinessPage() {
           <span>
             {business.name} · {business.city}
           </span>
-          <span>
-            Feito com{" "}
-            <a href="/" className="font-bold text-[#667448]">
-              ELLO
-            </a>
-          </span>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 font-semibold text-slate-500 hover:text-slate-800 transition"
+            aria-label="Conheça a ELLO"
+          >
+            <span>Feito com</span>
+            <ElloLogo tone="dark" height={16} />
+          </Link>
         </footer>
       </main>
 

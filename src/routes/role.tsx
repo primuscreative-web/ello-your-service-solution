@@ -4,6 +4,7 @@ import type React from "react";
 import { useState } from "react";
 import { ElloAppShell } from "@/components/ello/app-shell";
 import { ElloInfoBanner } from "@/components/ello/primitives";
+import { ElloLogo } from "@/components/ello/logo";
 import { useAuth } from "@/lib/auth/auth-context";
 import { chooseMyAccountMode } from "@/lib/ello-repository";
 
@@ -47,6 +48,9 @@ function Role() {
       <main className="relative flex h-full min-h-[700px] flex-col overflow-hidden ello-mesh-bg px-5 pb-8 pt-4 sm:px-7">
         <div className="absolute inset-x-8 top-0 h-36 rounded-full bg-white/70 blur-3xl" />
         <section className="relative animate-reveal">
+          <div className="mb-4">
+            <ElloLogo tone="dark" height={26} />
+          </div>
           <h1 className="max-w-[17rem] text-2xl font-extrabold leading-tight tracking-[-0.04em] text-slate-900">
             Como você deseja começar?
           </h1>
