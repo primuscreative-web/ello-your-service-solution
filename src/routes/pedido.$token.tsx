@@ -34,8 +34,6 @@ type Tracking = {
 type PaymentInfo = {
   order_id: string;
   order_number: number;
-  customer_name?: string;
-  customer_phone?: string;
   total: number;
   status: string;
   payment_method: string;
@@ -136,7 +134,9 @@ function PublicOrderTrackingPage() {
 
     // Fallback para a RPC anterior caso a nova ainda não tenha sido aplicada
     if (!pInfo) {
-      const fallbackRes = await client.rpc("localhub_get_order_pix_payment", { p_tracking_token: token });
+      const fallbackRes = await client.rpc("localhub_get_order_pix_payment", {
+        p_tracking_token: token,
+      });
       const fallbackRow = Array.isArray(fallbackRes.data) ? fallbackRes.data[0] : null;
       if (fallbackRow) {
         pInfo = {
@@ -175,12 +175,14 @@ function PublicOrderTrackingPage() {
     setLoading(false);
   }, [token]);
 
+  const paymentStatus = paymentInfo?.payment_status;
+
   useEffect(() => {
     let active = true;
     void loadData();
 
     // Polling adaptativo: 4 segundos enquanto aguarda pagamento, 12 segundos após confirmação
-    const isUnpaid = paymentInfo && paymentInfo.payment_status !== "paid";
+    const isUnpaid = paymentStatus !== undefined && paymentStatus !== "paid";
     const intervalMs = isUnpaid ? 4_000 : 12_000;
 
     const interval = window.setInterval(() => {
@@ -191,7 +193,7 @@ function PublicOrderTrackingPage() {
       active = false;
       window.clearInterval(interval);
     };
-  }, [loadData, paymentInfo?.payment_status]);
+  }, [loadData, paymentStatus]);
 
   async function handleManualCheck() {
     setChecking(true);
@@ -268,7 +270,6 @@ function PublicOrderTrackingPage() {
             cpfCnpj: cleanCpf,
             postalCode: cleanPostalCode || "01001000",
             addressNumber: cardForm.addressNumber || "1",
-            phone: paymentInfo.customer_phone || "11999999999",
           },
         }),
       });
@@ -336,8 +337,8 @@ function PublicOrderTrackingPage() {
               </div>
 
               {/* Seção de Pagamento 100% Nativa na ELLO */}
-              {paymentInfo && (
-                isPaid ? (
+              {paymentInfo &&
+                (isPaid ? (
                   <div className="mt-6 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950">
                     <span className="grid size-9 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700">
                       <Check size={18} />
@@ -415,7 +416,9 @@ function PublicOrderTrackingPage() {
                                 className="size-44 object-contain"
                               />
                             </div>
-                            <p className="mt-2 text-[11px] text-slate-400">Escaneie o QR Code no app do seu banco</p>
+                            <p className="mt-2 text-[11px] text-slate-400">
+                              Escaneie o QR Code no app do seu banco
+                            </p>
                           </div>
                         ) : (
                           <div className="py-4 text-center">
@@ -464,7 +467,8 @@ function PublicOrderTrackingPage() {
                         )}
 
                         <p className="mt-3 text-center text-xs text-slate-500 leading-relaxed">
-                          Abra o app do seu banco, escolha <b>Pagar com Pix</b> e use o QR Code ou cole o código acima. A confirmação é imediata!
+                          Abra o app do seu banco, escolha <b>Pagar com Pix</b> e use o QR Code ou
+                          cole o código acima. A confirmação é imediata!
                         </p>
                       </div>
                     )}
@@ -495,12 +499,17 @@ function PublicOrderTrackingPage() {
                               placeholder="0000 0000 0000 0000"
                               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-mono outline-none focus:border-slate-800"
                             />
-                            <CreditCard className="absolute right-3 top-3 text-slate-400" size={17} />
+                            <CreditCard
+                              className="absolute right-3 top-3 text-slate-400"
+                              size={17}
+                            />
                           </div>
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700">Nome impresso no cartão</label>
+                          <label className="font-semibold text-slate-700">
+                            Nome impresso no cartão
+                          </label>
                           <input
                             required
                             type="text"
@@ -569,15 +578,23 @@ function PublicOrderTrackingPage() {
                             <label className="font-semibold text-slate-700">Parcelas</label>
                             <select
                               value={cardForm.installments}
-                              onChange={(e) => setCardForm({ ...cardForm, installments: e.target.value })}
+                              onChange={(e) =>
+                                setCardForm({ ...cardForm, installments: e.target.value })
+                              }
                               className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-xs font-semibold"
                             >
-                              <option value="1">1x de {money(Number(paymentInfo.total))} sem juros</option>
+                              <option value="1">
+                                1x de {money(Number(paymentInfo.total))} sem juros
+                              </option>
                               {Number(paymentInfo.total) >= 30 && (
-                                <option value="2">2x de {money(Number(paymentInfo.total) / 2)}</option>
+                                <option value="2">
+                                  2x de {money(Number(paymentInfo.total) / 2)}
+                                </option>
                               )}
                               {Number(paymentInfo.total) >= 60 && (
-                                <option value="3">3x de {money(Number(paymentInfo.total) / 3)}</option>
+                                <option value="3">
+                                  3x de {money(Number(paymentInfo.total) / 3)}
+                                </option>
                               )}
                             </select>
                           </div>
@@ -635,20 +652,24 @@ function PublicOrderTrackingPage() {
                     )}
 
                     <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-slate-400">Verificação automática a cada 4s</span>
+                      <span className="text-[11px] text-slate-400">
+                        Verificação automática a cada 4s
+                      </span>
                       <button
                         type="button"
                         onClick={() => void handleManualCheck()}
                         disabled={checking}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                       >
-                        <RefreshCw size={12} className={checking ? "animate-spin text-slate-500" : "text-slate-400"} />
+                        <RefreshCw
+                          size={12}
+                          className={checking ? "animate-spin text-slate-500" : "text-slate-400"}
+                        />
                         {checking ? "Verificando…" : "Já paguei"}
                       </button>
                     </div>
                   </div>
-                )
-              )}
+                ))}
 
               {tracking.status === "cancelled" ? (
                 <div className="mt-8 rounded-2xl bg-red-50 p-4 text-sm text-red-800">

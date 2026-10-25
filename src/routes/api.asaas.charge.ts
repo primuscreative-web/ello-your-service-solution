@@ -8,11 +8,8 @@ import {
   isAsaasConfigured,
 } from "@/lib/asaas.server";
 
-import {
-  checkRateLimit,
-  getClientIp,
-  createRateLimitResponse,
-} from "@/lib/security.server";
+import { checkRateLimit, getClientIp, createRateLimitResponse } from "@/lib/security.server";
+import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
 const creditCardSchema = z.object({
   holderName: z.string().min(2).max(100),
@@ -35,7 +32,6 @@ const chargeSchema = z.object({
       cpfCnpj: z.string().max(20),
       postalCode: z.string().max(12),
       addressNumber: z.string().max(20),
-      phone: z.string().max(30),
     })
     .optional(),
   installmentCount: z.number().int().min(1).max(12).optional(),
@@ -45,6 +41,13 @@ export const Route = createFileRoute("/api/asaas/charge")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (!PAYMENT_POLICY.gatewayEnabled) {
+          return Response.json(
+            { error: "Pagamentos online estão temporariamente desativados por segurança." },
+            { status: 503 },
+          );
+        }
+
         // 1. Rate Limiting por IP (Proteção Anti-Carding e Anti-Flood: máx 12 req/min)
         const ip = getClientIp(request);
         const ipRateLimit = checkRateLimit(`charge-ip:${ip}`, 12, 60_000);
@@ -67,7 +70,10 @@ export const Route = createFileRoute("/api/asaas/charge")({
         const orderRateLimit = checkRateLimit(`charge-order:${input.orderId}`, 5, 600_000);
         if (!orderRateLimit.allowed) {
           return Response.json(
-            { error: "Limite de tentativas de pagamento para este pedido excedido. Aguarde alguns minutos." },
+            {
+              error:
+                "Limite de tentativas de pagamento para este pedido excedido. Aguarde alguns minutos.",
+            },
             { status: 429 },
           );
         }
@@ -85,7 +91,9 @@ export const Route = createFileRoute("/api/asaas/charge")({
           // 1. Localiza o pedido com validação do token público
           const { data: order, error: orderError } = await supabase
             .from("localhub_orders")
-            .select("id, business_id, order_number, customer_name, customer_phone, total, status, payment_status, payment_method")
+            .select(
+              "id, business_id, order_number, customer_name, customer_phone, total, status, payment_status, payment_method",
+            )
             .eq("id", input.orderId)
             .eq("public_tracking_token", input.trackingToken)
             .maybeSingle();
@@ -99,7 +107,10 @@ export const Route = createFileRoute("/api/asaas/charge")({
           }
 
           if (order.payment_status === "paid") {
-            return Response.json({ error: "Este pedido já foi pago.", paid: true }, { status: 200 });
+            return Response.json(
+              { error: "Este pedido já foi pago.", paid: true },
+              { status: 200 },
+            );
           }
 
           const orderTotal = Number(order.total);
@@ -119,7 +130,9 @@ export const Route = createFileRoute("/api/asaas/charge")({
           // 3. Busca pagamento Asaas já existente para este pedido (idempotência)
           const { data: existingPayment } = await supabase
             .from("localhub_asaas_order_payments")
-            .select("asaas_payment_id, status, billing_type, pix_qr_code_payload, pix_qr_code_image, pix_expiration_date, invoice_url")
+            .select(
+              "asaas_payment_id, status, billing_type, pix_qr_code_payload, pix_qr_code_image, pix_expiration_date, invoice_url",
+            )
             .eq("order_id", order.id)
             .maybeSingle();
 
@@ -179,7 +192,9 @@ export const Route = createFileRoute("/api/asaas/charge")({
               externalReference: order.id,
               billingType: input.billingType,
               creditCard: input.creditCard,
-              creditCardHolderInfo: input.creditCardHolderInfo,
+              creditCardHolderInfo: input.creditCardHolderInfo
+                ? { ...input.creditCardHolderInfo, phone: order.customer_phone }
+                : undefined,
               installmentCount: input.installmentCount,
             },
             subaccountApiKey,
@@ -211,7 +226,12 @@ export const Route = createFileRoute("/api/asaas/charge")({
             asaas_payment_id: payment.id,
             asaas_customer_id: asaasCustomerId,
             billing_type: input.billingType,
-            status: isImmediateSuccess ? "confirmed" : "pending",
+            status:
+              payment.status === "RECEIVED"
+                ? "received"
+                : isImmediateSuccess
+                  ? "confirmed"
+                  : "pending",
             pix_qr_code_payload: pixPayload,
             pix_qr_code_image: pixImage,
             pix_expiration_date: expirationDate,
@@ -231,7 +251,9 @@ export const Route = createFileRoute("/api/asaas/charge")({
               business_id: order.business_id,
               provider_transaction_id: payment.id,
               transaction_type: "sale",
-              status: isImmediateSuccess ? "available" : "pending",
+              // A confirmação da cobrança não comprova a liquidação do split.
+              // O saldo só pode ser liberado após PAYMENT_SPLIT_DONE reconciliado.
+              status: "pending",
               amount_cents: amountCents,
               description: `Venda ${input.billingType === "PIX" ? "Pix" : "Cartão"} - Pedido #${order.order_number}`,
             },
@@ -258,7 +280,10 @@ export const Route = createFileRoute("/api/asaas/charge")({
             paid: isImmediateSuccess,
           });
         } catch (error) {
-          console.error("Asaas charge generation failed:", error instanceof Error ? error.message : error);
+          console.error(
+            "Asaas charge generation failed:",
+            error instanceof Error ? error.message : error,
+          );
           return Response.json(
             {
               error:

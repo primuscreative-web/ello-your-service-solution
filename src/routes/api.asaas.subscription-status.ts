@@ -63,7 +63,7 @@ export const Route = createFileRoute("/api/asaas/subscription-status")({
             success: true,
             paymentId: payment.id,
             status: payment.status,
-            isPaid: isPaid && planPayment.status === "received",
+            isPaid: isPaid && ["confirmed", "received"].includes(planPayment.status),
             value: payment.value,
             paymentDate: payment.paymentDate || payment.confirmedDate || payment.clientPaymentDate,
           });

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   cancelAsaasSubscription,
   getAsaasAdminSupabase,
+  getAsaasReceivedSplit,
   verifyAsaasWebhookToken,
 } from "@/lib/asaas.server";
 import { sendWhatsAppMessage } from "@/lib/whatsapp.server";
@@ -16,6 +17,7 @@ type AsaasWebhookPayload = {
     | "PAYMENT_REFUNDED"
     | "PAYMENT_REVERSED"
     | "PAYMENT_DELETED"
+    | "PAYMENT_SPLIT_DONE"
     | "TRANSFER_CREATED"
     | "TRANSFER_PENDING"
     | "TRANSFER_IN_BANK_PROCESSING"
@@ -34,7 +36,9 @@ type AsaasWebhookPayload = {
     subscription?: string;
     confirmedDate?: string;
     paymentDate?: string;
+    additionalInfo?: { splitId?: string };
   };
+  additionalInfo?: { splitId?: string };
   transfer?: {
     id: string;
     value: number;
@@ -66,19 +70,34 @@ export const Route = createFileRoute("/api/asaas/webhook")({
           return Response.json({ error: "Evento não especificado." }, { status: 400 });
         }
 
+        if (!body.payment?.id && !body.transfer?.id) {
+          return Response.json(
+            { error: "Evento sem identificador de pagamento ou transferência." },
+            { status: 400 },
+          );
+        }
+
         const supabase = getAsaasAdminSupabase();
-        const entityId = body.payment?.id || body.transfer?.id || "unknown";
-        const eventId = `${body.event}_${entityId}_${Date.now()}`;
+        const splitId = body.payment?.additionalInfo?.splitId || body.additionalInfo?.splitId;
+        const entityId =
+          body.event === "PAYMENT_SPLIT_DONE" && splitId && body.payment?.id
+            ? `${body.payment.id}_${splitId}`
+            : (body.payment?.id ?? body.transfer?.id ?? "unknown");
+        const idempotencyId = `${body.event}_${entityId}`;
 
-        // 1. Checagem de idempotência
-        const { data: existingEvent } = await supabase
+        // Reserva o evento antes dos efeitos para evitar processamentos concorrentes.
+        const { error: claimError } = await supabase
           .from("localhub_asaas_webhook_events")
-          .select("event_id")
-          .eq("event_id", `${body.event}_${entityId}`)
-          .maybeSingle();
-
-        if (existingEvent) {
+          .insert({ event_id: idempotencyId, event_type: body.event });
+        if (claimError?.code === "23505") {
           return Response.json({ received: true, duplicate: true });
+        }
+        if (claimError) {
+          console.error("Não foi possível reservar evento Asaas para processamento.", claimError);
+          return Response.json(
+            { error: "Evento temporariamente indisponível para processamento." },
+            { status: 503 },
+          );
         }
 
         try {
@@ -120,11 +139,12 @@ export const Route = createFileRoute("/api/asaas/webhook")({
             const orderId = body.payment.externalReference;
 
             if (body.payment.subscription && body.event === "PAYMENT_CREATED") {
-              const { data: recurringPlan } = await supabase
+              const { data: recurringPlan, error: recurringPlanError } = await supabase
                 .from("localhub_plan_subscriptions")
                 .select("business_id, plan, billing_cycle, asaas_subscription_id, status")
                 .eq("asaas_subscription_id", body.payment.subscription)
                 .maybeSingle();
+              if (recurringPlanError) throw recurringPlanError;
               if (recurringPlan?.status === "active") {
                 await supabase.from("localhub_asaas_plan_payments").upsert(
                   {
@@ -141,9 +161,9 @@ export const Route = createFileRoute("/api/asaas/webhook")({
               }
             }
 
-            let orderPaymentQuery = supabase
+            const orderPaymentQuery = supabase
               .from("localhub_asaas_order_payments")
-              .select("order_id, business_id, status, amount_cents")
+              .select("order_id, business_id, status, amount_cents, asaas_payment_id")
               .eq("asaas_payment_id", paymentId);
 
             let { data: orderPayment } = await orderPaymentQuery.maybeSingle();
@@ -151,7 +171,7 @@ export const Route = createFileRoute("/api/asaas/webhook")({
             if (!orderPayment && orderId) {
               const fallbackQuery = await supabase
                 .from("localhub_asaas_order_payments")
-                .select("order_id, business_id, status, amount_cents")
+                .select("order_id, business_id, status, amount_cents, asaas_payment_id")
                 .eq("order_id", orderId)
                 .maybeSingle();
               orderPayment = fallbackQuery.data;
@@ -163,6 +183,27 @@ export const Route = createFileRoute("/api/asaas/webhook")({
               .select("business_id, requested_plan, billing_cycle, asaas_subscription_id, status")
               .eq("asaas_payment_id", paymentId)
               .maybeSingle();
+
+            const isOrderReference = Boolean(
+              orderId &&
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+                orderId,
+              ),
+            );
+            if (
+              !orderPayment &&
+              isOrderReference &&
+              ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_SPLIT_DONE"].includes(body.event)
+            ) {
+              throw new Error(
+                "Pagamento de pedido ainda não foi persistido; o webhook será reenviado.",
+              );
+            }
+            if (orderId?.startsWith("ello_") && !planPayment) {
+              throw new Error(
+                "Pagamento de assinatura ainda não foi persistido; o webhook será reenviado.",
+              );
+            }
 
             if (planPayment) {
               const paid = body.event === "PAYMENT_RECEIVED" || body.event === "PAYMENT_CONFIRMED";
@@ -184,7 +225,7 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                   state?.pending_payment_id === paymentId &&
                   state.pending_subscription_id === planPayment.asaas_subscription_id
                 ) {
-                  await supabase
+                  const { error: planActivationError } = await supabase
                     .from("localhub_plan_subscriptions")
                     .update({
                       asaas_subscription_id: planPayment.asaas_subscription_id,
@@ -198,13 +239,14 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                       updated_at: new Date().toISOString(),
                     })
                     .eq("business_id", planPayment.business_id);
+                  if (planActivationError) throw planActivationError;
                   const { data: biz } = await supabase
                     .from("localhub_businesses")
                     .select("onboarding_details, phone, name")
                     .eq("id", planPayment.business_id)
                     .maybeSingle();
                   if (biz) {
-                    await supabase
+                    const { error: businessPlanError } = await supabase
                       .from("localhub_businesses")
                       .update({
                         onboarding_details: {
@@ -215,6 +257,7 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                         },
                       })
                       .eq("id", planPayment.business_id);
+                    if (businessPlanError) throw businessPlanError;
                     if (biz.phone)
                       void sendWhatsAppMessage({
                         phone: biz.phone,
@@ -222,12 +265,16 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                       }).catch(() => {});
                   }
                 }
-                await supabase
+                const { error: planPaymentUpdateError } = await supabase
                   .from("localhub_asaas_plan_payments")
-                  .update({ status: "received", updated_at: new Date().toISOString() })
+                  .update({
+                    status: body.event === "PAYMENT_RECEIVED" ? "received" : "confirmed",
+                    updated_at: new Date().toISOString(),
+                  })
                   .eq("asaas_payment_id", paymentId);
+                if (planPaymentUpdateError) throw planPaymentUpdateError;
               } else if (failed) {
-                await supabase
+                const { error: failedPlanPaymentUpdateError } = await supabase
                   .from("localhub_asaas_plan_payments")
                   .update({
                     status:
@@ -239,6 +286,7 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                     updated_at: new Date().toISOString(),
                   })
                   .eq("asaas_payment_id", paymentId);
+                if (failedPlanPaymentUpdateError) throw failedPlanPaymentUpdateError;
                 const { data: state } = await supabase
                   .from("localhub_plan_subscriptions")
                   .select(
@@ -380,15 +428,16 @@ export const Route = createFileRoute("/api/asaas/webhook")({
 
               // Confirmação de pagamento (Pix ou Cartão)
               if (body.event === "PAYMENT_RECEIVED" || body.event === "PAYMENT_CONFIRMED") {
-                await supabase
+                const { error: orderPaymentUpdateError } = await supabase
                   .from("localhub_asaas_order_payments")
                   .update({
-                    status: "confirmed",
+                    status: body.event === "PAYMENT_RECEIVED" ? "received" : "confirmed",
                     updated_at: new Date().toISOString(),
                   })
                   .eq("order_id", targetOrderId);
+                if (orderPaymentUpdateError) throw orderPaymentUpdateError;
 
-                const { data: updatedOrder } = await supabase
+                const { data: updatedOrder, error: updatedOrderError } = await supabase
                   .from("localhub_orders")
                   .update({
                     payment_status: "paid",
@@ -399,14 +448,7 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                     "order_number, customer_phone, customer_name, total, public_tracking_token",
                   )
                   .single();
-
-                await supabase
-                  .from("localhub_wallet_transactions")
-                  .update({
-                    status: "available",
-                    available_at: new Date().toISOString(),
-                  })
-                  .eq("provider_transaction_id", paymentId);
+                if (updatedOrderError) throw updatedOrderError;
 
                 // Notifica o cliente que o pagamento online foi confirmado com sucesso
                 if (updatedOrder?.customer_phone) {
@@ -426,6 +468,79 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                       `O estabelecimento já foi notificado e está cuidando do seu pedido.\n` +
                       `📱 Acompanhe em tempo real: ${trackingUrl}`,
                   }).catch(() => {});
+                }
+              }
+
+              if (body.event === "PAYMENT_SPLIT_DONE") {
+                const receivedSplitId = splitId;
+                if (!receivedSplitId || orderPayment.asaas_payment_id !== paymentId) {
+                  throw new Error("Split sem referência inequívoca ao pagamento persistido.");
+                }
+
+                const { data: account, error: accountError } = await supabase
+                  .from("localhub_payment_accounts")
+                  .select(
+                    "provider, sales_enabled, onboarding_status, wallet_id, subaccount_api_key",
+                  )
+                  .eq("business_id", businessId)
+                  .maybeSingle();
+                if (
+                  accountError ||
+                  account?.provider !== "asaas" ||
+                  !account.sales_enabled ||
+                  account.onboarding_status !== "active" ||
+                  !account.wallet_id ||
+                  !account.subaccount_api_key
+                ) {
+                  throw new Error(
+                    "Conta de recebimento não está validada para conciliação de split.",
+                  );
+                }
+
+                const settledSplit = await getAsaasReceivedSplit(
+                  receivedSplitId,
+                  account.subaccount_api_key,
+                );
+                const settledAmountCents = Math.round(Number(settledSplit.totalValue) * 100);
+                if (
+                  settledSplit.id !== receivedSplitId ||
+                  settledSplit.payment?.id !== paymentId ||
+                  settledSplit.payment?.externalReference !== targetOrderId ||
+                  settledSplit.walletId !== account.wallet_id ||
+                  settledSplit.status !== "DONE" ||
+                  !Number.isSafeInteger(settledAmountCents) ||
+                  settledAmountCents <= 0 ||
+                  settledAmountCents > orderPayment.amount_cents
+                ) {
+                  throw new Error("Split não corresponde ao negócio, pedido ou valor registrado.");
+                }
+
+                const { data: settledWalletRows, error: settleError } = await supabase
+                  .from("localhub_wallet_transactions")
+                  .update({
+                    status: "available",
+                    amount_cents: settledAmountCents,
+                    available_at: new Date().toISOString(),
+                  })
+                  .eq("provider_transaction_id", paymentId)
+                  .eq("business_id", businessId)
+                  .eq("status", "pending")
+                  .select("id");
+                if (settleError) throw settleError;
+                if (!settledWalletRows?.length) {
+                  const { data: alreadySettled, error: settledLookupError } = await supabase
+                    .from("localhub_wallet_transactions")
+                    .select("id, status, amount_cents")
+                    .eq("provider_transaction_id", paymentId)
+                    .eq("business_id", businessId)
+                    .maybeSingle();
+                  if (settledLookupError) throw settledLookupError;
+                  if (
+                    alreadySettled?.status !== "available" ||
+                    alreadySettled.amount_cents !== settledAmountCents
+                  ) {
+                    throw new Error("Não foi possível reconciliar o saldo liquidado com o ledger.");
+                  }
                 }
               }
 
@@ -467,15 +582,19 @@ export const Route = createFileRoute("/api/asaas/webhook")({
             }
           }
 
-          // Registra na deduplicação
-          await supabase.from("localhub_asaas_webhook_events").insert({
-            event_id: `${body.event}_${entityId}`,
-            event_type: body.event,
-          });
-
           return Response.json({ received: true });
         } catch (error) {
           console.error("Asaas webhook processing error:", error);
+          const { error: releaseError } = await supabase
+            .from("localhub_asaas_webhook_events")
+            .delete()
+            .eq("event_id", idempotencyId);
+          if (releaseError) {
+            console.error(
+              "Não foi possível liberar a reserva do evento Asaas após falha.",
+              releaseError,
+            );
+          }
           return Response.json({ error: "Erro ao processar evento." }, { status: 500 });
         }
       },

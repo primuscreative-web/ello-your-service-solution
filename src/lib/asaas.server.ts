@@ -93,6 +93,17 @@ export type AsaasTransferResponse = {
   transactionReceiptUrl?: string;
 };
 
+export type AsaasReceivedSplitResponse = {
+  id: string;
+  walletId: string;
+  totalValue: number;
+  status: string;
+  payment: {
+    id: string;
+    externalReference?: string;
+  };
+};
+
 export function getAsaasAdminSupabase() {
   const config = getServerConfig();
   if (!config.supabaseUrl || !config.supabaseServiceRoleKey) {
@@ -379,6 +390,16 @@ export async function getAsaasPixQrCode(
   return asaasFetch<AsaasPixQrCodeResponse>(`payments/${paymentId}/pixQrCode`, {
     subaccountApiKey,
   });
+}
+
+export async function getAsaasReceivedSplit(
+  splitId: string,
+  subaccountApiKey: string,
+): Promise<AsaasReceivedSplitResponse> {
+  return asaasFetch<AsaasReceivedSplitResponse>(
+    `payments/splits/received/${encodeURIComponent(splitId)}`,
+    { subaccountApiKey },
+  );
 }
 
 export function verifyAsaasWebhookToken(providedToken: string | null): boolean {

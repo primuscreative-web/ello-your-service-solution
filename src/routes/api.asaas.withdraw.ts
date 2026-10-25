@@ -13,6 +13,7 @@ import {
   createRateLimitResponse,
   maskSensitiveData,
 } from "@/lib/security.server";
+import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
 const withdrawInputSchema = z.object({
   businessId: z.string().uuid(),
@@ -23,10 +24,19 @@ const withdrawInputSchema = z.object({
     .max(5_000_000, "O valor máximo por transferência é de R$ 50.000,00."),
 });
 
+const pixKeyTypeSchema = z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"]);
+
 export const Route = createFileRoute("/api/asaas/withdraw")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (!PAYMENT_POLICY.professionalWalletEnabled) {
+          return Response.json(
+            { error: "Saques estão desativados até a validação de saldo e liquidação." },
+            { status: 503 },
+          );
+        }
+
         // 1. Rate Limiting por IP (Máx 5 req/min)
         const ip = getClientIp(request);
         const ipLimit = checkRateLimit(`withdraw-ip:${ip}`, 5, 60_000);
@@ -42,8 +52,11 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
         let input: z.infer<typeof withdrawInputSchema>;
         try {
           input = withdrawInputSchema.parse(await request.json());
-        } catch (err: any) {
-          const msg = err?.errors?.[0]?.message || "Dados inválidos para saque.";
+        } catch (err) {
+          const msg =
+            err instanceof z.ZodError
+              ? err.issues[0]?.message || "Dados inválidos para saque."
+              : "Dados inválidos para saque.";
           return Response.json({ error: msg }, { status: 400 });
         }
 
@@ -51,7 +64,10 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
         const bizLimit = checkRateLimit(`withdraw-biz:${input.businessId}`, 3, 300_000);
         if (!bizLimit.allowed) {
           return Response.json(
-            { error: "Limite de solicitações de saque atingido para este período. Aguarde 5 minutos." },
+            {
+              error:
+                "Limite de solicitações de saque atingido para este período. Aguarde 5 minutos.",
+            },
             { status: 429 },
           );
         }
@@ -78,7 +94,10 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
             .maybeSingle();
 
           if (!business) {
-            return Response.json({ error: "Negócio não encontrado ou acesso não autorizado." }, { status: 404 });
+            return Response.json(
+              { error: "Negócio não encontrado ou acesso não autorizado." },
+              { status: 404 },
+            );
           }
 
           // 3. Prevenção de Race Condition: Checa se há transferência em andamento nos últimos 60 segundos
@@ -93,18 +112,31 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
 
           if (inFlightWithdrawal && inFlightWithdrawal.length > 0) {
             return Response.json(
-              { error: "Já existe uma transferência em processamento para este negócio. Aguarde a confirmação." },
+              {
+                error:
+                  "Já existe uma transferência em processamento para este negócio. Aguarde a confirmação.",
+              },
               { status: 409 },
             );
           }
 
           const { data: account } = await supabase
             .from("localhub_payment_accounts")
-            .select("subaccount_api_key, pix_key, pix_key_type, onboarding_status")
+            .select(
+              "provider, sales_enabled, subaccount_api_key, wallet_id, pix_key, pix_key_type, onboarding_status",
+            )
             .eq("business_id", input.businessId)
             .maybeSingle();
 
-          if (!account || !account.subaccount_api_key || !account.pix_key) {
+          if (
+            !account ||
+            account.provider !== "asaas" ||
+            !account.sales_enabled ||
+            account.onboarding_status !== "active" ||
+            !account.wallet_id ||
+            !account.subaccount_api_key ||
+            !account.pix_key
+          ) {
             return Response.json(
               { error: "Conta Asaas ou Chave Pix não configurada para saque." },
               { status: 400 },
@@ -127,7 +159,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
             {
               value: valueReais,
               pixAddressKey: account.pix_key,
-              pixAddressKeyType: (account.pix_key_type as any) || "CPF",
+              pixAddressKeyType: pixKeyTypeSchema.parse(account.pix_key_type || "CPF"),
               description: `Saque ELLO - ${business.name}`,
             },
             account.subaccount_api_key,
@@ -163,8 +195,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
           console.error("Asaas transfer failed:", error);
           return Response.json(
             {
-              error:
-                error instanceof Error ? error.message : "Não foi possível concluir o saque.",
+              error: error instanceof Error ? error.message : "Não foi possível concluir o saque.",
             },
             { status: 502 },
           );
