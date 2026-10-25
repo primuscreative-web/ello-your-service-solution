@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { privateNoStoreJson } from "@/lib/security.server";
 import { z } from "zod";
 import {
   cancelAsaasSubscription,
@@ -14,14 +15,14 @@ export const Route = createFileRoute("/api/asaas/cancel-subscription")({
         const limit = checkRateLimit(`cancel-plan:${getClientIp(request)}`, 5, 60_000);
         if (!limit.allowed) return createRateLimitResponse(limit.resetSeconds);
         if (!isAsaasConfigured())
-          return Response.json(
+          return privateNoStoreJson(
             { error: "O serviço de pagamentos não está disponível." },
             { status: 503 },
           );
 
         const bearer = request.headers.get("authorization");
         if (!bearer?.startsWith("Bearer "))
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Entre na sua conta para cancelar o plano." },
             { status: 401 },
           );
@@ -29,11 +30,17 @@ export const Route = createFileRoute("/api/asaas/cancel-subscription")({
         const supabase = getAsaasAdminSupabase();
         const { data: authData, error: authError } = await supabase.auth.getUser(bearer.slice(7));
         if (authError || !authData.user)
-          return Response.json({ error: "Sua sessão expirou. Entre novamente." }, { status: 401 });
+          return privateNoStoreJson(
+            { error: "Sua sessão expirou. Entre novamente." },
+            { status: 401 },
+          );
 
         const body = await request.json().catch(() => null);
         if (!z.object({ confirmation: z.literal("CANCELAR") }).safeParse(body).success) {
-          return Response.json({ error: "Confirme o cancelamento do plano." }, { status: 400 });
+          return privateNoStoreJson(
+            { error: "Confirme o cancelamento do plano." },
+            { status: 400 },
+          );
         }
 
         const { data: business, error: businessError } = await supabase
@@ -42,7 +49,7 @@ export const Route = createFileRoute("/api/asaas/cancel-subscription")({
           .eq("owner_id", authData.user.id)
           .maybeSingle();
         if (businessError || !business)
-          return Response.json({ error: "Não encontramos seu negócio." }, { status: 404 });
+          return privateNoStoreJson({ error: "Não encontramos seu negócio." }, { status: 404 });
 
         const { data: state, error } = await supabase
           .from("localhub_plan_subscriptions")
@@ -50,7 +57,10 @@ export const Route = createFileRoute("/api/asaas/cancel-subscription")({
           .eq("business_id", business.id)
           .maybeSingle();
         if (error || !state)
-          return Response.json({ error: "Não há um plano pago para cancelar." }, { status: 404 });
+          return privateNoStoreJson(
+            { error: "Não há um plano pago para cancelar." },
+            { status: 404 },
+          );
 
         try {
           if (state.asaas_subscription_id)
@@ -90,12 +100,12 @@ export const Route = createFileRoute("/api/asaas/cancel-subscription")({
               })
               .eq("id", business.id);
           }
-          return Response.json({ success: true, plan: "free" });
+          return privateNoStoreJson({ success: true, plan: "free" });
         } catch (caught) {
           console.error("Falha ao cancelar assinatura ELLO.", caught);
           const message =
             caught instanceof Error ? caught.message : "Não foi possível confirmar o cancelamento.";
-          return Response.json({ error: message }, { status: 502 });
+          return privateNoStoreJson({ error: message }, { status: 502 });
         }
       },
     },

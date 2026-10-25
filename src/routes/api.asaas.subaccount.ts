@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { privateNoStoreJson } from "@/lib/security.server";
 import { z } from "zod";
 import {
   createAsaasSubaccount,
@@ -33,14 +34,14 @@ export const Route = createFileRoute("/api/asaas/subaccount")({
         const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
 
         if (!token || !businessId) {
-          return Response.json({ error: "Parâmetros insuficientes." }, { status: 400 });
+          return privateNoStoreJson({ error: "Parâmetros insuficientes." }, { status: 400 });
         }
 
         try {
           const supabase = getAsaasAdminSupabase();
           const { data: auth, error: authError } = await supabase.auth.getUser(token);
           if (authError || !auth.user) {
-            return Response.json({ error: "Sessão inválida." }, { status: 401 });
+            return privateNoStoreJson({ error: "Sessão inválida." }, { status: 401 });
           }
 
           const { data: business } = await supabase
@@ -51,7 +52,7 @@ export const Route = createFileRoute("/api/asaas/subaccount")({
             .maybeSingle();
 
           if (!business) {
-            return Response.json({ error: "Negócio não encontrado." }, { status: 404 });
+            return privateNoStoreJson({ error: "Negócio não encontrado." }, { status: 404 });
           }
 
           const { data: paymentAccount } = await supabase
@@ -71,7 +72,7 @@ export const Route = createFileRoute("/api/asaas/subaccount")({
             }
           }
 
-          return Response.json({
+          return privateNoStoreJson({
             success: true,
             account: {
               salesEnabled: paymentAccount?.sales_enabled ?? false,
@@ -91,28 +92,28 @@ export const Route = createFileRoute("/api/asaas/subaccount")({
           });
         } catch (error) {
           console.error("Asaas subaccount GET error:", error);
-          return Response.json({ error: "Erro ao consultar subconta." }, { status: 500 });
+          return privateNoStoreJson({ error: "Erro ao consultar subconta." }, { status: 500 });
         }
       },
 
       POST: async ({ request }) => {
         const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
         if (!token) {
-          return Response.json({ error: "Autenticação necessária." }, { status: 401 });
+          return privateNoStoreJson({ error: "Autenticação necessária." }, { status: 401 });
         }
 
         let input: z.infer<typeof subaccountInputSchema>;
         try {
           input = subaccountInputSchema.parse(await request.json());
         } catch (err) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Dados inválidos para abertura de subconta.", details: err },
             { status: 400 },
           );
         }
 
         if (!isAsaasConfigured()) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "O gateway Asaas mestre não está configurado no servidor (ASAAS_API_KEY)." },
             { status: 503 },
           );
@@ -122,7 +123,7 @@ export const Route = createFileRoute("/api/asaas/subaccount")({
           const supabase = getAsaasAdminSupabase();
           const { data: auth, error: authError } = await supabase.auth.getUser(token);
           if (authError || !auth.user) {
-            return Response.json({ error: "Sessão inválida." }, { status: 401 });
+            return privateNoStoreJson({ error: "Sessão inválida." }, { status: 401 });
           }
 
           const { data: business } = await supabase
@@ -133,7 +134,10 @@ export const Route = createFileRoute("/api/asaas/subaccount")({
             .maybeSingle();
 
           if (!business) {
-            return Response.json({ error: "Negócio não encontrado ou não autorizado." }, { status: 404 });
+            return privateNoStoreJson(
+              { error: "Negócio não encontrado ou não autorizado." },
+              { status: 404 },
+            );
           }
 
           // Cria subconta no Asaas
@@ -183,14 +187,14 @@ export const Route = createFileRoute("/api/asaas/subaccount")({
             .update({ online_payment_enabled: true })
             .eq("id", input.businessId);
 
-          return Response.json({
+          return privateNoStoreJson({
             success: true,
             accountId: subaccount.id,
             walletId: subaccount.walletId,
           });
         } catch (error) {
           console.error("Asaas subaccount creation failed:", error);
-          return Response.json(
+          return privateNoStoreJson(
             {
               error:
                 error instanceof Error

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { privateNoStoreJson } from "@/lib/security.server";
 import { z } from "zod";
 import {
   createAsaasTransfer,
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
     handlers: {
       POST: async ({ request }) => {
         if (!PAYMENT_POLICY.professionalWalletEnabled) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Saques estão desativados até a validação de saldo e liquidação." },
             { status: 503 },
           );
@@ -46,7 +47,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
 
         const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
         if (!token) {
-          return Response.json({ error: "Autenticação necessária." }, { status: 401 });
+          return privateNoStoreJson({ error: "Autenticação necessária." }, { status: 401 });
         }
 
         let input: z.infer<typeof withdrawInputSchema>;
@@ -57,13 +58,13 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
             err instanceof z.ZodError
               ? err.issues[0]?.message || "Dados inválidos para saque."
               : "Dados inválidos para saque.";
-          return Response.json({ error: msg }, { status: 400 });
+          return privateNoStoreJson({ error: msg }, { status: 400 });
         }
 
         // 2. Rate Limiting por Negócio (Máx 3 saques por 5 minutos para evitar esvaziamento concorrente)
         const bizLimit = checkRateLimit(`withdraw-biz:${input.businessId}`, 3, 300_000);
         if (!bizLimit.allowed) {
-          return Response.json(
+          return privateNoStoreJson(
             {
               error:
                 "Limite de solicitações de saque atingido para este período. Aguarde 5 minutos.",
@@ -73,7 +74,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
         }
 
         if (!isAsaasConfigured()) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Gateway Asaas não configurado no servidor." },
             { status: 503 },
           );
@@ -83,7 +84,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
           const supabase = getAsaasAdminSupabase();
           const { data: auth, error: authError } = await supabase.auth.getUser(token);
           if (authError || !auth.user) {
-            return Response.json({ error: "Sessão inválida." }, { status: 401 });
+            return privateNoStoreJson({ error: "Sessão inválida." }, { status: 401 });
           }
 
           const { data: business } = await supabase
@@ -94,7 +95,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
             .maybeSingle();
 
           if (!business) {
-            return Response.json(
+            return privateNoStoreJson(
               { error: "Negócio não encontrado ou acesso não autorizado." },
               { status: 404 },
             );
@@ -111,7 +112,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
             .limit(1);
 
           if (inFlightWithdrawal && inFlightWithdrawal.length > 0) {
-            return Response.json(
+            return privateNoStoreJson(
               {
                 error:
                   "Já existe uma transferência em processamento para este negócio. Aguarde a confirmação.",
@@ -137,7 +138,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
             !account.subaccount_api_key ||
             !account.pix_key
           ) {
-            return Response.json(
+            return privateNoStoreJson(
               { error: "Conta Asaas ou Chave Pix não configurada para saque." },
               { status: 400 },
             );
@@ -148,7 +149,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
           // Valida saldo transferível no Asaas
           const balance = await getAsaasBalance(account.subaccount_api_key);
           if ((balance.transferableBalance ?? balance.balance) < valueReais) {
-            return Response.json(
+            return privateNoStoreJson(
               { error: "Saldo disponível insuficiente para realizar esta transferência." },
               { status: 422 },
             );
@@ -185,7 +186,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
             description: `Saque Pix para chave ${account.pix_key}`,
           });
 
-          return Response.json({
+          return privateNoStoreJson({
             success: true,
             transferId: transfer.id,
             status: transfer.status,
@@ -193,7 +194,7 @@ export const Route = createFileRoute("/api/asaas/withdraw")({
           });
         } catch (error) {
           console.error("Asaas transfer failed:", error);
-          return Response.json(
+          return privateNoStoreJson(
             {
               error: error instanceof Error ? error.message : "Não foi possível concluir o saque.",
             },

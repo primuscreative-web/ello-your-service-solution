@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { privateNoStoreJson } from "@/lib/security.server";
 import { asaasFetch, getAsaasAdminSupabase, isAsaasConfigured } from "@/lib/asaas.server";
 
 export const Route = createFileRoute("/api/asaas/subscription-status")({
@@ -6,23 +7,26 @@ export const Route = createFileRoute("/api/asaas/subscription-status")({
     handlers: {
       GET: async ({ request }) => {
         if (!isAsaasConfigured())
-          return Response.json(
+          return privateNoStoreJson(
             { error: "O serviço de pagamentos não está disponível." },
             { status: 503 },
           );
         const bearer = request.headers.get("authorization");
         if (!bearer?.startsWith("Bearer "))
-          return Response.json({ error: "Não autenticado." }, { status: 401 });
+          return privateNoStoreJson({ error: "Não autenticado." }, { status: 401 });
         const supabase = getAsaasAdminSupabase();
         const { data: authData, error: authError } = await supabase.auth.getUser(bearer.slice(7));
         if (authError || !authData.user)
-          return Response.json({ error: "Sessão inválida." }, { status: 401 });
+          return privateNoStoreJson({ error: "Sessão inválida." }, { status: 401 });
 
         const url = new URL(request.url);
         const paymentId = url.searchParams.get("paymentId");
 
         if (!paymentId) {
-          return Response.json({ error: "Parâmetro paymentId é obrigatório." }, { status: 400 });
+          return privateNoStoreJson(
+            { error: "Parâmetro paymentId é obrigatório." },
+            { status: 400 },
+          );
         }
 
         try {
@@ -45,7 +49,7 @@ export const Route = createFileRoute("/api/asaas/subscription-status")({
             .eq("owner_id", authData.user.id)
             .maybeSingle();
           if (!ownedBusiness)
-            return Response.json({ error: "Negócio não encontrado." }, { status: 404 });
+            return privateNoStoreJson({ error: "Negócio não encontrado." }, { status: 404 });
           const { data: planPayment } = await supabase
             .from("localhub_asaas_plan_payments")
             .select("business_id, asaas_subscription_id, status")
@@ -56,10 +60,13 @@ export const Route = createFileRoute("/api/asaas/subscription-status")({
             !planPayment ||
             (payment.subscription && payment.subscription !== planPayment.asaas_subscription_id)
           ) {
-            return Response.json({ error: "Cobrança não vinculada à sua conta." }, { status: 404 });
+            return privateNoStoreJson(
+              { error: "Cobrança não vinculada à sua conta." },
+              { status: 404 },
+            );
           }
 
-          return Response.json({
+          return privateNoStoreJson({
             success: true,
             paymentId: payment.id,
             status: payment.status,
@@ -70,7 +77,7 @@ export const Route = createFileRoute("/api/asaas/subscription-status")({
         } catch (err: unknown) {
           console.error("Erro ao consultar status do pagamento Asaas:", err);
           const message = err instanceof Error ? err.message : "Erro ao consultar status no Asaas.";
-          return Response.json({ error: message }, { status: 500 });
+          return privateNoStoreJson({ error: message }, { status: 500 });
         }
       },
     },

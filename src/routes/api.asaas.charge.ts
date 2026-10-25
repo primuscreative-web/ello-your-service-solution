@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { privateNoStoreJson } from "@/lib/security.server";
 import { z } from "zod";
 import {
   createAsaasUnifiedCharge,
@@ -42,7 +43,7 @@ export const Route = createFileRoute("/api/asaas/charge")({
     handlers: {
       POST: async ({ request }) => {
         if (!PAYMENT_POLICY.gatewayEnabled) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Pagamentos online estão temporariamente desativados por segurança." },
             { status: 503 },
           );
@@ -60,7 +61,7 @@ export const Route = createFileRoute("/api/asaas/charge")({
           const body = await request.json();
           input = chargeSchema.parse(body);
         } catch {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Dados inválidos para geração da cobrança." },
             { status: 400 },
           );
@@ -69,7 +70,7 @@ export const Route = createFileRoute("/api/asaas/charge")({
         // 2. Rate Limiting por Pedido (Máx 5 tentativas de pagamento por pedido em 10 min)
         const orderRateLimit = checkRateLimit(`charge-order:${input.orderId}`, 5, 600_000);
         if (!orderRateLimit.allowed) {
-          return Response.json(
+          return privateNoStoreJson(
             {
               error:
                 "Limite de tentativas de pagamento para este pedido excedido. Aguarde alguns minutos.",
@@ -79,7 +80,7 @@ export const Route = createFileRoute("/api/asaas/charge")({
         }
 
         if (!isAsaasConfigured()) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "O gateway de pagamento ainda não foi configurado no servidor." },
             { status: 503 },
           );
@@ -99,15 +100,15 @@ export const Route = createFileRoute("/api/asaas/charge")({
             .maybeSingle();
 
           if (orderError || !order) {
-            return Response.json({ error: "Pedido não localizado." }, { status: 404 });
+            return privateNoStoreJson({ error: "Pedido não localizado." }, { status: 404 });
           }
 
           if (order.status === "cancelled") {
-            return Response.json({ error: "Este pedido foi cancelado." }, { status: 409 });
+            return privateNoStoreJson({ error: "Este pedido foi cancelado." }, { status: 409 });
           }
 
           if (order.payment_status === "paid") {
-            return Response.json(
+            return privateNoStoreJson(
               { error: "Este pedido já foi pago.", paid: true },
               { status: 200 },
             );
@@ -115,7 +116,7 @@ export const Route = createFileRoute("/api/asaas/charge")({
 
           const orderTotal = Number(order.total);
           if (!Number.isFinite(orderTotal) || orderTotal <= 0) {
-            return Response.json({ error: "Valor de pedido inválido." }, { status: 422 });
+            return privateNoStoreJson({ error: "Valor de pedido inválido." }, { status: 422 });
           }
 
           // 2. Busca subconta Asaas do estabelecimento
@@ -147,7 +148,7 @@ export const Route = createFileRoute("/api/asaas/charge")({
               existingPayment.pix_expiration_date &&
               new Date(existingPayment.pix_expiration_date) > new Date()
             ) {
-              return Response.json({
+              return privateNoStoreJson({
                 success: true,
                 billingType: "PIX",
                 pixPayload: existingPayment.pix_qr_code_payload,
@@ -158,7 +159,7 @@ export const Route = createFileRoute("/api/asaas/charge")({
             }
 
             if (input.billingType === "CREDIT_CARD" && existingPayment.invoice_url) {
-              return Response.json({
+              return privateNoStoreJson({
                 success: true,
                 billingType: "CREDIT_CARD",
                 invoiceUrl: existingPayment.invoice_url,
@@ -270,7 +271,7 @@ export const Route = createFileRoute("/api/asaas/charge")({
             })
             .eq("id", order.id);
 
-          return Response.json({
+          return privateNoStoreJson({
             success: true,
             billingType: input.billingType,
             pixPayload,
@@ -284,7 +285,7 @@ export const Route = createFileRoute("/api/asaas/charge")({
             "Asaas charge generation failed:",
             error instanceof Error ? error.message : error,
           );
-          return Response.json(
+          return privateNoStoreJson(
             {
               error:
                 error instanceof Error

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { privateNoStoreJson } from "@/lib/security.server";
 import {
   cancelAsaasSubscription,
   getAsaasAdminSupabase,
@@ -56,22 +57,22 @@ export const Route = createFileRoute("/api/asaas/webhook")({
       POST: async ({ request }) => {
         const receivedToken = request.headers.get("asaas-access-token");
         if (!verifyAsaasWebhookToken(receivedToken)) {
-          return Response.json({ error: "Token de webhook Asaas inválido." }, { status: 401 });
+          return privateNoStoreJson({ error: "Token de webhook Asaas inválido." }, { status: 401 });
         }
 
         let body: AsaasWebhookPayload;
         try {
           body = (await request.json()) as AsaasWebhookPayload;
         } catch {
-          return Response.json({ error: "Payload inválido." }, { status: 400 });
+          return privateNoStoreJson({ error: "Payload inválido." }, { status: 400 });
         }
 
         if (!body.event) {
-          return Response.json({ error: "Evento não especificado." }, { status: 400 });
+          return privateNoStoreJson({ error: "Evento não especificado." }, { status: 400 });
         }
 
         if (!body.payment?.id && !body.transfer?.id) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Evento sem identificador de pagamento ou transferência." },
             { status: 400 },
           );
@@ -90,11 +91,11 @@ export const Route = createFileRoute("/api/asaas/webhook")({
           .from("localhub_asaas_webhook_events")
           .insert({ event_id: idempotencyId, event_type: body.event });
         if (claimError?.code === "23505") {
-          return Response.json({ received: true, duplicate: true });
+          return privateNoStoreJson({ received: true, duplicate: true });
         }
         if (claimError) {
           console.error("Não foi possível reservar evento Asaas para processamento.", claimError);
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Evento temporariamente indisponível para processamento." },
             { status: 503 },
           );
@@ -582,7 +583,7 @@ export const Route = createFileRoute("/api/asaas/webhook")({
             }
           }
 
-          return Response.json({ received: true });
+          return privateNoStoreJson({ received: true });
         } catch (error) {
           console.error("Asaas webhook processing error:", error);
           const { error: releaseError } = await supabase
@@ -595,7 +596,7 @@ export const Route = createFileRoute("/api/asaas/webhook")({
               releaseError,
             );
           }
-          return Response.json({ error: "Erro ao processar evento." }, { status: 500 });
+          return privateNoStoreJson({ error: "Erro ao processar evento." }, { status: 500 });
         }
       },
     },

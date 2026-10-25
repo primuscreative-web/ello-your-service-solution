@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { privateNoStoreJson } from "@/lib/security.server";
 import { z } from "zod";
 import {
   asaasFetch,
@@ -41,7 +42,7 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
         if (!ipLimit.allowed) return createRateLimitResponse(ipLimit.resetSeconds);
 
         if (!isAsaasConfigured()) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "O serviço de pagamentos não está disponível no momento." },
             { status: 503 },
           );
@@ -49,7 +50,7 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
 
         const authorization = request.headers.get("authorization");
         if (!authorization?.startsWith("Bearer ")) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Entre na sua conta para contratar um plano." },
             { status: 401 },
           );
@@ -59,7 +60,10 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
         const token = authorization.slice("Bearer ".length);
         const { data: authData, error: authError } = await supabase.auth.getUser(token);
         if (authError || !authData.user) {
-          return Response.json({ error: "Sua sessão expirou. Entre novamente." }, { status: 401 });
+          return privateNoStoreJson(
+            { error: "Sua sessão expirou. Entre novamente." },
+            { status: 401 },
+          );
         }
 
         let input: z.infer<typeof subscribeSchema>;
@@ -68,7 +72,7 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
         } catch (error) {
           const message =
             error instanceof z.ZodError ? error.errors[0]?.message : "Dados inválidos.";
-          return Response.json({ error: message }, { status: 400 });
+          return privateNoStoreJson({ error: message }, { status: 400 });
         }
 
         const cleanCpfCnpj = input.customerCpfCnpj.replace(/\D/g, "");
@@ -79,7 +83,10 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
           cleanPhone.length < 10 ||
           cleanPostalCode.length !== 8
         ) {
-          return Response.json({ error: "Confira CPF/CNPJ, telefone e CEP." }, { status: 400 });
+          return privateNoStoreJson(
+            { error: "Confira CPF/CNPJ, telefone e CEP." },
+            { status: 400 },
+          );
         }
 
         const { data: business, error: businessError } = await supabase
@@ -88,7 +95,7 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
           .eq("owner_id", authData.user.id)
           .maybeSingle();
         if (businessError || !business) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Crie seu espaço na ELLO antes de contratar um plano." },
             { status: 409 },
           );
@@ -100,13 +107,13 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
           .eq("business_id", business.id)
           .maybeSingle();
         if (stateError) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Não foi possível verificar o plano atual. Tente novamente." },
             { status: 503 },
           );
         }
         if (planState?.status === "pending") {
-          return Response.json(
+          return privateNoStoreJson(
             {
               error:
                 "Já existe um pagamento de plano aguardando confirmação. Conclua ou aguarde o vencimento antes de iniciar outra troca.",
@@ -121,7 +128,7 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
           .eq("business_id", business.id)
           .in("status", ["pending", "overdue"]);
         if (paymentsError)
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Não foi possível conferir cobranças anteriores." },
             { status: 503 },
           );
@@ -149,7 +156,7 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
                 "Não foi possível reconciliar uma cobrança anterior de assinatura.",
                 error,
               );
-              return Response.json(
+              return privateNoStoreJson(
                 {
                   error:
                     "Não foi possível reconciliar uma cobrança anterior. A troca foi interrompida para evitar cobranças duplicadas.",
@@ -169,13 +176,13 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
           planState?.status === "active" &&
           planState.billing_cycle === input.billingCycle
         ) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Este plano já está ativo para o período selecionado." },
             { status: 409 },
           );
         }
         if (currentPlan === "business" && input.planId === "pro") {
-          return Response.json(
+          return privateNoStoreJson(
             {
               error:
                 "Para mudar para o Pro, cancele o Business atual e aguarde a confirmação do cancelamento.",
@@ -185,7 +192,7 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
         }
 
         if (planState?.status === "canceled" && previousSubscriptionId) {
-          return Response.json(
+          return privateNoStoreJson(
             {
               error:
                 "O cancelamento anterior ainda está em reconciliação. Entre em contato com o suporte antes de contratar novamente.",
@@ -195,7 +202,7 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
         }
 
         if (currentPlan !== "free" && !previousSubscriptionId && !ownedOpenPayments?.length) {
-          return Response.json(
+          return privateNoStoreJson(
             {
               error:
                 "Não encontramos a assinatura atual para encerrá-la com segurança. Entre em contato com o suporte antes de trocar de plano.",
@@ -211,7 +218,7 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
           p_billing_cycle: input.billingCycle,
         });
         if (reservation.error || !reservation.data?.[0]?.acquired) {
-          return Response.json(
+          return privateNoStoreJson(
             { error: "Já existe uma troca de plano em andamento para este negócio." },
             { status: 409 },
           );
@@ -278,11 +285,12 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
                 bankSlipUrl?: string;
               }>;
             }>(`subscriptions/${encodeURIComponent(subscription.id)}/payments?limit=1`);
-            payment = generatedPayments.data?.[0]!;
-            if (!payment?.id)
+            const generatedPayment = generatedPayments.data?.[0];
+            if (!generatedPayment?.id)
               throw new Error(
                 "O pagamento inicial ainda não foi gerado. Tente novamente em instantes.",
               );
+            payment = generatedPayment;
             pixData = await getAsaasPixQrCode(payment.id);
           } catch (error) {
             await cancelAsaasSubscription(subscription.id).catch((cancelError) => {
@@ -341,7 +349,7 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
             );
           }
 
-          return Response.json({
+          return privateNoStoreJson({
             success: true,
             paymentId: payment.id,
             status: payment.status,
@@ -376,7 +384,7 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
           console.error("Falha ao iniciar assinatura ELLO.", error);
           const message =
             error instanceof Error ? error.message : "Não foi possível iniciar o plano.";
-          return Response.json({ error: message }, { status: 502 });
+          return privateNoStoreJson({ error: message }, { status: 502 });
         }
       },
     },

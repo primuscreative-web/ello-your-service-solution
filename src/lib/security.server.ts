@@ -1,6 +1,14 @@
 import { createClient, type User } from "@supabase/supabase-js";
 import { getServerConfig } from "./config.server.ts";
 
+/** Build a JSON response that cannot be stored by browsers or shared caches. */
+export function privateNoStoreJson(body: unknown, init: ResponseInit = {}): Response {
+  const headers = new Headers(init.headers);
+  headers.set("Cache-Control", "private, no-store, max-age=0");
+  headers.set("Pragma", "no-cache");
+  return Response.json(body, { ...init, headers });
+}
+
 /**
  * Módulo Central de Segurança Defensiva para o Backend da Plataforma ELLO.
  *
