@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { getStripeAdminClient, getStripeBaseUrl, getStripeClient } from "@/lib/stripe.server";
+import { privateNoStoreJson } from "@/lib/security.server";
+import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
 const inputSchema = z.object({ businessId: z.string().uuid() });
 
@@ -8,20 +10,27 @@ export const Route = createFileRoute("/api/stripe/connect/onboarding")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (!PAYMENT_POLICY.gatewayEnabled) {
+          return privateNoStoreJson(
+            { error: "Pagamentos online estão temporariamente desativados por segurança." },
+            { status: 503 },
+          );
+        }
         const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-        if (!token) return Response.json({ error: "Autenticação necessária." }, { status: 401 });
+        if (!token)
+          return privateNoStoreJson({ error: "Autenticação necessária." }, { status: 401 });
         let input: z.infer<typeof inputSchema>;
         try {
           input = inputSchema.parse(await request.json());
         } catch {
-          return Response.json({ error: "Negócio inválido." }, { status: 400 });
+          return privateNoStoreJson({ error: "Negócio inválido." }, { status: 400 });
         }
 
         try {
           const supabase = getStripeAdminClient();
           const { data: auth, error: authError } = await supabase.auth.getUser(token);
           if (authError || !auth.user) {
-            return Response.json({ error: "Sessão inválida." }, { status: 401 });
+            return privateNoStoreJson({ error: "Sessão inválida." }, { status: 401 });
           }
           const { data: business, error: businessError } = await supabase
             .from("localhub_businesses")
@@ -30,7 +39,7 @@ export const Route = createFileRoute("/api/stripe/connect/onboarding")({
             .eq("owner_id", auth.user.id)
             .maybeSingle();
           if (businessError || !business) {
-            return Response.json({ error: "Negócio não encontrado." }, { status: 404 });
+            return privateNoStoreJson({ error: "Negócio não encontrado." }, { status: 404 });
           }
 
           const stripe = getStripeClient();
@@ -75,13 +84,16 @@ export const Route = createFileRoute("/api/stripe/connect/onboarding")({
             return_url: `${baseUrl}/studio/financeiro?stripe=return`,
             type: "account_onboarding",
           });
-          return Response.json({ url: link.url });
+          return privateNoStoreJson({ url: link.url });
         } catch (error) {
           console.error(
             "Stripe Connect onboarding unavailable",
             error instanceof Error ? error.message : "unknown",
           );
-          return Response.json({ error: "Configuração Stripe indisponível." }, { status: 503 });
+          return privateNoStoreJson(
+            { error: "Configuração Stripe indisponível." },
+            { status: 503 },
+          );
         }
       },
     },

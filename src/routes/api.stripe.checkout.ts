@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { getStripeAdminClient, getStripeBaseUrl, getStripeClient } from "@/lib/stripe.server";
+import { privateNoStoreJson } from "@/lib/security.server";
+import { PAYMENT_POLICY } from "@/lib/payments/payment-policy";
 
 const inputSchema = z.object({ orderId: z.string().uuid(), trackingToken: z.string().uuid() });
 
@@ -8,11 +10,17 @@ export const Route = createFileRoute("/api/stripe/checkout")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (!PAYMENT_POLICY.gatewayEnabled) {
+          return privateNoStoreJson(
+            { error: "Pagamentos online estão temporariamente desativados por segurança." },
+            { status: 503 },
+          );
+        }
         let input: z.infer<typeof inputSchema>;
         try {
           input = inputSchema.parse(await request.json());
         } catch {
-          return Response.json({ error: "Pedido inválido." }, { status: 400 });
+          return privateNoStoreJson({ error: "Pedido inválido." }, { status: 400 });
         }
 
         try {
@@ -26,7 +34,7 @@ export const Route = createFileRoute("/api/stripe/checkout")({
             .eq("public_tracking_token", input.trackingToken)
             .maybeSingle();
           if (orderError || !order)
-            return Response.json({ error: "Pedido não encontrado." }, { status: 404 });
+            return privateNoStoreJson({ error: "Pedido não encontrado." }, { status: 404 });
           if (
             !["online_pix", "online_card"].includes(order.payment_method) ||
             order.payment_timing !== "online" ||
@@ -36,7 +44,7 @@ export const Route = createFileRoute("/api/stripe/checkout")({
             !Number.isSafeInteger(Math.round(Number(order.total) * 100)) ||
             Math.round(Number(order.total) * 100) <= 0
           ) {
-            return Response.json(
+            return privateNoStoreJson(
               { error: "Este pedido não está habilitado para pagamento online." },
               { status: 409 },
             );
@@ -47,7 +55,7 @@ export const Route = createFileRoute("/api/stripe/checkout")({
             .eq("business_id", order.business_id)
             .maybeSingle();
           if (accountError || !connectedAccount?.charges_enabled) {
-            return Response.json(
+            return privateNoStoreJson(
               { error: "O estabelecimento ainda não habilitou pagamentos online." },
               { status: 409 },
             );
@@ -60,7 +68,7 @@ export const Route = createFileRoute("/api/stripe/checkout")({
             .eq("order_id", order.id)
             .maybeSingle();
           if (existing.data?.status === "paid") {
-            return Response.json({ error: "Este pedido já foi pago." }, { status: 409 });
+            return privateNoStoreJson({ error: "Este pedido já foi pago." }, { status: 409 });
           }
           if (existing.data?.status === "expired") {
             return Response.json(
@@ -79,19 +87,19 @@ export const Route = createFileRoute("/api/stripe/checkout")({
               { stripeAccount: connectedAccount.stripe_account_id },
             );
             if (priorSession.status === "open")
-              return Response.json({ url: existing.data.checkout_url });
+              return privateNoStoreJson({ url: existing.data.checkout_url });
             if (priorSession.status === "expired") {
               await supabase
                 .from("localhub_stripe_order_payments")
                 .update({ status: "expired", updated_at: new Date().toISOString() })
                 .eq("order_id", order.id)
                 .eq("stripe_account_id", connectedAccount.stripe_account_id);
-              return Response.json(
+              return privateNoStoreJson(
                 { error: "A sessão expirou. Faça um novo pedido para pagar novamente." },
                 { status: 409 },
               );
             }
-            return Response.json(
+            return privateNoStoreJson(
               { error: "O pagamento está sendo confirmado. Atualize o pedido em instantes." },
               { status: 409 },
             );
@@ -148,13 +156,13 @@ export const Route = createFileRoute("/api/stripe/checkout")({
             .update({ payment_status: "pending" })
             .eq("id", order.id);
           if (orderPaymentError) throw orderPaymentError;
-          return Response.json({ url: session.url });
+          return privateNoStoreJson({ url: session.url });
         } catch (error) {
           console.error(
             "Stripe Checkout unavailable",
             error instanceof Error ? error.message : "unknown",
           );
-          return Response.json({ error: "Pagamentos Stripe indisponíveis." }, { status: 503 });
+          return privateNoStoreJson({ error: "Pagamentos Stripe indisponíveis." }, { status: 503 });
         }
       },
     },

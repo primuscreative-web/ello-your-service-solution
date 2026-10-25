@@ -120,22 +120,24 @@ export const Route = createFileRoute("/api/asaas/charge")({
           }
 
           // 2. Busca subconta Asaas do estabelecimento
-          const { data: paymentAccount } = await supabase
+          const { data: paymentAccount, error: paymentAccountError } = await supabase
             .from("localhub_payment_accounts")
             .select("subaccount_api_key, wallet_id, sales_enabled, onboarding_status")
             .eq("business_id", order.business_id)
             .maybeSingle();
+          if (paymentAccountError) throw paymentAccountError;
 
           const subaccountApiKey = paymentAccount?.subaccount_api_key ?? undefined;
 
           // 3. Busca pagamento Asaas já existente para este pedido (idempotência)
-          const { data: existingPayment } = await supabase
+          const { data: existingPayment, error: existingPaymentError } = await supabase
             .from("localhub_asaas_order_payments")
             .select(
               "asaas_payment_id, status, billing_type, pix_qr_code_payload, pix_qr_code_image, pix_expiration_date, invoice_url",
             )
             .eq("order_id", order.id)
             .maybeSingle();
+          if (existingPaymentError) throw existingPaymentError;
 
           if (
             existingPayment &&
@@ -167,12 +169,22 @@ export const Route = createFileRoute("/api/asaas/charge")({
             }
           }
 
+          // Uma cobrança registrada sem comprovante recuperável ou com outro meio de
+          // pagamento continua sendo uma obrigação potencial. Nunca gere outra no escuro.
+          if (existingPayment) {
+            return privateNoStoreJson(
+              { error: "Este pedido já possui uma cobrança em aberto ou em conciliação." },
+              { status: 409 },
+            );
+          }
+
           // 4. Localiza dados do negócio
-          const { data: business } = await supabase
+          const { data: business, error: businessError } = await supabase
             .from("localhub_businesses")
             .select("id, name, slug")
             .eq("id", order.business_id)
             .single();
+          if (businessError) throw businessError;
 
           // 5. Cria ou localiza o cliente no Asaas
           const asaasCustomerId = await findOrCreateAsaasCustomer(
@@ -197,6 +209,7 @@ export const Route = createFileRoute("/api/asaas/charge")({
                 ? { ...input.creditCardHolderInfo, phone: order.customer_phone }
                 : undefined,
               installmentCount: input.installmentCount,
+              idempotencyKey: `ello-order-${order.id}`,
             },
             subaccountApiKey,
           );
@@ -221,48 +234,54 @@ export const Route = createFileRoute("/api/asaas/charge")({
             payment.status === "CONFIRMED" || payment.status === "RECEIVED";
 
           // 7. Persiste o registro de pagamento
-          await supabase.from("localhub_asaas_order_payments").upsert({
-            order_id: order.id,
-            business_id: order.business_id,
-            asaas_payment_id: payment.id,
-            asaas_customer_id: asaasCustomerId,
-            billing_type: input.billingType,
-            status:
-              payment.status === "RECEIVED"
-                ? "received"
-                : isImmediateSuccess
-                  ? "confirmed"
-                  : "pending",
-            pix_qr_code_payload: pixPayload,
-            pix_qr_code_image: pixImage,
-            pix_expiration_date: expirationDate,
-            amount_cents: amountCents,
-            invoice_url: payment.invoiceUrl ?? null,
-            credit_card_brand: payment.creditCard?.creditCardBrand ?? null,
-            credit_card_last4: payment.creditCard?.creditCardNumber
-              ? payment.creditCard.creditCardNumber.slice(-4)
-              : null,
-            installments: input.installmentCount ?? 1,
-            updated_at: new Date().toISOString(),
-          });
+          const { error: paymentPersistError } = await supabase
+            .from("localhub_asaas_order_payments")
+            .upsert({
+              order_id: order.id,
+              business_id: order.business_id,
+              asaas_payment_id: payment.id,
+              asaas_customer_id: asaasCustomerId,
+              billing_type: input.billingType,
+              status:
+                payment.status === "RECEIVED"
+                  ? "received"
+                  : isImmediateSuccess
+                    ? "confirmed"
+                    : "pending",
+              pix_qr_code_payload: pixPayload,
+              pix_qr_code_image: pixImage,
+              pix_expiration_date: expirationDate,
+              amount_cents: amountCents,
+              invoice_url: payment.invoiceUrl ?? null,
+              credit_card_brand: payment.creditCard?.creditCardBrand ?? null,
+              credit_card_last4: payment.creditCard?.creditCardNumber
+                ? payment.creditCard.creditCardNumber.slice(-4)
+                : null,
+              installments: input.installmentCount ?? 1,
+              updated_at: new Date().toISOString(),
+            });
+          if (paymentPersistError) throw paymentPersistError;
 
           // 8. Registra no ledger financeiro da carteira
-          await supabase.from("localhub_wallet_transactions").upsert(
-            {
-              business_id: order.business_id,
-              provider_transaction_id: payment.id,
-              transaction_type: "sale",
-              // A confirmação da cobrança não comprova a liquidação do split.
-              // O saldo só pode ser liberado após PAYMENT_SPLIT_DONE reconciliado.
-              status: "pending",
-              amount_cents: amountCents,
-              description: `Venda ${input.billingType === "PIX" ? "Pix" : "Cartão"} - Pedido #${order.order_number}`,
-            },
-            { onConflict: "provider_transaction_id" },
-          );
+          const { error: walletPersistError } = await supabase
+            .from("localhub_wallet_transactions")
+            .upsert(
+              {
+                business_id: order.business_id,
+                provider_transaction_id: payment.id,
+                transaction_type: "sale",
+                // A confirmação da cobrança não comprova a liquidação do split.
+                // O saldo só pode ser liberado após PAYMENT_SPLIT_DONE reconciliado.
+                status: "pending",
+                amount_cents: amountCents,
+                description: `Venda ${input.billingType === "PIX" ? "Pix" : "Cartão"} - Pedido #${order.order_number}`,
+              },
+              { onConflict: "provider_transaction_id" },
+            );
+          if (walletPersistError) throw walletPersistError;
 
           // 9. Atualiza o pedido
-          await supabase
+          const { error: orderUpdateError } = await supabase
             .from("localhub_orders")
             .update({
               payment_status: isImmediateSuccess ? "paid" : "pending",
@@ -270,6 +289,7 @@ export const Route = createFileRoute("/api/asaas/charge")({
               payment_timing: "online",
             })
             .eq("id", order.id);
+          if (orderUpdateError) throw orderUpdateError;
 
           return privateNoStoreJson({
             success: true,

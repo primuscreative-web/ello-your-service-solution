@@ -9,6 +9,7 @@ import {
 import { sendWhatsAppMessage } from "@/lib/whatsapp.server";
 
 type AsaasWebhookPayload = {
+  id: string;
   event:
     | "PAYMENT_CREATED"
     | "PAYMENT_UPDATED"
@@ -80,11 +81,14 @@ export const Route = createFileRoute("/api/asaas/webhook")({
 
         const supabase = getAsaasAdminSupabase();
         const splitId = body.payment?.additionalInfo?.splitId || body.additionalInfo?.splitId;
-        const entityId =
-          body.event === "PAYMENT_SPLIT_DONE" && splitId && body.payment?.id
-            ? `${body.payment.id}_${splitId}`
-            : (body.payment?.id ?? body.transfer?.id ?? "unknown");
-        const idempotencyId = `${body.event}_${entityId}`;
+        const providerEventId = typeof body.id === "string" ? body.id.trim() : "";
+        if (!providerEventId || providerEventId.length > 255 || /[\r\n]/.test(providerEventId)) {
+          return privateNoStoreJson(
+            { error: "Identificador de evento inválido." },
+            { status: 400 },
+          );
+        }
+        const idempotencyId = `asaas_${providerEventId}`;
 
         // Reserva o evento antes dos efeitos para evitar processamentos concorrentes.
         const { error: claimError } = await supabase

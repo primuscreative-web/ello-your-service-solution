@@ -125,6 +125,7 @@ export async function asaasFetch<T>(
     method?: "GET" | "POST" | "PUT" | "DELETE";
     body?: unknown;
     subaccountApiKey?: string;
+    idempotencyKey?: string;
   } = {},
 ): Promise<T> {
   const { apiKey, apiBaseUrl } = getAsaasServerConfig();
@@ -141,6 +142,7 @@ export async function asaasFetch<T>(
       access_token: token,
       "Content-Type": "application/json",
       "User-Agent": "ELLO-LocalHub/1.0",
+      ...(options.idempotencyKey ? { "idempotency-key": options.idempotencyKey } : {}),
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
     signal: AbortSignal.timeout(15_000),
@@ -298,6 +300,7 @@ export async function createAsaasUnifiedCharge(
       phone: string;
     };
     installmentCount?: number;
+    idempotencyKey?: string;
   },
   subaccountApiKey?: string,
 ): Promise<AsaasPaymentResponse> {
@@ -331,6 +334,7 @@ export async function createAsaasUnifiedCharge(
     method: "POST",
     body,
     subaccountApiKey,
+    idempotencyKey: input.idempotencyKey,
   });
 
   return payment;

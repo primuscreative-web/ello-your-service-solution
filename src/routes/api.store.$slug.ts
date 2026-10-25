@@ -22,7 +22,7 @@ export const Route = createFileRoute("/api/store/$slug")({
           const { data: businessRow, error: businessError } = await supabase
             .from("localhub_businesses")
             .select(
-              "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order",
+              "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order",
             )
             .eq("slug", slug)
             .eq("is_published", true)
@@ -90,7 +90,7 @@ export const Route = createFileRoute("/api/store/$slug")({
             );
           }
 
-          const services = (serviceRes.data ?? []).map((s: any) => ({
+          const services = (serviceRes.data ?? []).map((s) => ({
             id: s.id,
             name: s.name,
             description: s.description,
@@ -106,8 +106,8 @@ export const Route = createFileRoute("/api/store/$slug")({
             promotionBadge: s.promotion_badge || null,
             displayOrder: Number(s.display_order || 0),
             addons: (addonRes.data ?? [])
-              .filter((a: any) => a.service_id === s.id)
-              .map((a: any) => ({
+              .filter((a) => a.service_id === s.id)
+              .map((a) => ({
                 id: a.id,
                 name: a.name,
                 duration: Number(a.duration_minutes || 0),
@@ -116,7 +116,7 @@ export const Route = createFileRoute("/api/store/$slug")({
               })),
           }));
 
-          const staff = (staffRes.data ?? []).map((m: any) => ({
+          const staff = (staffRes.data ?? []).map((m) => ({
             id: m.id,
             name: m.name,
             specialty: m.specialty || "",
@@ -128,7 +128,7 @@ export const Route = createFileRoute("/api/store/$slug")({
             active: Boolean(m.is_active),
           }));
 
-          const deliveryAreas = (areaRes.data ?? []).map((d: any) => ({
+          const deliveryAreas = (areaRes.data ?? []).map((d) => ({
             id: d.id,
             name: d.name,
             fee: Number(d.fee || 0),
@@ -154,7 +154,7 @@ export const Route = createFileRoute("/api/store/$slug")({
             acceptsPickup: businessRow.accepts_pickup ?? true,
             acceptsDineIn: businessRow.accepts_dine_in ?? false,
             onlinePaymentEnabled: businessRow.online_payment_enabled ?? false,
-            pixKey: businessRow.pix_key || "",
+            pixKey: "",
             loyaltyEnabled: businessRow.loyalty_enabled ?? false,
             loyaltyMode: businessRow.loyalty_mode || "points",
             loyaltyRate: Number(businessRow.loyalty_rate || 0),
@@ -169,7 +169,11 @@ export const Route = createFileRoute("/api/store/$slug")({
 
           return Response.json(
             { business, services, staff, deliveryAreas },
-            { headers: { "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300" } },
+            {
+              headers: {
+                "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
+              },
+            },
           );
         } catch (err: unknown) {
           const cause = err instanceof Error ? err.cause : undefined;

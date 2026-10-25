@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import Stripe from "stripe";
 import { getStripeAdminClient, getStripeClient } from "@/lib/stripe.server";
 import { getStripeServerConfig } from "@/lib/config.server";
+import { privateNoStoreJson } from "@/lib/security.server";
 
 export const Route = createFileRoute("/api/stripe/webhook")({
   server: {
@@ -10,7 +11,7 @@ export const Route = createFileRoute("/api/stripe/webhook")({
         const signature = request.headers.get("stripe-signature");
         const webhookSecret = getStripeServerConfig().connectWebhookSecret;
         if (!signature || !webhookSecret) {
-          return Response.json({ error: "Webhook Stripe não configurado." }, { status: 503 });
+          return privateNoStoreJson({ error: "Webhook Stripe não configurado." }, { status: 503 });
         }
         let event: Stripe.Event;
         try {
@@ -20,19 +21,25 @@ export const Route = createFileRoute("/api/stripe/webhook")({
             webhookSecret,
           );
         } catch {
-          return Response.json({ error: "Assinatura inválida." }, { status: 400 });
+          return privateNoStoreJson({ error: "Assinatura inválida." }, { status: 400 });
+        }
+
+        const supabase = getStripeAdminClient();
+        const { error: claimError } = await supabase
+          .from("localhub_stripe_webhook_events")
+          .insert({ event_id: event.id, event_type: event.type });
+        if (claimError?.code === "23505") {
+          return privateNoStoreJson({ received: true, duplicate: true });
+        }
+        if (claimError) {
+          console.error("Could not reserve Stripe webhook event", claimError);
+          return privateNoStoreJson(
+            { error: "Evento temporariamente indisponível." },
+            { status: 503 },
+          );
         }
 
         try {
-          const supabase = getStripeAdminClient();
-          const { data: processedEvent, error: lookupError } = await supabase
-            .from("localhub_stripe_webhook_events")
-            .select("event_id")
-            .eq("event_id", event.id)
-            .maybeSingle();
-          if (lookupError) throw lookupError;
-          if (processedEvent) return Response.json({ received: true, duplicate: true });
-
           if (event.type === "account.updated") {
             const account = event.data.object as Stripe.Account;
             const { error } = await supabase
@@ -127,20 +134,21 @@ export const Route = createFileRoute("/api/stripe/webhook")({
               }
             }
           }
-          const { error: eventError } = await supabase
-            .from("localhub_stripe_webhook_events")
-            .upsert(
-              { event_id: event.id, event_type: event.type },
-              { onConflict: "event_id", ignoreDuplicates: true },
-            );
-          if (eventError) throw eventError;
-          return Response.json({ received: true });
+          return privateNoStoreJson({ received: true });
         } catch (error) {
           console.error(
             "Stripe webhook processing failed",
             error instanceof Error ? error.message : "unknown",
           );
-          return Response.json({ error: "Falha ao processar evento Stripe." }, { status: 500 });
+          const { error: releaseError } = await supabase
+            .from("localhub_stripe_webhook_events")
+            .delete()
+            .eq("event_id", event.id);
+          if (releaseError) console.error("Could not release Stripe event claim", releaseError);
+          return privateNoStoreJson(
+            { error: "Falha ao processar evento Stripe." },
+            { status: 500 },
+          );
         }
       },
     },

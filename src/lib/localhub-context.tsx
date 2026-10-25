@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -1011,7 +1019,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     const initialStoreRes = await supabase
       .from("localhub_businesses")
       .select(
-        "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee",
+        "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee",
       )
       .eq("slug", slug)
       .eq("is_published", true)
@@ -1294,7 +1302,9 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     }
     await refresh();
   };
-  const saveWhatsAppTemplates: LocalHubContextValue["saveWhatsAppTemplates"] = async (templates) => {
+  const saveWhatsAppTemplates: LocalHubContextValue["saveWhatsAppTemplates"] = async (
+    templates,
+  ) => {
     if (!business?.id) throw new Error("Não foi possível localizar seu negócio.");
     const { error: writeError } = await requireClient()
       .from("localhub_businesses")
@@ -1327,7 +1337,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       display_order: item.displayOrder ?? 0,
     };
     const client = requireClient();
-    let request = item.id
+    const request = item.id
       ? client.from("localhub_services").update(payload).eq("id", item.id).select("id").single()
       : client.from("localhub_services").insert(payload).select("id").single();
     let { data: savedService, error: writeError } = await request;
