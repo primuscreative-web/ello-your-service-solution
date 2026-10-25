@@ -275,6 +275,10 @@ type BusinessRow = Omit<Business, "onboardingDetails" | "openingHours" | "blocke
   menu_categories_order?: string[];
   whatsapp_templates?: Business["whatsappTemplates"];
 };
+
+function isBusinessContextRpcUnavailable(error: { code?: string; message?: string } | null) {
+  return error?.code === "PGRST202" && error.message?.includes("localhub_get_business_context");
+}
 type ServiceRow = {
   id: string;
   business_id: string;
@@ -571,39 +575,21 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       setReady(true);
       return;
     }
-    const initialRes = await supabase
-      .from("localhub_businesses")
-      .select(
-        "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order,whatsapp_templates",
-      )
-      .eq("owner_id", auth.user.id)
-      .maybeSingle();
-    let ownedRow: BusinessRow | null = initialRes.data
-      ? (initialRes.data as unknown as BusinessRow)
-      : null;
-    let businessError = initialRes.error;
-    if (
-      businessError &&
-      (businessError.message?.includes("logo_url") ||
-        businessError.message?.includes("menu_categories_order") ||
-        businessError.message?.includes("whatsapp_templates"))
-    ) {
-      const fallbackRes = await supabase
+    const ownerContextRes = await supabase.rpc("localhub_get_business_context", {
+      p_business_id: null,
+    });
+    let ownedRow = (ownerContextRes.data as unknown as BusinessRow | null) ?? null;
+    let businessError = ownerContextRes.error;
+    if (isBusinessContextRpcUnavailable(businessError)) {
+      const legacyRes = await supabase
         .from("localhub_businesses")
         .select(
-          "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee",
+          "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order,whatsapp_templates",
         )
         .eq("owner_id", auth.user.id)
         .maybeSingle();
-      ownedRow = fallbackRes.data
-        ? ({
-            ...fallbackRes.data,
-            logo_url: null,
-            menu_categories_order: [],
-            whatsapp_templates: {},
-          } as unknown as BusinessRow)
-        : null;
-      businessError = fallbackRes.error;
+      ownedRow = (legacyRes.data as unknown as BusinessRow | null) ?? null;
+      businessError = legacyRes.error;
     }
     if (businessError) {
       setError(businessError.message);
@@ -628,40 +614,31 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       }
       if (access) {
         currentStaffId = access.staff_id;
-        const { data: staffBusiness, error: staffBusinessError } = await supabase
-          .from("localhub_businesses")
-          .select(
-            "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order,whatsapp_templates",
-          )
-          .eq("id", access.business_id)
-          .maybeSingle();
-        if (staffBusinessError) {
-          const fallbackStaff = await supabase
+        const staffContextRes = await supabase.rpc("localhub_get_business_context", {
+          p_business_id: access.business_id,
+        });
+        let staffBusiness = (staffContextRes.data as unknown as BusinessRow | null) ?? null;
+        let staffBusinessError = staffContextRes.error;
+        if (isBusinessContextRpcUnavailable(staffBusinessError)) {
+          const legacyStaff = await supabase
             .from("localhub_businesses")
             .select(
-              "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee",
+              "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order,whatsapp_templates",
             )
             .eq("id", access.business_id)
             .maybeSingle();
-          if (fallbackStaff.error) {
-            setBusiness(null);
-            setIsStaffAccount(false);
-            setStaffMemberId(null);
-            setError(fallbackStaff.error.message);
-            setReady(true);
-            return;
-          }
-          row = fallbackStaff.data
-            ? ({
-                ...fallbackStaff.data,
-                logo_url: null,
-                menu_categories_order: [],
-                whatsapp_templates: {},
-              } as unknown as BusinessRow)
-            : null;
-        } else {
-          row = staffBusiness as BusinessRow | null;
+          staffBusiness = (legacyStaff.data as unknown as BusinessRow | null) ?? null;
+          staffBusinessError = legacyStaff.error;
         }
+        if (staffBusinessError) {
+          setBusiness(null);
+          setIsStaffAccount(false);
+          setStaffMemberId(null);
+          setError(staffBusinessError.message);
+          setReady(true);
+          return;
+        }
+        row = staffBusiness;
       }
     }
     setIsStaffAccount(Boolean(currentStaffId && row));
