@@ -43,6 +43,7 @@ import {
   type StaffMember,
   type BusinessOpeningHours,
 } from "@/lib/localhub-context";
+import { PlanFeatureGate } from "@/components/localhub/plan-feature-gate";
 
 export const Route = createFileRoute("/studio/profissionais")({
   component: StudioProfissionaisPage,
@@ -433,6 +434,7 @@ function StudioProfissionaisPage() {
   }
 
   return (
+    <PlanFeatureGate feature="Gestão de equipe e profissionais">
     <div className="space-y-8 pb-16">
       {/* Toast feedback */}
       {feedbackMessage && (
@@ -1388,5 +1390,6 @@ function StudioProfissionaisPage() {
         </div>
       )}
     </div>
+    </PlanFeatureGate>
   );
 }

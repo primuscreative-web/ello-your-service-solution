@@ -106,12 +106,10 @@ export function getClientIp(request: Request): string {
 
 export function getSecurityAdminSupabase() {
   const config = getServerConfig();
-  const url = config.supabaseUrl || "https://fahrhrcxzcnnrhjavrfk.supabase.co";
-  const key =
-    config.supabaseServiceRoleKey ||
-    process.env.VITE_SUPABASE_ANON_KEY ||
-    "sb_publishable_2wUjef5P5H6bPLqRhfouWw_AFp-Mbk_";
-  return createClient(url, key, {
+  if (!config.supabaseUrl || !config.supabaseServiceRoleKey) {
+    throw new Error("Banco de dados não configurado para operações administrativas.");
+  }
+  return createClient(config.supabaseUrl, config.supabaseServiceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
@@ -133,7 +131,14 @@ export async function authenticateRequestUser(
   }
 
   try {
-    const supabase = getSecurityAdminSupabase();
+    const config = getServerConfig();
+    const key = config.supabaseAnonKey;
+    if (!config.supabaseUrl || !key) {
+      return { user: null, token, error: "Autenticação indisponível." };
+    }
+    const supabase = createClient(config.supabaseUrl, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
     const { data, error } = await supabase.auth.getUser(token);
 
     if (error || !data.user) {

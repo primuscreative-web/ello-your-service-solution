@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getAsaasAdminSupabase, verifyAsaasWebhookToken } from "@/lib/asaas.server";
+import {
+  cancelAsaasSubscription,
+  getAsaasAdminSupabase,
+  verifyAsaasWebhookToken,
+} from "@/lib/asaas.server";
 import { sendWhatsAppMessage } from "@/lib/whatsapp.server";
 
 type AsaasWebhookPayload = {
@@ -27,6 +31,7 @@ type AsaasWebhookPayload = {
     billingType: string;
     status: string;
     externalReference?: string;
+    subscription?: string;
     confirmedDate?: string;
     paymentDate?: string;
   };
@@ -114,6 +119,28 @@ export const Route = createFileRoute("/api/asaas/webhook")({
             const paymentId = body.payment.id;
             const orderId = body.payment.externalReference;
 
+            if (body.payment.subscription && body.event === "PAYMENT_CREATED") {
+              const { data: recurringPlan } = await supabase
+                .from("localhub_plan_subscriptions")
+                .select("business_id, plan, billing_cycle, asaas_subscription_id, status")
+                .eq("asaas_subscription_id", body.payment.subscription)
+                .maybeSingle();
+              if (recurringPlan?.status === "active") {
+                await supabase.from("localhub_asaas_plan_payments").upsert(
+                  {
+                    asaas_payment_id: paymentId,
+                    asaas_subscription_id: body.payment.subscription,
+                    business_id: recurringPlan.business_id,
+                    requested_plan: recurringPlan.plan,
+                    billing_cycle: recurringPlan.billing_cycle,
+                    amount_cents: Math.round(body.payment.value * 100),
+                    status: "pending",
+                  },
+                  { onConflict: "asaas_payment_id", ignoreDuplicates: true },
+                );
+              }
+            }
+
             let orderPaymentQuery = supabase
               .from("localhub_asaas_order_payments")
               .select("order_id, business_id, status, amount_cents")
@@ -130,7 +157,180 @@ export const Route = createFileRoute("/api/asaas/webhook")({
               orderPayment = fallbackQuery.data;
             }
 
-            // Trata pagamentos de assinatura de planos ELLO
+            // Trata planos ELLO com referência persistida no servidor.
+            const { data: planPayment } = await supabase
+              .from("localhub_asaas_plan_payments")
+              .select("business_id, requested_plan, billing_cycle, asaas_subscription_id, status")
+              .eq("asaas_payment_id", paymentId)
+              .maybeSingle();
+
+            if (planPayment) {
+              const paid = body.event === "PAYMENT_RECEIVED" || body.event === "PAYMENT_CONFIRMED";
+              const failed = [
+                "PAYMENT_OVERDUE",
+                "PAYMENT_REFUNDED",
+                "PAYMENT_REVERSED",
+                "PAYMENT_DELETED",
+              ].includes(body.event);
+              if (paid) {
+                const { data: state } = await supabase
+                  .from("localhub_plan_subscriptions")
+                  .select(
+                    "pending_payment_id, pending_plan, pending_billing_cycle, pending_subscription_id",
+                  )
+                  .eq("business_id", planPayment.business_id)
+                  .maybeSingle();
+                if (
+                  state?.pending_payment_id === paymentId &&
+                  state.pending_subscription_id === planPayment.asaas_subscription_id
+                ) {
+                  await supabase
+                    .from("localhub_plan_subscriptions")
+                    .update({
+                      asaas_subscription_id: planPayment.asaas_subscription_id,
+                      plan: planPayment.requested_plan,
+                      billing_cycle: planPayment.billing_cycle,
+                      status: "active",
+                      pending_plan: null,
+                      pending_billing_cycle: null,
+                      pending_payment_id: null,
+                      pending_subscription_id: null,
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq("business_id", planPayment.business_id);
+                  const { data: biz } = await supabase
+                    .from("localhub_businesses")
+                    .select("onboarding_details, phone, name")
+                    .eq("id", planPayment.business_id)
+                    .maybeSingle();
+                  if (biz) {
+                    await supabase
+                      .from("localhub_businesses")
+                      .update({
+                        onboarding_details: {
+                          ...(biz.onboarding_details || {}),
+                          plan: planPayment.requested_plan,
+                          planBillingCycle: planPayment.billing_cycle,
+                          planActivatedAt: new Date().toISOString(),
+                        },
+                      })
+                      .eq("id", planPayment.business_id);
+                    if (biz.phone)
+                      void sendWhatsAppMessage({
+                        phone: biz.phone,
+                        text: `Parabéns, *${biz.name}*! Seu plano ${planPayment.requested_plan === "pro" ? "Pro" : "Business"} na ELLO foi ativado. Acesse https://ello.app.br/studio`,
+                      }).catch(() => {});
+                  }
+                }
+                await supabase
+                  .from("localhub_asaas_plan_payments")
+                  .update({ status: "received", updated_at: new Date().toISOString() })
+                  .eq("asaas_payment_id", paymentId);
+              } else if (failed) {
+                await supabase
+                  .from("localhub_asaas_plan_payments")
+                  .update({
+                    status:
+                      body.event === "PAYMENT_OVERDUE"
+                        ? "overdue"
+                        : body.event === "PAYMENT_DELETED"
+                          ? "cancelled"
+                          : "refunded",
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("asaas_payment_id", paymentId);
+                const { data: state } = await supabase
+                  .from("localhub_plan_subscriptions")
+                  .select(
+                    "pending_payment_id, pending_subscription_id, asaas_subscription_id, status",
+                  )
+                  .eq("business_id", planPayment.business_id)
+                  .maybeSingle();
+                if (
+                  state?.pending_payment_id === paymentId ||
+                  state?.pending_subscription_id === planPayment.asaas_subscription_id
+                ) {
+                  const pendingSubscription = state.pending_subscription_id;
+                  if (pendingSubscription) {
+                    await cancelAsaasSubscription(pendingSubscription).catch((cancelError) => {
+                      console.error(
+                        "Falha ao encerrar assinatura pendente após cobrança não paga.",
+                        cancelError,
+                      );
+                    });
+                  }
+                  await supabase
+                    .from("localhub_plan_subscriptions")
+                    .update({
+                      asaas_subscription_id: null,
+                      status: "free",
+                      plan: "free",
+                      pending_plan: null,
+                      pending_billing_cycle: null,
+                      pending_payment_id: null,
+                      pending_subscription_id: null,
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq("business_id", planPayment.business_id);
+                  const { data: failedBusiness } = await supabase
+                    .from("localhub_businesses")
+                    .select("onboarding_details")
+                    .eq("id", planPayment.business_id)
+                    .maybeSingle();
+                  if (failedBusiness)
+                    await supabase
+                      .from("localhub_businesses")
+                      .update({
+                        onboarding_details: {
+                          ...(failedBusiness.onboarding_details ?? {}),
+                          plan: "free",
+                        },
+                      })
+                      .eq("id", planPayment.business_id);
+                } else if (
+                  state?.status === "active" &&
+                  state.asaas_subscription_id === planPayment.asaas_subscription_id
+                ) {
+                  if (planPayment.asaas_subscription_id) {
+                    await cancelAsaasSubscription(planPayment.asaas_subscription_id).catch(
+                      (cancelError) => {
+                        console.error(
+                          "Falha ao encerrar recorrência após cobrança não paga.",
+                          cancelError,
+                        );
+                      },
+                    );
+                  }
+                  await supabase
+                    .from("localhub_plan_subscriptions")
+                    .update({
+                      asaas_subscription_id: null,
+                      plan: "free",
+                      status: "past_due",
+                      billing_cycle: null,
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq("business_id", planPayment.business_id);
+                  const { data: unpaidBusiness } = await supabase
+                    .from("localhub_businesses")
+                    .select("onboarding_details")
+                    .eq("id", planPayment.business_id)
+                    .maybeSingle();
+                  if (unpaidBusiness)
+                    await supabase
+                      .from("localhub_businesses")
+                      .update({
+                        onboarding_details: {
+                          ...(unpaidBusiness.onboarding_details ?? {}),
+                          plan: "free",
+                        },
+                      })
+                      .eq("id", planPayment.business_id);
+                }
+              }
+            }
+
+            // Compatibilidade: somente referências legadas já registradas.
             if (orderId && orderId.startsWith("sub_")) {
               if (body.event === "PAYMENT_RECEIVED" || body.event === "PAYMENT_CONFIRMED") {
                 const parts = orderId.split("_");
@@ -195,7 +395,9 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                     updated_at: new Date().toISOString(),
                   })
                   .eq("id", targetOrderId)
-                  .select("order_number, customer_phone, customer_name, total, public_tracking_token")
+                  .select(
+                    "order_number, customer_phone, customer_name, total, public_tracking_token",
+                  )
                   .single();
 
                 await supabase
@@ -215,7 +417,12 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                     phone: updatedOrder.customer_phone,
                     text:
                       `Olá, *${(updatedOrder.customer_name || "Cliente").trim()}*! 🎉\n\n` +
-                      `Seu pagamento de *R$ ${Number(updatedOrder.total || 0).toFixed(2).replace(".", ",")}* para o *Pedido #${updatedOrder.order_number}* foi *CONFIRMADO*!\n\n` +
+                      `Seu pagamento de *R$ ${Number(updatedOrder.total || 0)
+                        .toFixed(2)
+                        .replace(
+                          ".",
+                          ",",
+                        )}* para o *Pedido #${updatedOrder.order_number}* foi *CONFIRMADO*!\n\n` +
                       `O estabelecimento já foi notificado e está cuidando do seu pedido.\n` +
                       `📱 Acompanhe em tempo real: ${trackingUrl}`,
                   }).catch(() => {});

@@ -47,9 +47,12 @@ import { Route as StudioPortfolioRouteImport } from './routes/studio.portfolio'
 import { Route as StudioPrecificacaoRouteImport } from './routes/studio.precificacao'
 import { Route as StudioProfissionaisRouteImport } from './routes/studio.profissionais'
 import { Route as StudioSettingsRouteImport } from './routes/studio.settings'
+import { Route as StudioWhatsappRouteImport } from './routes/studio.whatsapp'
 import { Route as TotemIndexRouteImport } from './routes/totem.index'
 import { Route as TotemSlugRouteImport } from './routes/totem.$slug'
+import { Route as ApiAsaasCancelSubscriptionRouteImport } from './routes/api.asaas.cancel-subscription'
 import { Route as ApiAsaasChargeRouteImport } from './routes/api.asaas.charge'
+import { Route as ApiAsaasPlanStatusRouteImport } from './routes/api.asaas.plan-status'
 import { Route as ApiAsaasSubaccountRouteImport } from './routes/api.asaas.subaccount'
 import { Route as ApiAsaasSubscribeRouteImport } from './routes/api.asaas.subscribe'
 import { Route as ApiAsaasSubscriptionStatusRouteImport } from './routes/api.asaas.subscription-status'
@@ -59,6 +62,7 @@ import { Route as ApiNotificationsWhatsappRouteImport } from './routes/api.notif
 import { Route as ApiStoreSlugRouteImport } from './routes/api.store.$slug'
 import { Route as ApiStripeCheckoutRouteImport } from './routes/api.stripe.checkout'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
+import { Route as ApiWhatsappGenerateTemplateRouteImport } from './routes/api.whatsapp.generate-template'
 import { Route as ApiWhatsappSessionRouteImport } from './routes/api.whatsapp.session'
 import { Route as AppBusinessClientsRouteImport } from './routes/app.business.clients'
 import { Route as AppBusinessQuotesRouteImport } from './routes/app.business.quotes'
@@ -262,6 +266,11 @@ const StudioSettingsRoute = StudioSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => StudioRoute,
 } as any)
+const StudioWhatsappRoute = StudioWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => StudioRoute,
+} as any)
 const TotemIndexRoute = TotemIndexRouteImport.update({
   id: '/totem/',
   path: '/totem/',
@@ -272,9 +281,20 @@ const TotemSlugRoute = TotemSlugRouteImport.update({
   path: '/totem/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAsaasCancelSubscriptionRoute =
+  ApiAsaasCancelSubscriptionRouteImport.update({
+    id: '/api/asaas/cancel-subscription',
+    path: '/api/asaas/cancel-subscription',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAsaasChargeRoute = ApiAsaasChargeRouteImport.update({
   id: '/api/asaas/charge',
   path: '/api/asaas/charge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAsaasPlanStatusRoute = ApiAsaasPlanStatusRouteImport.update({
+  id: '/api/asaas/plan-status',
+  path: '/api/asaas/plan-status',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAsaasSubaccountRoute = ApiAsaasSubaccountRouteImport.update({
@@ -324,6 +344,12 @@ const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   path: '/api/stripe/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWhatsappGenerateTemplateRoute =
+  ApiWhatsappGenerateTemplateRouteImport.update({
+    id: '/api/whatsapp/generate-template',
+    path: '/api/whatsapp/generate-template',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiWhatsappSessionRoute = ApiWhatsappSessionRouteImport.update({
   id: '/api/whatsapp/session',
   path: '/api/whatsapp/session',
@@ -425,11 +451,14 @@ export interface FileRoutesByFullPath {
   '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
+  '/studio/whatsapp': typeof StudioWhatsappRoute
   '/totem/$slug': typeof TotemSlugRoute
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/totem/': typeof TotemIndexRoute
+  '/api/asaas/cancel-subscription': typeof ApiAsaasCancelSubscriptionRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
+  '/api/asaas/plan-status': typeof ApiAsaasPlanStatusRoute
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/subscribe': typeof ApiAsaasSubscribeRoute
   '/api/asaas/subscription-status': typeof ApiAsaasSubscriptionStatusRoute
@@ -439,6 +468,7 @@ export interface FileRoutesByFullPath {
   '/api/store/$slug': typeof ApiStoreSlugRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/whatsapp/generate-template': typeof ApiWhatsappGenerateTemplateRoute
   '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
@@ -487,11 +517,14 @@ export interface FileRoutesByTo {
   '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
+  '/studio/whatsapp': typeof StudioWhatsappRoute
   '/totem/$slug': typeof TotemSlugRoute
   '/app': typeof AppIndexRoute
   '/studio': typeof StudioIndexRoute
   '/totem': typeof TotemIndexRoute
+  '/api/asaas/cancel-subscription': typeof ApiAsaasCancelSubscriptionRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
+  '/api/asaas/plan-status': typeof ApiAsaasPlanStatusRoute
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/subscribe': typeof ApiAsaasSubscribeRoute
   '/api/asaas/subscription-status': typeof ApiAsaasSubscriptionStatusRoute
@@ -501,6 +534,7 @@ export interface FileRoutesByTo {
   '/api/store/$slug': typeof ApiStoreSlugRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/whatsapp/generate-template': typeof ApiWhatsappGenerateTemplateRoute
   '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
@@ -552,11 +586,14 @@ export interface FileRoutesById {
   '/studio/precificacao': typeof StudioPrecificacaoRoute
   '/studio/profissionais': typeof StudioProfissionaisRoute
   '/studio/settings': typeof StudioSettingsRoute
+  '/studio/whatsapp': typeof StudioWhatsappRoute
   '/totem/$slug': typeof TotemSlugRoute
   '/app/': typeof AppIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/totem/': typeof TotemIndexRoute
+  '/api/asaas/cancel-subscription': typeof ApiAsaasCancelSubscriptionRoute
   '/api/asaas/charge': typeof ApiAsaasChargeRoute
+  '/api/asaas/plan-status': typeof ApiAsaasPlanStatusRoute
   '/api/asaas/subaccount': typeof ApiAsaasSubaccountRoute
   '/api/asaas/subscribe': typeof ApiAsaasSubscribeRoute
   '/api/asaas/subscription-status': typeof ApiAsaasSubscriptionStatusRoute
@@ -566,6 +603,7 @@ export interface FileRoutesById {
   '/api/store/$slug': typeof ApiStoreSlugRoute
   '/api/stripe/checkout': typeof ApiStripeCheckoutRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/whatsapp/generate-template': typeof ApiWhatsappGenerateTemplateRoute
   '/api/whatsapp/session': typeof ApiWhatsappSessionRoute
   '/app/business/clients': typeof AppBusinessClientsRoute
   '/app/business/quotes': typeof AppBusinessQuotesRoute
@@ -618,11 +656,14 @@ export interface FileRouteTypes {
     | '/studio/precificacao'
     | '/studio/profissionais'
     | '/studio/settings'
+    | '/studio/whatsapp'
     | '/totem/$slug'
     | '/app/'
     | '/studio/'
     | '/totem/'
+    | '/api/asaas/cancel-subscription'
     | '/api/asaas/charge'
+    | '/api/asaas/plan-status'
     | '/api/asaas/subaccount'
     | '/api/asaas/subscribe'
     | '/api/asaas/subscription-status'
@@ -632,6 +673,7 @@ export interface FileRouteTypes {
     | '/api/store/$slug'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
+    | '/api/whatsapp/generate-template'
     | '/api/whatsapp/session'
     | '/app/business/clients'
     | '/app/business/quotes'
@@ -680,11 +722,14 @@ export interface FileRouteTypes {
     | '/studio/precificacao'
     | '/studio/profissionais'
     | '/studio/settings'
+    | '/studio/whatsapp'
     | '/totem/$slug'
     | '/app'
     | '/studio'
     | '/totem'
+    | '/api/asaas/cancel-subscription'
     | '/api/asaas/charge'
+    | '/api/asaas/plan-status'
     | '/api/asaas/subaccount'
     | '/api/asaas/subscribe'
     | '/api/asaas/subscription-status'
@@ -694,6 +739,7 @@ export interface FileRouteTypes {
     | '/api/store/$slug'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
+    | '/api/whatsapp/generate-template'
     | '/api/whatsapp/session'
     | '/app/business/clients'
     | '/app/business/quotes'
@@ -744,11 +790,14 @@ export interface FileRouteTypes {
     | '/studio/precificacao'
     | '/studio/profissionais'
     | '/studio/settings'
+    | '/studio/whatsapp'
     | '/totem/$slug'
     | '/app/'
     | '/studio/'
     | '/totem/'
+    | '/api/asaas/cancel-subscription'
     | '/api/asaas/charge'
+    | '/api/asaas/plan-status'
     | '/api/asaas/subaccount'
     | '/api/asaas/subscribe'
     | '/api/asaas/subscription-status'
@@ -758,6 +807,7 @@ export interface FileRouteTypes {
     | '/api/store/$slug'
     | '/api/stripe/checkout'
     | '/api/stripe/webhook'
+    | '/api/whatsapp/generate-template'
     | '/api/whatsapp/session'
     | '/app/business/clients'
     | '/app/business/quotes'
@@ -785,7 +835,9 @@ export interface RootRouteChildren {
   PedidoTokenRoute: typeof PedidoTokenRoute
   TotemSlugRoute: typeof TotemSlugRoute
   TotemIndexRoute: typeof TotemIndexRoute
+  ApiAsaasCancelSubscriptionRoute: typeof ApiAsaasCancelSubscriptionRoute
   ApiAsaasChargeRoute: typeof ApiAsaasChargeRoute
+  ApiAsaasPlanStatusRoute: typeof ApiAsaasPlanStatusRoute
   ApiAsaasSubaccountRoute: typeof ApiAsaasSubaccountRoute
   ApiAsaasSubscribeRoute: typeof ApiAsaasSubscribeRoute
   ApiAsaasSubscriptionStatusRoute: typeof ApiAsaasSubscriptionStatusRoute
@@ -795,6 +847,7 @@ export interface RootRouteChildren {
   ApiStoreSlugRoute: typeof ApiStoreSlugRoute
   ApiStripeCheckoutRoute: typeof ApiStripeCheckoutRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  ApiWhatsappGenerateTemplateRoute: typeof ApiWhatsappGenerateTemplateRoute
   ApiWhatsappSessionRoute: typeof ApiWhatsappSessionRoute
   CBusinessSlugCampaignSlugRoute: typeof CBusinessSlugCampaignSlugRoute
   ApiStripeConnectOnboardingRoute: typeof ApiStripeConnectOnboardingRoute
@@ -1069,6 +1122,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioSettingsRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/studio/whatsapp': {
+      id: '/studio/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/studio/whatsapp'
+      preLoaderRoute: typeof StudioWhatsappRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/totem/': {
       id: '/totem/'
       path: '/totem'
@@ -1083,11 +1143,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TotemSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/asaas/cancel-subscription': {
+      id: '/api/asaas/cancel-subscription'
+      path: '/api/asaas/cancel-subscription'
+      fullPath: '/api/asaas/cancel-subscription'
+      preLoaderRoute: typeof ApiAsaasCancelSubscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/asaas/charge': {
       id: '/api/asaas/charge'
       path: '/api/asaas/charge'
       fullPath: '/api/asaas/charge'
       preLoaderRoute: typeof ApiAsaasChargeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/asaas/plan-status': {
+      id: '/api/asaas/plan-status'
+      path: '/api/asaas/plan-status'
+      fullPath: '/api/asaas/plan-status'
+      preLoaderRoute: typeof ApiAsaasPlanStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/asaas/subaccount': {
@@ -1151,6 +1225,13 @@ declare module '@tanstack/react-router' {
       path: '/api/stripe/webhook'
       fullPath: '/api/stripe/webhook'
       preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whatsapp/generate-template': {
+      id: '/api/whatsapp/generate-template'
+      path: '/api/whatsapp/generate-template'
+      fullPath: '/api/whatsapp/generate-template'
+      preLoaderRoute: typeof ApiWhatsappGenerateTemplateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/whatsapp/session': {
@@ -1316,6 +1397,7 @@ interface StudioRouteChildren {
   StudioPrecificacaoRoute: typeof StudioPrecificacaoRoute
   StudioProfissionaisRoute: typeof StudioProfissionaisRoute
   StudioSettingsRoute: typeof StudioSettingsRoute
+  StudioWhatsappRoute: typeof StudioWhatsappRoute
   StudioIndexRoute: typeof StudioIndexRoute
 }
 
@@ -1333,6 +1415,7 @@ const StudioRouteChildren: StudioRouteChildren = {
   StudioPrecificacaoRoute: StudioPrecificacaoRoute,
   StudioProfissionaisRoute: StudioProfissionaisRoute,
   StudioSettingsRoute: StudioSettingsRoute,
+  StudioWhatsappRoute: StudioWhatsappRoute,
   StudioIndexRoute: StudioIndexRoute,
 }
 
@@ -1352,7 +1435,9 @@ const rootRouteChildren: RootRouteChildren = {
   PedidoTokenRoute: PedidoTokenRoute,
   TotemSlugRoute: TotemSlugRoute,
   TotemIndexRoute: TotemIndexRoute,
+  ApiAsaasCancelSubscriptionRoute: ApiAsaasCancelSubscriptionRoute,
   ApiAsaasChargeRoute: ApiAsaasChargeRoute,
+  ApiAsaasPlanStatusRoute: ApiAsaasPlanStatusRoute,
   ApiAsaasSubaccountRoute: ApiAsaasSubaccountRoute,
   ApiAsaasSubscribeRoute: ApiAsaasSubscribeRoute,
   ApiAsaasSubscriptionStatusRoute: ApiAsaasSubscriptionStatusRoute,
@@ -1362,6 +1447,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStoreSlugRoute: ApiStoreSlugRoute,
   ApiStripeCheckoutRoute: ApiStripeCheckoutRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  ApiWhatsappGenerateTemplateRoute: ApiWhatsappGenerateTemplateRoute,
   ApiWhatsappSessionRoute: ApiWhatsappSessionRoute,
   CBusinessSlugCampaignSlugRoute: CBusinessSlugCampaignSlugRoute,
   ApiStripeConnectOnboardingRoute: ApiStripeConnectOnboardingRoute,

@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Sparkles,
   Calculator,
+  Package,
   Car,
   MessageCircle,
   CalendarDays,
@@ -18,9 +19,12 @@ import {
   Check,
   Copy,
   Receipt,
-  Share2,
-  Smartphone,
-  ExternalLink,
+  LayoutDashboard,
+  ClipboardList,
+  Bike,
+  BarChart3,
+  Settings2,
+  Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocalHub } from "@/lib/localhub-context";
@@ -265,77 +269,40 @@ export function StudioBusinessTools() {
 
         {/* SEGMENTO 4: ALIMENTAÇÃO & GASTRONOMIA */}
         {activeSegment === "alimentacao" && (
-          <div className="grid gap-5 lg:grid-cols-2">
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-900">Operação Gastronômica Completa</h3>
-              <div className="grid gap-2 sm:grid-cols-3">
-                <Link
-                  to="/studio/pedidos"
-                  className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 transition hover:border-[#b8d648] hover:bg-white hover:shadow-xs"
-                >
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <Receipt size={16} className="text-[#586341]" />
-                    <span className="text-xs font-bold">Painel KDS</span>
-                  </div>
-                  <p className="mt-2 text-[11px] text-slate-500">
-                    Preparo e despachos.
-                  </p>
-                </Link>
-
-                <Link
-                  to="/studio/mesas"
-                  className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 transition hover:border-[#b8d648] hover:bg-white hover:shadow-xs"
-                >
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <UtensilsCrossed size={16} className="text-[#586341]" />
-                    <span className="text-xs font-bold">Mesas & Salão</span>
-                  </div>
-                  <p className="mt-2 text-[11px] text-slate-500">
-                    Comandas e QR Codes.
-                  </p>
-                </Link>
-
-                <a
-                  href={`/totem/${business?.slug || "maniello"}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group flex flex-col justify-between rounded-xl border border-emerald-300 bg-emerald-50/70 p-3.5 transition hover:border-emerald-500 hover:bg-emerald-100/70 hover:shadow-xs"
-                >
-                  <div className="flex items-center gap-2 text-emerald-900">
-                    <Smartphone size={16} className="text-emerald-700" />
-                    <span className="text-xs font-bold">Totem Tablet</span>
-                  </div>
-                  <p className="mt-2 text-[11px] text-emerald-800">
-                    Autoatendimento touch.
-                  </p>
-                </a>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-[#dfe3d3] bg-[#f5f7ee] p-4">
-              <div className="flex items-center gap-2 text-[#465130] font-bold text-xs uppercase tracking-wider">
-                <Share2 size={15} />
-                <span>Cardápio Digital no WhatsApp & Totem</span>
-              </div>
-              <p className="mt-1 text-xs text-slate-600">
-                Seus clientes visualizam fotos nítidas dos pratos, pedem na mesa ou no totem touch e pagam no Pix.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Link
-                  to="/studio/catalog"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#292b25] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#3f4239]"
-                >
-                  Gerenciar Cardápio <ArrowRight size={12} />
-                </Link>
-                <a
-                  href={`/totem/${business?.slug || "maniello"}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-600 bg-emerald-100/80 px-3 py-1.5 text-xs font-bold text-emerald-900 transition hover:bg-emerald-200"
-                >
-                  📱 Abrir Totem <ExternalLink size={12} />
-                </a>
-              </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Ferramentas de alimentação</h3>
+            <p className="mt-1 text-xs text-slate-500">Acesso direto às áreas da operação do restaurante.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {[
+                { label: "Visão geral", description: "Resumo da operação", to: "/studio", icon: LayoutDashboard },
+                { label: "Pedidos", description: "Acompanhe e atualize pedidos", to: "/studio/pedidos", icon: ClipboardList },
+                { label: "Frente de caixa / PDV", description: "Registre vendas e movimentos", to: "/studio/caixa", icon: WalletCards },
+                { label: "Mesas", description: "Comandas, mesas e QR Codes", to: "/studio/mesas", icon: UtensilsCrossed },
+                { label: "Motoboys e entregas", description: "Equipe e pedidos em rota", to: "/studio/entregas", icon: Bike },
+                { label: "Cardápio", description: "Produtos, preços e disponibilidade", to: "/studio/catalog", icon: Package },
+                { label: "Cupons", description: "Descontos e promoções", to: "/studio/crm", icon: Tag, coupons: true },
+                { label: "Métricas de vendas", description: "Desempenho dos pedidos", to: "/studio/metricas", icon: BarChart3 },
+                { label: "Custos e precificação", description: "Custos, margens e preços", to: "/studio/precificacao", icon: Calculator },
+                { label: "Financeiro", description: "Movimentos e relatórios", to: "/studio/financeiro", icon: WalletCards },
+                { label: "Configuração da página", description: "Dados da loja e página pública", to: "/studio/settings", icon: Settings2 },
+              ].map(({ label, description, to, icon: Icon, coupons }) => {
+                const className = "group flex min-h-[76px] items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 transition hover:border-[#b8d648] hover:bg-white hover:shadow-xs";
+                const content = (
+                  <>
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#edf0e5] text-[#586341]"><Icon size={17} /></span>
+                    <span className="min-w-0">
+                      <span className="block text-xs font-bold text-slate-800">{label}</span>
+                      <span className="mt-1 block text-[11px] text-slate-500">{description}</span>
+                    </span>
+                    <ArrowRight size={14} className="ml-auto shrink-0 text-slate-400 transition group-hover:translate-x-0.5" />
+                  </>
+                );
+                return coupons ? (
+                  <Link key={label} to="/studio/crm" className={className}>{content}</Link>
+                ) : (
+                  <Link key={label} to={to as "/studio"} className={className}>{content}</Link>
+                );
+              })}
             </div>
           </div>
         )}

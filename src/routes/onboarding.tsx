@@ -346,6 +346,7 @@ function OnboardingPage() {
     specialties: [],
     serviceModes: [],
   });
+  const [foodOperationMode, setFoodOperationMode] = useState<"physical_delivery" | "delivery_only">("physical_delivery");
   const [form, setForm] = useState({
     name: "",
     category: "beleza",
@@ -441,7 +442,18 @@ function OnboardingPage() {
     }
     setSaving(true);
     try {
-      await createBusiness({ ...form, slug, onboardingDetails });
+      await createBusiness({
+        ...form,
+        slug,
+        onboardingDetails,
+        ...(form.category === "alimentacao"
+          ? {
+              acceptsDelivery: true,
+              acceptsDineIn: foodOperationMode === "physical_delivery",
+              acceptsPickup: foodOperationMode === "physical_delivery",
+            }
+          : {}),
+      });
       sessionStorage.setItem("ello_show_onboarding_tour", "true");
       setCreationCompleted(true);
     } catch (caught) {
@@ -1115,6 +1127,32 @@ function OnboardingPage() {
             </div>
           ) : (
             <div key="step-5" className="space-y-6">
+              {form.category === "alimentacao" && (
+                <fieldset className="min-w-0">
+                  <legend className="mb-2 text-sm font-semibold text-slate-700">Como funciona sua operação?</legend>
+                  <p className="mb-3 text-xs leading-5 text-slate-500">Escolha o formato principal. Você poderá ajustar as formas de atendimento nas configurações depois.</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {([
+                      ["physical_delivery", "Tenho local físico e também faço delivery"],
+                      ["delivery_only", "Trabalho apenas com delivery"],
+                    ] as const).map(([value, label]) => {
+                      const selected = foodOperationMode === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          onClick={() => setFoodOperationMode(value)}
+                          className={`flex min-h-14 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#89966a] ${selected ? "border-[#8a9668] bg-[#edf0e5] text-[#343e20]" : "border-[#dedfd6] bg-white text-slate-700 hover:border-[#c7c9bc]"}`}
+                        >
+                          {label}<span aria-hidden="true" className={`size-4 shrink-0 rounded-full border-2 ${selected ? "border-[#586341] bg-[#586341] ring-2 ring-[#586341]/20" : "border-slate-300"}`} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              )}
               <fieldset className="min-w-0">
                 <legend className="mb-2 text-sm font-semibold text-slate-700">
                   {setupProfile.serviceModeTitle}

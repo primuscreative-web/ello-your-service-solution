@@ -7,6 +7,8 @@ export type AsaasCustomerInput = {
   cpfCnpj?: string;
   phone?: string;
   email?: string;
+  postalCode?: string;
+  addressNumber?: string;
 };
 
 export type AsaasSubaccountInput = {
@@ -55,6 +57,17 @@ export type AsaasPaymentResponse = {
     creditCardBrand?: string;
     creditCardToken?: string;
   };
+};
+
+export type AsaasSubscriptionResponse = {
+  id: string;
+  customer: string;
+  value: number;
+  billingType: string;
+  cycle: string;
+  status: string;
+  nextDueDate: string;
+  externalReference?: string;
 };
 
 export type AsaasPixQrCodeResponse = {
@@ -122,7 +135,10 @@ export async function asaasFetch<T>(
     signal: AbortSignal.timeout(15_000),
   });
 
-  const data = (await response.json()) as T & { errors?: Array<{ code: string; description: string }> };
+  const responseText = await response.text();
+  const data = (responseText ? JSON.parse(responseText) : {}) as T & {
+    errors?: Array<{ code: string; description: string }>;
+  };
 
   if (!response.ok) {
     const errorMsg =
@@ -176,6 +192,8 @@ export async function findOrCreateAsaasCustomer(
       cpfCnpj: cleanCpfCnpj || undefined,
       phone: cleanPhone || undefined,
       email: input.email?.trim() || undefined,
+      postalCode: input.postalCode?.replace(/\D/g, "") || undefined,
+      addressNumber: input.addressNumber?.trim() || undefined,
       notificationDisabled: true,
     },
     subaccountApiKey,
@@ -305,6 +323,34 @@ export async function createAsaasUnifiedCharge(
   });
 
   return payment;
+}
+
+export async function createAsaasSubscription(input: {
+  customerId: string;
+  value: number;
+  cycle: "MONTHLY" | "YEARLY";
+  nextDueDate: string;
+  description: string;
+  externalReference: string;
+}): Promise<AsaasSubscriptionResponse> {
+  return asaasFetch<AsaasSubscriptionResponse>("subscriptions", {
+    method: "POST",
+    body: {
+      customer: input.customerId,
+      billingType: "PIX",
+      value: Math.round(input.value * 100) / 100,
+      cycle: input.cycle,
+      nextDueDate: input.nextDueDate,
+      description: input.description,
+      externalReference: input.externalReference,
+    },
+  });
+}
+
+export async function cancelAsaasSubscription(subscriptionId: string): Promise<void> {
+  await asaasFetch<unknown>(`subscriptions/${encodeURIComponent(subscriptionId)}`, {
+    method: "DELETE",
+  });
 }
 
 export async function createAsaasPixCharge(

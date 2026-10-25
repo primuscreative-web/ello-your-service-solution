@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Package,
   Settings2,
+  MessageCircle,
   LogOut,
   ClipboardList,
   BarChart3,
@@ -15,6 +16,7 @@ import {
   HeartHandshake,
   WalletCards,
   Utensils,
+  Tag,
   Copy,
   Check,
   Store,
@@ -80,30 +82,22 @@ export function StudioLayout() {
     },
     {
       title: "GESTÃO",
-      items: [
-        { to: "/studio/catalog", label: businessCopy.offerTitle, icon: Package, id: "tour-nav-catalog" },
-        {
-          to: "/studio/portfolio" as const,
-          label: "Portfólio & Trabalhos",
-          icon: ImagePlus,
-          id: "tour-nav-portfolio",
-        },
-        {
-          to: "/studio/crm" as const,
-          label: isFoodBusiness ? "Clientes & Promoções" : "Clientes & Fichas",
-          icon: HeartHandshake,
-          id: "tour-nav-crm",
-        },
-        ...(!isFoodBusiness
-          ? [
-              {
-                to: "/studio/profissionais" as const,
-                label: "Profissionais",
-                icon: UsersRound,
-              },
-            ]
-          : []),
-      ],
+      items: isFoodBusiness
+        ? [
+            { to: "/studio/catalog" as const, label: "Cardápio", icon: Package, id: "tour-nav-catalog" },
+            {
+              to: "/studio/crm" as const,
+              label: "Cupons & Promoções",
+              icon: Tag,
+              id: "tour-nav-coupons",
+            },
+          ] satisfies StudioNavItem[]
+        : [
+            { to: "/studio/catalog" as const, label: businessCopy.offerTitle, icon: Package, id: "tour-nav-catalog" },
+            { to: "/studio/portfolio" as const, label: "Portfólio & Trabalhos", icon: ImagePlus, id: "tour-nav-portfolio" },
+            { to: "/studio/crm" as const, label: "Clientes & Fichas", icon: HeartHandshake, id: "tour-nav-crm" },
+            { to: "/studio/profissionais" as const, label: "Profissionais", icon: UsersRound },
+          ] satisfies StudioNavItem[],
     },
     {
       title: "FINANÇAS & RESULTADOS",
@@ -116,7 +110,8 @@ export function StudioLayout() {
     {
       title: "CONFIGURAÇÕES",
       items: [
-        { to: "/studio/settings", label: "Minha Página & WhatsApp", icon: Settings2, id: "tour-nav-settings" },
+        { to: "/studio/settings", label: "Minha Página", icon: Settings2, id: "tour-nav-settings" },
+        { to: "/studio/whatsapp", label: "WhatsApp", icon: MessageCircle, id: "tour-nav-whatsapp" },
         { to: "/planos", label: "Planos & Assinatura", icon: Sparkles, id: "tour-nav-planos" },
       ],
     },
@@ -252,7 +247,7 @@ export function StudioLayout() {
                 <div className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#717565]">
                   {group.title}
                 </div>
-                {group.items.map(({ to, label, icon: Icon, id, ...options }) => {
+        {group.items.map(({ to, label, icon: Icon, id, ...options }) => {
                   const active =
                     "exact" in options && options.exact
                       ? pathname === to
@@ -453,7 +448,7 @@ export function StudioLayout() {
                   {group.title}
                 </h2>
                 <div className="overflow-hidden rounded-2xl border border-[#e7e6de] bg-white">
-                          {group.items.map(({ to, label, icon: Icon, id, exact }, index) => {
+                  {group.items.map(({ to, label, icon: Icon, id, exact }, index) => {
                     const active = exact ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
                     return (
                       <SheetClose asChild key={to}>

@@ -5,7 +5,6 @@ import {
   createRootRouteWithContext,
   useRouter,
   HeadContent,
-  redirect,
   Scripts,
 } from "@tanstack/react-router";
 import type { ErrorComponentProps } from "@tanstack/react-router";
@@ -87,30 +86,6 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  beforeLoad: ({ location }) => {
-    const allowed =
-      location.pathname === "/" ||
-      location.pathname === "/auth" ||
-      location.pathname === "/planos" ||
-      location.pathname.startsWith("/planos") ||
-      location.pathname === "/onboarding" ||
-      location.pathname === "/studio" ||
-      location.pathname.startsWith("/studio/") ||
-      location.pathname.startsWith("/loja/") ||
-      location.pathname.startsWith("/pedido/") ||
-      location.pathname.startsWith("/p/") ||
-      location.pathname === "/role" ||
-      location.pathname === "/app" ||
-      location.pathname.startsWith("/app/") ||
-      location.pathname === "/totem" ||
-      location.pathname.startsWith("/totem/") ||
-      location.pathname.startsWith("/c/") ||
-      location.pathname.startsWith("/api/");
-    if (!allowed) {
-      throw redirect({ href: "/" });
-    }
-    return {};
-  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -133,6 +108,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Uma página bonita e prática para mostrar serviços, receber pedidos e organizar sua rotina.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://ello.app.br/" },
+      { property: "og:image", content: "https://ello.app.br/images/ello/ello-logo-dark.png" },
+      { name: "twitter:image", content: "https://ello.app.br/images/ello/ello-logo-dark.png" },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@elloapp" },
     ],

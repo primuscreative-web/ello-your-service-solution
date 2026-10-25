@@ -12,7 +12,7 @@ interface ElloAtomLoaderProps {
   /** Custom text class */
   labelClassName?: string;
   /** Use video tag when supported or image directly (default: 'hybrid') */
-  mode?: "hybrid" | "image" | "video";
+  mode?: "hybrid" | "image" | "video" | "interlace";
 }
 
 /**
@@ -25,11 +25,39 @@ export function ElloAtomLoader({
   layout = "vertical",
   className = "",
   labelClassName = "",
-  mode = "hybrid",
+  mode = "interlace",
 }: ElloAtomLoaderProps) {
   const isHorizontal = layout === "horizontal";
 
   const renderVisual = () => {
+    if (mode === "interlace") {
+      return (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 128 80"
+          width={size}
+          height={size}
+          className="ello-interlace-loader shrink-0 overflow-visible"
+          focusable="false"
+        >
+          <defs>
+            <linearGradient id="ello-thread-lime" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#70ff28" />
+              <stop offset="1" stopColor="#19d944" />
+            </linearGradient>
+            <linearGradient id="ello-thread-green" x1="1" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#21f13b" />
+              <stop offset="1" stopColor="#00a94f" />
+            </linearGradient>
+          </defs>
+          <path d="M14 40C14 20 34 12 49 25L78 51C93 64 114 55 114 36" fill="none" stroke="#15391a" strokeWidth="13" strokeLinecap="round" />
+          <path d="M114 40C114 60 94 68 79 55L50 29C35 16 14 25 14 44" fill="none" stroke="#15391a" strokeWidth="13" strokeLinecap="round" />
+          <path className="ello-thread ello-thread-under" d="M114 40C114 60 94 68 79 55L50 29C35 16 14 25 14 44" fill="none" stroke="url(#ello-thread-green)" strokeWidth="8" strokeLinecap="round" />
+          <path className="ello-thread ello-thread-over" d="M14 40C14 20 34 12 49 25L78 51C93 64 114 55 114 36" fill="none" stroke="url(#ello-thread-lime)" strokeWidth="8" strokeLinecap="round" />
+        </svg>
+      );
+    }
+
     if (mode === "video") {
       return (
         <video

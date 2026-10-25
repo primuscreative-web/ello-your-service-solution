@@ -5,18 +5,21 @@ export const Route = createFileRoute("/api/asaas/subscription-status")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!isAsaasConfigured()) {
+        if (!isAsaasConfigured())
           return Response.json(
-            { error: "O gateway Asaas não está configurado no servidor." },
+            { error: "O serviço de pagamentos não está disponível." },
             { status: 503 },
           );
-        }
+        const bearer = request.headers.get("authorization");
+        if (!bearer?.startsWith("Bearer "))
+          return Response.json({ error: "Não autenticado." }, { status: 401 });
+        const supabase = getAsaasAdminSupabase();
+        const { data: authData, error: authError } = await supabase.auth.getUser(bearer.slice(7));
+        if (authError || !authData.user)
+          return Response.json({ error: "Sessão inválida." }, { status: 401 });
 
         const url = new URL(request.url);
         const paymentId = url.searchParams.get("paymentId");
-        const businessId = url.searchParams.get("businessId");
-        const planId = url.searchParams.get("planId") as "pro" | "business" | null;
-        const billingCycle = url.searchParams.get("billingCycle") as "monthly" | "yearly" | null;
 
         if (!paymentId) {
           return Response.json({ error: "Parâmetro paymentId é obrigatório." }, { status: 400 });
@@ -28,6 +31,7 @@ export const Route = createFileRoute("/api/asaas/subscription-status")({
             id: string;
             status: string;
             value: number;
+            subscription?: string;
             paymentDate?: string;
             confirmedDate?: string;
             clientPaymentDate?: string;
@@ -35,43 +39,31 @@ export const Route = createFileRoute("/api/asaas/subscription-status")({
 
           const isPaid = payment.status === "RECEIVED" || payment.status === "CONFIRMED";
 
-          // Se estiver pago e tiver businessId, garante a ativação no Supabase
-          if (isPaid && businessId && planId) {
-            try {
-              const supabase = getAsaasAdminSupabase();
-              const { data: currentBiz } = await supabase
-                .from("localhub_businesses")
-                .select("onboarding_details")
-                .eq("id", businessId)
-                .maybeSingle();
-
-              if (currentBiz) {
-                const currentDetails = currentBiz.onboarding_details || {};
-                if (currentDetails.plan !== planId) {
-                  await supabase
-                    .from("localhub_businesses")
-                    .update({
-                      onboarding_details: {
-                        ...currentDetails,
-                        plan: planId,
-                        planBillingCycle: billingCycle || "monthly",
-                        planActivatedAt: new Date().toISOString(),
-                        lastPaymentId: paymentId,
-                      },
-                    })
-                    .eq("id", businessId);
-                }
-              }
-            } catch (updateErr) {
-              console.error("Erro ao ativar plano no banco Supabase:", updateErr);
-            }
+          const { data: ownedBusiness } = await supabase
+            .from("localhub_businesses")
+            .select("id")
+            .eq("owner_id", authData.user.id)
+            .maybeSingle();
+          if (!ownedBusiness)
+            return Response.json({ error: "Negócio não encontrado." }, { status: 404 });
+          const { data: planPayment } = await supabase
+            .from("localhub_asaas_plan_payments")
+            .select("business_id, asaas_subscription_id, status")
+            .eq("asaas_payment_id", paymentId)
+            .eq("business_id", ownedBusiness.id)
+            .maybeSingle();
+          if (
+            !planPayment ||
+            (payment.subscription && payment.subscription !== planPayment.asaas_subscription_id)
+          ) {
+            return Response.json({ error: "Cobrança não vinculada à sua conta." }, { status: 404 });
           }
 
           return Response.json({
             success: true,
             paymentId: payment.id,
             status: payment.status,
-            isPaid,
+            isPaid: isPaid && planPayment.status === "received",
             value: payment.value,
             paymentDate: payment.paymentDate || payment.confirmedDate || payment.clientPaymentDate,
           });

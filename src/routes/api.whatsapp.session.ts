@@ -2,10 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getWhatsAppServerConfig } from "@/lib/config.server";
 import {
   authenticateRequestUser,
+  getSecurityAdminSupabase,
   checkRateLimit,
   getClientIp,
   createRateLimitResponse,
 } from "@/lib/security.server";
+
+function noStore(response: Response): Response {
+  response.headers.set("Cache-Control", "private, no-store, max-age=0");
+  response.headers.set("Pragma", "no-cache");
+  return response;
+}
+
+function noStoreJson(body: unknown, init?: ResponseInit): Response {
+  return noStore(Response.json(body, init));
+}
 
 export const Route = createFileRoute("/api/whatsapp/session")({
   server: {
@@ -15,14 +26,33 @@ export const Route = createFileRoute("/api/whatsapp/session")({
         const ip = getClientIp(request);
         const rateLimit = checkRateLimit(`wa-session-get:${ip}`, 20, 60_000);
         if (!rateLimit.allowed) {
-          return createRateLimitResponse(rateLimit.resetSeconds);
+          return noStore(createRateLimitResponse(rateLimit.resetSeconds));
+        }
+
+        const auth = await authenticateRequestUser(request);
+        if (!auth.user) {
+          return noStoreJson({ error: "Acesso não autorizado." }, { status: 401 });
+        }
+        let supabase;
+        try {
+          supabase = getSecurityAdminSupabase();
+        } catch {
+          return noStoreJson({ error: "Integração temporariamente indisponível." }, { status: 503 });
+        }
+        const { data: business } = await supabase
+          .from("localhub_businesses")
+          .select("id")
+          .eq("owner_id", auth.user.id)
+          .maybeSingle();
+        if (!business) {
+          return noStoreJson({ error: "Negócio não encontrado para esta conta." }, { status: 403 });
         }
 
         // 2. Leitura de estado e QR Code da instância
         try {
           const config = getWhatsAppServerConfig();
           if (config.provider !== "evolution" || !config.apiUrl || !config.apiToken) {
-            return Response.json({
+            return noStoreJson({
               configured: false,
               provider: config.provider,
               state: "not_configured",
@@ -47,7 +77,7 @@ export const Route = createFileRoute("/api/whatsapp/session")({
 
           // Se já conectado (open), não expõe QR code desnecessariamente
           if (state === "open") {
-            return Response.json({
+            return noStoreJson({
               configured: true,
               provider: "evolution",
               instance,
@@ -73,7 +103,7 @@ export const Route = createFileRoute("/api/whatsapp/session")({
             state = "connecting";
           }
 
-          return Response.json({
+          return noStoreJson({
             configured: true,
             provider: "evolution",
             instance,
@@ -81,7 +111,7 @@ export const Route = createFileRoute("/api/whatsapp/session")({
             qrcode,
           });
         } catch (error) {
-          return Response.json(
+          return noStoreJson(
             {
               configured: false,
               state: "error",
@@ -98,20 +128,38 @@ export const Route = createFileRoute("/api/whatsapp/session")({
         const ip = getClientIp(request);
         const rateLimit = checkRateLimit(`wa-session-cmd:${ip}`, 5, 60_000);
         if (!rateLimit.allowed) {
-          return createRateLimitResponse(rateLimit.resetSeconds);
+          return noStore(createRateLimitResponse(rateLimit.resetSeconds));
         }
 
         // 2. Autenticação obrigatória
         const auth = await authenticateRequestUser(request);
         if (!auth.user) {
-          return Response.json(
+          return noStoreJson(
             { error: "Acesso não autorizado. Apenas lojistas autenticados podem gerenciar sessões." },
             { status: 401 },
           );
         }
 
+        let supabase;
+        try {
+          supabase = getSecurityAdminSupabase();
+        } catch {
+          return noStoreJson({ error: "Integração temporariamente indisponível." }, { status: 503 });
+        }
+        const { data: business } = await supabase
+          .from("localhub_businesses")
+          .select("id")
+          .eq("owner_id", auth.user.id)
+          .maybeSingle();
+        if (!business) {
+          return noStoreJson({ error: "Negócio não encontrado para esta conta." }, { status: 403 });
+        }
+
         try {
           const config = getWhatsAppServerConfig();
+          if (config.provider !== "evolution" || !config.apiUrl || !config.apiToken) {
+            return noStoreJson({ error: "Integração WhatsApp não configurada." }, { status: 503 });
+          }
           const baseUrl = config.apiUrl.replace(/\/$/, "");
           const instance = config.instanceId || "ello-principal";
           const body = (await request.json().catch(() => ({}))) as { action?: string };
@@ -126,13 +174,13 @@ export const Route = createFileRoute("/api/whatsapp/session")({
 
             if (!logoutRes.ok) {
               const errTxt = await logoutRes.text().catch(() => "");
-              return Response.json(
+              return noStoreJson(
                 { success: false, error: `Falha ao desconectar instância: ${errTxt}` },
                 { status: 502 },
               );
             }
 
-            return Response.json({ success: true, message: "Instância desconectada com sucesso." });
+            return noStoreJson({ success: true, message: "Instância desconectada com sucesso." });
           }
 
           // Restart / Reconnect
@@ -142,9 +190,9 @@ export const Route = createFileRoute("/api/whatsapp/session")({
             signal: AbortSignal.timeout(10000),
           });
 
-          return Response.json({ success: true, message: "Instância reiniciada." });
+          return noStoreJson({ success: true, message: "Instância reiniciada." });
         } catch (error) {
-          return Response.json(
+          return noStoreJson(
             {
               success: false,
               error: error instanceof Error ? error.message : "Erro interno ao processar comando.",

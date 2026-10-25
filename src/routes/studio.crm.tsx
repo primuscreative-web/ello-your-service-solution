@@ -1,9 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { UsersRound, Search, Send, Tag, Plus, Link2, Copy, MessageCircle, CalendarDays, FileText } from "lucide-react";
+import {
+  UsersRound,
+  Search,
+  Send,
+  Tag,
+  Plus,
+  Link2,
+  Copy,
+  MessageCircle,
+  CalendarDays,
+  FileText,
+} from "lucide-react";
 import { Field, inputClass, PageTitle, primaryButtonClass } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { PlanFeatureGate } from "@/components/localhub/plan-feature-gate";
 
 export const Route = createFileRoute("/studio/crm")({ component: FoodCrmPage });
 
@@ -68,6 +80,8 @@ const toCampaignSlug = (value: string) =>
 
 function FoodCrmPage() {
   const { business, bookings, services, staff, saveBusiness } = useLocalHub();
+  const isFoodBusiness = business?.category === "alimentacao";
+  const isCouponsView = isFoodBusiness;
   const [editingNoteFor, setEditingNoteFor] = useState<string | null>(null);
   const [customerNoteDraft, setCustomerNoteDraft] = useState<string>("");
   const [savingNote, setSavingNote] = useState(false);
@@ -103,37 +117,38 @@ function FoodCrmPage() {
     if (!client || !business?.id) return;
     const eligibleSince = new Date(Date.now() - 30 * 60 * 1000).toISOString();
     const discardBefore = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const [customerResult, couponResult, cartResult, campaignResult, bookingsResult] = await Promise.all([
-      client.rpc("localhub_food_customers", { p_business_id: business.id }),
-      client
-        .from("localhub_coupons")
-        .select(
-          "id,code,discount_type,discount_value,minimum_order,first_order_only,per_customer_limit,usage_limit,is_active",
-        )
-        .eq("business_id", business.id)
-        .order("created_at", { ascending: false }),
-      client
-        .from("localhub_abandoned_carts")
-        .select("id,phone_e164,cart,abandoned_at")
-        .eq("business_id", business.id)
-        .not("recovery_consent_at", "is", null)
-        .is("recovered_order_id", null)
-        .is("recovery_message_queued_at", null)
-        .lte("abandoned_at", eligibleSince)
-        .gte("abandoned_at", discardBefore)
-        .order("abandoned_at", { ascending: true })
-        .limit(50),
-      client
-        .from("localhub_campaign_links")
-        .select("id,name,slug,coupon_id,clicks,conversions")
-        .eq("business_id", business.id)
-        .order("created_at", { ascending: false }),
-      client
-        .from("localhub_bookings")
-        .select("id,customer_name,phone,created_at,date,status,service_id")
-        .eq("business_id", business.id)
-        .neq("status", "cancelled"),
-    ]);
+    const [customerResult, couponResult, cartResult, campaignResult, bookingsResult] =
+      await Promise.all([
+        client.rpc("localhub_food_customers", { p_business_id: business.id }),
+        client
+          .from("localhub_coupons")
+          .select(
+            "id,code,discount_type,discount_value,minimum_order,first_order_only,per_customer_limit,usage_limit,is_active",
+          )
+          .eq("business_id", business.id)
+          .order("created_at", { ascending: false }),
+        client
+          .from("localhub_abandoned_carts")
+          .select("id,phone_e164,cart,abandoned_at")
+          .eq("business_id", business.id)
+          .not("recovery_consent_at", "is", null)
+          .is("recovered_order_id", null)
+          .is("recovery_message_queued_at", null)
+          .lte("abandoned_at", eligibleSince)
+          .gte("abandoned_at", discardBefore)
+          .order("abandoned_at", { ascending: true })
+          .limit(50),
+        client
+          .from("localhub_campaign_links")
+          .select("id,name,slug,coupon_id,clicks,conversions")
+          .eq("business_id", business.id)
+          .order("created_at", { ascending: false }),
+        client
+          .from("localhub_bookings")
+          .select("id,customer_name,phone,created_at,date,status,service_id")
+          .eq("business_id", business.id)
+          .neq("status", "cancelled"),
+      ]);
     if (couponResult.error || cartResult.error || campaignResult.error) {
       setError(
         couponResult.error?.message ??
@@ -152,7 +167,7 @@ function FoodCrmPage() {
     const fortyFiveDaysMs = 45 * 24 * 60 * 60 * 1000;
 
     const bookingCustomersMap = new Map<string, Customer>();
-    for (const b of (bookingsResult.data ?? [])) {
+    for (const b of bookingsResult.data ?? []) {
       const cleanPhone = (b.phone || "").replace(/\D/g, "");
       if (!cleanPhone || knownPhones.has(cleanPhone)) continue;
 
@@ -467,703 +482,768 @@ function FoodCrmPage() {
   };
 
   return (
-    <>
-      <PageTitle
-        eyebrow="Relacionamento e recorrência"
-        title="Clientes e promoções"
-        description="Histórico de compra, segmentos e cupons para aproximar clientes e acompanhar a recorrência."
-      />
-      {error && (
-        <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">
-          {notice}
-        </p>
-      )}
-      <div className="mb-5 grid gap-3 sm:grid-cols-4">
-        {(["new", "recurring", "inactive", "vip"] as const).map((key) => (
-          <button
-            type="button"
-            key={key}
-            onClick={() => setSegment(segment === key ? "all" : key)}
-            className={`rounded-2xl border bg-white p-4 text-left ${segment === key ? "border-[#778253] ring-1 ring-[#778253]" : "border-slate-100"}`}
-          >
-            <span className="text-xs text-slate-500">{segmentLabels[key]}</span>
-            <strong className="mt-1 block text-2xl">
-              {customers.filter((customer) => customer.segment === key).length}
-            </strong>
-          </button>
-        ))}
-      </div>
-      <div className="grid items-start gap-5 xl:grid-cols-[1.4fr_.8fr]">
-        <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-4 flex items-center gap-2">
-            <UsersRound size={18} className="text-[#778253]" />
-            <h2 className="font-bold">Base de clientes</h2>
-            <span className="ml-auto text-xs text-slate-500">
-              {visibleCustomers.length} clientes
-            </span>
-          </div>
-          <label className="mb-3 flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 px-3">
-            <Search size={15} className="text-slate-400" />
-            <span className="sr-only">Buscar cliente</span>
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              className="w-full text-sm outline-none"
-              placeholder="Buscar nome ou telefone"
-            />
-          </label>
-          <div className="divide-y divide-slate-100">
-            {visibleCustomers.map((customer) => (
-              <article key={customer.id} className="flex flex-wrap items-center gap-3 py-4">
-                <span className="grid size-10 place-items-center rounded-full bg-[#edf0e5] font-bold text-[#586341]">
-                  {customer.full_name.slice(0, 1).toUpperCase()}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <strong className="block truncate text-sm">{customer.full_name}</strong>
-                  <span className="text-xs text-slate-500">
-                    {customer.phone_e164} ·{" "}
-                    {business?.category === "alimentacao"
-                      ? `${customer.orders_count} pedidos`
-                      : `${customer.orders_count} atendimentos`}{" "}
-                    · {formatMoney(Number(customer.lifetime_value))}
-                    {business?.loyaltyEnabled && (
-                      <>
-                        {" · Saldo: "}
-                        {business.loyaltyMode === "points"
-                          ? `${Number(customer.loyalty_balance)} pontos`
-                          : formatMoney(Number(customer.loyalty_balance))}
-                      </>
-                    )}
-                  </span>
-                </div>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold">
-                  {segmentLabels[customer.segment]}
-                </span>
-                <button
-                  type="button"
-                  aria-expanded={expandedCustomerId === customer.id}
-                  onClick={() => void toggleCustomerHistory(customer)}
-                  className="min-h-9 rounded-lg border px-2.5 text-xs font-semibold"
-                >
-                  {loadingOrdersFor === customer.id
-                    ? "Carregando…"
-                    : expandedCustomerId === customer.id
-                      ? "Ocultar histórico"
-                      : business?.category === "alimentacao"
-                        ? "Ver compras"
-                        : "Ver histórico"}
-                </button>
-                {customer.phone_e164 && (
-                  <a
-                    href={`https://wa.me/${customer.phone_e164.replace(/\D/g, "").length === 10 || customer.phone_e164.replace(/\D/g, "").length === 11 ? `55${customer.phone_e164.replace(/\D/g, "")}` : customer.phone_e164.replace(/\D/g, "")}?text=${encodeURIComponent(getCustomerWhatsAppMessage(customer))}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition active:scale-95"
-                    title="Enviar mensagem amigável no WhatsApp"
-                  >
-                    <MessageCircle size={13} />
-                    <span>{customer.segment === "inactive" ? "Reconquistar" : "WhatsApp"}</span>
-                  </a>
-                )}
-                {customer.marketing_consent && customer.segment === "inactive" && (
-                  <button
-                    type="button"
-                    onClick={() => void queueReengagement(customer)}
-                    className="inline-flex min-h-9 items-center gap-1 rounded-lg border px-2.5 text-xs font-semibold"
-                  >
-                    <Send size={13} /> Preparar contato
-                  </button>
-                )}
-                {business?.loyaltyEnabled && Number(customer.loyalty_balance) > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRedeemingCustomerId(
-                        redeemingCustomerId === customer.id ? null : customer.id,
-                      );
-                      setRedemptionUnits("");
-                    }}
-                    className="min-h-9 rounded-lg border px-2.5 text-xs font-semibold"
-                  >
-                    Registrar resgate
-                  </button>
-                )}
-                {redeemingCustomerId === customer.id && (
-                  <form
-                    onSubmit={(event) => void redeemCustomerBalance(event, customer)}
-                    className="grid basis-full gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-[1fr_auto]"
-                  >
-                    <Field
-                      label={
-                        business?.loyaltyMode === "points"
-                          ? "Pontos a resgatar"
-                          : "Cashback a resgatar (R$)"
-                      }
-                      hint={
-                        business?.loyaltyMode === "points"
-                          ? "100 pontos equivalem a R$ 1,00."
-                          : undefined
-                      }
-                    >
-                      <input
-                        required
-                        type="number"
-                        min={business?.loyaltyMode === "points" ? "1" : "0.01"}
-                        max={Number(customer.loyalty_balance)}
-                        step={business?.loyaltyMode === "points" ? "1" : "0.01"}
-                        value={redemptionUnits}
-                        onChange={(event) => setRedemptionUnits(event.target.value)}
-                        className={inputClass}
-                      />
-                    </Field>
-                    <button disabled={redeeming} className={`${primaryButtonClass} self-end`}>
-                      {redeeming ? "Registrando…" : "Confirmar resgate"}
-                    </button>
-                  </form>
-                )}
-                {expandedCustomerId === customer.id && (() => {
-                  const cleanPhone = customer.phone_e164.replace(/\D/g, "");
-                  const customerBookings = bookings.filter((b) => (b.phone || "").replace(/\D/g, "") === cleanPhone);
-                  const existingNote = business?.onboardingDetails?.customerNotes?.[cleanPhone] || "";
-                  const orders = customerOrders[customer.id] ?? [];
-                  const isFood = business?.category === "alimentacao";
-
-                  return (
-                    <div className="basis-full rounded-xl bg-slate-50 p-4 space-y-4 border border-slate-200">
-                      {/* FICHA DE PREFERÊNCIAS / ANOTAÇÕES DO CLIENTE */}
-                      <div className="rounded-xl border border-[#dfe3d4] bg-white p-3.5 shadow-2xs">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                            <FileText size={14} className="text-[#687348]" />
-                            Ficha de Preferências & Anotações do Cliente
-                          </div>
-                          {editingNoteFor !== customer.id && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingNoteFor(customer.id);
-                                setCustomerNoteDraft(existingNote);
-                              }}
-                              className="text-[11px] font-bold text-[#586341] hover:underline"
-                            >
-                              {existingNote ? "Editar Ficha" : "+ Adicionar Anotação"}
-                            </button>
-                          )}
-                        </div>
-
-                        {editingNoteFor === customer.id ? (
-                          <div className="mt-2.5 space-y-2">
-                            <textarea
-                              rows={2}
-                              value={customerNoteDraft}
-                              onChange={(e) => setCustomerNoteDraft(e.target.value)}
-                              placeholder="Ex.: Prefere corte com tesoura no topo; Tonalizante 7.1; Alérgica a esmaltes com tolueno..."
-                              className="w-full rounded-lg border border-slate-200 bg-[#fdfdfc] p-2.5 text-xs text-slate-800 outline-none focus:border-[#778253]"
-                            />
-                            <div className="flex justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setEditingNoteFor(null)}
-                                className="rounded-lg px-2.5 py-1 text-xs text-slate-500 hover:bg-slate-100"
-                              >
-                                Cancelar
-                              </button>
-                              <button
-                                type="button"
-                                disabled={savingNote}
-                                onClick={() => void handleSaveCustomerNote(customer.phone_e164, customerNoteDraft)}
-                                className="rounded-lg bg-[#292b25] px-3 py-1 text-xs font-bold text-white hover:bg-black disabled:opacity-50"
-                              >
-                                {savingNote ? "Salvando…" : "Salvar Ficha"}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="mt-1.5 text-xs text-slate-600">
-                            {existingNote ? (
-                              <span className="whitespace-pre-line font-medium text-slate-700">{existingNote}</span>
-                            ) : (
-                              <span className="italic text-slate-400">
-                                Nenhuma anotação gravada ainda. Clique para anotar o tipo de corte, preferências ou histórico do cliente.
-                              </span>
-                            )}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* HISTÓRICO DE AGENDAMENTOS / ATENDIMENTOS */}
-                      {customerBookings.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 mb-2">
-                            <CalendarDays size={14} className="text-[#687348]" />
-                            Histórico de Atendimentos ({customerBookings.length})
-                          </div>
-                          <div className="space-y-2">
-                            {customerBookings.map((b) => {
-                              const s = services.find((srv) => srv.id === b.serviceId);
-                              const st = staff.find((m) => m.id === b.staffId);
-                              return (
-                                <div
-                                  key={b.id}
-                                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white p-2.5 text-xs"
-                                >
-                                  <div>
-                                    <strong className="text-slate-800">{s?.name ?? "Serviço"}</strong>
-                                    <div className="text-[11px] text-slate-500 mt-0.5">
-                                      {b.date} às {b.time}
-                                      {st ? ` · Profissional: ${st.name}` : ""}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-bold text-slate-700">
-                                      {formatMoney(s?.price ?? 0)}
-                                    </span>
-                                    <span
-                                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                                        b.status === "completed"
-                                          ? "bg-emerald-100 text-emerald-800"
-                                          : b.status === "confirmed"
-                                          ? "bg-blue-100 text-blue-800"
-                                          : b.status === "in_progress"
-                                          ? "bg-amber-100 text-amber-800"
-                                          : "bg-slate-100 text-slate-600"
-                                      }`}
-                                    >
-                                      {b.status === "completed"
-                                        ? "Concluído"
-                                        : b.status === "confirmed"
-                                        ? "Confirmado"
-                                        : b.status === "in_progress"
-                                        ? "Em andamento"
-                                        : b.status}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* HISTÓRICO DE PEDIDOS (GASTRONOMIA) */}
-                      {isFood && (
-                        <div>
-                          <h3 className="text-xs font-bold text-slate-700 mb-2">Últimos pedidos de delivery / balcão</h3>
-                          {orders.map((order) => (
-                            <div key={order.id} className="mt-2 rounded-lg border border-slate-200 bg-white p-2.5">
-                              <div className="flex flex-wrap justify-between gap-2 text-xs">
-                                <strong>Pedido #{order.order_number}</strong>
-                                <span>{formatMoney(order.total)}</span>
-                                <span className="text-slate-500">
-                                  {new Date(order.created_at).toLocaleString("pt-BR")}
-                                </span>
-                              </div>
-                              <p className="mt-1 text-[11px] capitalize text-slate-500">
-                                {order.status.replaceAll("_", " ")}
-                                {" · "}
-                                {order.fulfillment.replaceAll("_", " ")}
-                                {" · "}
-                                {order.payment_method.replaceAll("_", " ")}
-                              </p>
-                              <ul className="mt-2 space-y-1 text-xs text-slate-600">
-                                {order.items.map((item, index) => (
-                                  <li key={`${order.id}-${index}`} className="flex justify-between gap-3">
-                                    <span>
-                                      {item.quantity}× {item.item_name}
-                                    </span>
-                                    <span>{formatMoney(item.line_total)}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ))}
-                          {orders.length === 0 && (
-                            <p className="text-xs text-slate-400 italic">Nenhum pedido registrado.</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </article>
-            ))}
-            {!visibleCustomers.length && (
-              <p className="py-12 text-center text-sm text-slate-500">
-                Os clientes aparecem aqui após a primeira compra.
-              </p>
-            )}
-          </div>
-        </section>
-        <div className="space-y-5">
-          <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2">
-              <Link2 size={17} className="text-[#778253]" />
-              <h2 className="font-bold">Links de campanha</h2>
-            </div>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              Crie links rastreáveis para divulgar o cardápio e, opcionalmente, aplicar um cupom.
-            </p>
-            <form onSubmit={(event) => void createCampaignLink(event)} className="mt-4 space-y-3">
-              <Field label="Nome da campanha">
-                <input
-                  required
-                  minLength={2}
-                  maxLength={100}
-                  value={campaignName}
-                  onChange={(event) => setCampaignName(event.target.value)}
-                  className={inputClass}
-                  placeholder="Ex.: Almoço de sexta"
-                />
-              </Field>
-              <Field label="Cupom (opcional)">
-                <select
-                  value={campaignCouponId}
-                  onChange={(event) => setCampaignCouponId(event.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">Sem cupom</option>
-                  {coupons
-                    .filter((coupon) => coupon.is_active)
-                    .map((coupon) => (
-                      <option key={coupon.id} value={coupon.id}>
-                        {coupon.code}
-                      </option>
-                    ))}
-                </select>
-              </Field>
-              <button disabled={savingCampaign} className={primaryButtonClass}>
-                <Plus size={15} />
-                {savingCampaign ? "Criando…" : "Criar link rastreável"}
+    <PlanFeatureGate feature="CRM, campanhas e relacionamento com clientes">
+      <>
+        <PageTitle
+          eyebrow={isCouponsView ? "Vendas e promoções" : "Relacionamento e recorrência"}
+          title={
+            isCouponsView
+              ? "Cupons e promoções"
+              : isFoodBusiness
+                ? "Clientes e recorrência"
+                : "Clientes e fichas"
+          }
+          description={
+            isCouponsView
+              ? "Crie descontos e links de campanha para o cardápio."
+              : "Acompanhe o histórico e a recorrência dos clientes do seu negócio."
+          }
+        />
+        {error && (
+          <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
+        {notice && (
+          <p role="status" className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">
+            {notice}
+          </p>
+        )}
+        {!isCouponsView && (
+          <div className="mb-5 grid gap-3 sm:grid-cols-4">
+            {(["new", "recurring", "inactive", "vip"] as const).map((key) => (
+              <button
+                type="button"
+                key={key}
+                onClick={() => setSegment(segment === key ? "all" : key)}
+                className={`rounded-2xl border bg-white p-4 text-left ${segment === key ? "border-[#778253] ring-1 ring-[#778253]" : "border-slate-100"}`}
+              >
+                <span className="text-xs text-slate-500">{segmentLabels[key]}</span>
+                <strong className="mt-1 block text-2xl">
+                  {customers.filter((customer) => customer.segment === key).length}
+                </strong>
               </button>
-            </form>
-            <div className="mt-4 divide-y divide-slate-100">
-              {campaigns.map((campaign) => (
-                <div key={campaign.id} className="flex items-center gap-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <strong className="block truncate text-sm">{campaign.name}</strong>
-                    <span className="text-xs text-slate-500">
-                      {campaign.clicks} acessos · {campaign.conversions} pedidos
-                      {campaign.coupon_id ? " · cupom vinculado" : ""}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void copyCampaignLink(campaign)}
-                    aria-label={`Copiar link da campanha ${campaign.name}`}
-                    className="grid size-9 shrink-0 place-items-center rounded-lg border"
-                  >
-                    <Copy size={15} />
-                  </button>
-                </div>
-              ))}
-              {!campaigns.length && (
-                <p className="py-3 text-xs text-slate-500">Seus links e cliques aparecerão aqui.</p>
-              )}
-            </div>
-          </section>
-          <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="font-bold">Carrinhos para recuperar</h2>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Só aparecem carrinhos com autorização explícita, parados há pelo menos 30 minutos.
-                </p>
+            ))}
+          </div>
+        )}
+        <div
+          className={`grid items-start gap-5 ${isCouponsView ? "" : "xl:grid-cols-[1.4fr_.8fr]"}`}
+        >
+          {!isCouponsView && (
+            <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
+              <div className="mb-4 flex items-center gap-2">
+                <UsersRound size={18} className="text-[#778253]" />
+                <h2 className="font-bold">Base de clientes</h2>
+                <span className="ml-auto text-xs text-slate-500">
+                  {visibleCustomers.length} clientes
+                </span>
               </div>
-              <span className="rounded-full bg-[#edf0e5] px-2.5 py-1 text-xs font-bold text-[#586341]">
-                {abandonedCarts.length}
-              </span>
-            </div>
-            <div className="mt-3 divide-y divide-slate-100">
-              {abandonedCarts.map((cart) => (
-                <article key={cart.id} className="py-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <strong className="text-sm">{cart.phone_e164}</strong>
-                    <span className="text-xs text-slate-500">
-                      {new Date(cart.abandoned_at).toLocaleString("pt-BR")}
+              <label className="mb-3 flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 px-3">
+                <Search size={15} className="text-slate-400" />
+                <span className="sr-only">Buscar cliente</span>
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  className="w-full text-sm outline-none"
+                  placeholder="Buscar nome ou telefone"
+                />
+              </label>
+              <div className="divide-y divide-slate-100">
+                {visibleCustomers.map((customer) => (
+                  <article key={customer.id} className="flex flex-wrap items-center gap-3 py-4">
+                    <span className="grid size-10 place-items-center rounded-full bg-[#edf0e5] font-bold text-[#586341]">
+                      {customer.full_name.slice(0, 1).toUpperCase()}
                     </span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {cart.cart.map((item) => `${item.quantity}× ${item.name}`).join(" · ")}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => void queueAbandonedCartRecovery(cart)}
-                    disabled={queueingCartId === cart.id}
-                    className="mt-2 min-h-9 rounded-lg border px-3 text-xs font-semibold disabled:opacity-50"
-                  >
-                    {queueingCartId === cart.id ? "Preparando…" : "Preparar lembrete"}
-                  </button>
-                </article>
-              ))}
-              {!abandonedCarts.length && (
-                <p className="py-4 text-xs text-slate-500">
-                  Nenhum carrinho elegível. A recuperação exige consentimento e não dispara
-                  mensagens automaticamente.
-                </p>
-              )}
-            </div>
-          </section>
-          <form
-            onSubmit={(event) => void createCoupon(event)}
-            className="space-y-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
-          >
-            <div className="flex items-center gap-2">
-              <Tag size={17} className="text-[#778253]" />
-              <h2 className="font-bold">Criar cupom</h2>
-            </div>
-            <Field label="Código">
-              <input
-                required
-                minLength={3}
-                maxLength={40}
-                value={code}
-                onChange={(event) =>
-                  setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))
-                }
-                className={inputClass}
-                placeholder="BEMVINDO"
-              />
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Desconto">
-                <select
-                  value={couponType}
-                  onChange={(event) => setCouponType(event.target.value as "percent" | "fixed")}
-                  className={inputClass}
-                >
-                  <option value="percent">Percentual</option>
-                  <option value="fixed">Valor fixo</option>
-                </select>
-              </Field>
-              <Field label={couponType === "percent" ? "Percentual (%)" : "Valor (R$)"}>
-                <input
-                  required
-                  type="number"
-                  min="0.01"
-                  max={couponType === "percent" ? 100 : undefined}
-                  step="0.01"
-                  value={discount}
-                  onChange={(event) => setDiscount(event.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-            </div>
-            <Field label="Pedido mínimo (R$)">
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={minimum}
-                onChange={(event) => setMinimum(event.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <label className="flex min-h-11 items-center gap-2 text-sm font-medium text-slate-700">
-              <input
-                type="checkbox"
-                checked={firstOrderOnly}
-                onChange={(event) => setFirstOrderOnly(event.target.checked)}
-                className="size-4 accent-[#778253]"
-              />
-              Somente na primeira compra
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Usos por cliente">
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={perCustomerLimit}
-                  onChange={(event) => setPerCustomerLimit(event.target.value)}
-                  placeholder="Sem limite"
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Usos totais">
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={usageLimit}
-                  onChange={(event) => setUsageLimit(event.target.value)}
-                  placeholder="Sem limite"
-                  className={inputClass}
-                />
-              </Field>
-            </div>
-            <button disabled={saving} className={primaryButtonClass}>
-              <Plus size={15} />
-              {saving ? "Salvando…" : "Criar promoção"}
-            </button>
-          </form>
-          <section className="rounded-2xl border border-slate-100 bg-white p-5">
-            <h2 className="font-bold">Cupons ativos</h2>
-            <div className="mt-3 divide-y divide-slate-100">
-              {coupons
-                .filter((coupon) => coupon.is_active)
-                .map((coupon) => {
-                  const couponDirectLink = `https://ello.app.br/loja/${business?.slug ?? ""}?cupom=${coupon.code}`;
-                  return (
-                    <div key={coupon.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <strong>{coupon.code}</strong>
-                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-800">
-                            {coupon.discount_type === "percent"
-                              ? `${coupon.discount_value}% OFF`
-                              : `${formatMoney(coupon.discount_value)} OFF`}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-xs text-slate-500">
-                          Mínimo {formatMoney(coupon.minimum_order)}
-                          {coupon.first_order_only ? " · primeira compra" : ""}
-                          {coupon.per_customer_limit
-                            ? ` · ${coupon.per_customer_limit} por cliente`
-                            : ""}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            void navigator.clipboard.writeText(couponDirectLink);
-                            setNotice(`Link do cupom ${coupon.code} copiado com sucesso!`);
-                          }}
-                          className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                          title="Copiar link com o cupom aplicado"
-                        >
-                          <Copy size={12} /> Copiar Link
-                        </button>
-                        <a
-                          href={`https://wa.me/?text=${encodeURIComponent(`Aproveite o cupom *${coupon.code}* com desconto exclusivo no ${business?.name ?? "nosso restaurante"}! Peça agora pelo cardápio: ${couponDirectLink}`)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
-                        >
-                          WhatsApp
-                        </a>
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <strong className="block truncate text-sm">{customer.full_name}</strong>
+                      <span className="text-xs text-slate-500">
+                        {customer.phone_e164} ·{" "}
+                        {business?.category === "alimentacao"
+                          ? `${customer.orders_count} pedidos`
+                          : `${customer.orders_count} atendimentos`}{" "}
+                        · {formatMoney(Number(customer.lifetime_value))}
+                        {business?.loyaltyEnabled && (
+                          <>
+                            {" · Saldo: "}
+                            {business.loyaltyMode === "points"
+                              ? `${Number(customer.loyalty_balance)} pontos`
+                              : formatMoney(Number(customer.loyalty_balance))}
+                          </>
+                        )}
+                      </span>
                     </div>
-                  );
-                })}
-              {!coupons.some((coupon) => coupon.is_active) && (
-                <p className="py-4 text-xs text-slate-500">As promoções criadas aparecem aqui.</p>
-              )}
-            </div>
-          </section>
-
-          {/* Programa de Embaixadores */}
-          <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50/70 to-white p-5 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="grid size-8 place-items-center rounded-xl bg-amber-200 text-amber-900 font-bold text-sm">
-                  ★
-                </span>
-                <h2 className="font-bold text-amber-950">Programa de Embaixadores</h2>
-              </div>
-              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-900">
-                Indicação Premiada
-              </span>
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-amber-900">
-              Transforme seus melhores clientes em divulgadores da sua marca. A cada amigo que pedir pelo link deles, o amigo ganha desconto e o embaixador ganha créditos!
-            </p>
-            <div className="mt-4 rounded-xl border border-amber-200 bg-white p-3 text-xs">
-              <span className="text-slate-400 block text-[11px] font-semibold">Link de Indicação da Loja:</span>
-              <p className="font-mono font-bold text-slate-800 truncate mt-0.5">
-                https://ello.app.br/loja/{business?.slug ?? ""}?ref=embaixador
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(`https://ello.app.br/loja/${business?.slug ?? ""}?ref=embaixador`);
-                    setNotice("Link de embaixador copiado!");
-                  }}
-                  className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100"
-                >
-                  <Copy size={12} /> Copiar Link de Embaixador
-                </button>
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`Seja um Embaixador do ${business?.name ?? "nosso restaurante"}! Indique seus amigos e ganhe créditos a cada pedido deles. Cadastre-se ou acesse pelo link: https://ello.app.br/loja/${business?.slug ?? ""}?ref=embaixador`)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
-                >
-                  Convidar VIPs no WhatsApp
-                </a>
-              </div>
-            </div>
-          </section>
-
-          {/* Agendador de Postagens Instagram & Facebook */}
-          <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/70 to-white p-5 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="grid size-8 place-items-center rounded-xl bg-violet-200 text-violet-900 font-bold text-sm">
-                  📱
-                </span>
-                <h2 className="font-bold text-violet-950">Agendador de Postagens</h2>
-              </div>
-              <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-[10px] font-bold text-violet-900">
-                Instagram & Facebook
-              </span>
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-violet-900">
-              Textos persuasivos prontos com gatilhos gastronômicos para bombar as vendas no feed e stories.
-            </p>
-
-            <div className="mt-4 space-y-3">
-              {[
-                {
-                  day: "Quarta-feira",
-                  title: "🔥 Promoção do Meio de Semana",
-                  copy: `Bateu aquela preguiça de cozinhar no meio da semana? 😋 Peça o seu combo favorito no ${business?.name ?? "nosso cardápio"} com entrega quentinha na sua porta! Peça pelo link da bio ou acesse: https://ello.app.br/loja/${business?.slug ?? ""} #delivery #delicia #gastronomia`,
-                },
-                {
-                  day: "Sexta-feira",
-                  title: "🎉 Sextou com o Melhor Sabor!",
-                  copy: `O sextou perfeito já tem endereço certo! 🍕🍔 Reúna a galera e faça seu pedido direto pelo nosso cardápio online sem taxas extras: https://ello.app.br/loja/${business?.slug ?? ""} #sextou #comidaboa #fome`,
-                },
-                {
-                  day: "Domingo",
-                  title: "❤️ Almoço em Família",
-                  copy: `Domingo é dia de descanso e prato especial na mesa! Peça no conforto de casa sem pegar filas: https://ello.app.br/loja/${business?.slug ?? ""} #domingo #almocoemfamilia`,
-                },
-              ].map((post, i) => (
-                <div key={i} className="rounded-xl border border-slate-200 bg-white p-3 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800">{post.day} · {post.title}</span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold">
+                      {segmentLabels[customer.segment]}
+                    </span>
                     <button
                       type="button"
-                      onClick={() => {
-                        void navigator.clipboard.writeText(post.copy);
-                        setNotice(`Legenda de ${post.day} copiada!`);
-                      }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
+                      aria-expanded={expandedCustomerId === customer.id}
+                      onClick={() => void toggleCustomerHistory(customer)}
+                      className="min-h-9 rounded-lg border px-2.5 text-xs font-semibold"
                     >
-                      <Copy size={11} /> Copiar Legenda
+                      {loadingOrdersFor === customer.id
+                        ? "Carregando…"
+                        : expandedCustomerId === customer.id
+                          ? "Ocultar histórico"
+                          : business?.category === "alimentacao"
+                            ? "Ver compras"
+                            : "Ver histórico"}
+                    </button>
+                    {customer.phone_e164 && (
+                      <a
+                        href={`https://wa.me/${customer.phone_e164.replace(/\D/g, "").length === 10 || customer.phone_e164.replace(/\D/g, "").length === 11 ? `55${customer.phone_e164.replace(/\D/g, "")}` : customer.phone_e164.replace(/\D/g, "")}?text=${encodeURIComponent(getCustomerWhatsAppMessage(customer))}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition active:scale-95"
+                        title="Enviar mensagem amigável no WhatsApp"
+                      >
+                        <MessageCircle size={13} />
+                        <span>{customer.segment === "inactive" ? "Reconquistar" : "WhatsApp"}</span>
+                      </a>
+                    )}
+                    {customer.marketing_consent && customer.segment === "inactive" && (
+                      <button
+                        type="button"
+                        onClick={() => void queueReengagement(customer)}
+                        className="inline-flex min-h-9 items-center gap-1 rounded-lg border px-2.5 text-xs font-semibold"
+                      >
+                        <Send size={13} /> Preparar contato
+                      </button>
+                    )}
+                    {business?.loyaltyEnabled && Number(customer.loyalty_balance) > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRedeemingCustomerId(
+                            redeemingCustomerId === customer.id ? null : customer.id,
+                          );
+                          setRedemptionUnits("");
+                        }}
+                        className="min-h-9 rounded-lg border px-2.5 text-xs font-semibold"
+                      >
+                        Registrar resgate
+                      </button>
+                    )}
+                    {redeemingCustomerId === customer.id && (
+                      <form
+                        onSubmit={(event) => void redeemCustomerBalance(event, customer)}
+                        className="grid basis-full gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-[1fr_auto]"
+                      >
+                        <Field
+                          label={
+                            business?.loyaltyMode === "points"
+                              ? "Pontos a resgatar"
+                              : "Cashback a resgatar (R$)"
+                          }
+                          hint={
+                            business?.loyaltyMode === "points"
+                              ? "100 pontos equivalem a R$ 1,00."
+                              : undefined
+                          }
+                        >
+                          <input
+                            required
+                            type="number"
+                            min={business?.loyaltyMode === "points" ? "1" : "0.01"}
+                            max={Number(customer.loyalty_balance)}
+                            step={business?.loyaltyMode === "points" ? "1" : "0.01"}
+                            value={redemptionUnits}
+                            onChange={(event) => setRedemptionUnits(event.target.value)}
+                            className={inputClass}
+                          />
+                        </Field>
+                        <button disabled={redeeming} className={`${primaryButtonClass} self-end`}>
+                          {redeeming ? "Registrando…" : "Confirmar resgate"}
+                        </button>
+                      </form>
+                    )}
+                    {expandedCustomerId === customer.id &&
+                      (() => {
+                        const cleanPhone = customer.phone_e164.replace(/\D/g, "");
+                        const customerBookings = bookings.filter(
+                          (b) => (b.phone || "").replace(/\D/g, "") === cleanPhone,
+                        );
+                        const existingNote =
+                          business?.onboardingDetails?.customerNotes?.[cleanPhone] || "";
+                        const orders = customerOrders[customer.id] ?? [];
+                        const isFood = business?.category === "alimentacao";
+
+                        return (
+                          <div className="basis-full rounded-xl bg-slate-50 p-4 space-y-4 border border-slate-200">
+                            {/* FICHA DE PREFERÊNCIAS / ANOTAÇÕES DO CLIENTE */}
+                            <div className="rounded-xl border border-[#dfe3d4] bg-white p-3.5 shadow-2xs">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                                  <FileText size={14} className="text-[#687348]" />
+                                  Ficha de Preferências & Anotações do Cliente
+                                </div>
+                                {editingNoteFor !== customer.id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingNoteFor(customer.id);
+                                      setCustomerNoteDraft(existingNote);
+                                    }}
+                                    className="text-[11px] font-bold text-[#586341] hover:underline"
+                                  >
+                                    {existingNote ? "Editar Ficha" : "+ Adicionar Anotação"}
+                                  </button>
+                                )}
+                              </div>
+
+                              {editingNoteFor === customer.id ? (
+                                <div className="mt-2.5 space-y-2">
+                                  <textarea
+                                    rows={2}
+                                    value={customerNoteDraft}
+                                    onChange={(e) => setCustomerNoteDraft(e.target.value)}
+                                    placeholder="Ex.: Prefere corte com tesoura no topo; Tonalizante 7.1; Alérgica a esmaltes com tolueno..."
+                                    className="w-full rounded-lg border border-slate-200 bg-[#fdfdfc] p-2.5 text-xs text-slate-800 outline-none focus:border-[#778253]"
+                                  />
+                                  <div className="flex justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingNoteFor(null)}
+                                      className="rounded-lg px-2.5 py-1 text-xs text-slate-500 hover:bg-slate-100"
+                                    >
+                                      Cancelar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={savingNote}
+                                      onClick={() =>
+                                        void handleSaveCustomerNote(
+                                          customer.phone_e164,
+                                          customerNoteDraft,
+                                        )
+                                      }
+                                      className="rounded-lg bg-[#292b25] px-3 py-1 text-xs font-bold text-white hover:bg-black disabled:opacity-50"
+                                    >
+                                      {savingNote ? "Salvando…" : "Salvar Ficha"}
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="mt-1.5 text-xs text-slate-600">
+                                  {existingNote ? (
+                                    <span className="whitespace-pre-line font-medium text-slate-700">
+                                      {existingNote}
+                                    </span>
+                                  ) : (
+                                    <span className="italic text-slate-400">
+                                      Nenhuma anotação gravada ainda. Clique para anotar o tipo de
+                                      corte, preferências ou histórico do cliente.
+                                    </span>
+                                  )}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* HISTÓRICO DE AGENDAMENTOS / ATENDIMENTOS */}
+                            {customerBookings.length > 0 && (
+                              <div>
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 mb-2">
+                                  <CalendarDays size={14} className="text-[#687348]" />
+                                  Histórico de Atendimentos ({customerBookings.length})
+                                </div>
+                                <div className="space-y-2">
+                                  {customerBookings.map((b) => {
+                                    const s = services.find((srv) => srv.id === b.serviceId);
+                                    const st = staff.find((m) => m.id === b.staffId);
+                                    return (
+                                      <div
+                                        key={b.id}
+                                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white p-2.5 text-xs"
+                                      >
+                                        <div>
+                                          <strong className="text-slate-800">
+                                            {s?.name ?? "Serviço"}
+                                          </strong>
+                                          <div className="text-[11px] text-slate-500 mt-0.5">
+                                            {b.date} às {b.time}
+                                            {st ? ` · Profissional: ${st.name}` : ""}
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-bold text-slate-700">
+                                            {formatMoney(s?.price ?? 0)}
+                                          </span>
+                                          <span
+                                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                              b.status === "completed"
+                                                ? "bg-emerald-100 text-emerald-800"
+                                                : b.status === "confirmed"
+                                                  ? "bg-blue-100 text-blue-800"
+                                                  : b.status === "in_progress"
+                                                    ? "bg-amber-100 text-amber-800"
+                                                    : "bg-slate-100 text-slate-600"
+                                            }`}
+                                          >
+                                            {b.status === "completed"
+                                              ? "Concluído"
+                                              : b.status === "confirmed"
+                                                ? "Confirmado"
+                                                : b.status === "in_progress"
+                                                  ? "Em andamento"
+                                                  : b.status}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* HISTÓRICO DE PEDIDOS (GASTRONOMIA) */}
+                            {isFood && (
+                              <div>
+                                <h3 className="text-xs font-bold text-slate-700 mb-2">
+                                  Últimos pedidos de delivery / balcão
+                                </h3>
+                                {orders.map((order) => (
+                                  <div
+                                    key={order.id}
+                                    className="mt-2 rounded-lg border border-slate-200 bg-white p-2.5"
+                                  >
+                                    <div className="flex flex-wrap justify-between gap-2 text-xs">
+                                      <strong>Pedido #{order.order_number}</strong>
+                                      <span>{formatMoney(order.total)}</span>
+                                      <span className="text-slate-500">
+                                        {new Date(order.created_at).toLocaleString("pt-BR")}
+                                      </span>
+                                    </div>
+                                    <p className="mt-1 text-[11px] capitalize text-slate-500">
+                                      {order.status.replaceAll("_", " ")}
+                                      {" · "}
+                                      {order.fulfillment.replaceAll("_", " ")}
+                                      {" · "}
+                                      {order.payment_method.replaceAll("_", " ")}
+                                    </p>
+                                    <ul className="mt-2 space-y-1 text-xs text-slate-600">
+                                      {order.items.map((item, index) => (
+                                        <li
+                                          key={`${order.id}-${index}`}
+                                          className="flex justify-between gap-3"
+                                        >
+                                          <span>
+                                            {item.quantity}× {item.item_name}
+                                          </span>
+                                          <span>{formatMoney(item.line_total)}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ))}
+                                {orders.length === 0 && (
+                                  <p className="text-xs text-slate-400 italic">
+                                    Nenhum pedido registrado.
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                  </article>
+                ))}
+                {!visibleCustomers.length && (
+                  <p className="py-12 text-center text-sm text-slate-500">
+                    Os clientes aparecem aqui após a primeira compra.
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
+          <div className="space-y-5">
+            <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <Link2 size={17} className="text-[#778253]" />
+                <h2 className="font-bold">Links de campanha</h2>
+              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Crie links rastreáveis para divulgar o cardápio e, opcionalmente, aplicar um cupom.
+              </p>
+              <form onSubmit={(event) => void createCampaignLink(event)} className="mt-4 space-y-3">
+                <Field label="Nome da campanha">
+                  <input
+                    required
+                    minLength={2}
+                    maxLength={100}
+                    value={campaignName}
+                    onChange={(event) => setCampaignName(event.target.value)}
+                    className={inputClass}
+                    placeholder="Ex.: Almoço de sexta"
+                  />
+                </Field>
+                <Field label="Cupom (opcional)">
+                  <select
+                    value={campaignCouponId}
+                    onChange={(event) => setCampaignCouponId(event.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="">Sem cupom</option>
+                    {coupons
+                      .filter((coupon) => coupon.is_active)
+                      .map((coupon) => (
+                        <option key={coupon.id} value={coupon.id}>
+                          {coupon.code}
+                        </option>
+                      ))}
+                  </select>
+                </Field>
+                <button disabled={savingCampaign} className={primaryButtonClass}>
+                  <Plus size={15} />
+                  {savingCampaign ? "Criando…" : "Criar link rastreável"}
+                </button>
+              </form>
+              <div className="mt-4 divide-y divide-slate-100">
+                {campaigns.map((campaign) => (
+                  <div key={campaign.id} className="flex items-center gap-3 py-3">
+                    <div className="min-w-0 flex-1">
+                      <strong className="block truncate text-sm">{campaign.name}</strong>
+                      <span className="text-xs text-slate-500">
+                        {campaign.clicks} acessos · {campaign.conversions} pedidos
+                        {campaign.coupon_id ? " · cupom vinculado" : ""}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void copyCampaignLink(campaign)}
+                      aria-label={`Copiar link da campanha ${campaign.name}`}
+                      className="grid size-9 shrink-0 place-items-center rounded-lg border"
+                    >
+                      <Copy size={15} />
                     </button>
                   </div>
-                  <p className="mt-1.5 text-slate-600 leading-relaxed font-sans text-[11px] italic">
-                    "{post.copy}"
+                ))}
+                {!campaigns.length && (
+                  <p className="py-3 text-xs text-slate-500">
+                    Seus links e cliques aparecerão aqui.
                   </p>
+                )}
+              </div>
+            </section>
+            {!isCouponsView && (
+              <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="font-bold">Carrinhos para recuperar</h2>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      Só aparecem carrinhos com autorização explícita, parados há pelo menos 30
+                      minutos.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-[#edf0e5] px-2.5 py-1 text-xs font-bold text-[#586341]">
+                    {abandonedCarts.length}
+                  </span>
                 </div>
-              ))}
-            </div>
-          </section>
-          <p className="rounded-xl bg-[#f0f1e9] p-4 text-xs leading-5 text-slate-600">
-            Os descontos são recalculados no servidor ao confirmar o pedido. Usos cancelados são
-            liberados automaticamente. Contatos promocionais continuam dependendo de consentimento e
-            de um provedor de mensagens configurado.
-          </p>
+                <div className="mt-3 divide-y divide-slate-100">
+                  {abandonedCarts.map((cart) => (
+                    <article key={cart.id} className="py-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <strong className="text-sm">{cart.phone_e164}</strong>
+                        <span className="text-xs text-slate-500">
+                          {new Date(cart.abandoned_at).toLocaleString("pt-BR")}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {cart.cart.map((item) => `${item.quantity}× ${item.name}`).join(" · ")}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void queueAbandonedCartRecovery(cart)}
+                        disabled={queueingCartId === cart.id}
+                        className="mt-2 min-h-9 rounded-lg border px-3 text-xs font-semibold disabled:opacity-50"
+                      >
+                        {queueingCartId === cart.id ? "Preparando…" : "Preparar lembrete"}
+                      </button>
+                    </article>
+                  ))}
+                  {!abandonedCarts.length && (
+                    <p className="py-4 text-xs text-slate-500">
+                      Nenhum carrinho elegível. A recuperação exige consentimento e não dispara
+                      mensagens automaticamente.
+                    </p>
+                  )}
+                </div>
+              </section>
+            )}
+            <form
+              onSubmit={(event) => void createCoupon(event)}
+              className="space-y-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
+            >
+              <div className="flex items-center gap-2">
+                <Tag size={17} className="text-[#778253]" />
+                <h2 className="font-bold">Criar cupom</h2>
+              </div>
+              <Field label="Código">
+                <input
+                  required
+                  minLength={3}
+                  maxLength={40}
+                  value={code}
+                  onChange={(event) =>
+                    setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))
+                  }
+                  className={inputClass}
+                  placeholder="BEMVINDO"
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Desconto">
+                  <select
+                    value={couponType}
+                    onChange={(event) => setCouponType(event.target.value as "percent" | "fixed")}
+                    className={inputClass}
+                  >
+                    <option value="percent">Percentual</option>
+                    <option value="fixed">Valor fixo</option>
+                  </select>
+                </Field>
+                <Field label={couponType === "percent" ? "Percentual (%)" : "Valor (R$)"}>
+                  <input
+                    required
+                    type="number"
+                    min="0.01"
+                    max={couponType === "percent" ? 100 : undefined}
+                    step="0.01"
+                    value={discount}
+                    onChange={(event) => setDiscount(event.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+              <Field label="Pedido mínimo (R$)">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={minimum}
+                  onChange={(event) => setMinimum(event.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+              <label className="flex min-h-11 items-center gap-2 text-sm font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={firstOrderOnly}
+                  onChange={(event) => setFirstOrderOnly(event.target.checked)}
+                  className="size-4 accent-[#778253]"
+                />
+                Somente na primeira compra
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Usos por cliente">
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={perCustomerLimit}
+                    onChange={(event) => setPerCustomerLimit(event.target.value)}
+                    placeholder="Sem limite"
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Usos totais">
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={usageLimit}
+                    onChange={(event) => setUsageLimit(event.target.value)}
+                    placeholder="Sem limite"
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+              <button disabled={saving} className={primaryButtonClass}>
+                <Plus size={15} />
+                {saving ? "Salvando…" : "Criar promoção"}
+              </button>
+            </form>
+            <section className="rounded-2xl border border-slate-100 bg-white p-5">
+              <h2 className="font-bold">Cupons ativos</h2>
+              <div className="mt-3 divide-y divide-slate-100">
+                {coupons
+                  .filter((coupon) => coupon.is_active)
+                  .map((coupon) => {
+                    const couponDirectLink = `https://ello.app.br/loja/${business?.slug ?? ""}?cupom=${coupon.code}`;
+                    return (
+                      <div
+                        key={coupon.id}
+                        className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <strong>{coupon.code}</strong>
+                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-800">
+                              {coupon.discount_type === "percent"
+                                ? `${coupon.discount_value}% OFF`
+                                : `${formatMoney(coupon.discount_value)} OFF`}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Mínimo {formatMoney(coupon.minimum_order)}
+                            {coupon.first_order_only ? " · primeira compra" : ""}
+                            {coupon.per_customer_limit
+                              ? ` · ${coupon.per_customer_limit} por cliente`
+                              : ""}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void navigator.clipboard.writeText(couponDirectLink);
+                              setNotice(`Link do cupom ${coupon.code} copiado com sucesso!`);
+                            }}
+                            className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                            title="Copiar link com o cupom aplicado"
+                          >
+                            <Copy size={12} /> Copiar Link
+                          </button>
+                          <a
+                            href={`https://wa.me/?text=${encodeURIComponent(`Aproveite o cupom *${coupon.code}* com desconto exclusivo no ${business?.name ?? "nosso restaurante"}! Peça agora pelo cardápio: ${couponDirectLink}`)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                          >
+                            WhatsApp
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                {!coupons.some((coupon) => coupon.is_active) && (
+                  <p className="py-4 text-xs text-slate-500">As promoções criadas aparecem aqui.</p>
+                )}
+              </div>
+            </section>
+
+            {!isCouponsView && (
+              <>
+                {/* Programa de Embaixadores */}
+                <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50/70 to-white p-5 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="grid size-8 place-items-center rounded-xl bg-amber-200 text-amber-900 font-bold text-sm">
+                        ★
+                      </span>
+                      <h2 className="font-bold text-amber-950">Programa de Embaixadores</h2>
+                    </div>
+                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-900">
+                      Indicação Premiada
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-amber-900">
+                    Transforme seus melhores clientes em divulgadores da sua marca. A cada amigo que
+                    pedir pelo link deles, o amigo ganha desconto e o embaixador ganha créditos!
+                  </p>
+                  <div className="mt-4 rounded-xl border border-amber-200 bg-white p-3 text-xs">
+                    <span className="text-slate-400 block text-[11px] font-semibold">
+                      Link de Indicação da Loja:
+                    </span>
+                    <p className="font-mono font-bold text-slate-800 truncate mt-0.5">
+                      https://ello.app.br/loja/{business?.slug ?? ""}?ref=embaixador
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void navigator.clipboard.writeText(
+                            `https://ello.app.br/loja/${business?.slug ?? ""}?ref=embaixador`,
+                          );
+                          setNotice("Link de embaixador copiado!");
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100"
+                      >
+                        <Copy size={12} /> Copiar Link de Embaixador
+                      </button>
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(`Seja um Embaixador do ${business?.name ?? "nosso restaurante"}! Indique seus amigos e ganhe créditos a cada pedido deles. Cadastre-se ou acesse pelo link: https://ello.app.br/loja/${business?.slug ?? ""}?ref=embaixador`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                      >
+                        Convidar VIPs no WhatsApp
+                      </a>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Agendador de Postagens Instagram & Facebook */}
+                <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/70 to-white p-5 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="grid size-8 place-items-center rounded-xl bg-violet-200 text-violet-900 font-bold text-sm">
+                        📱
+                      </span>
+                      <h2 className="font-bold text-violet-950">Agendador de Postagens</h2>
+                    </div>
+                    <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-[10px] font-bold text-violet-900">
+                      Instagram & Facebook
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-violet-900">
+                    Textos persuasivos prontos com gatilhos gastronômicos para bombar as vendas no
+                    feed e stories.
+                  </p>
+
+                  <div className="mt-4 space-y-3">
+                    {[
+                      {
+                        day: "Quarta-feira",
+                        title: "🔥 Promoção do Meio de Semana",
+                        copy: `Bateu aquela preguiça de cozinhar no meio da semana? 😋 Peça o seu combo favorito no ${business?.name ?? "nosso cardápio"} com entrega quentinha na sua porta! Peça pelo link da bio ou acesse: https://ello.app.br/loja/${business?.slug ?? ""} #delivery #delicia #gastronomia`,
+                      },
+                      {
+                        day: "Sexta-feira",
+                        title: "🎉 Sextou com o Melhor Sabor!",
+                        copy: `O sextou perfeito já tem endereço certo! 🍕🍔 Reúna a galera e faça seu pedido direto pelo nosso cardápio online sem taxas extras: https://ello.app.br/loja/${business?.slug ?? ""} #sextou #comidaboa #fome`,
+                      },
+                      {
+                        day: "Domingo",
+                        title: "❤️ Almoço em Família",
+                        copy: `Domingo é dia de descanso e prato especial na mesa! Peça no conforto de casa sem pegar filas: https://ello.app.br/loja/${business?.slug ?? ""} #domingo #almocoemfamilia`,
+                      },
+                    ].map((post, i) => (
+                      <div
+                        key={i}
+                        className="rounded-xl border border-slate-200 bg-white p-3 text-xs"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-800">
+                            {post.day} · {post.title}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void navigator.clipboard.writeText(post.copy);
+                              setNotice(`Legenda de ${post.day} copiada!`);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
+                          >
+                            <Copy size={11} /> Copiar Legenda
+                          </button>
+                        </div>
+                        <p className="mt-1.5 text-slate-600 leading-relaxed font-sans text-[11px] italic">
+                          "{post.copy}"
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+                <p className="rounded-xl bg-[#f0f1e9] p-4 text-xs leading-5 text-slate-600">
+                  Os descontos são recalculados no servidor ao confirmar o pedido. Usos cancelados
+                  são liberados automaticamente. Contatos promocionais continuam dependendo de
+                  consentimento e de um provedor de mensagens configurado.
+                </p>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-    </>
+      </>
+    </PlanFeatureGate>
   );
 }

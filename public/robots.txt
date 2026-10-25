@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /onboarding
+Disallow: /studio
+Disallow: /studio/
+Disallow: /app
+Disallow: /app/
+Disallow: /api
+Disallow: /api/
+
+Sitemap: https://ello.app.br/sitemap.xml

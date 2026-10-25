@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { ElloLogo } from "@/components/ello/logo";
 import { useLocalHub } from "@/lib/localhub-context";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/planos")({
   head: () => ({
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/planos")({
       {
         name: "description",
         content:
-          "Conheça os planos da ELLO para seu negócio local. Catálogo digital, cardápio QR Code, agendamento online e painel Studio com taxa ZERO sobre suas vendas.",
+          "Conheça os planos da ELLO para negócios de todos os segmentos. Catálogo digital, pedidos, agendamentos e painel Studio com taxa ZERO sobre suas vendas.",
       },
     ],
   }),
@@ -133,10 +134,10 @@ type AsaasPixResponseData = {
 };
 
 export function PricingPlansPage() {
-  const { business, user, saveBusiness } = useLocalHub();
+  const { business, user, planSubscription, refresh } = useLocalHub();
   const navigate = useNavigate();
 
-  // Período de faturamento da landing: Mensal ou Anual (25% off)
+  // Período de faturamento da landing: Mensal ou Anual com preço de lançamento
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
 
   // Simulador de Economia vs Outras Plataformas
@@ -145,19 +146,22 @@ export function PricingPlansPage() {
   // FAQ Accordion
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Estado do Modal de Checkout Real Asaas
+  // Estado do modal de assinatura
   const [checkoutModalPlan, setCheckoutModalPlan] = useState<"pro" | "business" | null>(null);
   const [modalCycle, setModalCycle] = useState<"monthly" | "yearly">("monthly");
   const [modalStep, setModalStep] = useState<"form" | "payment" | "success">("form");
 
-  // Dados do formulário para emissão no Asaas
+  // Dados do formulário de assinatura
   const [payerName, setPayerName] = useState("");
   const [payerEmail, setPayerEmail] = useState("");
   const [payerPhone, setPayerPhone] = useState("");
   const [payerCpfCnpj, setPayerCpfCnpj] = useState("");
+  const [payerPostalCode, setPayerPostalCode] = useState("");
+  const [payerAddressNumber, setPayerAddressNumber] = useState("");
+  const [cancelingPlan, setCancelingPlan] = useState(false);
   const [formError, setFormError] = useState("");
 
-  // Estado da Cobrança Asaas
+  // Estado da cobrança
   const [isGeneratingPayment, setIsGeneratingPayment] = useState(false);
   const [paymentData, setPaymentData] = useState<AsaasPixResponseData | null>(null);
   const [copiedPixPayload, setCopiedPixPayload] = useState(false);
@@ -187,13 +191,18 @@ export function PricingPlansPage() {
   };
 
   // Cálculo da economia
-  const traditionalFee = monthlyRevenue * 0.15; // 15% média iFood/Trinks/AppBarber
-  const elloProCost = billingCycle === "yearly" ? 29.9 : 39.9;
+  const traditionalFee = monthlyRevenue * 0.15;
+  const elloProCost = 39.9;
   const monthlySavings = Math.max(0, traditionalFee - elloProCost);
   const yearlySavings = monthlySavings * 12;
 
   // Abertura do Modal de Assinatura
   const handleOpenCheckout = (plan: "pro" | "business") => {
+    if (!user) {
+      toast.info("Entre ou crie sua conta para assinar um plano.");
+      void navigate({ to: "/auth" });
+      return;
+    }
     setCheckoutModalPlan(plan);
     setModalCycle(billingCycle);
     setModalStep("form");
@@ -206,13 +215,15 @@ export function PricingPlansPage() {
   // Preços calculados do plano
   const planName = checkoutModalPlan === "pro" ? "Plano Pro" : "Plano Business";
   const planPriceMonthly = checkoutModalPlan === "pro" ? 39.9 : 79.9;
-  const planPriceYearlyMonthly = checkoutModalPlan === "pro" ? 29.9 : 59.9;
-  const planPriceYearlyTotal = checkoutModalPlan === "pro" ? 358.8 : 718.8;
+  const planPriceYearlyMonthly = checkoutModalPlan === "pro" ? 39.9 : 79.9;
+  const planPriceYearlyTotal = checkoutModalPlan === "pro" ? 478.8 : 958.8;
+  const planPriceRegularMonthly = checkoutModalPlan === "pro" ? 49.9 : 119.9;
+  const planPriceRegularYearly = planPriceRegularMonthly * 12;
 
   const currentPrice = modalCycle === "yearly" ? planPriceYearlyTotal : planPriceMonthly;
   const currentPriceStr = currentPrice.toFixed(2).replace(".", ",");
 
-  // Iniciar geração da cobrança real no Asaas
+  // Iniciar geração da cobrança da assinatura
   const handleGenerateAsaasPix = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setFormError("");
@@ -235,16 +246,27 @@ export function PricingPlansPage() {
 
     const cleanCpfCnpj = payerCpfCnpj.replace(/\D/g, "");
     if (!isValidCpfCnpj(cleanCpfCnpj)) {
-      setFormError("O CPF ou CNPJ informado é inválido. Digite um documento válido para geração do PIX pelo Banco Central.");
+      setFormError(
+        "O CPF ou CNPJ informado é inválido. Digite um documento válido para geração do PIX pelo Banco Central.",
+      );
       return;
     }
 
     setIsGeneratingPayment(true);
 
     try {
+      const client = getSupabaseBrowserClient();
+      const { data: sessionData } = (await client?.auth.getSession()) ?? {
+        data: { session: null },
+      };
+      if (!sessionData.session?.access_token)
+        throw new Error("Entre na sua conta para contratar um plano.");
       const res = await fetch("/api/asaas/subscribe", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
         body: JSON.stringify({
           planId: checkoutModalPlan,
           billingCycle: modalCycle,
@@ -252,26 +274,26 @@ export function PricingPlansPage() {
           customerEmail: payerEmail.trim(),
           customerPhone: cleanPhone,
           customerCpfCnpj: cleanCpfCnpj,
-          businessName: business?.name || payerName.trim(),
-          businessId: business?.id,
+          customerPostalCode: payerPostalCode,
+          customerAddressNumber: payerAddressNumber,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "Erro ao conectar com a API do Asaas.");
+        throw new Error(data.error || "Não foi possível gerar a cobrança.");
       }
 
       setPaymentData(data);
       setModalStep("payment");
-      toast.success("Cobrança PIX gerada com sucesso diretamente no Asaas!");
+      toast.success("Cobrança por Pix gerada com sucesso!");
 
       // Inicia polling a cada 3 segundos para detectar quando o cliente pagar no banco
       startPaymentPolling(data.paymentId);
     } catch (err: unknown) {
       console.error(err);
-      const msg = err instanceof Error ? err.message : "Erro ao gerar cobrança no Asaas.";
+      const msg = err instanceof Error ? err.message : "Não foi possível gerar a cobrança.";
       setFormError(msg);
       toast.error(msg);
     } finally {
@@ -279,7 +301,7 @@ export function PricingPlansPage() {
     }
   };
 
-  // Polling automático no Asaas
+  // Polling de confirmação do pagamento
   const startPaymentPolling = (paymentId: string) => {
     if (pollingRef.current) clearInterval(pollingRef.current);
 
@@ -288,11 +310,16 @@ export function PricingPlansPage() {
         const queryParams = new URLSearchParams({
           paymentId,
           businessId: business?.id || "",
-          planId: checkoutModalPlan || "",
-          billingCycle: modalCycle,
         });
 
-        const res = await fetch(`/api/asaas/subscription-status?${queryParams.toString()}`);
+        const client = getSupabaseBrowserClient();
+        const { data: sessionData } = (await client?.auth.getSession()) ?? {
+          data: { session: null },
+        };
+        if (!sessionData.session?.access_token) return;
+        const res = await fetch(`/api/asaas/subscription-status?${queryParams.toString()}`, {
+          headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+        });
         const result = await res.json();
 
         if (result.isPaid) {
@@ -314,21 +341,27 @@ export function PricingPlansPage() {
       const queryParams = new URLSearchParams({
         paymentId: paymentData.paymentId,
         businessId: business?.id || "",
-        planId: checkoutModalPlan || "",
-        billingCycle: modalCycle,
       });
 
-      const res = await fetch(`/api/asaas/subscription-status?${queryParams.toString()}`);
+      const client = getSupabaseBrowserClient();
+      const { data: sessionData } = (await client?.auth.getSession()) ?? {
+        data: { session: null },
+      };
+      if (!sessionData.session?.access_token)
+        throw new Error("Sua sessão expirou. Entre novamente.");
+      const res = await fetch(`/api/asaas/subscription-status?${queryParams.toString()}`, {
+        headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+      });
       const result = await res.json();
 
       if (result.isPaid) {
         if (pollingRef.current) clearInterval(pollingRef.current);
         handlePaymentConfirmedSuccess();
       } else {
-        toast.info("O Asaas ainda está aguardando a compensação do seu banco. Aguarde alguns instantes.");
+        toast.info("O pagamento ainda está sendo confirmado. Aguarde alguns instantes.");
       }
     } catch {
-      toast.error("Não foi possível consultar o Asaas no momento.");
+      toast.error("Não foi possível consultar o pagamento no momento.");
     } finally {
       setIsCheckingPayment(false);
     }
@@ -337,22 +370,44 @@ export function PricingPlansPage() {
   // Confirmação com sucesso
   const handlePaymentConfirmedSuccess = async () => {
     setModalStep("success");
-    toast.success(`🎉 Pagamento confirmado no Asaas! ${planName} ativado com sucesso!`);
+    toast.success(`🎉 Pagamento confirmado! ${planName} ativado com sucesso!`);
+    await refresh();
+  };
 
-    if (business && checkoutModalPlan) {
-      try {
-        await saveBusiness({
-          ...business,
-          onboardingDetails: {
-            ...(business.onboardingDetails || { specialties: [], serviceModes: [] }),
-            plan: checkoutModalPlan,
-            planBillingCycle: modalCycle,
-            planActivatedAt: new Date().toISOString(),
-          },
-        });
-      } catch (err) {
-        console.error("Erro ao atualizar contexto local:", err);
-      }
+  const handleCancelPlan = async () => {
+    if (
+      !window.confirm(
+        "Deseja cancelar seu plano? A ELLO encerra a recorrência e remove cobranças pendentes. Seu negócio voltará ao plano grátis e só terá novas cobranças se você contratar novamente.",
+      )
+    )
+      return;
+    const client = getSupabaseBrowserClient();
+    const { data: sessionData } = (await client?.auth.getSession()) ?? { data: { session: null } };
+    if (!sessionData.session?.access_token) {
+      toast.error("Entre novamente para cancelar o plano.");
+      return;
+    }
+    setCancelingPlan(true);
+    try {
+      const response = await fetch("/api/asaas/cancel-subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({ confirmation: "CANCELAR" }),
+      });
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(result.error || "Não foi possível confirmar o cancelamento.");
+      await refresh();
+      toast.success("Plano cancelado. Nenhuma nova recorrência será iniciada.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível confirmar o cancelamento.",
+      );
+    } finally {
+      setCancelingPlan(false);
     }
   };
 
@@ -371,9 +426,10 @@ export function PricingPlansPage() {
 
   // Link do WhatsApp de suporte
   const getWhatsAppSubscriptionUrl = () => {
-    const cycleLabel = modalCycle === "yearly" ? "Anual com 25% OFF" : "Mensal";
+    const cycleLabel =
+      modalCycle === "yearly" ? "Anual — oferta de lançamento" : "Mensal — oferta de lançamento";
     const bizLabel = business?.name || payerName || "meu negócio";
-    const msg = `Olá equipe ELLO! 👋\n\nEstou assinando o *${planName}* (${cycleLabel} - R$ ${currentPriceStr}) para o estabelecimento *${bizLabel}*.\n\nCódigo da cobrança Asaas: ${paymentData?.paymentId || "gerando..."}.\n\nPoderiam me auxiliar a confirmar a ativação?`;
+    const msg = `Olá equipe ELLO! 👋\n\nEstou assinando o *${planName}* (${cycleLabel} - R$ ${currentPriceStr}) para o estabelecimento *${bizLabel}*.\n\nCódigo da cobrança: ${paymentData?.paymentId || "gerando..."}.\n\nPoderiam me auxiliar a confirmar a ativação?`;
     return `https://wa.me/5511987654321?text=${encodeURIComponent(msg)}`;
   };
 
@@ -431,15 +487,17 @@ export function PricingPlansPage() {
           <div className="mx-auto max-w-[780px]">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#dce4ca] bg-[#f1f4e9] px-4 py-1.5 text-[12px] font-semibold tracking-wide text-[#66794a] shadow-xs">
               <Sparkles size={14} className="text-[#849a58]" />
-              <span>Taxa ZERO de Comissão sobre suas Vendas</span>
+              <span>Condição especial de lançamento · 0% de comissão</span>
             </div>
 
             <h1 className="mt-6 font-display text-[38px] font-medium leading-[1.05] tracking-[-.05em] sm:text-[56px] lg:text-[64px] text-[#20221f]">
-              Planos transparentes para você <span className="ello-heading-accent">lucrar mais</span> a cada pedido.
+              Planos para o momento certo de crescer seu negócio.
             </h1>
 
             <p className="mt-5 text-[16px] leading-[1.7] text-[#6a6c65] sm:text-[19px] max-w-[620px] mx-auto">
-              Ao contrário de outros apps que cobram 15% a 27% do seu faturamento, na ELLO você paga uma mensalidade fixa e todo o dinheiro das suas vendas fica 100% com você.
+              Aproveite os preços especiais de lançamento. A ELLO atende negócios de todos os
+              segmentos, com ferramentas para apresentar produtos e serviços, receber pedidos e
+              organizar agendamentos.
             </p>
 
             {/* TOGGLE MENSAL / ANUAL */}
@@ -466,10 +524,32 @@ export function PricingPlansPage() {
               >
                 <span>Anual</span>
                 <span className="rounded-full bg-[#d0f25a] px-2 py-0.5 text-[10px] font-black tracking-wide text-[#20221f]">
-                  25% OFF
+                  LANÇAMENTO
                 </span>
               </button>
             </div>
+            {(planSubscription.status === "active" || planSubscription.status === "pending") && (
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-sm">
+                <span className="font-semibold text-[#687348]">
+                  {planSubscription.status === "pending"
+                    ? `Plano atual: ${planSubscription.plan === "business" ? "Business" : planSubscription.plan === "pro" ? "Pro" : "Grátis"} · confirmação pendente`
+                    : `Plano ativo: ${planSubscription.plan === "business" ? "Business" : "Pro"} · ${planSubscription.billing_cycle === "yearly" ? "Anual" : "Mensal"}`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void handleCancelPlan()}
+                  disabled={cancelingPlan}
+                  className="rounded-full border border-red-200 px-4 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+                >
+                  {cancelingPlan ? "Cancelando…" : "Cancelar plano e cobranças"}
+                </button>
+              </div>
+            )}
+            {planSubscription.status === "pending" && (
+              <p className="mt-4 text-sm font-medium text-amber-700">
+                Confirmação de pagamento pendente. O novo plano só será liberado após a confirmação.
+              </p>
+            )}
           </div>
         </section>
 
@@ -495,23 +575,24 @@ export function PricingPlansPage() {
                 </h3>
 
                 <p className="mt-2 text-[13px] leading-relaxed text-[#72756d]">
-                  Ideal para quem atende sozinho, freelancers e quem quer colocar seu cardápio ou serviços no ar hoje mesmo.
+                  Para profissionais autônomos e pequenos negócios que querem apresentar produtos ou
+                  serviços e começar a vender ou receber agendamentos online.
                 </p>
 
                 <div className="mt-6 flex items-baseline gap-1.5 border-t border-[#f0f0ea] pt-6">
                   <span className="font-display text-[42px] font-black tracking-tight text-[#20221f]">
                     R$ 0
                   </span>
-                  <span className="text-[13px] font-medium text-[#888b81]">
-                    / para sempre
-                  </span>
+                  <span className="text-[13px] font-medium text-[#888b81]">/ para sempre</span>
                 </div>
 
                 {/* Vantagens */}
                 <div className="mt-6 space-y-3 border-t border-[#f0f0ea] pt-6 text-[13px] text-[#4f514a]">
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
-                    <span><strong>1 usuário</strong> (o próprio gestor/dono)</span>
+                    <span>
+                      <strong>1 usuário</strong> (o próprio gestor/dono)
+                    </span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
@@ -530,11 +611,15 @@ export function PricingPlansPage() {
                     <span>Compartilhamento rápido no WhatsApp</span>
                   </div>
                   <div className="flex items-start gap-2.5 text-slate-400">
-                    <span className="mt-0.5 size-4 shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-[10px]">✕</span>
+                    <span className="mt-0.5 size-4 shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-[10px]">
+                      ✕
+                    </span>
                     <span className="line-through">Subcontas para profissionais da equipe</span>
                   </div>
                   <div className="flex items-start gap-2.5 text-slate-400">
-                    <span className="mt-0.5 size-4 shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-[10px]">✕</span>
+                    <span className="mt-0.5 size-4 shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-[10px]">
+                      ✕
+                    </span>
                     <span className="line-through">Remoção do selo ELLO</span>
                   </div>
                 </div>
@@ -557,7 +642,7 @@ export function PricingPlansPage() {
             <div className="relative flex flex-col justify-between rounded-3xl border-2 border-[#20221f] bg-[#20221f] p-7 text-white shadow-xl sm:p-9">
               {/* Badge Flutuante no Topo */}
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#d0f25a] px-4 py-1 text-[11px] font-black uppercase tracking-wider text-[#20221f] shadow-md">
-                ⚡ Mais Escolhido por Empresas
+                Oferta especial de lançamento
               </div>
 
               <div>
@@ -575,24 +660,28 @@ export function PricingPlansPage() {
                 </h3>
 
                 <p className="mt-2 text-[13px] leading-relaxed text-white/70">
-                  Para salões, barbearias, clínicas, restaurantes e estúdios que têm equipe e querem gestão profissional sem comissão.
+                  Para equipes e negócios de qualquer segmento que precisam organizar a operação e
+                  crescer sem pagar comissão sobre as vendas.
                 </p>
 
-                <div className="mt-6 flex items-baseline gap-1.5 border-t border-white/10 pt-6">
+                <div className="mt-6 flex flex-wrap items-baseline gap-1.5 border-t border-white/10 pt-6">
+                  <span className="text-base font-semibold text-white/45 line-through">
+                    R$ 49,90
+                  </span>
                   <span className="font-display text-[46px] font-black tracking-tight text-white">
-                    {billingCycle === "yearly" ? "R$ 29,90" : "R$ 39,90"}
+                    R$ 39,90
                   </span>
-                  <span className="text-[13px] font-medium text-white/60">
-                    /mês
-                  </span>
+                  <span className="text-[13px] font-medium text-white/60">/mês</span>
                 </div>
                 {billingCycle === "yearly" ? (
                   <span className="text-[11px] text-[#d0f25a] font-semibold">
-                    Cobrado anualmente (R$ 358,80/ano · Economia de R$ 120)
+                    <span className="line-through text-white/45">R$ 598,80/ano</span> · Lançamento:
+                    R$ 478,80/ano (economize R$ 120)
                   </span>
                 ) : (
                   <span className="text-[11px] text-white/50 font-medium">
-                    Faturamento mensal sem fidelidade · Cancele quando quiser
+                    <span className="line-through">De R$ 49,90</span> · Oferta de lançamento ·
+                    Cancele quando quiser
                   </span>
                 )}
 
@@ -607,7 +696,8 @@ export function PricingPlansPage() {
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#d0f25a]" />
                     <span>
-                      <strong>Link Exclusivo de Auto-Cadastro</strong> por WhatsApp para cada profissional
+                      <strong>Link Exclusivo de Auto-Cadastro</strong> por WhatsApp para cada
+                      profissional
                     </span>
                   </div>
                   <div className="flex items-start gap-2.5">
@@ -630,7 +720,7 @@ export function PricingPlansPage() {
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#d0f25a]" />
-                    <span>Cobrança online com PIX Instantâneo Asaas</span>
+                    <span>Receba cobranças por Pix instantâneo ou cartão</span>
                   </div>
                 </div>
               </div>
@@ -645,7 +735,7 @@ export function PricingPlansPage() {
                   <ArrowRight size={16} />
                 </button>
                 <p className="mt-2 text-center text-[11px] text-white/50">
-                  Liberação automática instantânea via Asaas PIX
+                  Ativação após a confirmação do pagamento
                 </p>
               </div>
             </div>
@@ -667,24 +757,27 @@ export function PricingPlansPage() {
                 </h3>
 
                 <p className="mt-2 text-[13px] leading-relaxed text-[#72756d]">
-                  Para marcas com múltiplas filiais, totens de atendimento e automações integradas de WhatsApp.
+                  Para marcas com múltiplas filiais, totens de atendimento e automações integradas
+                  de WhatsApp.
                 </p>
 
-                <div className="mt-6 flex items-baseline gap-1.5 border-t border-[#f0f0ea] pt-6">
+                <div className="mt-6 flex flex-wrap items-baseline gap-1.5 border-t border-[#f0f0ea] pt-6">
+                  <span className="text-base font-semibold text-[#888b81] line-through">
+                    R$ 119,90
+                  </span>
                   <span className="font-display text-[46px] font-black tracking-tight text-[#20221f]">
-                    {billingCycle === "yearly" ? "R$ 59,90" : "R$ 79,90"}
+                    R$ 79,90
                   </span>
-                  <span className="text-[13px] font-medium text-[#888b81]">
-                    /mês
-                  </span>
+                  <span className="text-[13px] font-medium text-[#888b81]">/mês</span>
                 </div>
                 {billingCycle === "yearly" ? (
                   <span className="text-[11px] text-[#687348] font-semibold">
-                    Cobrado anualmente (R$ 718,80/ano · Economia de R$ 240)
+                    <span className="line-through">R$ 1.438,80/ano</span> · Lançamento: R$
+                    958,80/ano (economize R$ 480)
                   </span>
                 ) : (
                   <span className="text-[11px] text-[#888b81] font-medium">
-                    Faturamento mensal sem fidelidade
+                    <span className="line-through">De R$ 119,90</span> · Oferta de lançamento
                   </span>
                 )}
 
@@ -692,11 +785,15 @@ export function PricingPlansPage() {
                 <div className="mt-6 space-y-3 border-t border-[#f0f0ea] pt-6 text-[13px] text-[#4f514a]">
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
-                    <span><strong>Tudo do Plano Pro incluído</strong></span>
+                    <span>
+                      <strong>Tudo do Plano Pro incluído</strong>
+                    </span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
-                    <span><strong>Múltiplas Filiais / Unidades</strong> no mesmo painel</span>
+                    <span>
+                      <strong>Múltiplas Filiais / Unidades</strong> no mesmo painel
+                    </span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
@@ -734,19 +831,20 @@ export function PricingPlansPage() {
         </section>
 
         {/* ==============================================================
-            4. CALCULADORA DE ECONOMIA vs OUTRAS PLATAFORMAS (iFood/Trinks/etc)
+            4. SIMULADOR DE ECONOMIA ESTIMADA
            ============================================================== */}
         <section className="border-y border-[#e6e5dd] bg-[#f5f5f0] px-5 py-16 sm:px-10 sm:py-24 lg:px-16">
           <div className="mx-auto max-w-[1080px]">
             <div className="text-center">
               <span className="text-[12px] font-bold uppercase tracking-wider text-[#687348]">
-                Simulador de Lucro Real
+                Simulador de economia estimada
               </span>
               <h2 className="mt-2 font-display text-[32px] font-medium tracking-tight text-[#20221f] sm:text-[44px]">
-                Veja quanto dinheiro você está perdendo em comissões
+                Compare seus custos com a ELLO
               </h2>
               <p className="mt-3 text-[15px] text-[#72756d] max-w-xl mx-auto">
-                Arraste a barra abaixo com a média do faturamento mensal do seu negócio e veja o impacto no seu bolso.
+                Arraste a barra abaixo com a média do faturamento mensal do seu negócio e veja o
+                impacto no seu bolso.
               </p>
             </div>
 
@@ -781,13 +879,14 @@ export function PricingPlansPage() {
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl border border-red-100 bg-red-50/50 p-5">
                   <div className="flex items-center gap-2 text-red-600 text-[12px] font-bold uppercase tracking-wider">
-                    <span>Taxas de Outros Aplicativos (15%)</span>
+                    <span>Exemplo de comissão de 15%</span>
                   </div>
                   <div className="mt-2 font-display text-[28px] sm:text-[34px] font-black text-red-700">
                     - R$ {traditionalFee.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </div>
                   <p className="mt-1 text-[12px] text-red-600/80">
-                    Valor médio que você entrega mensalmente em comissões de marketplace.
+                    Simulação ilustrativa sobre o faturamento informado; as taxas variam por
+                    plataforma e segmento.
                   </p>
                 </div>
 
@@ -799,7 +898,11 @@ export function PricingPlansPage() {
                     + R$ {monthlySavings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </div>
                   <p className="mt-1 text-[12px] text-[#637248]">
-                    Lucro líquido a mais por mês no seu bolso. (<strong>R$ {yearlySavings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/ano</strong>)
+                    Diferença estimada entre a comissão ilustrativa e a assinatura Pro mensal. (
+                    <strong>
+                      R$ {yearlySavings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/ano
+                    </strong>
+                    )
                   </p>
                 </div>
               </div>
@@ -836,62 +939,90 @@ export function PricingPlansPage() {
               <thead>
                 <tr className="border-b border-[#e4e4db] bg-[#fafaf7]">
                   <th className="p-4 sm:p-5 font-bold text-[#6d7067] w-1/2">Funcionalidade</th>
-                  <th className="p-4 sm:p-5 font-bold text-center text-[#20221f] w-1/6">Começar Grátis</th>
-                  <th className="p-4 sm:p-5 font-bold text-center text-[#20221f] bg-[#f4f7eb] w-1/6">Plano Pro</th>
-                  <th className="p-4 sm:p-5 font-bold text-center text-[#20221f] w-1/6">Business</th>
+                  <th className="p-4 sm:p-5 font-bold text-center text-[#20221f] w-1/6">
+                    Começar Grátis
+                  </th>
+                  <th className="p-4 sm:p-5 font-bold text-center text-[#20221f] bg-[#f4f7eb] w-1/6">
+                    Plano Pro
+                  </th>
+                  <th className="p-4 sm:p-5 font-bold text-center text-[#20221f] w-1/6">
+                    Business
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#efefe9] text-[#4f514a]">
                 <tr>
                   <td className="p-4 sm:p-5 font-medium">Taxa sobre faturamento e pedidos</td>
                   <td className="p-4 sm:p-5 text-center font-bold text-emerald-700">0%</td>
-                  <td className="p-4 sm:p-5 text-center font-bold text-emerald-700 bg-[#fbfdf7]">0%</td>
+                  <td className="p-4 sm:p-5 text-center font-bold text-emerald-700 bg-[#fbfdf7]">
+                    0%
+                  </td>
                   <td className="p-4 sm:p-5 text-center font-bold text-emerald-700">0%</td>
                 </tr>
                 <tr>
                   <td className="p-4 sm:p-5 font-medium">Subcontas ilimitadas para equipe</td>
                   <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Ilimitadas</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">
+                    ✓ Ilimitadas
+                  </td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Ilimitadas</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-medium">Link de auto-cadastro por WhatsApp para colaboradores</td>
+                  <td className="p-4 sm:p-5 font-medium">
+                    Link de auto-cadastro por WhatsApp para colaboradores
+                  </td>
                   <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Sim</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">
+                    ✓ Sim
+                  </td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Sim</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-medium">Cardápio & Catálogo Digital com fotos</td>
+                  <td className="p-4 sm:p-5 font-medium">
+                    Catálogo de produtos e serviços com fotos
+                  </td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Ilimitado</td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Ilimitado</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">
+                    ✓ Ilimitado
+                  </td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Ilimitado</td>
                 </tr>
                 <tr>
                   <td className="p-4 sm:p-5 font-medium">Remoção de marca ELLO (100% sua marca)</td>
                   <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Sim</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">
+                    ✓ Sim
+                  </td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Sim</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-medium">Painel KDS de Cozinha & Preparo em tempo real</td>
+                  <td className="p-4 sm:p-5 font-medium">Painel de operações em tempo real</td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Incluso</td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
-                </tr>
-                <tr>
-                  <td className="p-4 sm:p-5 font-medium">Impressão Térmica Automática 80mm</td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Incluso</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">
+                    ✓ Incluso
+                  </td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-medium">Múltiplas Filiais / Unidades no mesmo painel</td>
+                  <td className="p-4 sm:p-5 font-medium">Impressão térmica automática 80 mm</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">
+                    ✓ Incluso
+                  </td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium">
+                    Múltiplas Filiais / Unidades no mesmo painel
+                  </td>
                   <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
                   <td className="p-4 sm:p-5 text-center text-slate-300 bg-[#fbfdf7]">—</td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Sim</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-medium">Totem de Autoatendimento para iPad/Tablet</td>
+                  <td className="p-4 sm:p-5 font-medium">
+                    Totem de Autoatendimento para iPad/Tablet
+                  </td>
                   <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
                   <td className="p-4 sm:p-5 text-center text-slate-300 bg-[#fbfdf7]">—</td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
@@ -899,8 +1030,12 @@ export function PricingPlansPage() {
                 <tr>
                   <td className="p-4 sm:p-5 font-medium">Suporte ao cliente</td>
                   <td className="p-4 sm:p-5 text-center text-slate-500">Padrão</td>
-                  <td className="p-4 sm:p-5 text-center font-bold text-[#556934] bg-[#fbfdf7]">Prioritário</td>
-                  <td className="p-4 sm:p-5 text-center font-bold text-amber-700">VIP no WhatsApp</td>
+                  <td className="p-4 sm:p-5 text-center font-bold text-[#556934] bg-[#fbfdf7]">
+                    Prioritário
+                  </td>
+                  <td className="p-4 sm:p-5 text-center font-bold text-amber-700">
+                    VIP no WhatsApp
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -937,7 +1072,7 @@ export function PricingPlansPage() {
                 },
                 {
                   q: "Quais são as formas de pagamento disponíveis para assinar?",
-                  a: "Aceitamos PIX Instantâneo oficial com compensação automática via Asaas em poucos segundos, além de cartão de crédito. Se optar pelo plano anual, você garante 25% de desconto.",
+                  a: "A assinatura é paga por Pix. Os planos mensal e anual estão com preços especiais de lançamento; o valor total do ciclo anual aparece antes da confirmação.",
                 },
                 {
                   q: "Posso começar no plano grátis e mudar para o Pro depois?",
@@ -988,7 +1123,8 @@ export function PricingPlansPage() {
                 Pronto para transformar a gestão do seu negócio?
               </h3>
               <p className="mt-2 text-sm text-white/70">
-                Leva menos de 3 minutos para criar seu cardápio, agenda e perfil profissional.
+                Leva menos de 3 minutos para criar sua vitrine de produtos ou serviços, agenda e
+                perfil profissional.
               </p>
             </div>
 
@@ -1013,12 +1149,14 @@ export function PricingPlansPage() {
         <Link to="/" className="flex items-center font-semibold text-[#242620]">
           <ElloLogo tone="dark" height={22} />
         </Link>
-        <span>Plataforma completa para estabelecimentos e negócios locais. Taxa Zero sobre vendas.</span>
+        <span>
+          Plataforma completa para estabelecimentos e negócios locais. Taxa Zero sobre vendas.
+        </span>
         <span>© {new Date().getFullYear()} ELLO</span>
       </footer>
 
       {/* ==============================================================
-          9. MODAL DE CHECKOUT REAL VIA ASAAS (PIX AUTOMÁTICO)
+          9. MODAL DE CHECKOUT (PIX)
          ============================================================== */}
       {checkoutModalPlan && (
         <div
@@ -1048,14 +1186,17 @@ export function PricingPlansPage() {
                 </div>
                 <div>
                   <span className="inline-block rounded-full bg-[#d0f25a]/20 text-[#d0f25a] px-3 py-1 text-xs font-bold uppercase tracking-wider mb-2">
-                    ⚡ Pagamento Confirmado no Asaas
+                    Pagamento confirmado
                   </span>
                   <h3 className="font-display text-2xl font-bold text-white">
                     Parabéns! O {planName} está 100% ativo!
                   </h3>
                   <p className="mt-2 text-sm text-white/70 max-w-sm mx-auto leading-relaxed">
-                    A sua assinatura foi confirmada pelo Banco Central e compensada no Asaas. Todos os recursos, subcontas e relatórios já foram liberados para{" "}
-                    <strong className="text-white">{business?.name || payerName || "seu negócio"}</strong>.
+                    A sua assinatura foi confirmada. Os recursos do plano já foram liberados para{" "}
+                    <strong className="text-white">
+                      {business?.name || payerName || "seu negócio"}
+                    </strong>
+                    .
                   </p>
                 </div>
 
@@ -1081,7 +1222,7 @@ export function PricingPlansPage() {
               </div>
             )}
 
-            {/* ETAPA 2: TELA DO PIX REAL GERADO PELO ASAAS */}
+            {/* ETAPA 2: TELA DA COBRANÇA PIX */}
             {modalStep === "payment" && paymentData && (
               <div className="space-y-5">
                 <div>
@@ -1089,17 +1230,19 @@ export function PricingPlansPage() {
                     <Zap size={13} />
                     <span>{planName}</span>
                     <span>·</span>
-                    <span>{modalCycle === "yearly" ? "Anual (25% OFF)" : "Mensal"}</span>
+                    <span>
+                      {modalCycle === "yearly" ? "Anual — lançamento" : "Mensal — lançamento"}
+                    </span>
                   </div>
                   <h3 className="mt-2 font-display text-2xl font-bold text-white">
                     Pague com PIX para Ativar
                   </h3>
                   <p className="mt-1 text-xs text-white/60">
-                    Cobrança real emitida no Asaas. A aprovação é imediata após a leitura do QR Code.
+                    Cobrança segura. A confirmação acontece após o pagamento pelo Pix.
                   </p>
                 </div>
 
-                {/* Card com o QR Code Real do Asaas */}
+                {/* Card com o QR Code Pix */}
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-center space-y-4">
                   <div className="flex items-center justify-between text-xs pb-1 border-b border-white/10">
                     <span className="text-white/60">Valor da Assinatura:</span>
@@ -1113,7 +1256,7 @@ export function PricingPlansPage() {
                     <div className="bg-white p-3 rounded-2xl shadow-xl inline-block border-4 border-white">
                       <img
                         src={`data:image/png;base64,${paymentData.pix.encodedImage}`}
-                        alt="QR Code Pix Oficial Asaas"
+                        alt="QR Code para pagamento por Pix"
                         className="size-48 sm:size-52 rounded-lg object-contain"
                       />
                     </div>
@@ -1145,7 +1288,8 @@ export function PricingPlansPage() {
                       )}
                     </button>
                     <p className="text-[11px] text-white/40">
-                      Abra o app do seu banco, escolha <strong>Pix Copia e Cola</strong> e cole o código.
+                      Abra o app do seu banco, escolha <strong>Pix Copia e Cola</strong> e cole o
+                      código.
                     </p>
                   </div>
                 </div>
@@ -1159,7 +1303,11 @@ export function PricingPlansPage() {
                     className="flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-2.5 px-3 text-xs font-semibold text-white hover:bg-white/10 transition cursor-pointer"
                   >
                     <RefreshCw size={14} className={isCheckingPayment ? "animate-spin" : ""} />
-                    <span>{isCheckingPayment ? "Verificando com o Asaas..." : "Já paguei, verificar agora"}</span>
+                    <span>
+                      {isCheckingPayment
+                        ? "Verificando pagamento..."
+                        : "Já paguei, verificar agora"}
+                    </span>
                   </button>
 
                   {paymentData.invoiceUrl && (
@@ -1169,7 +1317,7 @@ export function PricingPlansPage() {
                       rel="noreferrer"
                       className="flex items-center justify-center gap-1.5 text-xs text-white/50 hover:text-white py-1 transition"
                     >
-                      <span>Abrir fatura completa no Asaas</span>
+                      <span>Abrir detalhes da cobrança</span>
                       <ExternalLink size={12} />
                     </a>
                   )}
@@ -1189,7 +1337,7 @@ export function PricingPlansPage() {
                     Assinar {planName}
                   </h3>
                   <p className="mt-1 text-xs text-white/60">
-                    Preencha os dados do pagador para emissão do PIX oficial registrado pelo Asaas.
+                    Preencha os dados do pagador para gerar a cobrança por Pix.
                   </p>
                 </div>
 
@@ -1198,7 +1346,7 @@ export function PricingPlansPage() {
                   <div className="flex items-center justify-between text-xs font-semibold text-white/70 pb-2">
                     <span>Ciclo de Faturamento</span>
                     {modalCycle === "yearly" && (
-                      <span className="text-[#d0f25a] font-bold">Economize 25%</span>
+                      <span className="text-[#d0f25a] font-bold">Preço especial de lançamento</span>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -1225,8 +1373,11 @@ export function PricingPlansPage() {
                           : "bg-white/5 text-white/70 hover:bg-white/10"
                       }`}
                     >
-                      <span>Anual (25% OFF)</span>
+                      <span>Anual — lançamento</span>
                       <span className="text-[11px] opacity-80 font-normal">
+                        <span className="line-through">
+                          R$ {planPriceRegularMonthly.toFixed(2).replace(".", ",")}
+                        </span>{" "}
                         R$ {planPriceYearlyMonthly.toFixed(2).replace(".", ",")}/mês
                       </span>
                     </button>
@@ -1241,7 +1392,15 @@ export function PricingPlansPage() {
                       R$ {currentPriceStr}
                     </div>
                     {modalCycle === "yearly" && (
-                      <div className="text-[10px] text-white/40">Pagamento único anual com 25% de desconto</div>
+                      <div className="text-[10px] text-white/40">
+                        <span className="line-through">
+                          De R$ {planPriceRegularYearly.toFixed(2).replace(".", ",")}
+                        </span>
+                        {" · "}Economize R${" "}
+                        {(planPriceRegularYearly - planPriceYearlyTotal)
+                          .toFixed(2)
+                          .replace(".", ",")}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1272,7 +1431,7 @@ export function PricingPlansPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-[11px] font-semibold text-white/80 block mb-1">
-                        CPF ou CNPJ (Obrigatório Asaas) *
+                        CPF ou CNPJ *
                       </label>
                       <input
                         type="text"
@@ -1311,6 +1470,39 @@ export function PricingPlansPage() {
                       className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-white/30 focus:border-[#d0f25a] focus:outline-hidden transition"
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-white/80">
+                        CEP do titular *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        inputMode="numeric"
+                        maxLength={9}
+                        placeholder="00000-000"
+                        value={payerPostalCode}
+                        onChange={(event) =>
+                          setPayerPostalCode(event.target.value.replace(/\D/g, "").slice(0, 8))
+                        }
+                        className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-white/30 focus:border-[#d0f25a] focus:outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-white/80">
+                        Número do endereço *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={12}
+                        placeholder="123"
+                        value={payerAddressNumber}
+                        onChange={(event) => setPayerAddressNumber(event.target.value)}
+                        className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-white/30 focus:border-[#d0f25a] focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* BOTÃO PRINCIPAL DE GERAR PIX REAL NO ASAAS */}
@@ -1323,11 +1515,11 @@ export function PricingPlansPage() {
                     {isGeneratingPayment ? (
                       <span className="flex items-center gap-2">
                         <Loader2 size={16} className="animate-spin" />
-                        <span>Gerando PIX Oficial no Asaas...</span>
+                        <span>Gerando cobrança por Pix...</span>
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
-                        <span>Gerar PIX Oficial Asaas</span>
+                        <span>Gerar cobrança por Pix</span>
                         <ArrowRight size={16} />
                       </span>
                     )}
@@ -1345,7 +1537,9 @@ export function PricingPlansPage() {
 
                   <p className="text-center text-[10px] text-white/40 pt-1 flex items-center justify-center gap-1">
                     <ShieldCheck size={13} className="text-emerald-400" />
-                    <span>Ambiente seguro protegido por criptografia e regulado pelo Banco Central</span>
+                    <span>
+                      Ambiente seguro protegido por criptografia e regulado pelo Banco Central
+                    </span>
                   </p>
                 </div>
               </form>

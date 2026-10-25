@@ -23,11 +23,15 @@ export function getServerConfig() {
       process.env.VITE_SUPABASE_URL ||
       process.env.SUPABASE_URL ||
       "https://fahrhrcxzcnnrhjavrfk.supabase.co",
+    supabaseAnonKey:
+      process.env.VITE_SUPABASE_ANON_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.SUPABASE_PUBLISHABLE_KEY ||
+      "sb_publishable_2wUjef5P5H6bPLqRhfouWw_AFp-Mbk_",
     supabaseServiceRoleKey:
       process.env.SUPABASE_SERVICE_ROLE_KEY ??
-      process.env.SUPABASE_SECRET_KEY ??
-      process.env.VITE_SUPABASE_ANON_KEY ??
-      "sb_publishable_2wUjef5P5H6bPLqRhfouWw_AFp-Mbk_",
+      process.env.SUPABASE_SECRET_KEY,
     foodOrderIngestionToken: process.env.FOOD_ORDER_INGESTION_TOKEN,
   };
 }
@@ -69,10 +73,8 @@ export function getWhatsAppServerConfig() {
       | "none",
     apiUrl:
       process.env.WHATSAPP_API_URL?.trim() ||
-      "https://evolution-api-production-072e.up.railway.app",
-    apiToken:
-      process.env.WHATSAPP_API_TOKEN?.trim() ||
-      "c5e2d29a4145bac85fcb745872619307b137810ae9e39a733b20a8a6800768c8",
+      "",
+    apiToken: process.env.WHATSAPP_API_TOKEN?.trim(),
     instanceId: process.env.WHATSAPP_INSTANCE_ID?.trim() || "ello-principal",
     notifyOwner: process.env.WHATSAPP_NOTIFY_OWNER !== "false",
   };

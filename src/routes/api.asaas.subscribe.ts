@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import {
-  createAsaasUnifiedCharge,
+  asaasFetch,
+  cancelAsaasSubscription,
+  createAsaasSubscription,
   findOrCreateAsaasCustomer,
   getAsaasAdminSupabase,
   getAsaasPixQrCode,
@@ -16,103 +18,327 @@ const subscribeSchema = z.object({
   customerEmail: z.string().email("E-mail inválido"),
   customerPhone: z.string().min(10, "Telefone inválido"),
   customerCpfCnpj: z.string().min(11, "CPF ou CNPJ inválido"),
-  businessName: z.string().optional(),
-  businessId: z.string().optional(),
+  customerPostalCode: z.string().min(8, "CEP é obrigatório"),
+  customerAddressNumber: z.string().min(1, "Número do endereço é obrigatório"),
 });
+
+const planPrices = {
+  pro: { monthly: 39.9, yearly: 478.8 },
+  business: { monthly: 79.9, yearly: 958.8 },
+} as const;
+
+const dateAfterDays = (days: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
 
 export const Route = createFileRoute("/api/asaas/subscribe")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // 1. Rate Limiting por IP (Proteção contra flood: máx 15 req/min)
-        const ip = getClientIp(request);
-        const ipRateLimit = checkRateLimit(`subscribe-ip:${ip}`, 15, 60_000);
-        if (!ipRateLimit.allowed) {
-          return createRateLimitResponse(ipRateLimit.resetSeconds);
-        }
-
-        let input: z.infer<typeof subscribeSchema>;
-        try {
-          const body = await request.json();
-          input = subscribeSchema.parse(body);
-        } catch (err: unknown) {
-          const errorMsg = err instanceof z.ZodError ? err.errors[0]?.message : "Dados inválidos.";
-          return Response.json({ error: errorMsg || "Dados inválidos para assinatura." }, { status: 400 });
-        }
+        const ipLimit = checkRateLimit(`subscribe-ip:${getClientIp(request)}`, 8, 60_000);
+        if (!ipLimit.allowed) return createRateLimitResponse(ipLimit.resetSeconds);
 
         if (!isAsaasConfigured()) {
           return Response.json(
-            { error: "O gateway Asaas não está configurado no servidor." },
+            { error: "O serviço de pagamentos não está disponível no momento." },
             { status: 503 },
           );
         }
 
-        // Limpa CPF/CNPJ e Telefone
-        const cleanCpfCnpj = input.customerCpfCnpj.replace(/\D/g, "");
-        const cleanPhone = input.customerPhone.replace(/\D/g, "");
-
-        if (cleanCpfCnpj.length !== 11 && cleanCpfCnpj.length !== 14) {
+        const authorization = request.headers.get("authorization");
+        if (!authorization?.startsWith("Bearer ")) {
           return Response.json(
-            { error: "CPF deve conter 11 dígitos ou CNPJ deve conter 14 dígitos válidos." },
-            { status: 400 },
+            { error: "Entre na sua conta para contratar um plano." },
+            { status: 401 },
           );
         }
 
-        // Cálculo do valor exato
-        let amount = 39.9;
-        if (input.planId === "pro") {
-          amount = input.billingCycle === "yearly" ? 358.8 : 39.9;
-        } else if (input.planId === "business") {
-          amount = input.billingCycle === "yearly" ? 718.8 : 79.9;
+        const supabase = getAsaasAdminSupabase();
+        const token = authorization.slice("Bearer ".length);
+        const { data: authData, error: authError } = await supabase.auth.getUser(token);
+        if (authError || !authData.user) {
+          return Response.json({ error: "Sua sessão expirou. Entre novamente." }, { status: 401 });
         }
 
-        const planTitle = input.planId === "pro" ? "Plano Pro" : "Plano Business";
-        const cycleTitle = input.billingCycle === "yearly" ? "Anual (25% OFF)" : "Mensal";
-        const bizTitle = input.businessName?.trim() || "Empresa";
-
+        let input: z.infer<typeof subscribeSchema>;
         try {
-          // 2. Cria ou localiza o cliente no Asaas (Conta Master)
-          const customerId = await findOrCreateAsaasCustomer({
-            name: input.customerName.trim(),
-            cpfCnpj: cleanCpfCnpj,
-            email: input.customerEmail.trim(),
-            phone: cleanPhone,
-          });
+          input = subscribeSchema.parse(await request.json());
+        } catch (error) {
+          const message =
+            error instanceof z.ZodError ? error.errors[0]?.message : "Dados inválidos.";
+          return Response.json({ error: message }, { status: 400 });
+        }
 
-          // 3. Cria a cobrança PIX no Asaas
-          const externalRef = `sub_${input.planId}_${input.billingCycle}_${input.businessId || "new"}_${Date.now()}`;
-          const payment = await createAsaasUnifiedCharge({
-            customerId,
-            value: amount,
-            description: `Assinatura ELLO ${planTitle} (${cycleTitle}) - ${bizTitle}`,
-            externalReference: externalRef,
-            billingType: "PIX",
-          });
+        const cleanCpfCnpj = input.customerCpfCnpj.replace(/\D/g, "");
+        const cleanPhone = input.customerPhone.replace(/\D/g, "");
+        const cleanPostalCode = input.customerPostalCode.replace(/\D/g, "");
+        if (
+          ![11, 14].includes(cleanCpfCnpj.length) ||
+          cleanPhone.length < 10 ||
+          cleanPostalCode.length !== 8
+        ) {
+          return Response.json({ error: "Confira CPF/CNPJ, telefone e CEP." }, { status: 400 });
+        }
 
-          // 4. Busca o QR Code e Payload PIX oficial gerado pelo Asaas
-          const pixData = await getAsaasPixQrCode(payment.id);
+        const { data: business, error: businessError } = await supabase
+          .from("localhub_businesses")
+          .select("id, name, owner_id, phone, onboarding_details")
+          .eq("owner_id", authData.user.id)
+          .maybeSingle();
+        if (businessError || !business) {
+          return Response.json(
+            { error: "Crie seu espaço na ELLO antes de contratar um plano." },
+            { status: 409 },
+          );
+        }
 
-          // 5. Se houver businessId, salva o id da cobrança de assinatura para histórico
-          if (input.businessId) {
+        const { data: planState, error: stateError } = await supabase
+          .from("localhub_plan_subscriptions")
+          .select("*")
+          .eq("business_id", business.id)
+          .maybeSingle();
+        if (stateError) {
+          return Response.json(
+            { error: "Não foi possível verificar o plano atual. Tente novamente." },
+            { status: 503 },
+          );
+        }
+        if (planState?.status === "pending") {
+          return Response.json(
+            {
+              error:
+                "Já existe um pagamento de plano aguardando confirmação. Conclua ou aguarde o vencimento antes de iniciar outra troca.",
+            },
+            { status: 409 },
+          );
+        }
+
+        const { data: ownedOpenPayments, error: paymentsError } = await supabase
+          .from("localhub_asaas_plan_payments")
+          .select("asaas_payment_id")
+          .eq("business_id", business.id)
+          .in("status", ["pending", "overdue"]);
+        if (paymentsError)
+          return Response.json(
+            { error: "Não foi possível conferir cobranças anteriores." },
+            { status: 503 },
+          );
+
+        let previousSubscriptionId = planState?.asaas_subscription_id as string | null | undefined;
+        if (!previousSubscriptionId && ownedOpenPayments?.length) {
+          for (const openPayment of ownedOpenPayments) {
             try {
-              const supabase = getAsaasAdminSupabase();
-              await supabase
-                .from("localhub_businesses")
-                .update({
-                  onboarding_details: {
-                    pendingSubscription: {
-                      paymentId: payment.id,
-                      plan: input.planId,
-                      billingCycle: input.billingCycle,
-                      value: amount,
-                      createdAt: new Date().toISOString(),
-                    },
-                  },
-                })
-                .eq("id", input.businessId);
-            } catch {
-              // não bloqueia se Supabase falhar na gravação do pending
+              const payment = await asaasFetch<{
+                id: string;
+                subscription?: string;
+                status: string;
+              }>(`payments/${encodeURIComponent(openPayment.asaas_payment_id)}`);
+              if (payment.subscription) previousSubscriptionId = payment.subscription;
+              if (
+                !previousSubscriptionId &&
+                ["PENDING", "OVERDUE", "CONFIRMED"].includes(payment.status)
+              ) {
+                await asaasFetch(`payments/${encodeURIComponent(payment.id)}`, {
+                  method: "DELETE",
+                });
+              }
+            } catch (error) {
+              console.error(
+                "Não foi possível reconciliar uma cobrança anterior de assinatura.",
+                error,
+              );
+              return Response.json(
+                {
+                  error:
+                    "Não foi possível reconciliar uma cobrança anterior. A troca foi interrompida para evitar cobranças duplicadas.",
+                },
+                { status: 409 },
+              );
             }
+          }
+        }
+
+        const previousPlan = planState?.plan as string | undefined;
+        const upgrades = { free: 0, pro: 1, business: 2 } as const;
+        const currentPlan =
+          previousPlan === "pro" || previousPlan === "business" ? previousPlan : "free";
+        if (
+          currentPlan === input.planId &&
+          planState?.status === "active" &&
+          planState.billing_cycle === input.billingCycle
+        ) {
+          return Response.json(
+            { error: "Este plano já está ativo para o período selecionado." },
+            { status: 409 },
+          );
+        }
+        if (currentPlan === "business" && input.planId === "pro") {
+          return Response.json(
+            {
+              error:
+                "Para mudar para o Pro, cancele o Business atual e aguarde a confirmação do cancelamento.",
+            },
+            { status: 409 },
+          );
+        }
+
+        if (planState?.status === "canceled" && previousSubscriptionId) {
+          return Response.json(
+            {
+              error:
+                "O cancelamento anterior ainda está em reconciliação. Entre em contato com o suporte antes de contratar novamente.",
+            },
+            { status: 409 },
+          );
+        }
+
+        if (currentPlan !== "free" && !previousSubscriptionId && !ownedOpenPayments?.length) {
+          return Response.json(
+            {
+              error:
+                "Não encontramos a assinatura atual para encerrá-la com segurança. Entre em contato com o suporte antes de trocar de plano.",
+            },
+            { status: 409 },
+          );
+        }
+
+        const cleanName = input.customerName.trim();
+        const reservation = await supabase.rpc("localhub_reserve_plan_change", {
+          p_business_id: business.id,
+          p_plan: input.planId,
+          p_billing_cycle: input.billingCycle,
+        });
+        if (reservation.error || !reservation.data?.[0]?.acquired) {
+          return Response.json(
+            { error: "Já existe uma troca de plano em andamento para este negócio." },
+            { status: 409 },
+          );
+        }
+        previousSubscriptionId = reservation.data[0].prior_subscription_id;
+        let previousSubscriptionCanceled = false;
+        try {
+          const customerId =
+            planState?.asaas_customer_id ||
+            (await findOrCreateAsaasCustomer({
+              name: cleanName,
+              cpfCnpj: cleanCpfCnpj,
+              phone: cleanPhone,
+              email: input.customerEmail.trim(),
+              postalCode: cleanPostalCode,
+              addressNumber: input.customerAddressNumber.trim(),
+            }));
+          if (previousSubscriptionId) {
+            await cancelAsaasSubscription(previousSubscriptionId);
+            previousSubscriptionCanceled = true;
+            const { error: closePriorPlanError } = await supabase
+              .from("localhub_plan_subscriptions")
+              .update({
+                asaas_subscription_id: null,
+                plan: "free",
+                status: "free",
+                billing_cycle: null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("business_id", business.id);
+            if (closePriorPlanError)
+              throw new Error(
+                "O plano anterior foi encerrado, mas não foi possível confirmar o estado local. Contate o suporte antes de uma nova cobrança.",
+              );
+            previousSubscriptionId = null;
+          }
+          const regularAmount = planPrices[input.planId][input.billingCycle];
+          const amount = regularAmount;
+          const cycle = input.billingCycle === "yearly" ? "YEARLY" : "MONTHLY";
+          const subscription = await createAsaasSubscription({
+            customerId,
+            value: regularAmount,
+            cycle,
+            nextDueDate: dateAfterDays(1),
+            description: `Assinatura ELLO ${input.planId === "pro" ? "Pro" : "Business"} - ${business.name}`,
+            externalReference: `ello_${business.id}_${input.planId}_${crypto.randomUUID()}`,
+          });
+
+          let payment: {
+            id: string;
+            status: string;
+            value: number;
+            invoiceUrl?: string;
+            bankSlipUrl?: string;
+          };
+          let pixData: { encodedImage: string; payload: string; expirationDate: string };
+          try {
+            const generatedPayments = await asaasFetch<{
+              data: Array<{
+                id: string;
+                status: string;
+                value: number;
+                invoiceUrl?: string;
+                bankSlipUrl?: string;
+              }>;
+            }>(`subscriptions/${encodeURIComponent(subscription.id)}/payments?limit=1`);
+            payment = generatedPayments.data?.[0]!;
+            if (!payment?.id)
+              throw new Error(
+                "O pagamento inicial ainda não foi gerado. Tente novamente em instantes.",
+              );
+            pixData = await getAsaasPixQrCode(payment.id);
+          } catch (error) {
+            await cancelAsaasSubscription(subscription.id).catch((cancelError) => {
+              console.error(
+                "Falha ao reverter assinatura após erro no Pix; intervenção necessária.",
+                cancelError,
+              );
+            });
+            throw error;
+          }
+
+          const { error: paymentInsertError } = await supabase
+            .from("localhub_asaas_plan_payments")
+            .insert({
+              asaas_payment_id: payment.id,
+              asaas_subscription_id: subscription.id,
+              business_id: business.id,
+              requested_plan: input.planId,
+              billing_cycle: input.billingCycle,
+              amount_cents: Math.round(amount * 100),
+            });
+          if (paymentInsertError) {
+            await asaasFetch(`payments/${encodeURIComponent(payment.id)}`, {
+              method: "DELETE",
+            }).catch(() => {});
+            await cancelAsaasSubscription(subscription.id).catch(() => {});
+            throw new Error(
+              "Não foi possível registrar a assinatura com segurança. A tentativa foi cancelada.",
+            );
+          }
+
+          const { error: pendingStateError } = await supabase
+            .from("localhub_plan_subscriptions")
+            .upsert(
+              {
+                business_id: business.id,
+                asaas_subscription_id: subscription.id,
+                asaas_customer_id: customerId,
+                plan: "free",
+                status: "pending",
+                pending_plan: input.planId,
+                pending_billing_cycle: input.billingCycle,
+                pending_payment_id: payment.id,
+                pending_subscription_id: subscription.id,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "business_id" },
+            );
+          if (pendingStateError) {
+            await asaasFetch(`payments/${encodeURIComponent(payment.id)}`, {
+              method: "DELETE",
+            }).catch(() => {});
+            await cancelAsaasSubscription(subscription.id).catch(() => {});
+            throw new Error(
+              "Não foi possível registrar o plano com segurança. A tentativa foi cancelada.",
+            );
           }
 
           return Response.json({
@@ -122,16 +348,35 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
             value: payment.value,
             invoiceUrl: payment.invoiceUrl,
             bankSlipUrl: payment.bankSlipUrl,
-            pix: {
-              encodedImage: pixData.encodedImage,
-              payload: pixData.payload,
-              expirationDate: pixData.expirationDate,
-            },
+            pix: pixData,
           });
-        } catch (err: unknown) {
-          console.error("Erro ao gerar assinatura Asaas:", err);
-          const message = err instanceof Error ? err.message : "Erro desconhecido ao processar assinatura no Asaas.";
-          return Response.json({ error: message }, { status: 500 });
+        } catch (error) {
+          await supabase
+            .from("localhub_plan_subscriptions")
+            .update({
+              asaas_subscription_id: previousSubscriptionCanceled
+                ? null
+                : (previousSubscriptionId ?? null),
+              plan: previousSubscriptionCanceled ? "free" : currentPlan,
+              billing_cycle: previousSubscriptionCanceled
+                ? null
+                : (planState?.billing_cycle ?? null),
+              status: previousSubscriptionCanceled
+                ? "free"
+                : currentPlan === "free"
+                  ? "free"
+                  : "active",
+              pending_plan: null,
+              pending_billing_cycle: null,
+              pending_payment_id: null,
+              pending_subscription_id: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("business_id", business.id);
+          console.error("Falha ao iniciar assinatura ELLO.", error);
+          const message =
+            error instanceof Error ? error.message : "Não foi possível iniciar o plano.";
+          return Response.json({ error: message }, { status: 502 });
         }
       },
     },

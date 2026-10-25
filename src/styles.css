@@ -2108,7 +2108,6 @@
   }
 }
 
-
 /* Touch-first Studio chrome and safe areas for installed mobile experiences. */
 .ello-studio {
   min-height: 100dvh;
@@ -2117,16 +2116,537 @@
 }
 
 .ello-studio a,
-.ello-studio button { touch-action: manipulation; }
+.ello-studio button {
+  touch-action: manipulation;
+}
 
-.ello-studio input,
-.ello-studio textarea,
-.ello-studio select { font-size: 16px; }
+@media (pointer: coarse) {
+  .ello-studio input,
+  .ello-studio textarea,
+  .ello-studio select {
+    font-size: 16px;
+  }
+}
 
 @media (prefers-reduced-transparency: reduce) {
   .ello-studio nav[aria-label="Navegação principal"] > div {
     background: #fbfaf7;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+  }
+}
+
+/* Public restaurant storefront: XMenu-inspired contrast and density, in ELLO colors. */
+  .ello-food-store {
+    --food-bg: #111214;
+    --food-surface: #191a1d;
+    --food-surface-raised: #202125;
+    --food-border: #303137;
+    --food-copy: #f4f4f5;
+    --food-muted: #a1a1aa;
+    --food-accent: #d0f25a;
+    min-height: 100dvh;
+    overflow-x: clip;
+    background: var(--food-bg);
+    color: var(--food-copy);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .ello-food-store .food-store-header {
+    background: rgb(17 18 20 / 94%);
+    border-color: var(--food-border);
+  }
+
+  .ello-food-store .food-header-action {
+    color: var(--food-copy);
+    background: var(--food-surface);
+    border-color: var(--food-border);
+    box-shadow: none;
+  }
+
+  .ello-food-store .food-header-action:hover {
+    background: var(--food-surface-raised);
+    border-color: #4a4c54;
+  }
+
+  .ello-food-store .food-store-overview {
+    background: var(--food-surface);
+    border: 1px solid var(--food-border);
+  }
+
+  .ello-food-store .food-store-cover {
+    isolation: isolate;
+  }
+
+  .ello-food-store .food-store-cover::after {
+    position: absolute;
+    z-index: -1;
+    content: "";
+    inset: 0;
+    background: linear-gradient(180deg, rgb(10 10 12 / 10%), rgb(10 10 12 / 82%));
+  }
+
+  .ello-food-store .food-store-identity {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 55%);
+  }
+
+  .ello-food-store .food-store-logo {
+    border: 1.5px solid rgb(255 255 255 / 85%);
+    background: var(--food-surface);
+  }
+
+  .ello-food-store .food-promo-frame {
+    aspect-ratio: 16 / 5;
+    min-height: 132px;
+    background: var(--food-surface-raised);
+  }
+
+  .ello-food-store .food-promo-slide {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ello-food-store .food-promo-slide.is-active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .ello-food-store .food-promo-overlay {
+    background: linear-gradient(90deg, rgb(8 9 10 / 42%), transparent 72%), linear-gradient(0deg, rgb(8 9 10 / 34%), transparent 42%);
+  }
+
+  .ello-food-store .food-promo-cta {
+    color: #171910;
+    background: var(--food-accent);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 22%);
+  }
+
+  .ello-food-store .food-promo-dot {
+    width: 8px;
+    height: 8px;
+    border: 1px solid rgb(255 255 255 / 88%);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 48%);
+  }
+
+  .ello-food-store .food-promo-dot.is-active {
+    width: 22px;
+    background: #fff;
+  }
+
+  .ello-food-store .food-store-meta {
+    color: var(--food-muted);
+  }
+
+  .ello-food-store .food-store-meta-item svg {
+    color: var(--food-accent);
+  }
+
+  .ello-food-store .food-store-status {
+    color: #fde68a;
+    background: rgb(245 158 11 / 12%);
+    border: 1px solid rgb(245 158 11 / 24%);
+  }
+
+  .ello-food-store .food-store-status.is-open {
+    color: #bbf7d0;
+    background: rgb(34 197 94 / 12%);
+    border-color: rgb(34 197 94 / 28%);
+  }
+
+  .ello-food-store .food-store-status.is-closed {
+    color: #fecaca;
+    background: rgb(239 68 68 / 12%);
+    border-color: rgb(239 68 68 / 24%);
+  }
+
+  .ello-food-store .food-store-mode {
+    color: #e4e4e7;
+    border: 1px solid #3c3e45;
+    background: #232429;
+  }
+
+  .ello-food-store .food-store-mode.online-payment {
+    color: #e5f6a4;
+    border-color: rgb(208 242 90 / 28%);
+    background: rgb(208 242 90 / 9%);
+  }
+
+  .ello-food-store .food-store-info-link {
+    color: var(--food-accent);
+  }
+
+  .ello-food-store .food-detail-summary,
+  .ello-food-store .food-detail-panel {
+    color: var(--food-copy);
+    border-color: var(--food-border);
+    background: var(--food-surface);
+  }
+
+  .ello-food-store .food-detail-summary:hover {
+    background: var(--food-surface-raised);
+  }
+
+  .ello-food-store .food-hour-row {
+    border-color: var(--food-border);
+  }
+
+  .ello-food-store .food-hour-row > span:first-child,
+  .ello-food-store .food-hour-value {
+    color: #d4d4d8;
+  }
+
+  .ello-food-store .food-menu-eyebrow,
+  .ello-food-store .food-menu-title,
+  .ello-food-store .food-product-name {
+    color: var(--food-copy);
+  }
+
+  .ello-food-store .food-muted {
+    color: var(--food-muted);
+  }
+
+  .ello-food-store .food-menu-search {
+    position: sticky;
+    top: 3.15rem;
+    z-index: 35;
+    padding-block: 0.35rem;
+    background: var(--food-bg);
+  }
+
+  .ello-food-store .food-search-input {
+    min-height: 3rem;
+    font-size: 16px;
+    border: 1px solid var(--food-border);
+    border-radius: 1rem;
+    color: var(--food-copy);
+    background: #1b1c20;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
+  }
+
+  .ello-food-store .food-search-input::placeholder {
+    color: #92939c;
+  }
+
+  .ello-food-store .food-search-input:focus {
+    border-color: rgb(208 242 90 / 65%);
+    --tw-ring-color: rgb(208 242 90 / 12%);
+  }
+
+  .ello-food-store .food-search-clear {
+    color: #b0b1b9;
+  }
+
+  .ello-food-store .food-category-nav {
+    top: 7.15rem;
+    z-index: 34;
+    border-block: 1px solid var(--food-border);
+    background: rgb(17 18 20 / 96%);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    touch-action: pan-x;
+    scrollbar-width: none;
+  }
+
+  .ello-food-store .food-featured-strip {
+    scroll-snap-type: x proximity;
+    touch-action: pan-x;
+  }
+
+  .ello-food-store .food-product-carousel {
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ello-food-store .food-product-carousel-card {
+    flex: 0 0 min(86%, 22rem);
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  .ello-food-store .food-feature-card {
+    scroll-snap-align: start;
+  }
+
+  .ello-food-store .food-category-nav::-webkit-scrollbar,
+  .ello-food-store .food-featured-strip::-webkit-scrollbar,
+  .ello-food-store .food-product-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ello-food-store .food-category-chip {
+    color: #e4e4e7;
+    border-color: #41434a;
+    background: #212227;
+    white-space: nowrap;
+  }
+
+  .ello-food-store .food-category-chip:hover {
+    border-color: #73765d;
+    background: #292b29;
+  }
+
+  .ello-food-store .food-category-chip.is-active {
+    color: #171914;
+    border-color: var(--food-accent);
+    background: var(--food-accent);
+  }
+
+  .ello-food-store .food-category-chip:focus-visible,
+  .ello-food-store .food-next-feature:focus-visible,
+  .ello-food-store .food-add-button:focus-visible,
+  .ello-food-store .food-header-action:focus-visible,
+  .ello-food-store .food-store-info-link:focus-visible {
+    outline: 2px solid var(--food-accent);
+    outline-offset: 3px;
+  }
+
+  .ello-food-store .food-icon-tile {
+    color: var(--food-accent);
+    background: rgb(208 242 90 / 12%);
+  }
+
+  .ello-food-store .food-count-pill {
+    color: #dbe9ad;
+    background: rgb(208 242 90 / 11%);
+  }
+
+  .ello-food-store .food-next-feature,
+  .ello-food-store .food-quantity-button {
+    color: #e4e4e7;
+    border-color: #42444b;
+    background: var(--food-surface);
+  }
+
+  .ello-food-store .food-next-feature:hover,
+  .ello-food-store .food-quantity-button:hover {
+    background: #292a2f;
+  }
+
+  .ello-food-store .food-feature-card,
+  .ello-food-store .food-product-card {
+    border-color: var(--food-border);
+    background: var(--food-surface);
+    box-shadow: 0 5px 18px rgb(0 0 0 / 12%);
+  }
+
+  .ello-food-store .food-feature-card:hover,
+  .ello-food-store .food-product-card:hover {
+    border-color: #4a4c53;
+    box-shadow: 0 9px 25px rgb(0 0 0 / 22%);
+  }
+
+  .ello-food-store .food-product-badge {
+    color: #d5e8ff;
+    border: 1px solid rgb(96 165 250 / 22%);
+    background: rgb(59 130 246 / 17%);
+  }
+
+  .ello-food-store .food-product-badge.is-promo {
+    color: #fef3c7;
+    border-color: rgb(245 158 11 / 30%);
+    background: rgb(245 158 11 / 16%);
+  }
+
+  .ello-food-store .food-product-description,
+  .ello-food-store .food-price-old {
+    color: #a1a1aa;
+  }
+
+  .ello-food-store .food-product-image,
+  .ello-food-store .food-feature-image {
+    background: #292a2f;
+  }
+
+  .ello-food-store .food-product-footer,
+  .ello-food-store .food-feature-footer,
+  .ello-food-store .food-category-heading {
+    border-color: var(--food-border);
+  }
+
+  .ello-food-store .food-price-promo {
+    color: #fcd34d;
+  }
+
+  .ello-food-store .food-add-button {
+    color: #171914;
+    background: var(--food-accent);
+  }
+
+  .ello-food-store .food-add-button:hover {
+    background: #dcf886;
+  }
+
+  .ello-food-store .food-quantity-button {
+    color: var(--food-copy);
+  }
+
+  .ello-food-store .food-empty-state {
+    color: var(--food-copy);
+    border-color: #44464d;
+    background: var(--food-surface);
+  }
+
+  .ello-food-store .food-store-footer {
+    border-color: var(--food-border);
+    color: var(--food-muted);
+  }
+
+  .ello-food-store .food-cart-bar {
+    bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    border-color: #46484e;
+    background: rgb(25 26 29 / 96%);
+    box-shadow: 0 10px 32px rgb(0 0 0 / 42%);
+  }
+
+  .ello-food-store .food-config-backdrop {
+    background: rgb(5 6 8 / 76%);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+
+  .ello-food-store .food-config-panel {
+    color: var(--food-copy);
+    border: 1px solid var(--food-border);
+    background: #191a1d;
+    box-shadow: 0 24px 70px rgb(0 0 0 / 50%);
+  }
+
+  .ello-food-store .food-config-image {
+    max-height: 13rem;
+    background: #222328;
+  }
+
+  .ello-food-store .food-config-eyebrow {
+    color: var(--food-accent);
+  }
+
+  .ello-food-store .food-config-muted {
+    color: var(--food-muted);
+  }
+
+  .ello-food-store .food-config-title {
+    color: var(--food-copy);
+  }
+
+  .ello-food-store .food-config-close {
+    color: #d4d4d8;
+    background: #292a2f;
+  }
+
+  .ello-food-store .food-option-row {
+    color: var(--food-copy);
+    border-color: #3c3e45;
+    background: #202125;
+  }
+
+  .ello-food-store .food-option-row:has(input:checked) {
+    border-color: rgb(208 242 90 / 65%);
+    background: rgb(208 242 90 / 8%);
+  }
+
+  .ello-food-store .food-option-row.is-disabled {
+    opacity: 0.45;
+  }
+
+  .ello-food-store .food-add-button:disabled {
+    color: #96979f;
+    background: #37383e;
+  }
+
+  .ello-food-store .food-store-details > summary svg {
+    color: #a1a1aa;
+  }
+
+  .ello-food-store .food-hour-row > span:first-child {
+    color: #e4e4e7;
+  }
+
+  .ello-food-store .food-hour-value > span {
+    color: #a1a1aa;
+  }
+
+  @media (max-width: 639px) {
+    .ello-food-store {
+      padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    }
+
+    .ello-food-store .food-store-overview {
+      border-radius: 1.25rem;
+    }
+
+    .ello-food-store .food-store-meta {
+      gap: 0.55rem 0.75rem;
+      padding: 0.9rem;
+    }
+
+    .ello-food-store .food-store-info-link {
+      margin-left: auto;
+    }
+
+    .ello-food-store .food-config-panel {
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    }
+  }
+
+  @media (pointer: coarse) {
+    .ello-food-store input,
+    .ello-food-store textarea,
+    .ello-food-store select {
+      font-size: 16px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .ello-food-store .food-product-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ello-food-store .food-product-carousel-card {
+      flex-basis: min(48%, 22rem);
+    }
+
+    .ello-food-store .food-category-nav {
+      border: 1px solid var(--food-border);
+      border-radius: 0 0 1rem 1rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ello-food-store *,
+    .ello-food-store *::before,
+    .ello-food-store *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+
+@keyframes ello-interlace-thread-flow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -238; }
+}
+
+.ello-thread {
+  stroke-dasharray: 16 220;
+  animation: ello-interlace-thread-flow 2.4s linear infinite;
+}
+
+.ello-thread-under {
+  animation-direction: reverse;
+  animation-duration: 2.8s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ello-thread {
+    animation: none;
+    stroke-dasharray: none;
   }
 }

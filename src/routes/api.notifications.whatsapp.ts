@@ -16,6 +16,11 @@ import {
   getSecurityAdminSupabase,
 } from "@/lib/security.server";
 import { normalizePhoneE164 } from "@/lib/coupons";
+import {
+  renderAppointmentTemplate,
+  renderOrderCustomerTemplate,
+  renderOrderOwnerTemplate,
+} from "@/lib/whatsapp-templates";
 
 const notifyOrderSchema = z.object({
   type: z.literal("order"),
@@ -70,6 +75,16 @@ const requestSchema = z.discriminatedUnion("type", [
   notifyDirectSchema,
 ]);
 
+function noStore(response: Response): Response {
+  response.headers.set("Cache-Control", "private, no-store, max-age=0");
+  response.headers.set("Pragma", "no-cache");
+  return response;
+}
+
+function noStoreJson(body: unknown, init?: ResponseInit): Response {
+  return noStore(Response.json(body, init));
+}
+
 export const Route = createFileRoute("/api/notifications/whatsapp")({
   server: {
     handlers: {
@@ -78,7 +93,7 @@ export const Route = createFileRoute("/api/notifications/whatsapp")({
         const ip = getClientIp(request);
         const rateLimit = checkRateLimit(`wa-notify:${ip}`, 30, 60_000);
         if (!rateLimit.allowed) {
-          return createRateLimitResponse(rateLimit.resetSeconds);
+          return noStore(createRateLimitResponse(rateLimit.resetSeconds));
         }
 
         try {
@@ -86,27 +101,44 @@ export const Route = createFileRoute("/api/notifications/whatsapp")({
           const parsed = requestSchema.safeParse(body);
 
           if (!parsed.success) {
-            return Response.json(
-              { error: "Payload inválido para notificação WhatsApp.", details: parsed.error.flatten() },
+            return noStoreJson(
+              {
+                error: "Payload inválido para notificação WhatsApp.",
+                details: parsed.error.flatten(),
+              },
               { status: 400 },
             );
           }
 
           const data = parsed.data;
           const auth = await authenticateRequestUser(request);
-          const supabase = getSecurityAdminSupabase();
+          let supabase: ReturnType<typeof getSecurityAdminSupabase> | null = null;
+          if (auth.user) {
+            try {
+              supabase = getSecurityAdminSupabase();
+            } catch {
+              return noStoreJson({ error: "Integração temporariamente indisponível." }, { status: 503 });
+            }
+          }
 
           // 2. Proteção de Envio Direto (Spam Relay Prevention)
           // Se for "direct", exige OBRIGATORIAMENTE usuário autenticado no sistema
           if (data.type === "direct") {
             if (!auth.user) {
-              return Response.json(
+              return noStoreJson(
                 { error: "Acesso negado. Disparos diretos exigem autenticação de lojista." },
                 { status: 401 },
               );
             }
+            const { data: businesses } = await supabase!
+              .from("localhub_businesses")
+              .select("id")
+              .eq("owner_id", auth.user.id);
+            if (!businesses?.length) {
+              return noStoreJson({ error: "Negócio não encontrado para esta conta." }, { status: 403 });
+            }
             const result = await sendWhatsAppMessage({ phone: data.phone, text: data.text });
-            return Response.json(result);
+            return noStoreJson(result);
           }
 
           // 3. Validação de Pedido (Order Spoofing Prevention)
@@ -116,21 +148,24 @@ export const Route = createFileRoute("/api/notifications/whatsapp")({
             // Se não for um usuário autenticado da loja, deve comprovar que o pedido é legítimo e existente
             if (!auth.user) {
               if (!orderPayload.trackingToken) {
-                return Response.json(
-                  { error: "Não autorizado. Token de rastreamento do pedido é obrigatório para notificações públicas." },
+                return noStoreJson(
+                  {
+                    error:
+                      "Não autorizado. Token de rastreamento do pedido é obrigatório para notificações públicas.",
+                  },
                   { status: 403 },
                 );
               }
 
               // Busca pedido no banco de dados para validar integridade
-              const { data: dbOrder, error: dbError } = await supabase
+              const { data: dbOrder, error: dbError } = await supabase!
                 .from("localhub_orders")
                 .select("id, customer_phone, business_id, public_tracking_token")
                 .eq("public_tracking_token", orderPayload.trackingToken)
                 .maybeSingle();
 
               if (dbError || !dbOrder) {
-                return Response.json(
+                return noStoreJson(
                   { error: "Pedido não localizado para envio de notificação." },
                   { status: 404 },
                 );
@@ -141,14 +176,14 @@ export const Route = createFileRoute("/api/notifications/whatsapp")({
               const normPayloadPhone = normalizePhoneE164(orderPayload.customerPhone);
 
               if (data.target === "customer" && normDbPhone !== normPayloadPhone) {
-                return Response.json(
+                return noStoreJson(
                   { error: "Número de telefone divergente do cadastro do pedido." },
                   { status: 403 },
                 );
               }
 
               if (data.target === "owner") {
-                const { data: business } = await supabase
+                const { data: business } = await supabase!
                   .from("localhub_businesses")
                   .select("phone")
                   .eq("id", dbOrder.business_id)
@@ -158,23 +193,96 @@ export const Route = createFileRoute("/api/notifications/whatsapp")({
                 const givenOwnerNorm = normalizePhoneE164(data.ownerPhone || "");
 
                 if (expectedOwnerNorm && givenOwnerNorm && expectedOwnerNorm !== givenOwnerNorm) {
-                  return Response.json(
+                  return noStoreJson(
                     { error: "Telefone do estabelecimento divergente do cadastro." },
                     { status: 403 },
                   );
                 }
               }
             }
-
-            if (data.target === "owner" && data.ownerPhone) {
-              const text = formatOwnerNewOrderWhatsAppMessage(orderPayload);
-              const result = await sendWhatsAppMessage({ phone: data.ownerPhone, text });
-              return Response.json(result);
+            if (auth.user && orderPayload.trackingToken) {
+              const { data: order } = await supabase!
+                .from("localhub_orders")
+                .select("business_id")
+                .eq("public_tracking_token", orderPayload.trackingToken)
+                .maybeSingle();
+              const { data: business } = await supabase!
+                .from("localhub_businesses")
+                .select("owner_id")
+                .eq("id", order?.business_id ?? "")
+                .maybeSingle();
+              if (business?.owner_id !== auth.user.id) {
+                return noStoreJson({ error: "Pedido fora da sua conta." }, { status: 403 });
+              }
             }
 
-            const text = formatOrderWhatsAppMessage(orderPayload);
+            if (data.target === "owner" && data.ownerPhone) {
+              if (!auth.user && orderPayload.trackingToken) {
+                const { data: order } = await supabase!
+                  .from("localhub_orders")
+                  .select("business_id")
+                  .eq("public_tracking_token", orderPayload.trackingToken)
+                  .maybeSingle();
+                const { data: business } = await supabase!
+                  .from("localhub_businesses")
+                  .select("phone")
+                  .eq("id", order?.business_id ?? "")
+                  .maybeSingle();
+                if (
+                  !business?.phone ||
+                  normalizePhoneE164(business.phone) !== normalizePhoneE164(data.ownerPhone)
+                ) {
+                  return noStoreJson({ error: "Envio ao estabelecimento não autorizado." }, { status: 403 });
+                }
+              } else if (!auth.user) {
+                return noStoreJson({ error: "Envio ao estabelecimento não autorizado." }, { status: 403 });
+              }
+              let templates: { orderOwner?: string } | null = null;
+              if (orderPayload.trackingToken) {
+                const { data: order } = await supabase!
+                  .from("localhub_orders")
+                  .select("business_id")
+                  .eq("public_tracking_token", orderPayload.trackingToken)
+                  .maybeSingle();
+                if (order?.business_id) {
+                  const { data: business } = await supabase!
+                    .from("localhub_businesses")
+                    .select("whatsapp_templates")
+                    .eq("id", order.business_id)
+                    .maybeSingle();
+                  templates = business?.whatsapp_templates ?? null;
+                }
+              }
+              const text = templates?.orderOwner
+                ? renderOrderOwnerTemplate(templates.orderOwner, orderPayload)
+                : formatOwnerNewOrderWhatsAppMessage(orderPayload);
+              const result = await sendWhatsAppMessage({ phone: data.ownerPhone, text });
+              return noStoreJson(result);
+            }
+
+            let templates: { orderCustomer?: string } | null = null;
+            if (orderPayload.trackingToken) {
+              const { data: order } = await supabase!
+                .from("localhub_orders")
+                .select("business_id")
+                .eq("public_tracking_token", orderPayload.trackingToken)
+                .maybeSingle();
+              if (order?.business_id) {
+                const { data: business } = await supabase!
+                  .from("localhub_businesses")
+                  .select("whatsapp_templates")
+                  .eq("id", order.business_id)
+                  .maybeSingle();
+                templates = business?.whatsapp_templates ?? null;
+              }
+            } else if (data.target === "owner" && !auth.user) {
+              return noStoreJson({ error: "Envio ao estabelecimento não autorizado." }, { status: 403 });
+            }
+            const text = templates?.orderCustomer
+              ? renderOrderCustomerTemplate(templates.orderCustomer, orderPayload)
+              : formatOrderWhatsAppMessage(orderPayload);
             const result = await sendWhatsAppMessage({ phone: orderPayload.customerPhone, text });
-            return Response.json(result);
+            return noStoreJson(result);
           }
 
           // 4. Validação de Agendamento
@@ -182,27 +290,68 @@ export const Route = createFileRoute("/api/notifications/whatsapp")({
             const aptPayload = data.appointment as AppointmentNotificationPayload;
 
             // Se for público, valida agendamento real ou autenticação
-            if (!auth.user && (data.appointment as any).appointmentId) {
-              const { data: dbBooking } = await supabase
+            if (!auth.user) {
+              if (!aptPayload.appointmentId) {
+                return noStoreJson({ error: "Agendamento não autorizado." }, { status: 403 });
+              }
+              const { data: dbBooking } = await supabase!
                 .from("localhub_bookings")
-                .select("id, phone")
-                .eq("id", (data.appointment as any).appointmentId)
+                .select("id, phone, customer_name")
+                .eq("id", aptPayload.appointmentId)
                 .maybeSingle();
 
-              if (!dbBooking) {
-                return Response.json({ error: "Agendamento não encontrado." }, { status: 404 });
+              if (
+                !dbBooking ||
+                normalizePhoneE164(dbBooking.phone) !== normalizePhoneE164(aptPayload.customerPhone) ||
+                dbBooking.customer_name.trim().toLocaleLowerCase() !==
+                  aptPayload.customerName.trim().toLocaleLowerCase()
+              ) {
+                return noStoreJson({ error: "Agendamento não encontrado." }, { status: 404 });
+              }
+            }
+            if (auth.user && aptPayload.appointmentId) {
+              const { data: booking } = await supabase!
+                .from("localhub_bookings")
+                .select("business_id")
+                .eq("id", aptPayload.appointmentId)
+                .maybeSingle();
+              const { data: business } = await supabase!
+                .from("localhub_businesses")
+                .select("owner_id")
+                .eq("id", booking?.business_id ?? "")
+                .maybeSingle();
+              if (!booking || business?.owner_id !== auth.user.id) {
+                return noStoreJson({ error: "Agendamento fora da sua conta." }, { status: 403 });
               }
             }
 
-            const text = formatAppointmentWhatsAppMessage(aptPayload);
+            let template: string | undefined;
+            if ((data.appointment as any).appointmentId) {
+              const { data: booking } = await supabase!
+                .from("localhub_bookings")
+                .select("business_id")
+                .eq("id", (data.appointment as any).appointmentId)
+                .maybeSingle();
+              if (booking?.business_id) {
+                const { data: business } = await supabase!
+                  .from("localhub_businesses")
+                  .select("whatsapp_templates")
+                  .eq("id", booking.business_id)
+                  .maybeSingle();
+                template = business?.whatsapp_templates?.appointment;
+              }
+            }
+            const text = template
+              ? renderAppointmentTemplate(template, aptPayload)
+              : formatAppointmentWhatsAppMessage(aptPayload);
             const result = await sendWhatsAppMessage({ phone: aptPayload.customerPhone, text });
-            return Response.json(result);
+            return noStoreJson(result);
           }
 
-          return Response.json({ error: "Tipo de notificação não suportado." }, { status: 400 });
+          return noStoreJson({ error: "Tipo de notificação não suportado." }, { status: 400 });
         } catch (err) {
           console.error("[SEGURANÇA] Falha ao processar notificação WhatsApp:", err);
-          return Response.json(
+          return noStoreJson(
             { error: "Falha ao processar requisição de notificação." },
             { status: 500 },
           );
