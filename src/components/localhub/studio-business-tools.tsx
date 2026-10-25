@@ -84,25 +84,25 @@ export function StudioBusinessTools() {
   };
 
   return (
-    <div className="rounded-2xl border border-[#e8e6df] bg-white p-5 shadow-xs sm:p-6">
+    <div className="min-w-0 rounded-2xl border border-[#e8e6df] bg-white p-4 shadow-xs sm:p-6">
       {/* CABEÇALHO DA SEÇÃO DE FERRAMENTAS */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-5 border-b border-slate-100">
-        <div>
+      <div className="flex min-w-0 flex-col items-start gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between sm:pb-5">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="grid size-7 place-items-center rounded-lg bg-[#d0f25a] text-[#292b25]">
               <Sparkles size={16} strokeWidth={2.4} />
             </span>
-            <h2 className="text-base font-bold text-[#292b25]">
+            <h2 className="min-w-0 text-sm font-bold leading-snug text-[#292b25] sm:text-base">
               Ferramentas & Utilidades para o seu Negócio
             </h2>
           </div>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-500">
             Recursos inteligentes desenvolvidos para otimizar sua rotina, do atendimento ao fechamento de caixa.
           </p>
         </div>
 
         {/* INDICADOR EXCLUSIVO DO NICHO DO NEGÓCIO */}
-        <div className="flex items-center gap-2 rounded-xl bg-[#edf0e5] px-3.5 py-1.5 text-xs font-bold text-[#586341] border border-[#d9ddcf]">
+        <div className="flex max-w-full items-center gap-2 rounded-xl border border-[#d9ddcf] bg-[#edf0e5] px-3 py-2 text-[11px] font-bold leading-tight text-[#586341] sm:px-3.5 sm:py-1.5 sm:text-xs">
           {activeSegment === "beleza" && <Scissors size={14} />}
           {activeSegment === "pet" && <Dog size={14} />}
           {activeSegment === "saude" && <Stethoscope size={14} />}

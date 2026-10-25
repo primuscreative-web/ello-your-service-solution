@@ -20,6 +20,8 @@ import {
   Store,
   Sparkles,
   ImagePlus,
+  MoreHorizontal,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocalHub } from "@/lib/localhub-context";
@@ -27,6 +29,24 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getBusinessCopy } from "@/lib/localhub-business";
 import { StudioOnboardingTour } from "@/components/localhub/studio-onboarding-tour";
 import { ElloLogo } from "@/components/ello/logo";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+
+type StudioNavItem = {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  exact?: boolean;
+  id?: string;
+};
+
+type StudioNavGroup = { title: string; items: StudioNavItem[] };
 
 export function StudioLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -35,8 +55,9 @@ export function StudioLayout() {
   const isFoodBusiness = business?.category === "alimentacao";
   const navigate = useNavigate();
   const [copiedLink, setCopiedLink] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navigationGroups = [
+  const navigationGroups: StudioNavGroup[] = [
     {
       title: "OPERAÇÃO",
       items: [
@@ -101,13 +122,29 @@ export function StudioLayout() {
     },
   ];
 
-  const staffItems = [{ to: "/studio/agenda" as const, label: "Minha agenda", icon: CalendarDays }];
+  const staffItems: StudioNavItem[] = [{ to: "/studio/agenda", label: "Minha agenda", icon: CalendarDays }];
+  const operationItem = navigationGroups[0].items.find((item) => item.id === "tour-nav-operations")!;
+  const catalogItem = navigationGroups[1].items[0];
+  const mobileNavigationItems = isStaffAccount
+    ? staffItems.map((item) => ({ ...item, label: "Agenda" }))
+    : [
+        { ...navigationGroups[0].items[0], label: "Início" },
+        { ...operationItem, label: isFoodBusiness ? "Pedidos" : "Agenda" },
+        { ...catalogItem, label: isFoodBusiness ? "Cardápio" : "Serviços" },
+      ];
+  const activeMobileDestination = mobileNavigationItems.some((item) =>
+    item.exact ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`),
+  );
 
   useEffect(() => {
     if (isStaffAccount && pathname !== "/studio/agenda") {
       void navigate({ to: "/studio/agenda", replace: true });
     }
   }, [isStaffAccount, navigate, pathname]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const handleCopyPublicUrl = async () => {
     if (!business?.slug) return;
@@ -141,7 +178,7 @@ export function StudioLayout() {
   }
 
   return (
-    <div className="ello-studio min-h-screen bg-[#f5f4ed] text-[#171914] antialiased">
+    <div className="ello-studio min-h-screen min-w-0 bg-[#f5f4ed] text-[#171914] antialiased">
       {/* Mini Tutorial Guiado Interativo com luz de foco */}
       <StudioOnboardingTour />
 
@@ -286,9 +323,9 @@ export function StudioLayout() {
       </aside>
 
       {/* ÁREA PRINCIPAL COM HEADER FLUTUANTE */}
-      <div className="lg:pl-[268px]">
+      <div className="min-w-0 lg:pl-[268px]">
         {/* HEADER DO STUDIO */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#e2e0d5] bg-[#fbfaf7]/90 px-5 backdrop-blur-xl sm:px-8">
+        <header className="sticky top-0 z-20 flex min-h-14 items-center justify-between gap-2 border-b border-[#e2e0d5] bg-[#fbfaf7]/90 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-2xl sm:min-h-16 sm:px-8">
           <div className="flex items-center gap-3">
             <div className="lg:hidden">
               <ElloLogo tone="dark" height={22} />
@@ -300,7 +337,7 @@ export function StudioLayout() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 sm:gap-3.5">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3.5">
             {business && (
               <>
                 <button
@@ -315,7 +352,7 @@ export function StudioLayout() {
                   to="/loja/$slug"
                   params={{ slug: business.slug }}
                   target="_blank"
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#171914] px-3.5 py-1.5 text-xs font-black text-white shadow-xs transition hover:bg-[#2b2e25]"
+                  className="inline-flex min-h-10 cursor-pointer items-center gap-1 rounded-xl bg-[#171914] px-2.5 py-1.5 text-[11px] font-black text-white shadow-xs transition hover:bg-[#2b2e25] sm:gap-1.5 sm:px-3.5 sm:text-xs"
                 >
                   <Store size={14} className="text-[#d4f455]" />
                   <span>Ver Loja</span>
@@ -327,15 +364,15 @@ export function StudioLayout() {
             <div className="h-5 w-px bg-[#e2e0d5] mx-1" />
 
             {/* AVATAR DO USUÁRIO & SAIR */}
-            <div className="flex items-center gap-2">
-              <span className="grid size-8.5 place-items-center rounded-xl bg-[#e8ebdf] text-xs font-black text-[#586341] border border-[#d6dacb]">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <span className="grid size-8 place-items-center rounded-xl border border-[#d6dacb] bg-[#e8ebdf] text-xs font-black text-[#586341] sm:size-8.5">
                 {business?.name?.slice(0, 1).toUpperCase() ?? "E"}
               </span>
               <button
                 type="button"
                 aria-label="Sair da conta"
                 title="Sair da conta"
-                className="grid size-9 cursor-pointer place-items-center rounded-xl text-[#727568] transition hover:bg-[#edece4] hover:text-[#171914]"
+                className="hidden size-9 cursor-pointer place-items-center rounded-xl text-[#727568] transition hover:bg-[#edece4] hover:text-[#171914] lg:grid"
                 onClick={() =>
                   void getSupabaseBrowserClient()
                     ?.auth.signOut()
@@ -348,39 +385,128 @@ export function StudioLayout() {
           </div>
         </header>
 
-        {/* NAVEGAÇÃO MOBILE EM ABAS */}
-        <nav
-          aria-label="Navegação móvel do painel"
-          className="flex gap-1.5 overflow-x-auto border-b border-[#2b2e25] bg-[#171914] px-3 py-2 lg:hidden scrollbar-none"
-        >
-          {navigationGroups
-            .flatMap((g) => g.items)
-            .map(({ to, label, icon: Icon, id, ...options }) => {
-              const active =
-                "exact" in options && options.exact
-                  ? pathname === to
-                  : pathname === to || pathname.startsWith(`${to}/`);
-              return (
-                <Link
-                  key={to}
-                  id={id ? `${id}-mobile` : undefined}
-                  to={to}
-                  className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
-                    active ? "bg-[#d4f455] text-[#151712]" : "text-[#c2c5b8] hover:text-white"
-                  }`}
-                >
-                  <Icon size={14} />
-                  <span>{label}</span>
-                </Link>
-              );
-            })}
-        </nav>
-
         {/* CONTEÚDO CENTRAL */}
-        <main className="mx-auto max-w-[1400px] p-4 sm:p-7 lg:p-9">
+        <main className="mx-auto min-w-0 max-w-[1400px] p-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:p-7 sm:pb-[calc(7rem+env(safe-area-inset-bottom))] lg:p-9">
           <Outlet />
         </main>
       </div>
+
+      {/* DOCK PRINCIPAL MOBILE */}
+      <nav
+        aria-label="Navegação principal"
+        className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 lg:hidden"
+      >
+        <div className="mx-auto flex max-w-xl items-stretch gap-1 rounded-[24px] border border-white/70 bg-[#fbfaf7]/85 p-1.5 shadow-[0_-8px_32px_rgba(24,26,20,0.12),0_4px_20px_rgba(24,26,20,0.08)] backdrop-blur-2xl">
+          {mobileNavigationItems.map(({ to, label, icon: Icon, exact }) => {
+            const active = exact ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
+            return (
+              <Link
+                key={to}
+                to={to}
+                aria-current={active ? "page" : undefined}
+                className={`flex min-h-[54px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-2 text-[10px] font-semibold leading-tight transition-colors active:scale-[0.97] ${
+                  active ? "bg-[#e8ebdf] text-[#303728]" : "text-[#74786c] hover:text-[#25271f]"
+                }`}
+              >
+                <Icon size={19} strokeWidth={active ? 2.3 : 1.8} />
+                <span className="max-w-full truncate">{label}</span>
+              </Link>
+            );
+          })}
+
+          {!isStaffAccount && (
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen(true)}
+              className={`flex min-h-[54px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-2 text-[10px] font-semibold leading-tight transition-colors active:scale-[0.97] ${
+                activeMobileDestination ? "text-[#74786c] hover:text-[#25271f]" : "bg-[#e8ebdf] text-[#303728]"
+              }`}
+            >
+              <MoreHorizontal size={19} strokeWidth={1.8} />
+              <span>Mais</span>
+            </button>
+          )}
+        </div>
+      </nav>
+
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-[#dedfd6] bg-[#fbfaf7] p-0 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-20px_60px_rgba(20,24,15,0.22)] ease-out data-[state=open]:duration-300 data-[state=closed]:duration-200 lg:hidden"
+        >
+          <div className="mx-auto mt-3 h-1 w-9 rounded-full bg-[#c8cbbd]" />
+          <SheetHeader className="px-5 pb-4 pt-5 text-left">
+            <SheetTitle className="text-xl font-bold tracking-tight text-[#20221b]">
+              {business?.name || "Menu do Studio"}
+            </SheetTitle>
+            <SheetDescription className="text-sm text-[#74786c]">
+              Acesse qualquer área do seu negócio.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-5 px-4 pb-4">
+            {(isStaffAccount ? [{ title: "OPERAÇÃO", items: staffItems }] : navigationGroups).map((group) => (
+              <section key={group.title} aria-label={group.title}>
+                <h2 className="px-2 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#848879]">
+                  {group.title}
+                </h2>
+                <div className="overflow-hidden rounded-2xl border border-[#e7e6de] bg-white">
+                          {group.items.map(({ to, label, icon: Icon, id, exact }, index) => {
+                    const active = exact ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
+                    return (
+                      <SheetClose asChild key={to}>
+                        <Link
+                          id={id ? `${id}-mobile-sheet` : undefined}
+                          to={to}
+                          aria-current={active ? "page" : undefined}
+                          className={`flex min-h-12 items-center gap-3 px-3.5 py-2.5 text-sm font-medium active:bg-[#f1f2eb] ${
+                            index ? "border-t border-[#efeee8]" : ""
+                          } ${active ? "bg-[#f4f5ee] text-[#303728]" : "text-[#383a32]"}`}
+                        >
+                          <span className={`grid size-8 shrink-0 place-items-center rounded-xl ${active ? "bg-[#e2e8d4] text-[#4f5c37]" : "bg-[#f4f3ed] text-[#75796c]"}`}>
+                            <Icon size={16} />
+                          </span>
+                          <span className="min-w-0 flex-1 truncate">{label}</span>
+                          {active && <span className="size-1.5 rounded-full bg-[#768452]" />}
+                        </Link>
+                      </SheetClose>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+
+            {business && (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleCopyPublicUrl()}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[#e5e4dc] bg-white px-3 text-xs font-semibold text-[#45483e] active:scale-[0.98]"
+                >
+                  {copiedLink ? <Check size={15} /> : <Copy size={15} />}
+                  {copiedLink ? "Link copiado" : "Copiar link"}
+                </button>
+                <SheetClose asChild>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void getSupabaseBrowserClient()
+                        ?.auth.signOut()
+                        .then(() => navigate({ to: "/auth" }))
+                    }
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[#e5e4dc] bg-white px-3 text-xs font-semibold text-[#8a3f37] active:scale-[0.98]"
+                  >
+                    <LogOut size={15} />
+                    Sair da conta
+                  </button>
+                </SheetClose>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

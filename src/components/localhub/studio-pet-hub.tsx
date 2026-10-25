@@ -425,19 +425,19 @@ export function StudioPetHub() {
   };
 
   return (
-    <div className="rounded-2xl border border-[#d9ddcf] bg-white p-5 shadow-xs sm:p-7">
+    <div className="min-w-0 rounded-2xl border border-[#d9ddcf] bg-white p-4 shadow-xs sm:p-7">
       {/* HEADER PRINCIPAL */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <div className="flex items-center gap-2.5">
             <span className="grid size-9 place-items-center rounded-xl bg-[#d0f25a] text-[#292b25] shadow-xs">
               <Dog size={20} strokeWidth={2.4} />
             </span>
-            <div>
-              <h2 className="text-lg font-bold text-[#292b25]">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-bold leading-snug text-[#292b25] sm:text-lg">
                 Central Operacional Pet Care & Banho e Tosa
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">
                 Esteira de atendimento em tempo real, controle de porte, alertas comportamentais e contato veloz com tutores.
               </p>
             </div>
@@ -445,11 +445,11 @@ export function StudioPetHub() {
         </div>
 
         {/* NAVEGAÇÃO DE ABAS */}
-        <div className="flex rounded-xl bg-[#edf0e5] p-1 text-xs font-bold text-[#586341]">
+        <div className="grid w-full grid-cols-2 gap-1 rounded-xl bg-[#edf0e5] p-1 text-[11px] font-bold leading-tight text-[#586341] sm:flex sm:w-auto sm:text-xs">
           <button
             type="button"
             onClick={() => setActiveTab("board")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${
+            className={`flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-center transition sm:min-h-0 sm:px-3 sm:py-1.5 ${
               activeTab === "board"
                 ? "bg-white text-[#292b25] shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
@@ -461,7 +461,7 @@ export function StudioPetHub() {
           <button
             type="button"
             onClick={() => setActiveTab("calc")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${
+            className={`flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-center transition sm:min-h-0 sm:px-3 sm:py-1.5 ${
               activeTab === "calc"
                 ? "bg-white text-[#292b25] shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
@@ -473,7 +473,7 @@ export function StudioPetHub() {
           <button
             type="button"
             onClick={() => setActiveTab("admission")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${
+            className={`col-span-2 flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-center transition sm:col-span-1 sm:min-h-0 sm:px-3 sm:py-1.5 ${
               activeTab === "admission"
                 ? "bg-white text-[#292b25] shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
@@ -489,8 +489,8 @@ export function StudioPetHub() {
       {activeTab === "board" && (
         <div className="mt-6 space-y-5">
           {/* BARRA SUPERIOR DE AÇÕES & RESUMO */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
-            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-700">
+          <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-3.5">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-[11px] font-semibold text-slate-700 sm:gap-4 sm:text-xs">
               <span className="flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-blue-500 animate-pulse" />
                 {pets.filter((p) => p.stage === "bath" || p.stage === "grooming").length} em bancada
@@ -505,10 +505,10 @@ export function StudioPetHub() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="grid w-full grid-cols-1 gap-2 min-[380px]:grid-cols-2 sm:flex sm:w-auto">
               <Link
                 to="/studio/agenda"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold leading-tight text-slate-700 hover:bg-slate-50 sm:min-h-0 sm:px-3 sm:py-1.5 sm:text-xs"
               >
                 <CalendarDays size={13} />
                 <span>Ver Agenda Completa</span>
@@ -516,7 +516,7 @@ export function StudioPetHub() {
               <button
                 type="button"
                 onClick={() => setShowAddModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#292b25] px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-[#414339] active:scale-95"
+                className="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg bg-[#292b25] px-2 py-2 text-center text-[11px] font-bold leading-tight text-white transition hover:bg-[#414339] active:scale-95 sm:min-h-0 sm:px-3.5 sm:py-1.5 sm:text-xs"
               >
                 <Plus size={14} />
                 <span>Dar Entrada em Novo Pet</span>
@@ -533,7 +533,7 @@ export function StudioPetHub() {
               return (
                 <div
                   key={stageKey}
-                  className={`flex flex-col rounded-xl border ${config.border} ${config.bg} p-3 min-h-[380px]`}
+                  className={`flex min-w-0 flex-col rounded-xl border ${config.border} ${config.bg} p-3 min-h-[220px] sm:min-h-[320px] lg:min-h-[380px]`}
                 >
                   {/* Título da Coluna */}
                   <div className="flex items-center justify-between pb-2.5 border-b border-black/5">
@@ -547,7 +547,7 @@ export function StudioPetHub() {
                   </div>
 
                   {/* Lista de Pets nessa Etapa */}
-                  <div className="mt-2.5 flex-1 space-y-2.5 overflow-y-auto">
+                  <div className="mt-2.5 flex-1 space-y-2.5 sm:overflow-y-auto">
                     {stagePets.length === 0 ? (
                       <div className="grid h-28 place-items-center text-center text-[11px] text-slate-400">
                         Nenhum pet nesta etapa
@@ -727,7 +727,7 @@ export function StudioPetHub() {
             {/* 2. TIPO DE PELAGEM */}
             <div>
               <label className="text-xs font-bold text-slate-700">2. Tipo de Pelagem</label>
-              <div className="mt-2 grid grid-cols-3 gap-2">
+              <div className="mt-2 grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
                 {[
                   { id: "short", label: "Pelo Curto", sub: "Pinscher, Boxer" },
                   { id: "medium", label: "Pelo Médio / Liso", sub: "Yorkshire, Maltês" },
@@ -981,8 +981,8 @@ export function StudioPetHub() {
 
       {/* MODAL / DRAWER: NOVO PET NA ESTEIRA */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-2 backdrop-blur-xs sm:items-center sm:p-4">
+          <div className="max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-xl animate-in fade-in zoom-in-95 duration-150 sm:max-h-[calc(100dvh-2rem)] sm:p-6">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <span className="grid size-8 place-items-center rounded-lg bg-[#d0f25a] text-[#292b25]">
@@ -1000,7 +1000,7 @@ export function StudioPetHub() {
             </div>
 
             <form onSubmit={handleAddPet} className="mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                 <div>
                   <label className="text-xs font-bold text-slate-700">Nome do Pet *</label>
                   <input
@@ -1041,7 +1041,7 @@ export function StudioPetHub() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                 <div>
                   <label className="text-xs font-bold text-slate-700">Raça</label>
                   <input
@@ -1073,7 +1073,7 @@ export function StudioPetHub() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                 <div>
                   <label className="text-xs font-bold text-slate-700">Nome do Tutor</label>
                   <input
@@ -1125,7 +1125,7 @@ export function StudioPetHub() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                 <div>
                   <label className="text-xs font-bold text-slate-700">Valor Total (R$)</label>
                   <input
@@ -1148,7 +1148,7 @@ export function StudioPetHub() {
                 </div>
               </div>
 
-              <div className="mt-5 flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="mt-5 flex flex-col-reverse gap-2 border-t border-slate-100 pt-3 min-[420px]:flex-row min-[420px]:justify-end">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
@@ -1170,8 +1170,8 @@ export function StudioPetHub() {
 
       {/* MODAL DE DISPARO RÁPIDO DE WHATSAPP PARA O PET */}
       {messageModalPet && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-2 backdrop-blur-xs sm:items-center sm:p-4">
+          <div className="max-h-[calc(100dvh-1rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-xl animate-in fade-in zoom-in-95 duration-150 sm:max-h-[calc(100dvh-2rem)] sm:p-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <span className="grid size-8 place-items-center rounded-lg bg-emerald-100 text-emerald-800">

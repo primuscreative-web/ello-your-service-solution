@@ -2108,3 +2108,25 @@
   }
 }
 
+
+/* Touch-first Studio chrome and safe areas for installed mobile experiences. */
+.ello-studio {
+  min-height: 100dvh;
+  overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ello-studio a,
+.ello-studio button { touch-action: manipulation; }
+
+.ello-studio input,
+.ello-studio textarea,
+.ello-studio select { font-size: 16px; }
+
+@media (prefers-reduced-transparency: reduce) {
+  .ello-studio nav[aria-label="Navegação principal"] > div {
+    background: #fbfaf7;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

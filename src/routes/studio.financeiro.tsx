@@ -1338,7 +1338,7 @@ function BusinessFinancePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
                 <div>
                   <label className="font-semibold text-slate-700">CEP *</label>
                   <input

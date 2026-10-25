@@ -79,7 +79,7 @@ function DashboardPage() {
     : bookings.filter((item) => item.status === "pending").length;
 
   return (
-    <div className="space-y-7">
+    <div className="min-w-0 space-y-5 sm:space-y-7">
       {/* CABEÇALHO DO DASHBOARD COM IDENTIDADE EDITORIAL */}
       <PageTitle
         eyebrow="Painel Operacional"
@@ -183,7 +183,7 @@ function DashboardPage() {
       </div>
 
       {/* HUB DE FERRAMENTAS DO NEGÓCIO */}
-      <div className="rounded-3xl border border-[#dedfd6] bg-white p-5 sm:p-6 shadow-sm">
+      <div className="min-w-0">
         <StudioBusinessTools />
       </div>
 

@@ -12,22 +12,22 @@ export function PageTitle({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-[#e2e0d5]/80 pb-6">
-      <div className="space-y-1.5">
+    <div className="mb-6 flex min-w-0 flex-col items-start justify-between gap-3 border-b border-[#e2e0d5]/80 pb-5 sm:mb-8 sm:flex-row sm:items-end sm:gap-4 sm:pb-6">
+      <div className="min-w-0 space-y-1.5">
         {eyebrow && (
           <div className="inline-flex items-center gap-2 rounded-full border border-[#768452]/25 bg-[#edf0e5]/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#4d5733] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
             <span className="size-1.5 rounded-full bg-[#768452] animate-pulse" />
             {eyebrow}
           </div>
         )}
-        <h1 className="font-display text-2xl font-black tracking-[-0.04em] text-[#171914] sm:text-3xl lg:text-[34px]">
+        <h1 className="font-display text-[clamp(1.35rem,6vw,1.75rem)] font-black leading-tight tracking-[-0.04em] text-[#171914] sm:text-3xl lg:text-[34px]">
           {title}
         </h1>
         {description && (
           <p className="max-w-2xl text-xs sm:text-sm leading-relaxed text-[#686b60]">{description}</p>
         )}
       </div>
-      {action && <div className="flex items-center gap-2.5">{action}</div>}
+      {action && <div className="flex w-full flex-wrap items-center gap-2.5 sm:w-auto">{action}</div>}
     </div>
   );
 }
