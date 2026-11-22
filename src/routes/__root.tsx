@@ -8,7 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import type { ErrorComponentProps } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { LocalHubProvider } from "@/lib/localhub-context";
@@ -158,18 +158,18 @@ const elloStructuredData = {
     {
       "@type": "Organization",
       "@id": "https://ello.app.br/#organization",
-      "name": "ELLO",
-      "url": "https://ello.app.br",
-      "description":
+      name: "ELLO",
+      url: "https://ello.app.br",
+      description:
         "Plataforma completa para gestão, cardápio digital, agendamento e vendas para negócios locais e prestadores de serviços.",
     },
     {
       "@type": "SoftwareApplication",
       "@id": "https://ello.app.br/#software",
-      "name": "ELLO Studio & Delivery",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web, iOS, Android",
-      "featureList": [
+      name: "ELLO Studio & Delivery",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web, iOS, Android",
+      featureList: [
         "Cardápio digital sem comissão",
         "Agendamento online inteligente",
         "Gestão de entregas próprias e motoboys",
@@ -195,6 +195,11 @@ function RootShell({ children }: { children: ReactNode }) {
       <body>
         <script
           dangerouslySetInnerHTML={{
+            __html: createChunkRecoveryScript(),
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
             __html: createPublicRuntimeConfigScript(),
           }}
         />
@@ -203,6 +208,10 @@ function RootShell({ children }: { children: ReactNode }) {
       </body>
     </html>
   );
+}
+
+function createChunkRecoveryScript() {
+  return `window.addEventListener('vite:preloadError',function(event){event.preventDefault();var key='ello:chunk-recovery-attempted';try{if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,'1');}catch{}var url=new URL(window.location.href);url.searchParams.set('__ello_chunk_retry',String(Date.now()));window.location.replace(url.toString());});`;
 }
 
 function createPublicRuntimeConfigScript() {
@@ -216,6 +225,14 @@ function createPublicRuntimeConfigScript() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    try {
+      window.sessionStorage.removeItem("ello:chunk-recovery-attempted");
+    } catch {
+      // Storage can be disabled; the preload recovery still fails safely without it.
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

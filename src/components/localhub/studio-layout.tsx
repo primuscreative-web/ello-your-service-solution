@@ -20,9 +20,11 @@ import {
   Copy,
   Check,
   Store,
+  Building2,
   Sparkles,
   ImagePlus,
   MoreHorizontal,
+  Crown,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -30,6 +32,7 @@ import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getBusinessCopy } from "@/lib/localhub-business";
 import { StudioOnboardingTour } from "@/components/localhub/studio-onboarding-tour";
+import { getEffectivePlan, getPlanName, hasPlanFeature } from "@/lib/plan-access";
 import { ElloLogo } from "@/components/ello/logo";
 import {
   Sheet,
@@ -52,9 +55,15 @@ type StudioNavGroup = { title: string; items: StudioNavItem[] };
 
 export function StudioLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const { business, user, isStaffAccount } = useLocalHub();
+  const { business, user, isStaffAccount, planSubscription, planStatusError } = useLocalHub();
   const businessCopy = getBusinessCopy(business?.category);
   const isFoodBusiness = business?.category === "alimentacao";
+  const isMaster =
+    user?.email?.toLowerCase() === "master@ello.app.br" ||
+    user?.email?.toLowerCase() === "admin@ello.app.br" ||
+    user?.email?.toLowerCase() === "primuscreative@gmail.com" ||
+    user?.app_metadata?.role === "master" ||
+    user?.app_metadata?.is_master === true;
   const navigate = useNavigate();
   const [copiedLink, setCopiedLink] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -84,20 +93,26 @@ export function StudioLayout() {
       title: "GESTÃO",
       items: isFoodBusiness
         ? [
-            { to: "/studio/catalog" as const, label: "Cardápio", icon: Package, id: "tour-nav-catalog" },
-            {
-              to: "/studio/crm" as const,
-              label: "Cupons & Promoções",
-              icon: Tag,
-              id: "tour-nav-coupons",
-            },
-          ] satisfies StudioNavItem[]
+          { to: "/studio/catalog" as const, label: "Cardápio", icon: Package, id: "tour-nav-catalog" },
+          {
+            to: "/studio/crm" as const,
+            label: "Cupons & Promoções",
+            icon: Tag,
+            id: "tour-nav-coupons",
+          },
+          ...(!isStaffAccount && hasPlanFeature(planSubscription, "multi_unit")
+            ? [{ to: "/studio/filiais" as const, label: "Filiais", icon: Building2 }]
+            : []),
+        ] satisfies StudioNavItem[]
         : [
-            { to: "/studio/catalog" as const, label: businessCopy.offerTitle, icon: Package, id: "tour-nav-catalog" },
-            { to: "/studio/portfolio" as const, label: "Portfólio & Trabalhos", icon: ImagePlus, id: "tour-nav-portfolio" },
-            { to: "/studio/crm" as const, label: "Clientes & Fichas", icon: HeartHandshake, id: "tour-nav-crm" },
-            { to: "/studio/profissionais" as const, label: "Profissionais", icon: UsersRound },
-          ] satisfies StudioNavItem[],
+          { to: "/studio/catalog" as const, label: businessCopy.offerTitle, icon: Package, id: "tour-nav-catalog" },
+          { to: "/studio/portfolio" as const, label: "Portfólio & Trabalhos", icon: ImagePlus, id: "tour-nav-portfolio" },
+          { to: "/studio/crm" as const, label: "Clientes & Fichas", icon: HeartHandshake, id: "tour-nav-crm" },
+          { to: "/studio/profissionais" as const, label: "Profissionais", icon: UsersRound },
+          ...(!isStaffAccount && hasPlanFeature(planSubscription, "multi_unit")
+            ? [{ to: "/studio/filiais" as const, label: "Filiais", icon: Building2 }]
+            : []),
+        ] satisfies StudioNavItem[],
     },
     {
       title: "FINANÇAS & RESULTADOS",
@@ -115,6 +130,21 @@ export function StudioLayout() {
         { to: "/planos", label: "Planos & Assinatura", icon: Sparkles, id: "tour-nav-planos" },
       ],
     },
+    ...(isMaster
+      ? [
+        {
+          title: "ADMINISTRAÇÃO MESTRE",
+          items: [
+            {
+              to: "/studio/master" as const,
+              label: "Painel Mestre",
+              icon: Crown,
+              id: "tour-nav-master",
+            },
+          ],
+        },
+      ]
+      : []),
   ];
 
   const staffItems: StudioNavItem[] = [{ to: "/studio/agenda", label: "Minha agenda", icon: CalendarDays }];
@@ -123,10 +153,10 @@ export function StudioLayout() {
   const mobileNavigationItems = isStaffAccount
     ? staffItems.map((item) => ({ ...item, label: "Agenda" }))
     : [
-        { ...navigationGroups[0].items[0], label: "Início" },
-        { ...operationItem, label: isFoodBusiness ? "Pedidos" : "Agenda" },
-        { ...catalogItem, label: isFoodBusiness ? "Cardápio" : "Serviços" },
-      ];
+      { ...navigationGroups[0].items[0], label: "Início" },
+      { ...operationItem, label: isFoodBusiness ? "Pedidos" : "Agenda" },
+      { ...catalogItem, label: isFoodBusiness ? "Cardápio" : "Serviços" },
+    ];
   const activeMobileDestination = mobileNavigationItems.some((item) =>
     item.exact ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`),
   );
@@ -203,11 +233,11 @@ export function StudioLayout() {
                     to="/planos"
                     className="shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider transition bg-[#d4f455]/15 text-[#d4f455] hover:bg-[#d4f455]/25 border border-[#d4f455]/30"
                   >
-                    {business.onboardingDetails?.plan === "pro"
-                      ? "⚡ PRO"
-                      : business.onboardingDetails?.plan === "business"
-                      ? "🏢 BUSINESS"
-                      : "GRÁTIS"}
+                    {isStaffAccount
+                      ? "EQUIPE"
+                      : planStatusError
+                        ? "VERIFICANDO"
+                        : getPlanName(getEffectivePlan(planSubscription))}
                   </Link>
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] text-[#9a9d90] mt-0.5">
@@ -229,11 +259,10 @@ export function StudioLayout() {
                   <Link
                     key={to}
                     to={to}
-                    className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all ${
-                      active
+                    className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all ${active
                         ? "bg-[#d4f455] text-[#151712] shadow-xs"
                         : "text-[#c2c5b8] hover:bg-white/[0.06] hover:text-white"
-                    }`}
+                      }`}
                   >
                     <Icon size={17} />
                     <span>{label}</span>
@@ -247,7 +276,7 @@ export function StudioLayout() {
                 <div className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#717565]">
                   {group.title}
                 </div>
-        {group.items.map(({ to, label, icon: Icon, id, ...options }) => {
+                {group.items.map(({ to, label, icon: Icon, id, ...options }) => {
                   const active =
                     "exact" in options && options.exact
                       ? pathname === to
@@ -257,18 +286,16 @@ export function StudioLayout() {
                       key={to}
                       id={id}
                       to={to}
-                      className={`group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all duration-150 active:scale-[0.98] ${
-                        active
+                      className={`group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all duration-150 active:scale-[0.98] ${active
                           ? "bg-[#d4f455] text-[#151712] shadow-[0_2px_10px_-2px_rgba(212,244,85,0.4)]"
                           : "text-[#d2d5c8] font-semibold hover:bg-white/[0.07] hover:text-white"
-                      }`}
+                        }`}
                     >
                       <Icon
                         size={17}
                         strokeWidth={active ? 2.5 : 2}
-                        className={`shrink-0 transition-transform group-hover:scale-105 ${
-                          active ? "text-[#151712]" : "text-[#969a8b] group-hover:text-white"
-                        }`}
+                        className={`shrink-0 transition-transform group-hover:scale-105 ${active ? "text-[#151712]" : "text-[#969a8b] group-hover:text-white"
+                          }`}
                       />
                       <span className="truncate">{label}</span>
                     </Link>
@@ -399,9 +426,8 @@ export function StudioLayout() {
                 key={to}
                 to={to}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-[54px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-2 text-[10px] font-semibold leading-tight transition-colors active:scale-[0.97] ${
-                  active ? "bg-[#e8ebdf] text-[#303728]" : "text-[#74786c] hover:text-[#25271f]"
-                }`}
+                className={`flex min-h-[54px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-2 text-[10px] font-semibold leading-tight transition-colors active:scale-[0.97] ${active ? "bg-[#e8ebdf] text-[#303728]" : "text-[#74786c] hover:text-[#25271f]"
+                  }`}
               >
                 <Icon size={19} strokeWidth={active ? 2.3 : 1.8} />
                 <span className="max-w-full truncate">{label}</span>
@@ -415,9 +441,8 @@ export function StudioLayout() {
               aria-haspopup="dialog"
               aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen(true)}
-              className={`flex min-h-[54px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-2 text-[10px] font-semibold leading-tight transition-colors active:scale-[0.97] ${
-                activeMobileDestination ? "text-[#74786c] hover:text-[#25271f]" : "bg-[#e8ebdf] text-[#303728]"
-              }`}
+              className={`flex min-h-[54px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-2 text-[10px] font-semibold leading-tight transition-colors active:scale-[0.97] ${activeMobileDestination ? "text-[#74786c] hover:text-[#25271f]" : "bg-[#e8ebdf] text-[#303728]"
+                }`}
             >
               <MoreHorizontal size={19} strokeWidth={1.8} />
               <span>Mais</span>
@@ -456,9 +481,8 @@ export function StudioLayout() {
                           id={id ? `${id}-mobile-sheet` : undefined}
                           to={to}
                           aria-current={active ? "page" : undefined}
-                          className={`flex min-h-12 items-center gap-3 px-3.5 py-2.5 text-sm font-medium active:bg-[#f1f2eb] ${
-                            index ? "border-t border-[#efeee8]" : ""
-                          } ${active ? "bg-[#f4f5ee] text-[#303728]" : "text-[#383a32]"}`}
+                          className={`flex min-h-12 items-center gap-3 px-3.5 py-2.5 text-sm font-medium active:bg-[#f1f2eb] ${index ? "border-t border-[#efeee8]" : ""
+                            } ${active ? "bg-[#f4f5ee] text-[#303728]" : "text-[#383a32]"}`}
                         >
                           <span className={`grid size-8 shrink-0 place-items-center rounded-xl ${active ? "bg-[#e2e8d4] text-[#4f5c37]" : "bg-[#f4f3ed] text-[#75796c]"}`}>
                             <Icon size={16} />

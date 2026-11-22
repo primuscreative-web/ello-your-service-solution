@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import {
-  Dog,
-  Cat,
+  PawPrint,
   Sparkles,
   Scissors,
   CalendarDays,
@@ -19,7 +18,6 @@ import {
   ShieldCheck,
   Heart,
   Search,
-  Filter,
   CheckCircle2,
   User,
   Phone,
@@ -31,12 +29,53 @@ import { useLocalHub } from "@/lib/localhub-context";
 
 export type PetStage = "reception" | "bath" | "grooming" | "ready" | "taxi" | "completed";
 
+const PET_SPECIES_OPTIONS = [
+  { id: "dog", label: "Cão", group: "Animais domésticos", emoji: "🐶" },
+  { id: "cat", label: "Gato", group: "Animais domésticos", emoji: "🐱" },
+  { id: "rabbit", label: "Coelho", group: "Animais domésticos", emoji: "🐰" },
+  { id: "guinea_pig", label: "Porquinho-da-índia", group: "Animais domésticos", emoji: "🐹" },
+  { id: "hamster", label: "Hamster", group: "Animais domésticos", emoji: "🐹" },
+  { id: "ferret", label: "Furão", group: "Animais domésticos", emoji: "🦦" },
+  { id: "chinchilla", label: "Chinchila", group: "Animais domésticos", emoji: "🐭" },
+  { id: "gerbil", label: "Gerbil", group: "Animais domésticos", emoji: "🐭" },
+  { id: "mouse", label: "Camundongo", group: "Animais domésticos", emoji: "🐭" },
+  { id: "rat", label: "Rato doméstico", group: "Animais domésticos", emoji: "🐀" },
+  { id: "hedgehog", label: "Ouriço pigmeu", group: "Animais domésticos", emoji: "🦔" },
+  { id: "cockatiel", label: "Calopsita", group: "Aves", emoji: "🦜" },
+  { id: "budgerigar", label: "Periquito-australiano", group: "Aves", emoji: "🦜" },
+  { id: "lovebird", label: "Agapornis", group: "Aves", emoji: "🦜" },
+  { id: "canary", label: "Canário", group: "Aves", emoji: "🐦" },
+  { id: "parrot", label: "Papagaio", group: "Aves", emoji: "🦜" },
+  { id: "pigeon", label: "Pombo doméstico", group: "Aves", emoji: "🕊️" },
+  { id: "tortoise", label: "Jabuti", group: "Répteis", emoji: "🐢" },
+  { id: "turtle", label: "Tigre-d’água", group: "Répteis", emoji: "🐢" },
+  { id: "iguana", label: "Iguana", group: "Répteis", emoji: "🦎" },
+  { id: "gecko", label: "Gecko", group: "Répteis", emoji: "🦎" },
+  { id: "bearded_dragon", label: "Dragão-barbudo", group: "Répteis", emoji: "🦎" },
+  { id: "snake", label: "Serpente de cativeiro", group: "Répteis", emoji: "🐍" },
+  { id: "chameleon", label: "Camaleão", group: "Répteis", emoji: "🦎" },
+  { id: "axolotl", label: "Axolote", group: "Anfíbios", emoji: "🦎" },
+  { id: "frog", label: "Rã de cativeiro", group: "Anfíbios", emoji: "🐸" },
+  { id: "fish", label: "Peixe ornamental", group: "Aquáticos", emoji: "🐠" },
+  { id: "tarantula", label: "Tarântula de cativeiro", group: "Invertebrados", emoji: "🕷️" },
+  { id: "other", label: "Outra espécie", group: "Outro", emoji: "🐾" },
+] as const;
+
+type PetSpeciesId = (typeof PET_SPECIES_OPTIONS)[number]["id"];
+
+function getPetSpeciesInfo(species: string) {
+  return PET_SPECIES_OPTIONS.find((option) => option.id === species) ?? PET_SPECIES_OPTIONS[PET_SPECIES_OPTIONS.length - 1];
+}
+
+const STANDARD_GROOMING_SPECIES = new Set<PetSpeciesId>(["dog", "cat"]);
+
 export type PetRecord = {
   id: string;
   petName: string;
-  species: "dog" | "cat";
+  species: PetSpeciesId;
+  speciesDetail?: string;
   breed: string;
-  size: "P" | "M" | "G" | "GG";
+  size: "P" | "M" | "G" | "GG" | "N/A";
   tutorName: string;
   tutorPhone: string;
   services: string[];
@@ -109,43 +148,43 @@ const STAGE_CONFIG: Record<
     bg: "bg-slate-50",
     border: "border-slate-200",
     text: "text-slate-700",
-    nextLabel: "Iniciar Banho 🛁",
+    nextLabel: "Iniciar atendimento",
     nextStage: "bath",
   },
   bath: {
-    label: "No Banho & Secador",
+    label: "Em atendimento",
     icon: "🛁",
     bg: "bg-blue-50/70",
     border: "border-blue-200",
     text: "text-blue-800",
-    nextLabel: "Enviar p/ Tosa ✂️",
+    nextLabel: "Avançar etapa",
     nextStage: "grooming",
   },
   grooming: {
-    label: "Na Tosa / Estética",
+    label: "Cuidados / finalização",
     icon: "✂️",
     bg: "bg-purple-50/70",
     border: "border-purple-200",
     text: "text-purple-800",
-    nextLabel: "Marcar Pronto 🐾",
+    nextLabel: "Concluir atendimento",
     nextStage: "ready",
   },
   ready: {
-    label: "Pronto! Aguardando",
+    label: "Concluído / aguardando tutor",
     icon: "🐾",
     bg: "bg-emerald-50/70",
     border: "border-emerald-200",
     text: "text-emerald-800",
-    nextLabel: "Despachar no Táxi 🚗",
+    nextLabel: "Iniciar transporte",
     nextStage: "taxi",
   },
   taxi: {
-    label: "Táxi Pet a Caminho",
+    label: "Transporte a caminho",
     icon: "🚗",
     bg: "bg-amber-50/70",
     border: "border-amber-200",
     text: "text-amber-800",
-    nextLabel: "Concluir Entrega ✅",
+    nextLabel: "Confirmar entrega",
     nextStage: "completed",
   },
   completed: {
@@ -160,18 +199,21 @@ const STAGE_CONFIG: Record<
 };
 
 const COMMON_ALERTS = [
-  "⚠️ Bravo / Morde",
-  "🌸 Alérgico a perfume",
-  "👂 Cuidado c/ ouvidos",
-  "🧓 Idoso / Cardíaco",
-  "✂️ Não passar máquina",
-  "🩹 Pele sensível / Nós",
-  "⚡ Medo de soprador",
-  "🐱 Cat Friendly / Calmo",
+  "⚠️ Precaução no manejo a confirmar",
+  "🌸 Alergia ou irritação a confirmar com o tutor",
+  "🩺 Condição de saúde a confirmar com o tutor",
+  "🔊 Sensibilidade a ruído a confirmar",
+];
+
+const GROOMING_ALERTS = [
+  "👂 Cuidado com os ouvidos",
+  "✂️ Não usar máquina",
+  "🩹 Pele sensível ou nós na pelagem",
+  "⚡ Sensibilidade ao soprador",
 ];
 
 export function StudioPetHub() {
-  const { business } = useLocalHub();
+  const { business, services } = useLocalHub();
   const [activeTab, setActiveTab] = useState<"board" | "calc" | "admission">("board");
 
   // Storage key scoped to business
@@ -198,19 +240,17 @@ export function StudioPetHub() {
   // Form de novo pet
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPetName, setNewPetName] = useState("");
-  const [newSpecies, setNewSpecies] = useState<"dog" | "cat">("dog");
+  const [newSpecies, setNewSpecies] = useState<PetSpeciesId>("dog");
+  const [newSpeciesDetail, setNewSpeciesDetail] = useState("");
   const [newBreed, setNewBreed] = useState("");
-  const [newSize, setNewSize] = useState<"P" | "M" | "G" | "GG">("P");
+  const [newSize, setNewSize] = useState<PetRecord["size"]>("P");
   const [newTutorName, setNewTutorName] = useState("");
   const [newTutorPhone, setNewTutorPhone] = useState("");
   const [newHasTaxi, setNewHasTaxi] = useState(false);
   const [newScheduledTime, setNewScheduledTime] = useState("10:00");
   const [newSelectedAlerts, setNewSelectedAlerts] = useState<string[]>([]);
-  const [newSelectedServices, setNewSelectedServices] = useState<string[]>([
-    "Banho Completo",
-    "Tosa Higiênica",
-  ]);
-  const [newPrice, setNewPrice] = useState("75");
+  const [newSelectedServices, setNewSelectedServices] = useState<string[]>([]);
+  const [newPrice, setNewPrice] = useState("");
 
   // Calculadora de Porte e Pelagem
   const [calcSize, setCalcSize] = useState<"P" | "M" | "G" | "GG">("P");
@@ -241,11 +281,11 @@ export function StudioPetHub() {
   const [admTutorPhone, setAdmTutorPhone] = useState("");
   const [admObservations, setAdmObservations] = useState("");
   const [admChecks, setAdmChecks] = useState({
-    noFleas: true,
-    healthySkin: true,
-    vaccinesOk: true,
-    allowHygienic: true,
-    allowDryer: true,
+    identityConfirmed: false,
+    contactConfirmed: false,
+    serviceApproved: false,
+    handlingProtocolConfirmed: false,
+    transportAgreed: false,
   });
 
   // Disparo WhatsApp
@@ -257,6 +297,14 @@ export function StudioPetHub() {
       toast.error("Informe pelo menos o nome do pet e o telefone do tutor.");
       return;
     }
+    if (newSpecies === "other" && !newSpeciesDetail.trim()) {
+      toast.error("Informe qual é a espécie do animal.");
+      return;
+    }
+    if (newPrice.trim() && (!Number.isFinite(Number(newPrice)) || Number(newPrice) < 0)) {
+      toast.error("Informe um valor válido ou deixe o preço sem definir.");
+      return;
+    }
 
     const now = new Date();
     const entryTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
@@ -265,16 +313,25 @@ export function StudioPetHub() {
       id: `pet-${Date.now()}`,
       petName: newPetName.trim(),
       species: newSpecies,
-      breed: newBreed.trim() || (newSpecies === "dog" ? "SRD (Vira-lata)" : "SRD Felino"),
+      ...(newSpecies === "other" ? { speciesDetail: newSpeciesDetail.trim() } : {}),
+      breed:
+        newBreed.trim() ||
+        (newSpecies === "dog"
+          ? "SRD (Vira-lata)"
+          : newSpecies === "cat"
+            ? "SRD Felino"
+            : "Não informada"),
       size: newSize,
       tutorName: newTutorName.trim() || "Tutor",
       tutorPhone: newTutorPhone.replace(/\D/g, ""),
-      services: newSelectedServices,
+      services: services
+        .filter((service) => newSelectedServices.includes(service.id))
+        .map((service) => service.name),
       alerts: newSelectedAlerts,
       hasTaxi: newHasTaxi,
       stage: "reception",
       scheduledTime: newScheduledTime || entryTime,
-      totalPrice: Number(newPrice) || 70,
+      totalPrice: newPrice.trim() ? Number(newPrice) : undefined,
       entryTime,
     };
 
@@ -283,10 +340,14 @@ export function StudioPetHub() {
 
     // Reset
     setNewPetName("");
+    setNewSpeciesDetail("");
     setNewBreed("");
     setNewTutorName("");
     setNewTutorPhone("");
     setNewSelectedAlerts([]);
+    setNewSelectedServices([]);
+    setNewHasTaxi(false);
+    setNewPrice("");
     setShowAddModal(false);
   };
 
@@ -367,6 +428,12 @@ export function StudioPetHub() {
   };
 
   const calcResult = calculateTotal();
+  const availableAlerts = [
+    ...COMMON_ALERTS,
+    ...(STANDARD_GROOMING_SPECIES.has(newSpecies) ? GROOMING_ALERTS : []),
+    ...(newSpecies === "cat" ? ["🐱 Ambiente Cat Friendly"] : []),
+  ];
+  const activeBusinessServices = services.filter((service) => service.active);
 
   const generateCalcBudgetCopy = () => {
     const bizName = business?.name || "nosso Pet Care";
@@ -407,16 +474,20 @@ export function StudioPetHub() {
     if (!messageModalPet) return;
     const pet = messageModalPet;
     const bizName = business?.name || "nosso Pet Care";
+    const petLabel = pet.species === "other"
+      ? pet.speciesDetail || "animal"
+      : getPetSpeciesInfo(pet.species).label.toLowerCase();
 
     let msg = "";
     if (type === "ready") {
-      msg = `Olá ${pet.tutorName}! 🐾 Boas notícias: o(a) *${pet.petName}* já terminou os cuidados, está sequinho(a), cheiroso(a) e esperando você no *${bizName}*! Já pode vir buscar. 🥰`;
+      msg = `Olá ${pet.tutorName}! 🐾 O atendimento de *${pet.petName}* (${petLabel}) foi concluído no *${bizName}*. Entre em contato para combinar a retirada. 🥰`;
     } else if (type === "taxi") {
-      msg = `Olá ${pet.tutorName}! 🚗 Nosso motorista do Táxi Pet acabou de sair para levar o(a) *${pet.petName}* de volta para casa com muito carinho e segurança! Previsão de chegada nos próximos minutos. 🐾`;
+      if (!pet.hasTaxi) return;
+      msg = `Olá ${pet.tutorName}! 🚗 O transporte contratado de *${pet.petName}* (${petLabel}) está a caminho. Falaremos com você para confirmar a chegada. 🐾`;
     } else if (type === "alert") {
-      msg = `Olá ${pet.tutorName}! 👋 Durante a avaliação inicial do(a) *${pet.petName}* no *${bizName}*, notamos alguns nós na pelagem / sensibilidade na pele. Gostaria de autorizar realizarmos um desembolo especial / tosa higiênica para o conforto dele(a)? ✂️`;
+      msg = `Olá ${pet.tutorName}! 👋 Precisamos conversar sobre um cuidado registrado para *${pet.petName}* (${petLabel}) durante o atendimento no *${bizName}*. Pode falar conosco antes de avançarmos?`;
     } else if (type === "thankyou") {
-      msg = `Olá ${pet.tutorName}! Passando para agradecer pelo carinho de trazer o(a) *${pet.petName}* hoje no *${bizName}*. Ele(a) se comportou muito bem! Qualquer dúvida estamos à disposição. Até o próximo banho! ❤️🐾`;
+      msg = `Olá ${pet.tutorName}! Obrigado por confiar o atendimento de *${pet.petName}* (${petLabel}) ao *${bizName}*. Se tiver alguma observação para a próxima visita, estamos à disposição. ❤️🐾`;
     }
 
     const url = getWhatsAppUrl(pet.tutorPhone, msg);
@@ -431,14 +502,14 @@ export function StudioPetHub() {
         <div className="min-w-0">
           <div className="flex items-center gap-2.5">
             <span className="grid size-9 place-items-center rounded-xl bg-[#d0f25a] text-[#292b25] shadow-xs">
-              <Dog size={20} strokeWidth={2.4} />
+              <PawPrint size={20} strokeWidth={2.4} />
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold leading-snug text-[#292b25] sm:text-lg">
-                Central Operacional Pet Care & Banho e Tosa
+                Central Operacional Pet Care
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                Esteira de atendimento em tempo real, controle de porte, alertas comportamentais e contato veloz com tutores.
+                Acompanhe atendimentos de diferentes espécies, serviços selecionados e informações compartilhadas pelos tutores.
               </p>
             </div>
           </div>
@@ -455,7 +526,7 @@ export function StudioPetHub() {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <Dog size={14} />
+            <PawPrint size={14} />
             <span>Esteira do Dia ({pets.filter((p) => p.stage !== "completed").length})</span>
           </button>
           <button
@@ -468,7 +539,7 @@ export function StudioPetHub() {
             }`}
           >
             <Scissors size={14} />
-            <span>Calculadora de Banho/Tosa</span>
+            <span>Banho e tosa (cães/gatos)</span>
           </button>
           <button
             type="button"
@@ -562,14 +633,18 @@ export function StudioPetHub() {
                           <div className="flex items-start justify-between gap-1.5">
                             <div className="flex items-center gap-1.5">
                               <span className="grid size-6 place-items-center rounded-md bg-[#edf0e5] text-xs">
-                                {pet.species === "dog" ? "🐶" : "🐱"}
+                                {getPetSpeciesInfo(pet.species).emoji}
                               </span>
                               <div>
                                 <h4 className="text-xs font-bold text-slate-900 leading-tight">
                                   {pet.petName}
                                 </h4>
                                 <span className="text-[10px] text-slate-500">
-                                  {pet.breed} • Porte {pet.size}
+                                  {pet.species === "other"
+                                    ? pet.speciesDetail
+                                    : getPetSpeciesInfo(pet.species).label}
+                                  {pet.breed && ` · ${pet.breed}`}
+                                  {pet.size === "N/A" ? " · Porte não aplicável" : ` · Porte ${pet.size}`}
                                 </span>
                               </div>
                             </div>
@@ -600,7 +675,7 @@ export function StudioPetHub() {
 
                           {/* Serviços Inclusos */}
                           <div className="mt-2 text-[10px] text-slate-600 line-clamp-2">
-                            {pet.services.join(", ")}
+                            {pet.services.length > 0 ? pet.services.join(", ") : "Serviço a definir"}
                           </div>
 
                           {/* Tutor & Contato */}
@@ -609,7 +684,9 @@ export function StudioPetHub() {
                               👤 {pet.tutorName}
                             </span>
                             <span className="font-semibold text-slate-700">
-                              R$ {pet.totalPrice ? pet.totalPrice.toFixed(0) : "0"}
+                              {pet.totalPrice == null
+                                ? "Preço a definir"
+                                : `R$ ${pet.totalPrice.toFixed(2).replace(".", ",")}`}
                             </span>
                           </div>
 
@@ -691,9 +768,9 @@ export function StudioPetHub() {
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-5 rounded-xl border border-slate-200 bg-slate-50/40 p-4 sm:p-5">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Configuração do Procedimento Pet</h3>
+              <h3 className="text-sm font-bold text-slate-900">Estimativa de banho e tosa para cães e gatos</h3>
               <p className="text-xs text-slate-500">
-                Selecione o porte, tipo de pelagem e serviços extras para calcular o valor sugerido e tempo de bancada.
+                Valores de referência para cães e gatos. Ajuste à tabela real do negócio; não use esta calculadora para espécies não convencionais.
               </p>
             </div>
 
@@ -881,24 +958,24 @@ export function StudioPetHub() {
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#586341]">
               <ShieldCheck size={16} />
-              <span>Ficha Rápida de Entrada do Animal (Triagem)</span>
+              <span>Ficha Rápida de Entrada do Animal</span>
             </div>
             <p className="mt-1 text-xs text-slate-600">
-              Faça a inspeção rápida na recepção antes de iniciar o procedimento para resguardar o negócio e o bem-estar do pet.
+              Registre as informações compartilhadas pelo tutor e confirme o serviço e o protocolo adequado à espécie. Este checklist não substitui avaliação clínica.
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <input
               type="text"
-              placeholder="Nome do Pet (ex: Bob)"
+              placeholder="Nome do animal (ex.: Bob)"
               value={admPetName}
               onChange={(e) => setAdmPetName(e.target.value)}
               className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800"
             />
             <input
               type="text"
-              placeholder="Raça / Espécie"
+              placeholder="Espécie (ex.: cão, calopsita, jabuti)"
               value={admBreed}
               onChange={(e) => setAdmBreed(e.target.value)}
               className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800"
@@ -919,15 +996,15 @@ export function StudioPetHub() {
             />
           </div>
 
-          {/* CHECKLIST DE CONDIÇÕES */}
+          {/* CHECKLIST DE CADASTRO E AUTORIZAÇÃO */}
           <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3.5">
-            <div className="text-xs font-bold text-slate-800 mb-1">Checklist de Verificação Inicial:</div>
+            <div className="text-xs font-bold text-slate-800 mb-1">Checklist de cadastro e atendimento:</div>
             {[
-              { key: "noFleas", label: "Ausência visível de pulgas / carrapatos graves" },
-              { key: "healthySkin", label: "Pele e ouvidos sem feridas ou infecções aparentes" },
-              { key: "vaccinesOk", label: "Tutor confirmou carteira de vacinação em dia" },
-              { key: "allowHygienic", label: "Autorizada tosa higiênica e corte de unhas" },
-              { key: "allowDryer", label: "Tolerância normal ao soprador e secador" },
+              { key: "identityConfirmed", label: "Espécie e identificação confirmadas com o tutor" },
+              { key: "contactConfirmed", label: "Contato do tutor conferido" },
+              { key: "serviceApproved", label: "Serviço escolhido e autorizado pelo tutor" },
+              { key: "handlingProtocolConfirmed", label: "Protocolo de manejo adequado à espécie confirmado" },
+              { key: "transportAgreed", label: "Transporte combinado, se necessário" },
             ].map((check) => {
               const val = admChecks[check.key as keyof typeof admChecks];
               return (
@@ -950,7 +1027,7 @@ export function StudioPetHub() {
           </div>
 
           <textarea
-            placeholder="Observações especiais (ex: verruga no flanco esquerdo, sensibilidade na pata traseira, tosa bebê autorizada)..."
+            placeholder="Observações informadas pelo tutor ou detalhes do protocolo de atendimento..."
             value={admObservations}
             onChange={(e) => setAdmObservations(e.target.value)}
             rows={3}
@@ -966,7 +1043,7 @@ export function StudioPetHub() {
                   return;
                 }
                 const bizName = business?.name || "nosso Pet Care";
-                const msg = `Olá ${admTutorName || "tutor"}! 🐾 Confirmamos a entrada do(a) *${admPetName}* no *${bizName}* para atendimento hoje.\n\n📋 *Status da Triagem:* Realizada com sucesso.\n${admObservations ? `📝 *Observações:* ${admObservations}\n` : ""}Avisaremos você assim que o procedimento for concluído! ❤️`;
+                const msg = `Olá ${admTutorName || "tutor"}! 🐾 Registramos a entrada de *${admPetName}*${admBreed ? ` (${admBreed})` : ""} no *${bizName}*.\n\n${admObservations ? `📝 *Observações informadas:* ${admObservations}\n\n` : ""}Vamos confirmar o serviço e os próximos passos com você. ❤️`;
                 const url = getWhatsAppUrl(admTutorPhone, msg);
                 window.open(url, "_blank");
               }}
@@ -986,7 +1063,7 @@ export function StudioPetHub() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <span className="grid size-8 place-items-center rounded-lg bg-[#d0f25a] text-[#292b25]">
-                  <Dog size={16} />
+                  <PawPrint size={16} />
                 </span>
                 <h3 className="text-base font-bold text-slate-900">Entrada de Pet na Esteira</h3>
               </div>
@@ -1002,7 +1079,7 @@ export function StudioPetHub() {
             <form onSubmit={handleAddPet} className="mt-4 space-y-4">
               <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                 <div>
-                  <label className="text-xs font-bold text-slate-700">Nome do Pet *</label>
+                  <label className="text-xs font-bold text-slate-700">Nome do animal *</label>
                   <input
                     type="text"
                     required
@@ -1014,63 +1091,120 @@ export function StudioPetHub() {
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-700">Espécie</label>
-                  <div className="mt-1 grid grid-cols-2 gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setNewSpecies("dog")}
-                      className={`rounded-lg py-1.5 text-xs font-bold border transition ${
-                        newSpecies === "dog"
-                          ? "bg-[#edf0e5] border-[#586341] text-[#586341]"
-                          : "bg-white border-slate-200 text-slate-600"
-                      }`}
-                    >
-                      🐶 Cão
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewSpecies("cat")}
-                      className={`rounded-lg py-1.5 text-xs font-bold border transition ${
-                        newSpecies === "cat"
-                          ? "bg-[#edf0e5] border-[#586341] text-[#586341]"
-                          : "bg-white border-slate-200 text-slate-600"
-                      }`}
-                    >
-                      🐱 Gato
-                    </button>
-                  </div>
+                  <select
+                    value={newSpecies}
+                    onChange={(event) => {
+                      const species = event.target.value as PetSpeciesId;
+                      setNewSpecies(species);
+                      setNewSize(STANDARD_GROOMING_SPECIES.has(species) ? "P" : "N/A");
+                      setNewSpeciesDetail("");
+                      setNewHasTaxi(false);
+                      setNewSelectedServices([]);
+                      setNewPrice("");
+                    }}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800"
+                  >
+                    {[...new Set(PET_SPECIES_OPTIONS.map((option) => option.group))].map((group) => (
+                      <optgroup key={group} label={group}>
+                        {PET_SPECIES_OPTIONS.filter((option) => option.group === group).map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.emoji} {option.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
                 </div>
               </div>
 
+              {newSpecies === "other" && (
+                <div>
+                  <label className="text-xs font-bold text-slate-700">
+                    Qual é a espécie? *
+                    <input
+                      type="text"
+                      required
+                      value={newSpeciesDetail}
+                      onChange={(event) => setNewSpeciesDetail(event.target.value)}
+                      placeholder="Informe o nome da espécie"
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800"
+                    />
+                  </label>
+                </div>
+              )}
+
+              {!STANDARD_GROOMING_SPECIES.has(newSpecies) && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-900">
+                  Espécie não convencional para banho e tosa. O sistema não sugere procedimento, preço ou transporte; confirme a legalidade, a espécie exata e o atendimento com profissional habilitado.
+                </div>
+              )}
+
               <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                 <div>
-                  <label className="text-xs font-bold text-slate-700">Raça</label>
+                  <label className="text-xs font-bold text-slate-700">Raça ou variedade (se aplicável)</label>
                   <input
                     type="text"
-                    placeholder="Ex: Shih-tzu, Pug, SRD"
+                    placeholder="Ex.: raça ou variedade"
                     value={newBreed}
                     onChange={(e) => setNewBreed(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-700">Porte</label>
-                  <div className="mt-1 grid grid-cols-4 gap-1">
-                    {(["P", "M", "G", "GG"] as const).map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setNewSize(s)}
-                        className={`rounded-lg py-1.5 text-xs font-bold border transition ${
-                          newSize === s
-                            ? "bg-[#292b25] border-[#292b25] text-white"
-                            : "bg-white border-slate-200 text-slate-600"
-                        }`}
-                      >
-                        {s}
-                      </button>
+                  <label className="text-xs font-bold text-slate-700">Porte aproximado</label>
+                  {STANDARD_GROOMING_SPECIES.has(newSpecies) ? (
+                    <div className="mt-1 grid grid-cols-4 gap-1">
+                      {(["P", "M", "G", "GG"] as const).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setNewSize(s)}
+                          className={`rounded-lg py-1.5 text-xs font-bold border transition ${
+                            newSize === s
+                              ? "bg-[#292b25] border-[#292b25] text-white"
+                              : "bg-white border-slate-200 text-slate-600"
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-[11px] text-slate-500">
+                      A classificação P/M/G/GG é usada somente para a estimativa de cães e gatos.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700">Serviços previstos</label>
+                {activeBusinessServices.length > 0 ? (
+                  <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+                    {activeBusinessServices.map((service) => (
+                      <label key={service.id} className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={newSelectedServices.includes(service.id)}
+                          onChange={(event) => setNewSelectedServices((current) =>
+                            event.target.checked
+                              ? [...current, service.id]
+                              : current.filter((id) => id !== service.id),
+                          )}
+                          className="mt-0.5 rounded border-slate-300 text-[#586341]"
+                        />
+                        <span>{service.name}</span>
+                      </label>
                     ))}
                   </div>
-                </div>
+                ) : (
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Cadastre os serviços do seu negócio para selecioná-los aqui.
+                  </p>
+                )}
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Nenhum serviço vem pré-selecionado. Para espécies não convencionais, marque apenas um serviço adequado e prestado por profissional habilitado.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
@@ -1101,7 +1235,7 @@ export function StudioPetHub() {
               <div>
                 <label className="text-xs font-bold text-slate-700">Alertas / Cuidados Especiais</label>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {COMMON_ALERTS.map((alert) => {
+                  {availableAlerts.map((alert) => {
                     const selected = newSelectedAlerts.includes(alert);
                     return (
                       <button
@@ -1130,21 +1264,29 @@ export function StudioPetHub() {
                   <label className="text-xs font-bold text-slate-700">Valor Total (R$)</label>
                   <input
                     type="number"
+                    min="0"
+                    step="0.01"
                     value={newPrice}
                     onChange={(e) => setNewPrice(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800"
                   />
                 </div>
-                <div className="flex items-center pt-5">
-                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={newHasTaxi}
-                      onChange={(e) => setNewHasTaxi(e.target.checked)}
-                      className="rounded border-slate-300 text-[#586341]"
-                    />
-                    <span>🚗 Táxi Pet (Leva e Traz)</span>
-                  </label>
+                <div className="pt-5">
+                  {STANDARD_GROOMING_SPECIES.has(newSpecies) ? (
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newHasTaxi}
+                        onChange={(e) => setNewHasTaxi(e.target.checked)}
+                        className="rounded border-slate-300 text-[#586341]"
+                      />
+                      <span>🚗 Táxi Pet (Leva e Traz)</span>
+                    </label>
+                  ) : (
+                    <p className="text-[11px] leading-relaxed text-slate-500">
+                      Transporte de espécie não convencional precisa ser organizado fora do fluxo padrão.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1182,7 +1324,9 @@ export function StudioPetHub() {
                     Chamar Tutor: {messageModalPet.tutorName}
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Pet: {messageModalPet.petName} ({messageModalPet.breed})
+                    {messageModalPet.species === "other"
+                      ? messageModalPet.speciesDetail
+                      : getPetSpeciesInfo(messageModalPet.species).label}: {messageModalPet.petName}
                   </p>
                 </div>
               </div>
@@ -1203,26 +1347,28 @@ export function StudioPetHub() {
               >
                 <span className="text-base">🐾</span>
                 <div>
-                  <div className="text-xs font-bold text-emerald-900">1. Pet Pronto para Retirada</div>
+                  <div className="text-xs font-bold text-emerald-900">1. Atendimento concluído</div>
                   <div className="mt-0.5 text-[11px] text-emerald-700 leading-tight">
-                    "O {messageModalPet.petName} já terminou os cuidados, está cheiroso e esperando você..."
+                    "O atendimento de {messageModalPet.petName} foi concluído. Combine a retirada..."
                   </div>
                 </div>
               </button>
 
-              <button
-                type="button"
-                onClick={() => sendWhatsAppTemplate("taxi")}
-                className="w-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-left transition hover:bg-amber-100/60"
-              >
-                <span className="text-base">🚗</span>
-                <div>
-                  <div className="text-xs font-bold text-amber-900">2. Táxi Pet a Caminho de Casa</div>
-                  <div className="mt-0.5 text-[11px] text-amber-700 leading-tight">
-                    "Nosso motorista do Táxi Pet acabou de sair para levar o {messageModalPet.petName}..."
+              {messageModalPet.hasTaxi && (
+                <button
+                  type="button"
+                  onClick={() => sendWhatsAppTemplate("taxi")}
+                  className="w-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-left transition hover:bg-amber-100/60"
+                >
+                  <span className="text-base">🚗</span>
+                  <div>
+                    <div className="text-xs font-bold text-amber-900">2. Transporte contratado a caminho</div>
+                    <div className="mt-0.5 text-[11px] text-amber-700 leading-tight">
+                      "O transporte contratado de {messageModalPet.petName} está a caminho..."
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -1231,9 +1377,9 @@ export function StudioPetHub() {
               >
                 <span className="text-base">⚠️</span>
                 <div>
-                  <div className="text-xs font-bold text-rose-900">3. Alerta / Autorização de Tosa/Nós</div>
+                  <div className="text-xs font-bold text-rose-900">3. Conversar sobre um cuidado</div>
                   <div className="mt-0.5 text-[11px] text-rose-700 leading-tight">
-                    "Notamos alguns nós na pelagem. Gostaria de autorizar realizarmos um desembolo especial..."
+                    "Precisamos alinhar um cuidado antes de avançar..."
                   </div>
                 </div>
               </button>

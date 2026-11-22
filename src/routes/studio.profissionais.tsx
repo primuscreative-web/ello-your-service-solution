@@ -155,7 +155,7 @@ function StudioProfissionaisPage() {
 
     const eligibleBookings = bookings.filter((b) => {
       if (!b.staffId) return false;
-      if (b.status === "cancelled") return false;
+      if (b.status !== "completed") return false;
 
       if (commissionPeriod === "current_month") {
         return b.date.startsWith(currentYearMonth);
@@ -248,7 +248,7 @@ function StudioProfissionaisPage() {
       `✂️ *Atendimentos realizados:* ${count}\n` +
       `💵 *Faturamento bruto gerado:* ${money(rev)}\n` +
       (supp > 0 ? `🧪 *Custo de insumos de bancada:* ${money(supp)}\n` : "") +
-      `✨ *SUA COMISSÃO A RECEBER:* *${money(comm)}*\n` +
+      `✨ *COMISSÃO CALCULADA:* *${money(comm)}*\n` +
       `----------------------------------------\n` +
       `🏦 *Retenção líquida do espaço:* ${money(salon)}\n\n` +
       `Qualquer dúvida ou conferência de agendamentos, estou à disposição! 🤝`;
@@ -503,6 +503,9 @@ function StudioProfissionaisPage() {
 
       {viewTab === "comissoes" ? (
         <div className="space-y-6 animate-in fade-in duration-200">
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-950">
+            Estimativas calculadas com os preços e custos atuais do catálogo; valores históricos e pagamentos efetivos não são registrados neste relatório.
+          </p>
           {/* Barra de Filtros e Ações de Fechamento */}
           <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
@@ -580,17 +583,17 @@ function StudioProfissionaisPage() {
             <SurfaceCard className="p-4">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Faturamento Bruto</span>
               <div className="mt-2 text-2xl font-black text-slate-900">{money(commissionAnalysis.totalRevenue)}</div>
-              <span className="text-[11px] text-slate-400">total cobrado</span>
+              <span className="text-[11px] text-slate-400">estimado pelo preço atual</span>
             </SurfaceCard>
             <SurfaceCard className="p-4">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Insumos / Cosméticos</span>
               <div className="mt-2 text-2xl font-black text-rose-700">{money(commissionAnalysis.totalSupplies)}</div>
-              <span className="text-[11px] text-slate-400">produtos de bancada</span>
+              <span className="text-[11px] text-slate-400">estimados pelo custo atual</span>
             </SurfaceCard>
             <SurfaceCard className="p-4">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Repasses / Comissões</span>
               <div className="mt-2 text-2xl font-black text-amber-700">{money(commissionAnalysis.totalCommissions)}</div>
-              <span className="text-[11px] text-slate-400">a pagar aos profissionais</span>
+              <span className="text-[11px] text-slate-400">estimativa, não pagamento</span>
             </SurfaceCard>
             <SurfaceCard className="p-4 bg-emerald-50/70 border-emerald-200">
               <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">Sobra do Salão</span>

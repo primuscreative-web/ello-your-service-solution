@@ -146,7 +146,9 @@ export const Route = createFileRoute("/api/asaas/webhook")({
             if (body.payment.subscription && body.event === "PAYMENT_CREATED") {
               const { data: recurringPlan, error: recurringPlanError } = await supabase
                 .from("localhub_plan_subscriptions")
-                .select("business_id, plan, billing_cycle, asaas_subscription_id, status")
+                .select(
+                  "business_id, plan, billing_cycle, asaas_subscription_id, status, market_country_code, currency_code",
+                )
                 .eq("asaas_subscription_id", body.payment.subscription)
                 .maybeSingle();
               if (recurringPlanError) throw recurringPlanError;
@@ -158,6 +160,9 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                     business_id: recurringPlan.business_id,
                     requested_plan: recurringPlan.plan,
                     billing_cycle: recurringPlan.billing_cycle,
+                    market_country_code: recurringPlan.market_country_code ?? "BR",
+                    currency_code: recurringPlan.currency_code ?? "BRL",
+                    amount_minor: Math.round(body.payment.value * 100),
                     amount_cents: Math.round(body.payment.value * 100),
                     status: "pending",
                   },
@@ -222,7 +227,7 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                 const { data: state } = await supabase
                   .from("localhub_plan_subscriptions")
                   .select(
-                    "pending_payment_id, pending_plan, pending_billing_cycle, pending_subscription_id",
+                    "pending_payment_id, pending_plan, pending_billing_cycle, pending_subscription_id, pending_market_country_code, pending_currency_code, pending_market_price_id",
                   )
                   .eq("business_id", planPayment.business_id)
                   .maybeSingle();
@@ -237,6 +242,12 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                       plan: planPayment.requested_plan,
                       billing_cycle: planPayment.billing_cycle,
                       status: "active",
+                      market_country_code: state.pending_market_country_code ?? "BR",
+                      currency_code: state.pending_currency_code ?? "BRL",
+                      market_price_id: state.pending_market_price_id,
+                      pending_market_country_code: null,
+                      pending_currency_code: null,
+                      pending_market_price_id: null,
                       pending_plan: null,
                       pending_billing_cycle: null,
                       pending_payment_id: null,
@@ -320,6 +331,9 @@ export const Route = createFileRoute("/api/asaas/webhook")({
                       plan: "free",
                       pending_plan: null,
                       pending_billing_cycle: null,
+                      pending_market_country_code: null,
+                      pending_currency_code: null,
+                      pending_market_price_id: null,
                       pending_payment_id: null,
                       pending_subscription_id: null,
                       updated_at: new Date().toISOString(),

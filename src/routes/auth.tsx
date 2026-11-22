@@ -83,8 +83,7 @@ function AuthPage() {
       return setError("O acesso está indisponível no momento.");
     setBusy(true);
     try {
-      const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
-      const redirectTo = `${isLocalhost ? "https://ello.app.br" : window.location.origin}/auth`;
+      const redirectTo = `${window.location.origin}/auth`;
 
       if (mode === "forgot") {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
@@ -145,6 +144,30 @@ function AuthPage() {
           ? "Não foi possível conectar ao serviço de autenticação. Verifique sua conexão e tente novamente."
           : "Não foi possível concluir o acesso agora. Tente novamente em instantes.",
       );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function continueWithGoogle() {
+    setError("");
+    setMessage("");
+    const supabase = getSupabaseBrowserClient();
+    if (!isSupabaseConfigured() || !supabase) {
+      setError("O acesso está indisponível no momento.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const redirectTo = `${window.location.origin}/auth`;
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo },
+      });
+      if (oauthError) setError(getAuthErrorMessage(oauthError.message, oauthError.code));
+    } catch {
+      setError("Não foi possível iniciar o acesso com Google. Tente novamente em instantes.");
     } finally {
       setBusy(false);
     }
@@ -226,6 +249,25 @@ function AuthPage() {
               >
                 Criar conta
               </button>
+            </div>
+          )}
+
+          {(mode === "login" || mode === "signup") && (
+            <div className="mt-5">
+              <button
+                type="button"
+                onClick={() => void continueWithGoogle()}
+                disabled={busy}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#dedfd6] bg-white px-4 py-3 text-sm font-semibold text-[#292b25] shadow-xs transition hover:bg-[#f8f8f5] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <span aria-hidden="true" className="font-bold text-[#4285F4]">G</span>
+                Continuar com Google
+              </button>
+              <div className="mt-5 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                <span className="h-px flex-1 bg-[#e8e6df]" />
+                ou use seu e-mail
+                <span className="h-px flex-1 bg-[#e8e6df]" />
+              </div>
             </div>
           )}
 

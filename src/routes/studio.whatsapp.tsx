@@ -4,6 +4,7 @@ import { Loader2, MessageCircle, Save, Sparkles } from "lucide-react";
 import { ElloAtomLoader } from "@/components/ello/atom-loader";
 import { PageTitle, primaryButtonClass } from "@/components/localhub/ui";
 import { useLocalHub } from "@/lib/localhub-context";
+import { PlanFeatureGate } from "@/components/localhub/plan-feature-gate";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { WhatsAppTemplates } from "@/lib/whatsapp-templates";
 
@@ -26,6 +27,14 @@ const templateVariables: Record<TemplateKind, string> = {
 };
 
 function WhatsAppSettingsPage() {
+  return (
+    <PlanFeatureGate minimumPlan="business" feature="Automação e integração WhatsApp">
+      <WhatsAppSettingsContent />
+    </PlanFeatureGate>
+  );
+}
+
+function WhatsAppSettingsContent() {
   const { business, saveWhatsAppTemplates } = useLocalHub();
   const [templates, setTemplates] = useState<WhatsAppTemplates>(business?.whatsappTemplates ?? {});
   const [templateKind, setTemplateKind] = useState<TemplateKind>("orderCustomer");
@@ -152,6 +161,8 @@ function WhatsAppSettingsPage() {
         ? "Aguardando leitura"
         : waState === "loading"
           ? "Verificando"
+        : waState === "not_configured"
+          ? "Provisionamento pendente"
           : "Desconectado";
   const statusClass =
     waState === "open"
@@ -193,7 +204,7 @@ function WhatsAppSettingsPage() {
               <button
                 type="button"
                 onClick={() => void fetchWhatsAppStatus()}
-                disabled={waLoading}
+                disabled={waLoading || waState === "not_configured"}
                 className="rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-50"
               >
                 {waLoading ? "Atualizando..." : "Atualizar conexão"}
@@ -213,6 +224,10 @@ function WhatsAppSettingsPage() {
           {waState === "open" ? (
             <div className="mt-4 rounded-xl border border-emerald-200 bg-white p-4 text-sm font-semibold text-emerald-900">
               Seu WhatsApp está conectado e pronto para enviar mensagens automáticas.
+            </div>
+          ) : waState === "not_configured" ? (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+              A instância compartilhada não será usada para conectar contas de negócios. A conexão será liberada depois que uma instância exclusiva deste negócio for provisionada.
             </div>
           ) : (
             <div className="mt-4 grid gap-5 rounded-xl border border-emerald-200 bg-white p-5 sm:grid-cols-[auto_1fr] sm:items-center">

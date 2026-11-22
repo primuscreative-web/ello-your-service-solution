@@ -32,6 +32,7 @@ export function TotemPage() {
   const { getPublicStore, createFoodOrder } = useLocalHub();
 
   const [loading, setLoading] = useState(true);
+  const [planBlocked, setPlanBlocked] = useState(false);
   const [business, setBusiness] = useState<Business | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -52,14 +53,21 @@ export function TotemPage() {
   // Carrega catálogo
   useEffect(() => {
     let active = true;
-    void getPublicStore(slug).then((data) => {
-      if (!active) return;
-      if (data) {
-        setBusiness(data.business);
-        setServices(data.services.filter((s) => s.active));
-      }
-      setLoading(false);
-    });
+    void getPublicStore(slug, { requireFeature: "self_service_kiosk" })
+      .then((data) => {
+        if (!active) return;
+        if (data) {
+          setBusiness(data.business);
+          setServices(data.services.filter((s) => s.active));
+        }
+      })
+      .catch((error: Error & { code?: string }) => {
+        if (!active) return;
+        setPlanBlocked(error.code === "PLAN_UPGRADE_REQUIRED");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
     return () => {
       active = false;
     };
@@ -181,9 +189,20 @@ export function TotemPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#1a1c16] p-6 text-center text-white">
         <div>
-          <Store size={48} className="mx-auto text-slate-500" />
-          <h1 className="mt-4 text-xl font-bold">Estabelecimento não encontrado</h1>
-          <p className="mt-1 text-sm text-slate-400">Verifique o endereço ou QR Code do totem.</p>
+          {planBlocked ? <Sparkles size={48} className="mx-auto text-[#d0f25a]" /> : <Store size={48} className="mx-auto text-slate-500" />}
+          <h1 className="mt-4 text-xl font-bold">
+            {planBlocked ? "Totem disponível no Business" : "Estabelecimento não encontrado"}
+          </h1>
+          <p className="mt-1 text-sm text-slate-400">
+            {planBlocked
+              ? "O autoatendimento por tablet está incluído no plano Business deste estabelecimento."
+              : "Verifique o endereço ou QR Code do totem."}
+          </p>
+          {planBlocked && (
+            <a href="/planos" className="mt-5 inline-flex rounded-xl bg-[#d0f25a] px-4 py-2.5 text-sm font-bold text-[#20221f]">
+              Conhecer os planos ELLO
+            </a>
+          )}
         </div>
       </div>
     );
@@ -262,7 +281,7 @@ export function TotemPage() {
             <span className="rounded-full border border-[#2d3323] bg-[#24281c] px-3 py-1 text-xs font-semibold text-slate-300">
               Toque nos itens para adicionar
             </span>
-            <ElloLogo tone="white" height={20} className="opacity-75 hidden sm:inline-block" />
+            {!business.whiteLabel && <ElloLogo tone="white" height={20} className="opacity-75 hidden sm:inline-block" />}
           </div>
         </header>
 

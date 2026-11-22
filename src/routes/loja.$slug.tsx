@@ -449,6 +449,8 @@ function PublicBusinessPage() {
   const activeServices = useMemo(() => services.filter((service) => service.active), [services]);
   const normalizedMenuSearch = normalizeMenuText(menuSearch.trim());
   const isFoodBusiness = business?.category === "alimentacao";
+  const isBeautyBusiness = business?.category === "beleza";
+  const isPetBusiness = business?.category === "pet";
   useEffect(() => {
     const timer = window.setInterval(() => setScheduleClock(Date.now()), 30_000);
     return () => window.clearInterval(timer);
@@ -1312,7 +1314,7 @@ function PublicBusinessPage() {
       encodeURIComponent("Olá! Encontrei sua página " + business.name + " na ELLO.")
     : undefined;
   return (
-    <div className={isFoodBusiness ? "ello-food-store min-h-screen pb-12 antialiased" : "min-h-screen bg-[#f5f4ed] pb-12 text-[#171914] antialiased"}>
+      <div className={isFoodBusiness ? "ello-food-store min-h-screen pb-12 antialiased" : isBeautyBusiness ? "ello-beauty-store min-h-screen pb-12 antialiased" : isPetBusiness ? "ello-pet-store min-h-screen pb-12 antialiased" : isHealthBusiness ? "ello-health-store min-h-screen pb-12 antialiased" : "min-h-screen bg-[#f5f4ed] pb-12 text-[#171914] antialiased"} data-store-theme={isFoodBusiness || isBeautyBusiness || isPetBusiness || isHealthBusiness ? business.publicTheme ?? "standard" : undefined}>
       <header className={`sticky top-0 z-40 ello-glass-dock ${isFoodBusiness ? "food-store-header" : ""}`}>
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
           {isFoodBusiness && (
@@ -1490,7 +1492,7 @@ function PublicBusinessPage() {
         ) : (
           /* Layout Padrão para Clínicas, Salões e Serviços */
           <section
-            className="relative mt-5 overflow-hidden rounded-2xl bg-[#292b25] bg-cover bg-center px-6 py-9 text-white sm:mt-8 sm:px-10 sm:py-12"
+            className="service-store-hero relative mt-5 overflow-hidden rounded-2xl bg-[#292b25] bg-cover bg-center px-6 py-7 text-white sm:mt-8 sm:px-10 sm:py-10"
             style={
               business.bannerUrl
                 ? {
@@ -1507,9 +1509,8 @@ function PublicBusinessPage() {
             >
               <Pencil size={13} /> Editar perfil
             </button>
-            <div className="absolute -right-8 -top-20 size-64 rounded-full bg-[#d5ec9a]/10 blur-3xl" />
-            <div className="absolute -bottom-28 left-1/3 size-72 rounded-full bg-[#d5ec9a]/10 blur-3xl" />
-            <div className="relative max-w-2xl">
+            <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-2xl">
               <div className="flex items-center gap-3">
                 {business.logoUrl && (
                   <img
@@ -1518,10 +1519,11 @@ function PublicBusinessPage() {
                     className="size-14 rounded-full border-2 border-white/30 object-cover shadow-md"
                   />
                 )}
-                <div>
+                <div className="min-w-0">
                   <h1 className="font-display text-4xl font-semibold tracking-[-.05em] sm:text-5xl">
                     {business.name}
                   </h1>
+                  <p className="mt-1 text-xs font-semibold text-white/65">{business.city}</p>
                 </div>
               </div>
               <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">
@@ -1551,6 +1553,11 @@ function PublicBusinessPage() {
                   {hasAppointments ? "Agendamento online" : "Fale com o estabelecimento"}
                 </span>
               </div>
+              </div>
+              <a href="#catalog-section" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#d4f455] px-5 text-sm font-bold text-[#171914] transition hover:bg-[#e2ff72] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                {hasAppointments ? "Ver opções e horários" : `Ver ${businessCopy.offerTitle.toLocaleLowerCase("pt-BR")}`}
+                <ArrowRight size={16} />
+              </a>
             </div>
           </section>
         )}
@@ -1777,12 +1784,12 @@ function PublicBusinessPage() {
           </div>
         </details>
         {isFoodBusiness && <FoodPromoCarousel images={galleryUrls} editing={studioEditing} />}
-        <section id={isFoodBusiness ? "food-menu" : undefined} className={`relative mt-8 ${isFoodBusiness ? "food-menu-section" : ""}`}>
+        <section id={isFoodBusiness ? "food-menu" : "catalog-section"} className={`relative mt-8 ${isFoodBusiness ? "food-menu-section" : "service-catalog-section"}`}>
           <StudioEditAnchor enabled={studioEditing} section="catalog" label="Editar cardápio e serviços" />
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <div className={`text-xs font-bold uppercase tracking-[.14em] text-[#778253] ${isFoodBusiness ? "food-menu-eyebrow" : ""}`}>
-                {isFoodBusiness ? "Feito para pedir" : "Conheça nosso trabalho"}
+                {isFoodBusiness ? "Feito para pedir" : hasAppointments ? "Escolha com tranquilidade" : "Conheça nossas opções"}
               </div>
               <h2 className={`mt-2 font-display text-2xl font-extrabold tracking-tight ${isFoodBusiness ? "food-menu-title" : ""}`}>
                 {businessCopy.offerTitle}
@@ -2009,10 +2016,10 @@ function PublicBusinessPage() {
                         return (
                           <article
                             key={service.id}
-                            className={`food-product-card group relative flex flex-col justify-between rounded-2xl border p-3.5 transition-all duration-200 sm:p-4 ${isFoodBusiness ? "food-product-carousel-card" : ""}`}
+                            className={`food-product-card group relative flex flex-col justify-between rounded-2xl border p-3.5 transition-all duration-200 sm:p-4 ${isFoodBusiness ? "food-product-carousel-card" : "service-offer-card"}`}
                           >
                             <StudioEditAnchor enabled={studioEditing} section="service" serviceId={service.id} label={`Editar ${service.name}`} />
-                            <div className="flex gap-3">
+                            <div className={`flex gap-3 ${isFoodBusiness ? "food-product-layout" : ""}`}>
                               <div className="min-w-0 flex-1">
                                 {(isPromo || service.isFeatured) && (
                                   <div className="mb-1">
@@ -2033,12 +2040,12 @@ function PublicBusinessPage() {
                                       : "Atendimento pensado para você.")}
                                 </p>
                               </div>
-                              {isFoodBusiness && service.imageUrl && (
+                              {service.imageUrl && (
                                 <img
                                   src={service.imageUrl}
                                   alt={service.name}
                                   loading="lazy"
-                                  className="food-product-image size-20 shrink-0 rounded-xl object-cover transition-transform duration-200 group-hover:scale-[1.02] sm:size-24"
+                                  className={`food-product-image shrink-0 rounded-xl object-cover transition-transform duration-200 group-hover:scale-[1.02] ${isFoodBusiness ? "size-20 sm:size-24" : "service-offer-image"}`}
                                 />
                               )}
                             </div>
@@ -2059,10 +2066,10 @@ function PublicBusinessPage() {
                                     {money(service.price)}
                                   </div>
                                 )}
-                                {!isFoodBusiness && (
-                                  <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-400">
+                                {!isFoodBusiness && (hasAppointments || service.duration > 0) && (
+                                  <div className="mt-1.5 flex items-center gap-1 text-[11px] text-slate-500">
                                     <Clock3 size={12} />
-                                    {service.duration} minutos
+                                    {service.duration > 0 ? `${service.duration} min` : "Consulte a duração"}
                                   </div>
                                 )}
                               </div>
@@ -2129,7 +2136,7 @@ function PublicBusinessPage() {
                                     setTime("");
                                     setWhatsappUrlAfterBooking("");
                                   }}
-                                  className="cursor-pointer inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-[#292b25] px-4 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-[#3d4036] active:scale-95"
+                                  className="service-book-button cursor-pointer inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#292b25] px-4 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-[#3d4036] active:scale-95"
                                 >
                                   {businessCopy.bookingAction}
                                 </button>
@@ -2152,7 +2159,7 @@ function PublicBusinessPage() {
               )}
             </>
           ) : (
-            <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+            <div className={`mt-4 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center ${isFoodBusiness ? "food-empty-state" : "service-empty-state"}`}>
               {isFoodBusiness ? (
                 <UtensilsCrossed className="mx-auto text-[#a5b280]" size={26} />
               ) : (
@@ -2186,14 +2193,16 @@ function PublicBusinessPage() {
           <span>
             {business.name} · {business.city}
           </span>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 font-semibold text-slate-500 hover:text-slate-800 transition"
-            aria-label="Conheça a ELLO"
-          >
-            <span>Feito com</span>
-            <ElloLogo tone={isFoodBusiness ? "white" : "dark"} height={16} />
-          </Link>
+          {!business.whiteLabel && (
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 font-semibold text-slate-500 hover:text-slate-800 transition"
+              aria-label="Conheça a ELLO"
+            >
+              <span>Feito com</span>
+              <ElloLogo tone={isFoodBusiness ? "white" : "dark"} height={16} />
+            </Link>
+          )}
         </footer>
       </main>
 

@@ -2650,3 +2650,1009 @@
     stroke-dasharray: none;
   }
 }
+
+/* Public niches: a lightweight app shell that keeps the business and next action clear. */
+.service-store-hero {
+  background-color: #292b25;
+  background-position: center 42%;
+  box-shadow: 0 18px 48px rgb(35 39 28 / 12%);
+}
+
+/* Beauty storefront themes: same mobile-first service layout, distinct visual identities. */
+.ello-beauty-store {
+  background: #f5f4ed;
+  color: #26251f;
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+.ello-beauty-store .service-store-hero {
+  isolation: isolate;
+  background-color: #30312b;
+  background-blend-mode: normal;
+}
+
+.ello-beauty-store .service-store-hero::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+  transition: background 220ms ease;
+}
+
+.ello-beauty-store .service-store-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ello-beauty-store .service-store-hero h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -0.04em;
+}
+
+.ello-beauty-store .service-store-hero > div > a {
+  background: #d9b3ad;
+  color: #382625;
+}
+
+.ello-beauty-store .service-book-button {
+  background: #687944;
+  color: #fff;
+}
+
+.ello-beauty-store[data-store-theme="sophisticated"] {
+  background: #f4eee9;
+  color: #382d2b;
+}
+
+.ello-beauty-store[data-store-theme="sophisticated"] .service-store-hero::before {
+  background: linear-gradient(112deg, rgb(55 39 38 / 85%), rgb(102 68 66 / 55%));
+}
+
+.ello-beauty-store[data-store-theme="sophisticated"] .service-store-hero > div > a,
+.ello-beauty-store[data-store-theme="sophisticated"] .service-book-button {
+  background: #d9b3ad;
+  color: #382625;
+}
+
+.ello-beauty-store[data-store-theme="sophisticated"] .service-offer-card,
+.ello-beauty-store[data-store-theme="sophisticated"] details > summary,
+.ello-beauty-store[data-store-theme="sophisticated"] main > section:not(.service-store-hero) {
+  border-color: #e5d8d2;
+  background-color: #fffaf6;
+}
+
+.ello-beauty-store[data-store-theme="luxury"] {
+  background: #201b1b;
+  color: #f3ece3;
+}
+
+.ello-beauty-store[data-store-theme="luxury"] .service-store-hero::before {
+  background: linear-gradient(112deg, rgb(22 18 18 / 90%), rgb(69 48 43 / 62%));
+}
+
+.ello-beauty-store[data-store-theme="luxury"] .service-store-hero > div > a,
+.ello-beauty-store[data-store-theme="luxury"] .service-book-button {
+  background: #d2b486;
+  color: #261f1b;
+}
+
+.ello-beauty-store[data-store-theme="luxury"] .service-offer-card,
+.ello-beauty-store[data-store-theme="luxury"] details > summary,
+.ello-beauty-store[data-store-theme="luxury"] main > section:not(.service-store-hero) {
+  border-color: #443a36;
+  background-color: #2c2525;
+  color: #f3ece3;
+}
+
+.ello-beauty-store[data-store-theme="luxury"] .food-product-name,
+.ello-beauty-store[data-store-theme="luxury"] .service-store-hero h1 {
+  color: #f3ece3;
+}
+
+.ello-beauty-store[data-store-theme="luxury"] .food-product-description,
+.ello-beauty-store[data-store-theme="luxury"] .service-offer-card .food-product-description {
+  color: #c7b9ad;
+}
+
+.ello-beauty-store[data-store-theme="artisanal"] {
+  background: #e9eee7;
+  color: #26382d;
+}
+
+.ello-beauty-store[data-store-theme="artisanal"] .service-store-hero::before {
+  background: linear-gradient(112deg, rgb(34 52 40 / 86%), rgb(70 94 73 / 56%));
+}
+
+.ello-beauty-store[data-store-theme="artisanal"] .service-store-hero > div > a,
+.ello-beauty-store[data-store-theme="artisanal"] .service-book-button {
+  background: #b8c9b4;
+  color: #26382d;
+}
+
+.ello-beauty-store[data-store-theme="artisanal"] .service-offer-card,
+.ello-beauty-store[data-store-theme="artisanal"] details > summary,
+.ello-beauty-store[data-store-theme="artisanal"] main > section:not(.service-store-hero) {
+  border-color: #d1ddcf;
+  background-color: #f8fbf6;
+}
+
+/* Pet storefront themes use the same compact service catalog with animal-care colors. */
+.ello-pet-store {
+  background: #f5f4ed;
+  color: #252b25;
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+.ello-pet-store .service-store-hero {
+  isolation: isolate;
+}
+
+.ello-pet-store .service-store-hero::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(112deg, rgb(35 47 38 / 84%), rgb(69 86 66 / 54%));
+  content: "";
+  pointer-events: none;
+  transition: background 220ms ease;
+}
+
+.ello-pet-store .service-store-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ello-pet-store .service-store-hero h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -0.04em;
+}
+
+.ello-pet-store .service-store-hero > div > a,
+.ello-pet-store .service-book-button {
+  background: #c4d5b6;
+  color: #27352a;
+}
+
+.ello-pet-store .service-book-button {
+  background: #637c5b;
+  color: white;
+}
+
+.ello-pet-store[data-store-theme="sophisticated"] {
+  background: #e9e6da;
+  color: #30382f;
+}
+
+.ello-pet-store[data-store-theme="sophisticated"] .service-store-hero::before {
+  background: linear-gradient(112deg, rgb(35 53 40 / 88%), rgb(69 91 69 / 58%));
+}
+
+.ello-pet-store[data-store-theme="sophisticated"] .service-store-hero > div > a,
+.ello-pet-store[data-store-theme="sophisticated"] .service-book-button {
+  background: #c5d1b7;
+  color: #29362c;
+}
+
+.ello-pet-store[data-store-theme="sophisticated"] .service-offer-card,
+.ello-pet-store[data-store-theme="sophisticated"] details > summary,
+.ello-pet-store[data-store-theme="sophisticated"] main > section:not(.service-store-hero) {
+  border-color: #d9d6c7;
+  background-color: #fffdf6;
+}
+
+.ello-pet-store[data-store-theme="luxury"] {
+  background: #202625;
+  color: #eff2eb;
+}
+
+.ello-pet-store[data-store-theme="luxury"] .service-store-hero::before {
+  background: linear-gradient(112deg, rgb(24 32 31 / 91%), rgb(49 67 63 / 62%));
+}
+
+.ello-pet-store[data-store-theme="luxury"] .service-store-hero > div > a,
+.ello-pet-store[data-store-theme="luxury"] .service-book-button {
+  background: #d49b71;
+  color: #28231f;
+}
+
+.ello-pet-store[data-store-theme="luxury"] .service-offer-card,
+.ello-pet-store[data-store-theme="luxury"] details > summary,
+.ello-pet-store[data-store-theme="luxury"] main > section:not(.service-store-hero) {
+  border-color: #3b4945;
+  background-color: #2b3330;
+  color: #eff2eb;
+}
+
+.ello-pet-store[data-store-theme="luxury"] .food-product-name,
+.ello-pet-store[data-store-theme="luxury"] .service-store-hero h1 {
+  color: #eff2eb;
+}
+
+.ello-pet-store[data-store-theme="luxury"] .food-product-description,
+.ello-pet-store[data-store-theme="luxury"] .service-offer-card .food-product-description {
+  color: #c0ccc5;
+}
+
+.ello-pet-store[data-store-theme="artisanal"] {
+  background: #e9efe6;
+  color: #2c3b30;
+}
+
+.ello-pet-store[data-store-theme="artisanal"] .service-store-hero::before {
+  background: linear-gradient(112deg, rgb(36 57 39 / 84%), rgb(81 111 71 / 55%));
+}
+
+.ello-pet-store[data-store-theme="artisanal"] .service-store-hero > div > a,
+.ello-pet-store[data-store-theme="artisanal"] .service-book-button {
+  background: #edbd91;
+  color: #3c3027;
+}
+
+.ello-pet-store[data-store-theme="artisanal"] .service-offer-card,
+.ello-pet-store[data-store-theme="artisanal"] details > summary,
+.ello-pet-store[data-store-theme="artisanal"] main > section:not(.service-store-hero) {
+  border-color: #d1ddcf;
+  background-color: #f8fbf5;
+}
+
+/* Health storefront themes keep appointment information calm, legible, and clear. */
+.ello-health-store {
+  background: #f5f4ed;
+  color: #26323a;
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+.ello-health-store .service-store-hero {
+  isolation: isolate;
+}
+
+.ello-health-store .service-store-hero::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(112deg, rgb(32 50 59 / 86%), rgb(61 91 105 / 56%));
+  content: "";
+  pointer-events: none;
+  transition: background 220ms ease;
+}
+
+.ello-health-store .service-store-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ello-health-store .service-store-hero h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -0.04em;
+}
+
+.ello-health-store .service-store-hero > div > a,
+.ello-health-store .service-book-button {
+  background: #c1dce2;
+  color: #243842;
+}
+
+.ello-health-store .service-book-button {
+  background: #527f8e;
+  color: white;
+}
+
+.ello-health-store[data-store-theme="sophisticated"] {
+  background: #edf3f5;
+  color: #2b3b43;
+}
+
+.ello-health-store[data-store-theme="sophisticated"] .service-store-hero::before {
+  background: linear-gradient(112deg, rgb(34 65 78 / 88%), rgb(75 125 145 / 55%));
+}
+
+.ello-health-store[data-store-theme="sophisticated"] .service-store-hero > div > a,
+.ello-health-store[data-store-theme="sophisticated"] .service-book-button {
+  background: #b8d4dc;
+  color: #243842;
+}
+
+.ello-health-store[data-store-theme="sophisticated"] .service-offer-card,
+.ello-health-store[data-store-theme="sophisticated"] details > summary,
+.ello-health-store[data-store-theme="sophisticated"] main > section:not(.service-store-hero) {
+  border-color: #d7e3e7;
+  background-color: #fbfeff;
+}
+
+.ello-health-store[data-store-theme="luxury"] {
+  background: #18252d;
+  color: #eaf0f1;
+}
+
+.ello-health-store[data-store-theme="luxury"] .service-store-hero::before {
+  background: linear-gradient(112deg, rgb(21 35 43 / 92%), rgb(48 74 86 / 62%));
+}
+
+.ello-health-store[data-store-theme="luxury"] .service-store-hero > div > a,
+.ello-health-store[data-store-theme="luxury"] .service-book-button {
+  background: #b5cbd0;
+  color: #202e34;
+}
+
+.ello-health-store[data-store-theme="luxury"] .service-offer-card,
+.ello-health-store[data-store-theme="luxury"] details > summary,
+.ello-health-store[data-store-theme="luxury"] main > section:not(.service-store-hero) {
+  border-color: #344852;
+  background-color: #23333d;
+  color: #eaf0f1;
+}
+
+.ello-health-store[data-store-theme="luxury"] .food-product-name,
+.ello-health-store[data-store-theme="luxury"] .service-store-hero h1 {
+  color: #eaf0f1;
+}
+
+.ello-health-store[data-store-theme="luxury"] .food-product-description,
+.ello-health-store[data-store-theme="luxury"] .service-offer-card .food-product-description {
+  color: #b9c9cf;
+}
+
+.ello-health-store[data-store-theme="artisanal"] {
+  background: #e8efeb;
+  color: #293b34;
+}
+
+.ello-health-store[data-store-theme="artisanal"] .service-store-hero::before {
+  background: linear-gradient(112deg, rgb(36 61 52 / 87%), rgb(85 122 106 / 57%));
+}
+
+.ello-health-store[data-store-theme="artisanal"] .service-store-hero > div > a,
+.ello-health-store[data-store-theme="artisanal"] .service-book-button {
+  background: #b9d0c4;
+  color: #293b34;
+}
+
+.ello-health-store[data-store-theme="artisanal"] .service-offer-card,
+.ello-health-store[data-store-theme="artisanal"] details > summary,
+.ello-health-store[data-store-theme="artisanal"] main > section:not(.service-store-hero) {
+  border-color: #d1ded8;
+  background-color: #f8fbf9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ello-health-store,
+  .ello-health-store .service-store-hero::before {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ello-pet-store,
+  .ello-pet-store .service-store-hero::before {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ello-beauty-store,
+  .ello-beauty-store .service-store-hero::before {
+    transition: none;
+  }
+}
+
+.service-catalog-section {
+  scroll-margin-top: 5.5rem;
+}
+
+.service-catalog-section .food-product-grid {
+  align-items: stretch;
+  gap: 0.9rem;
+}
+
+.service-offer-card {
+  min-height: 11.5rem;
+  border-color: #e8e8df;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(31 35 25 / 3%);
+}
+
+.service-offer-card:hover {
+  border-color: #cbd1b9;
+  box-shadow: 0 12px 28px rgb(31 35 25 / 8%);
+  transform: translateY(-2px);
+}
+
+.service-offer-card .food-product-name {
+  color: #20221c;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.service-offer-card .food-product-description {
+  color: #74776d;
+  font-size: 0.78rem;
+  line-height: 1.45rem;
+}
+
+.service-offer-card .food-product-footer {
+  border-color: #efefe9;
+}
+
+.service-offer-image {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 0.875rem;
+  background: #f0f0e9;
+}
+
+.service-book-button:focus-visible,
+.service-store-hero a:focus-visible {
+  outline: 3px solid #9caf65;
+  outline-offset: 3px;
+}
+
+.service-empty-state {
+  border-color: #d9dccf;
+  background: linear-gradient(180deg, #fff, #fafbf7);
+}
+
+.ello-food-store .food-menu-section {
+  scroll-margin-top: 6rem;
+}
+
+.ello-food-store .food-product-carousel-card {
+  flex-basis: min(88vw, 27rem);
+  min-height: 10.25rem;
+  border-color: var(--food-border);
+  background: var(--food-surface);
+}
+
+.ello-food-store .food-product-carousel-card:hover {
+  border-color: #51534a;
+  background: #1d1e21;
+}
+
+.ello-food-store .food-product-carousel-card .food-product-description {
+  color: #b5b5bd;
+  font-size: 0.75rem;
+}
+
+.ello-food-store .food-product-carousel-card .food-product-footer {
+  border-color: #303137;
+}
+
+.ello-food-store .food-product-carousel-card .food-add-button {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  justify-content: center;
+  border-radius: 999px;
+  color: #171910;
+  background: var(--food-accent);
+}
+
+.ello-food-store .food-product-carousel-card .food-add-button:hover {
+  background: #e1ff75;
+}
+
+.ello-food-store .food-product-carousel-card .food-quantity-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-color: #44464d;
+  color: #f4f4f5;
+  background: #27282d;
+}
+
+.ello-food-store .food-cart-bar {
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  min-height: 3.75rem;
+  border-color: rgb(208 242 90 / 35%);
+  background: #d0f25a;
+  color: #171910;
+  box-shadow: 0 14px 40px rgb(0 0 0 / 38%);
+}
+
+.ello-food-store .food-cart-bar .text-\[\#d5ec9a\] {
+  color: #414a2d;
+}
+
+.ello-food-store .food-cart-bar .text-white\/70,
+.ello-food-store .food-cart-bar .text-white\/60,
+.ello-food-store .food-cart-bar .text-white\/60 svg {
+  color: #555a46;
+}
+
+@media (max-width: 639px) {
+  .service-store-hero {
+    margin-inline: -0.25rem;
+    padding: 1.25rem 1.125rem;
+    border-radius: 1.25rem;
+  }
+
+  .service-store-hero h1 {
+    overflow-wrap: anywhere;
+    font-size: clamp(2rem, 9vw, 2.65rem);
+  }
+
+  .service-offer-card {
+    min-height: 10.5rem;
+    padding: 1rem;
+  }
+
+  .service-offer-image {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+
+  .ello-food-store .food-product-carousel-card {
+    flex-basis: min(88vw, 24rem);
+  }
+
+  .ello-food-store .food-cart-bar {
+    inset-inline: 0.75rem;
+    width: auto;
+    padding-inline: 0.9rem;
+  }
+}
+
+/* Nicho 1: temas públicos de alimentação. Each preset changes surfaces, type, and menu rhythm. */
+.ello-food-store[data-store-theme="standard"] {
+  --food-bg: #f5f4ed;
+  --food-surface: #ffffff;
+  --food-surface-raised: #fafaf6;
+  --food-border: #e3e4dc;
+  --food-copy: #20221c;
+  --food-muted: #74776d;
+  --food-accent: #687944;
+  background: var(--food-bg);
+  color: var(--food-copy);
+}
+
+.ello-food-store[data-store-theme="standard"] .food-store-header {
+  background: rgb(245 244 237 / 94%);
+}
+
+.ello-food-store[data-store-theme="standard"] .food-header-action,
+.ello-food-store[data-store-theme="standard"] .food-search-input {
+  color: var(--food-copy);
+  background: var(--food-surface);
+  border-color: var(--food-border);
+}
+
+.ello-food-store[data-store-theme="standard"] .food-store-overview,
+.ello-food-store[data-store-theme="standard"] .food-detail-summary,
+.ello-food-store[data-store-theme="standard"] .food-detail-panel,
+.ello-food-store[data-store-theme="standard"] .food-feature-card,
+.ello-food-store[data-store-theme="standard"] .food-product-card {
+  color: var(--food-copy);
+  border-color: var(--food-border);
+  background: var(--food-surface);
+}
+
+.ello-food-store[data-store-theme="standard"] .food-menu-search,
+.ello-food-store[data-store-theme="standard"] .food-category-nav {
+  background: rgb(245 244 237 / 96%);
+}
+
+.ello-food-store[data-store-theme="standard"] .food-category-chip.is-active {
+  color: #fff;
+  border-color: #30352a;
+  background: #30352a;
+}
+
+.ello-food-store[data-store-theme="standard"] .food-product-name,
+.ello-food-store[data-store-theme="standard"] .food-menu-title {
+  color: var(--food-copy);
+}
+
+.ello-food-store[data-store-theme="standard"] .food-product-description,
+.ello-food-store[data-store-theme="standard"] .food-muted {
+  color: var(--food-muted);
+}
+
+.ello-food-store[data-store-theme="standard"] .food-product-footer,
+.ello-food-store[data-store-theme="standard"] .food-feature-footer {
+  border-color: var(--food-border);
+}
+
+.ello-food-store[data-store-theme="standard"] .food-add-button {
+  color: #fff;
+  background: #30352a;
+}
+
+.ello-food-store[data-store-theme="standard"] .food-add-button:hover {
+  background: #434a39;
+}
+
+.ello-food-store[data-store-theme="standard"] .food-cart-bar {
+  color: #fff;
+  border-color: #434a39;
+  background: #30352a;
+}
+
+.ello-food-store[data-store-theme="standard"] .food-cart-bar .text-\[\#d5ec9a\],
+.ello-food-store[data-store-theme="standard"] .food-cart-bar .text-white\/70,
+.ello-food-store[data-store-theme="standard"] .food-cart-bar .text-white\/60 {
+  color: rgb(255 255 255 / 78%);
+}
+
+.ello-food-store[data-store-theme="standard"] .food-price-promo,
+.ello-food-store[data-store-theme="standard"] .food-icon-tile {
+  color: var(--food-accent);
+}
+
+.ello-food-store[data-store-theme="sophisticated"] {
+  --food-bg: #f0eee7;
+  --food-surface: #fffdf8;
+  --food-surface-raised: #f7f4ec;
+  --food-border: #ded8ca;
+  --food-copy: #28261f;
+  --food-muted: #777164;
+  --food-accent: #8b7950;
+  background: var(--food-bg);
+  color: var(--food-copy);
+}
+
+.ello-food-store[data-store-theme="sophisticated"] .food-store-header,
+.ello-food-store[data-store-theme="sophisticated"] .food-menu-search,
+.ello-food-store[data-store-theme="sophisticated"] .food-category-nav {
+  background: rgb(240 238 231 / 96%);
+}
+
+.ello-food-store[data-store-theme="sophisticated"] .food-header-action,
+.ello-food-store[data-store-theme="sophisticated"] .food-search-input {
+  color: var(--food-copy);
+  background: var(--food-surface);
+  border-color: var(--food-border);
+}
+
+.ello-food-store[data-store-theme="sophisticated"] .food-store-overview,
+.ello-food-store[data-store-theme="sophisticated"] .food-detail-summary,
+.ello-food-store[data-store-theme="sophisticated"] .food-detail-panel,
+.ello-food-store[data-store-theme="sophisticated"] .food-feature-card,
+.ello-food-store[data-store-theme="sophisticated"] .food-product-card {
+  color: var(--food-copy);
+  border-color: var(--food-border);
+  background: var(--food-surface);
+  border-radius: 0.9rem;
+  box-shadow: 0 5px 20px rgb(54 46 32 / 4%);
+}
+
+.ello-food-store[data-store-theme="sophisticated"] .food-menu-title,
+.ello-food-store[data-store-theme="sophisticated"] .food-product-name {
+  color: var(--food-copy);
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -0.02em;
+}
+
+.ello-food-store[data-store-theme="sophisticated"] .food-product-description,
+.ello-food-store[data-store-theme="sophisticated"] .food-muted {
+  color: var(--food-muted);
+}
+
+.ello-food-store[data-store-theme="sophisticated"] .food-product-footer,
+.ello-food-store[data-store-theme="sophisticated"] .food-feature-footer {
+  border-color: var(--food-border);
+}
+
+.ello-food-store[data-store-theme="sophisticated"] .food-category-chip.is-active {
+  color: #fffdf8;
+  border-color: #574c34;
+  background: #574c34;
+}
+
+.ello-food-store[data-store-theme="sophisticated"] .food-add-button {
+  color: #fffdf8;
+  background: #574c34;
+}
+
+.ello-food-store[data-store-theme="sophisticated"] .food-promo-cta {
+  color: #fffdf8;
+  background: #574c34;
+}
+
+.ello-food-store[data-store-theme="sophisticated"] .food-price-promo,
+.ello-food-store[data-store-theme="sophisticated"] .food-icon-tile {
+  color: #8b7950;
+}
+
+.ello-food-store[data-store-theme="sophisticated"] .food-cart-bar {
+  color: #fffdf8;
+  border-color: #574c34;
+  background: #574c34;
+}
+
+.ello-food-store[data-store-theme="luxury"] {
+  --food-bg: #171513;
+  --food-surface: #211e1a;
+  --food-surface-raised: #29241f;
+  --food-border: #453a2e;
+  --food-copy: #f7f0e2;
+  --food-muted: #b7ac99;
+  --food-accent: #c8a76b;
+  background: var(--food-bg);
+  color: var(--food-copy);
+}
+
+.ello-food-store[data-store-theme="luxury"] .food-store-header,
+.ello-food-store[data-store-theme="luxury"] .food-menu-search,
+.ello-food-store[data-store-theme="luxury"] .food-category-nav {
+  background: rgb(23 21 19 / 96%);
+}
+
+.ello-food-store[data-store-theme="luxury"] .food-header-action,
+.ello-food-store[data-store-theme="luxury"] .food-search-input,
+.ello-food-store[data-store-theme="luxury"] .food-store-overview,
+.ello-food-store[data-store-theme="luxury"] .food-detail-summary,
+.ello-food-store[data-store-theme="luxury"] .food-detail-panel,
+.ello-food-store[data-store-theme="luxury"] .food-feature-card,
+.ello-food-store[data-store-theme="luxury"] .food-product-card {
+  color: var(--food-copy);
+  border-color: var(--food-border);
+  background: var(--food-surface);
+}
+
+.ello-food-store[data-store-theme="luxury"] .food-menu-title,
+.ello-food-store[data-store-theme="luxury"] .food-product-name {
+  color: var(--food-copy);
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -0.02em;
+}
+
+.ello-food-store[data-store-theme="luxury"] .food-product-description,
+.ello-food-store[data-store-theme="luxury"] .food-muted,
+.ello-food-store[data-store-theme="luxury"] .food-store-meta {
+  color: var(--food-muted);
+}
+
+.ello-food-store[data-store-theme="luxury"] .food-product-footer,
+.ello-food-store[data-store-theme="luxury"] .food-feature-footer,
+.ello-food-store[data-store-theme="luxury"] .food-category-heading {
+  border-color: var(--food-border);
+}
+
+.ello-food-store[data-store-theme="luxury"] .food-category-chip.is-active {
+  color: #211e1a;
+  border-color: var(--food-accent);
+  background: var(--food-accent);
+}
+
+.ello-food-store[data-store-theme="luxury"] .food-category-chip,
+.ello-food-store[data-store-theme="luxury"] .food-mode,
+.ello-food-store[data-store-theme="luxury"] .food-store-mode {
+  color: var(--food-copy);
+  border-color: var(--food-border);
+  background: var(--food-surface-raised);
+}
+
+.ello-food-store[data-store-theme="luxury"] .food-add-button,
+.ello-food-store[data-store-theme="luxury"] .food-promo-cta {
+  color: #211e1a;
+  background: var(--food-accent);
+}
+
+.ello-food-store[data-store-theme="luxury"] .food-cart-bar {
+  color: #211e1a;
+  border-color: #d2b778;
+  background: #c8a76b;
+}
+
+.ello-food-store[data-store-theme="luxury"] .food-price-promo,
+.ello-food-store[data-store-theme="luxury"] .food-icon-tile {
+  color: var(--food-accent);
+}
+
+.ello-food-store[data-store-theme="luxury"] .food-cart-bar .text-white\/70,
+.ello-food-store[data-store-theme="luxury"] .food-cart-bar .text-white\/60 {
+  color: rgb(33 30 26 / 76%);
+}
+
+.ello-food-store[data-store-theme="artisanal"] {
+  --food-bg: #efe6d6;
+  --food-surface: #fff8ec;
+  --food-surface-raised: #f7eddd;
+  --food-border: #ddcdb6;
+  --food-copy: #302d24;
+  --food-muted: #766d5c;
+  --food-accent: #a64f32;
+  background: var(--food-bg);
+  color: var(--food-copy);
+}
+
+.ello-food-store[data-store-theme="artisanal"] .food-store-header,
+.ello-food-store[data-store-theme="artisanal"] .food-menu-search,
+.ello-food-store[data-store-theme="artisanal"] .food-category-nav {
+  background: rgb(239 230 214 / 96%);
+}
+
+.ello-food-store[data-store-theme="artisanal"] .food-header-action,
+.ello-food-store[data-store-theme="artisanal"] .food-search-input,
+.ello-food-store[data-store-theme="artisanal"] .food-store-overview,
+.ello-food-store[data-store-theme="artisanal"] .food-detail-summary,
+.ello-food-store[data-store-theme="artisanal"] .food-detail-panel,
+.ello-food-store[data-store-theme="artisanal"] .food-feature-card,
+.ello-food-store[data-store-theme="artisanal"] .food-product-card {
+  color: var(--food-copy);
+  border-color: var(--food-border);
+  background: var(--food-surface);
+}
+
+.ello-food-store[data-store-theme="artisanal"] .food-menu-title,
+.ello-food-store[data-store-theme="artisanal"] .food-product-name {
+  color: var(--food-copy);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.ello-food-store[data-store-theme="artisanal"] .food-product-description,
+.ello-food-store[data-store-theme="artisanal"] .food-muted {
+  color: var(--food-muted);
+}
+
+.ello-food-store[data-store-theme="artisanal"] .food-product-footer,
+.ello-food-store[data-store-theme="artisanal"] .food-feature-footer {
+  border-color: var(--food-border);
+}
+
+.ello-food-store[data-store-theme="artisanal"] .food-category-chip.is-active,
+.ello-food-store[data-store-theme="artisanal"] .food-add-button,
+.ello-food-store[data-store-theme="artisanal"] .food-promo-cta {
+  color: #fff8ec;
+  border-color: #743923;
+  background: #743923;
+}
+
+.ello-food-store[data-store-theme="artisanal"] .food-price-promo,
+.ello-food-store[data-store-theme="artisanal"] .food-icon-tile {
+  color: var(--food-accent);
+}
+
+.ello-food-store[data-store-theme="artisanal"] .food-cart-bar {
+  color: #fff8ec;
+  border-color: #743923;
+  background: #743923;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-theme-option {
+    transition: none;
+  }
+}
+
+.studio-theme-option {
+  border-color: #e6e6de;
+  background: #fff;
+}
+
+.studio-theme-option:hover {
+  border-color: #b9c29f;
+  background: #fafbf7;
+}
+
+.studio-theme-option.is-selected {
+  border-color: #687944;
+  box-shadow: 0 0 0 2px rgb(104 121 68 / 15%);
+}
+
+.studio-theme-swatch {
+  height: 4.2rem;
+  padding: 0.45rem;
+  background: var(--theme-bg);
+}
+
+.studio-theme-swatch-top {
+  display: block;
+  height: 0.55rem;
+  border-radius: 0.25rem;
+  background: var(--theme-accent);
+  opacity: 0.92;
+}
+
+.studio-theme-swatch-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+}
+
+.studio-theme-swatch-content i {
+  display: block;
+  height: 2.05rem;
+  border: 1px solid rgb(0 0 0 / 5%);
+  border-radius: 0.25rem;
+  background: var(--theme-surface);
+}
+
+@media (max-width: 639px) {
+  .studio-theme-picker {
+    margin-inline: 0.75rem;
+    padding: 0.9rem;
+    border-radius: 1rem;
+  }
+
+  .studio-theme-option {
+    min-height: 7.5rem;
+    padding: 0.55rem;
+  }
+
+  .studio-theme-swatch {
+    height: 3.6rem;
+  }
+
+  .studio-theme-swatch-content i {
+    height: 1.65rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .service-catalog-section .food-product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ello-food-store .food-product-carousel-card {
+    flex-basis: min(32%, 25rem);
+  }
+}
+
+/* Studio page editor: full-width live page on phones, device frame on larger screens. */
+@media (max-width: 639px) {
+  .studio-page-editor {
+    width: calc(100% + 2rem);
+    margin-inline: -1rem;
+  }
+
+  .studio-page-editor-toolbar {
+    align-items: center;
+    margin-inline: 0.75rem;
+    border-radius: 1rem;
+    padding: 0.7rem 0.8rem;
+  }
+
+  .studio-page-editor-toolbar p {
+    margin-top: 0.2rem;
+    line-height: 1rem;
+  }
+
+  .studio-page-editor-toolbar button {
+    min-height: 2.75rem;
+    flex: 0 0 auto;
+    padding-inline: 0.8rem;
+    font-size: 0.75rem;
+  }
+
+  .studio-page-preview-shell {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+    box-shadow: none;
+  }
+
+  .studio-page-preview-frame {
+    width: 100%;
+    min-height: max(560px, calc(100dvh - 13rem));
+    height: max(560px, calc(100dvh - 13rem));
+    border-radius: 0;
+  }
+
+  .studio-page-editor-hint {
+    margin-inline: 1rem;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+}
+
+@media (min-width: 640px) {
+  .studio-page-editor-toolbar {
+    max-width: 390px;
+    margin-inline: auto;
+  }
+
+  .studio-page-preview-shell {
+    line-height: 0;
+  }
+}
+
+@media (max-width: 639px) {
+  .studio-settings-page [role="dialog"],
+  .studio-page-editor + [role="dialog"] {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

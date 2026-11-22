@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowDown,
   ArrowUp,
@@ -40,6 +40,7 @@ import {
 import { getBusinessCopy, supportsAppointments } from "@/lib/localhub-business";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ElloAtomLoader } from "@/components/ello/atom-loader";
+import { getPlanLimit } from "@/lib/plan-access";
 
 export const Route = createFileRoute("/studio/catalog")({ component: CatalogPage });
 
@@ -136,7 +137,9 @@ function DecimalInput({
 }
 
 function CatalogPage() {
-  const { business, services, saveService, removeService, saveBusiness, user } = useLocalHub();
+  const { business, services, saveService, removeService, saveBusiness, user, planSubscription, ready } = useLocalHub();
+  const catalogLimit = ready ? getPlanLimit(planSubscription, "catalogItems") : null;
+  const catalogLimitReached = catalogLimit !== null && services.length >= catalogLimit;
   const copy = getBusinessCopy(business?.category);
   const hasAppointments = supportsAppointments(business?.category);
   const desktopGridColumns = hasAppointments
@@ -354,7 +357,9 @@ function CatalogPage() {
                 setEditing(null);
                 setCreating(true);
               }}
-              className={primaryButtonClass}
+              disabled={!ready || catalogLimitReached}
+              className={`${primaryButtonClass} disabled:cursor-not-allowed disabled:opacity-50`}
+              title={!ready ? "Aguarde a confirmação do plano." : catalogLimitReached ? "O limite de itens do seu plano foi atingido." : undefined}
             >
               <Plus size={16} />
               {copy.addOffer}
@@ -362,6 +367,13 @@ function CatalogPage() {
           </div>
         }
       />
+
+      {catalogLimit !== null && (
+        <div className={`mb-5 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-3 text-xs ${catalogLimitReached ? "border-amber-300 bg-amber-50 text-amber-900" : "border-slate-200 bg-white text-slate-600"}`}>
+          <span>Plano Grátis: {services.length} de {catalogLimit} produtos ou serviços cadastrados.</span>
+          {catalogLimitReached && <Link to="/planos" className="font-bold underline">Conhecer planos pagos</Link>}
+        </div>
+      )}
 
       {showCategoryManager && business?.category === "alimentacao" && (
         <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

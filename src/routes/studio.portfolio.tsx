@@ -21,11 +21,12 @@ import { PageTitle, SurfaceCard, primaryButtonClass, secondaryButtonClass, money
 import { useLocalHub, type PortfolioItem, type Service } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { BeforeAfterSlider } from "@/components/localhub/portfolio-view";
+import { getPlanLimit, hasPlanFeature } from "@/lib/plan-access";
 
 export const Route = createFileRoute("/studio/portfolio")({ component: StudioPortfolioPage });
 
 function StudioPortfolioPage() {
-  const { business, services, user, saveBusiness } = useLocalHub();
+  const { business, services, user, saveBusiness, planSubscription, ready } = useLocalHub();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
   const [saving, setSaving] = useState(false);
@@ -45,6 +46,10 @@ function StudioPortfolioPage() {
 
   // Lista de itens do portfólio
   const items: PortfolioItem[] = business?.portfolioItems ?? business?.onboardingDetails?.portfolioItems ?? [];
+  const videoLimit = ready ? getPlanLimit(planSubscription, "portfolioVideos") : null;
+  const videosCount = items.filter((item) => item.mediaType === "video").length;
+  const canAddVideo = ready && hasPlanFeature(planSubscription, "video_portfolio") &&
+    (videoLimit === null || videosCount < videoLimit);
 
   const openNewModal = () => {
     setEditingItem(null);
@@ -83,6 +88,25 @@ function StudioPortfolioPage() {
   ) => {
     const file = e.target.files?.[0];
     if (!file || !business?.id || !user?.id) return;
+
+    if (targetField === "mediaUrl" && mediaType === "video") {
+      if (!ready) {
+        toast.info("Aguarde a confirmação do seu plano antes de enviar vídeos.");
+        e.target.value = "";
+        return;
+      }
+      const keepsExistingVideo = editingItem?.mediaType === "video";
+      if (!hasPlanFeature(planSubscription, "video_portfolio") && !keepsExistingVideo) {
+        toast.error("Vídeos no portfólio estão disponíveis a partir do plano Pro.");
+        e.target.value = "";
+        return;
+      }
+      if (videoLimit !== null && videosCount >= videoLimit && !keepsExistingVideo) {
+        toast.error(`O limite de ${videoLimit} vídeos do plano foi atingido.`);
+        e.target.value = "";
+        return;
+      }
+    }
 
     setUploading(true);
     try {
@@ -129,6 +153,21 @@ function StudioPortfolioPage() {
     if (mediaType !== "before_after" && !mediaUrl) {
       toast.error("Informe o link ou envie o arquivo da mídia.");
       return;
+    }
+    if (mediaType === "video") {
+      if (!ready) {
+        toast.info("Aguarde a confirmação do seu plano antes de salvar vídeos.");
+        return;
+      }
+      const keepsExistingVideo = editingItem?.mediaType === "video";
+      if (ready && !hasPlanFeature(planSubscription, "video_portfolio") && !keepsExistingVideo) {
+        toast.error("Vídeos no portfólio estão disponíveis a partir do plano Pro.");
+        return;
+      }
+      if (videoLimit !== null && videosCount >= videoLimit && !keepsExistingVideo) {
+        toast.error(`O limite de ${videoLimit} vídeos do plano foi atingido.`);
+        return;
+      }
     }
 
     setSaving(true);
@@ -194,7 +233,6 @@ function StudioPortfolioPage() {
 
   // Estatísticas do Portfólio
   const photosCount = items.filter((i) => i.mediaType === "image").length;
-  const videosCount = items.filter((i) => i.mediaType === "video").length;
   const beforeAfterCount = items.filter((i) => i.mediaType === "before_after").length;
   const linkedServicesCount = items.filter((i) => Boolean(i.serviceId)).length;
 
@@ -429,14 +467,30 @@ function StudioPortfolioPage() {
                     <button
                       key={tab.id}
                       type="button"
-                      onClick={() => setMediaType(tab.id as typeof mediaType)}
+                        onClick={() => {
+                          if (tab.id === "video" && ready && !hasPlanFeature(planSubscription, "video_portfolio") && editingItem?.mediaType !== "video") {
+                            toast.info("Vídeos no portfólio estão disponíveis a partir do plano Pro.");
+                            return;
+                          }
+                          if (tab.id === "video" && !ready) {
+                            toast.info("Aguarde a confirmação do seu plano.");
+                            return;
+                          }
+                          if (tab.id === "video" && !canAddVideo && editingItem?.mediaType !== "video") {
+                            toast.info("Você atingiu o limite de vídeos do seu plano.");
+                            return;
+                          }
+                          setMediaType(tab.id as typeof mediaType);
+                        }}
                       className={`flex flex-col text-left p-3 rounded-xl border transition ${
                         mediaType === tab.id
                           ? "border-[#768452] bg-[#edf0e5] font-black text-[#171914]"
                           : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                       }`}
                     >
-                      <span className="text-xs font-bold">{tab.label}</span>
+                      <span className="text-xs font-bold">
+                        {tab.label}{tab.id === "video" && ready && !hasPlanFeature(planSubscription, "video_portfolio") ? " · 🔒 Pro" : ""}
+                      </span>
                       <span className="text-[10px] text-slate-500 mt-0.5">{tab.desc}</span>
                     </button>
                   ))}

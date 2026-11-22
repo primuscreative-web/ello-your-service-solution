@@ -7,6 +7,7 @@ import {
   getClientIp,
   createRateLimitResponse,
 } from "@/lib/security.server";
+import { businessHasPlanFeature } from "@/lib/plan-access.server";
 
 function noStore(response: Response): Response {
   response.headers.set("Cache-Control", "private, no-store, max-age=0");
@@ -41,11 +42,27 @@ export const Route = createFileRoute("/api/whatsapp/session")({
         }
         const { data: business } = await supabase
           .from("localhub_businesses")
-          .select("id")
+          .select("id,whatsapp_instance_id")
           .eq("owner_id", auth.user.id)
           .maybeSingle();
         if (!business) {
           return noStoreJson({ error: "Negócio não encontrado para esta conta." }, { status: 403 });
+        }
+        try {
+          if (!(await businessHasPlanFeature(supabase, business.id, "whatsapp_automation"))) {
+            return noStoreJson({ error: "A integração WhatsApp está disponível no plano Business." }, { status: 403 });
+          }
+        } catch {
+          return noStoreJson({ error: "Não foi possível verificar o plano." }, { status: 503 });
+        }
+        if (!business.whatsapp_instance_id) {
+          return noStoreJson({
+            configured: false,
+            provider: "evolution",
+            state: "not_configured",
+            qrcode: null,
+            error: "A sessão WhatsApp exclusiva deste negócio ainda não foi provisionada.",
+          }, { status: 503 });
         }
 
         // 2. Leitura de estado e QR Code da instância
@@ -59,9 +76,18 @@ export const Route = createFileRoute("/api/whatsapp/session")({
               qrcode: null,
             });
           }
+          if (business.whatsapp_instance_id === (config.instanceId || "ello-principal")) {
+            return noStoreJson({
+              configured: false,
+              provider: "evolution",
+              state: "not_configured",
+              qrcode: null,
+              error: "Esta instância está compartilhada e não pode ser associada ao negócio.",
+            }, { status: 503 });
+          }
 
           const baseUrl = config.apiUrl.replace(/\/$/, "");
-          const instance = config.instanceId || "ello-principal";
+          const instance = business.whatsapp_instance_id;
 
           // 3. Checa estado da conexão na Evolution API
           const stateRes = await fetch(`${baseUrl}/instance/connectionState/${instance}`, {
@@ -148,11 +174,21 @@ export const Route = createFileRoute("/api/whatsapp/session")({
         }
         const { data: business } = await supabase
           .from("localhub_businesses")
-          .select("id")
+          .select("id,whatsapp_instance_id")
           .eq("owner_id", auth.user.id)
           .maybeSingle();
         if (!business) {
           return noStoreJson({ error: "Negócio não encontrado para esta conta." }, { status: 403 });
+        }
+        try {
+          if (!(await businessHasPlanFeature(supabase, business.id, "whatsapp_automation"))) {
+            return noStoreJson({ error: "A integração WhatsApp está disponível no plano Business." }, { status: 403 });
+          }
+        } catch {
+          return noStoreJson({ error: "Não foi possível verificar o plano." }, { status: 503 });
+        }
+        if (!business.whatsapp_instance_id) {
+          return noStoreJson({ error: "A sessão WhatsApp exclusiva deste negócio ainda não foi provisionada." }, { status: 503 });
         }
 
         try {
@@ -160,8 +196,11 @@ export const Route = createFileRoute("/api/whatsapp/session")({
           if (config.provider !== "evolution" || !config.apiUrl || !config.apiToken) {
             return noStoreJson({ error: "Integração WhatsApp não configurada." }, { status: 503 });
           }
+          if (business.whatsapp_instance_id === (config.instanceId || "ello-principal")) {
+            return noStoreJson({ error: "Esta instância está compartilhada e não pode ser associada ao negócio." }, { status: 503 });
+          }
           const baseUrl = config.apiUrl.replace(/\/$/, "");
-          const instance = config.instanceId || "ello-principal";
+          const instance = business.whatsapp_instance_id;
           const body = (await request.json().catch(() => ({}))) as { action?: string };
 
           if (body.action === "disconnect") {

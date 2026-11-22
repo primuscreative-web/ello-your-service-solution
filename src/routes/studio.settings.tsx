@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowUpRight,
@@ -43,6 +43,8 @@ import {
 } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { formatSetupChoice, getBusinessCopy } from "@/lib/localhub-business";
+import { getPlanLimit, hasPlanFeature } from "@/lib/plan-access";
+import { getStorefrontThemes, type StorefrontThemeId } from "@/lib/storefront-themes";
 import {
   LuckyWheel,
   type LuckyWheelSettings,
@@ -70,6 +72,7 @@ function SettingsPage() {
     services,
     user,
     saveBusiness,
+    savePublicTheme,
     saveService,
     removeService,
     deliveryAreas,
@@ -77,6 +80,8 @@ function SettingsPage() {
     removeDeliveryArea,
     staff,
     saveStaff,
+    planSubscription,
+    ready,
   } = useLocalHub();
   const [form, setForm] = useState({ ...business! });
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -117,6 +122,43 @@ function SettingsPage() {
   const [editTarget, setEditTarget] = useState<{ section: string; serviceId?: string } | null>(null);
   const [serviceDraft, setServiceDraft] = useState<(Omit<Service, "id"> & { id?: string }) | null>(null);
   const [videoUrl, setVideoUrl] = useState("");
+  const [themeSaving, setThemeSaving] = useState(false);
+  const [themeMessage, setThemeMessage] = useState("");
+  const pageVideos = (form.onboardingDetails?.portfolioItems ?? []).filter((item) => item.mediaType === "video").length;
+  const pageVideoLimit = ready ? getPlanLimit(planSubscription, "portfolioVideos") : null;
+  const canAddPageVideo = ready && hasPlanFeature(planSubscription, "video_portfolio") &&
+    (pageVideoLimit === null || pageVideos < pageVideoLimit);
+  const pageThemes = getStorefrontThemes(form.category);
+  const selectedPublicTheme = form.publicTheme ?? "standard";
+  const themeSubject = form.category === "alimentacao"
+    ? "cardápio"
+    : form.category === "beleza"
+      ? "página de beleza"
+      : form.category === "pet"
+        ? "página pet"
+      : form.category === "saude"
+        ? "página de saúde"
+      : "página pública";
+  const themeCategoryLabel = form.category === "alimentacao"
+    ? "alimentação"
+    : form.category === "beleza"
+      ? "beleza"
+      : form.category === "saude"
+        ? "saúde e bem-estar"
+      : "cuidado pet";
+
+  async function persistPublicTheme() {
+    setThemeSaving(true);
+    setThemeMessage("");
+    try {
+      await savePublicTheme(selectedPublicTheme);
+      setThemeMessage("Tema salvo e aplicado à página pública.");
+    } catch (caught) {
+      setThemeMessage(caught instanceof Error ? caught.message : "Não foi possível salvar o tema.");
+    } finally {
+      setThemeSaving(false);
+    }
+  }
 
   async function handleCepSearch(val: string) {
     const clean = val.replace(/\D/g, "");
@@ -517,25 +559,84 @@ function SettingsPage() {
 
   async function addPageVideo() {
     if (!videoUrl.trim()) return;
+    if (!ready) {
+      setError("Aguarde a confirmação do seu plano para adicionar vídeos.");
+      return;
+    }
+    if (!hasPlanFeature(planSubscription, "video_portfolio")) {
+      setError("Vídeos no portfólio estão disponíveis a partir do plano Pro.");
+      return;
+    }
+    if (ready && pageVideoLimit !== null && pageVideos >= pageVideoLimit) {
+      setError(`O limite de ${pageVideoLimit} vídeos do plano foi atingido.`);
+      return;
+    }
     const portfolioItems = [...(form.onboardingDetails?.portfolioItems ?? []), { id: crypto.randomUUID(), title: "Vídeo", mediaType: "video" as const, mediaUrl: videoUrl.trim(), createdAt: new Date().toISOString() }];
     const onboardingDetails = { ...(form.onboardingDetails ?? { specialties: [], serviceModes: [] }), portfolioItems };
     const next = { ...form, onboardingDetails, portfolioItems };
-    setForm(next);
-    try { await saveBusiness(next); setVideoUrl(""); } catch (caught) { setError(caught instanceof Error ? caught.message : "Não foi possível salvar o vídeo."); }
+    try { await saveBusiness(next); setForm(next); setVideoUrl(""); setError(""); } catch (caught) { setError(caught instanceof Error ? caught.message : "Não foi possível salvar o vídeo."); }
   }
 
   return (
     <>
       <PageTitle eyebrow="Minha página" title="Editar página" description="Veja sua loja como ela aparece no celular e edite cada parte diretamente na página." action={<a href={`/loja/${form.slug}`} target="_blank" rel="noreferrer" className={secondaryButtonClass}>Abrir página <ExternalLink size={15} /></a>} />
-      <div className="mx-auto w-[406px] max-w-full">
-        <div className="mb-3 flex items-center justify-between px-2"><div><h2 className="text-sm font-bold">Sua página no celular</h2><p className="text-xs text-slate-500">Demonstração ao vivo da página pública</p></div><button type="button" onClick={() => { setEditingMode((value) => !value); setEditTarget(null); setTimeout(sendPreviewUpdate, 0); }} className={editingMode ? primaryButtonClass : secondaryButtonClass}><Pencil size={15} /> {editingMode ? "Concluir edição" : "Editar página"}</button></div>
-        <div className="overflow-hidden rounded-[34px] border-[8px] border-[#22231f] bg-white shadow-xl"><iframe ref={previewFrameRef} title="Página pública no celular" src={`/loja/${form.slug}?studioPreview=1`} onLoad={sendPreviewUpdate} className="block h-[min(78vh,850px)] min-h-[620px] w-[390px] max-w-full bg-white" /></div>
-        {editingMode && <p className="mt-3 text-center text-xs text-[#586341]">Toque no lápis que aparece sobre a parte que deseja editar.</p>}
+      <div className="studio-page-editor mx-auto w-full max-w-[1180px]">
+        {pageThemes.length > 0 && (
+          <section className="studio-theme-picker mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:p-5" aria-labelledby="store-theme-title">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#778253]">Aparência da página</p>
+                <h2 id="store-theme-title" className="mt-1 text-base font-bold text-[#20221c]">Escolha o tema do seu {themeSubject}</h2>
+                <p className="mt-1 text-xs leading-5 text-slate-500">A prévia muda na hora. Salve para aplicar na página pública.</p>
+              </div>
+              <button type="button" onClick={() => void persistPublicTheme()} disabled={themeSaving || selectedPublicTheme === (business?.publicTheme ?? "standard")} className={`${primaryButtonClass} min-h-11 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto`}>
+                {themeSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                {themeSaving ? "Salvando tema" : "Salvar tema"}
+              </button>
+            </div>
+            <fieldset className="mt-4">
+              <legend className="sr-only">Temas disponíveis para negócios de {themeCategoryLabel}</legend>
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+                {pageThemes.map((theme) => {
+                  const selectedTheme = selectedPublicTheme === theme.id;
+                  return (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      aria-pressed={selectedTheme}
+                      onClick={() => {
+                        setForm((current) => ({ ...current, publicTheme: theme.id as StorefrontThemeId }));
+                        setThemeMessage("");
+                      }}
+                      className={`studio-theme-option min-w-0 rounded-xl border p-2.5 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#687944] sm:p-3 ${selectedTheme ? "is-selected" : ""}`}
+                    >
+                      <span className="studio-theme-swatch block overflow-hidden rounded-lg border border-black/5" style={{ "--theme-bg": theme.palette[0], "--theme-surface": theme.palette[1], "--theme-accent": theme.palette[2] } as CSSProperties} aria-hidden="true">
+                        <span className="studio-theme-swatch-top" />
+                        <span className="studio-theme-swatch-content"><i /><i /><i /></span>
+                      </span>
+                      <span className="mt-2 block text-xs font-bold text-[#20221c] sm:text-sm">{theme.name}</span>
+                      <span className="mt-0.5 block text-[10px] leading-4 text-slate-500 sm:text-[11px]">{theme.description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+            {themeMessage && <p role="status" className={`mt-3 text-xs ${themeMessage.includes("salvo") ? "text-emerald-700" : "text-amber-800"}`}>{themeMessage}</p>}
+          </section>
+        )}
+        <div className="studio-page-editor-toolbar mb-3 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs sm:px-5">
+          <div className="min-w-0"><h2 className="text-sm font-bold">Sua página no celular</h2><p className="text-xs text-slate-500">Prévia ao vivo · toque no lápis para editar</p></div>
+          <button type="button" onClick={() => { setEditingMode((value) => !value); setEditTarget(null); setTimeout(sendPreviewUpdate, 0); }} className={editingMode ? primaryButtonClass : secondaryButtonClass}><Pencil size={15} /> {editingMode ? "Concluir" : "Editar página"}</button>
+        </div>
+        <div className="studio-page-preview-shell overflow-hidden rounded-[28px] border border-slate-200 bg-[#f5f4ef] p-2 shadow-sm sm:mx-auto sm:w-fit sm:rounded-[38px] sm:border-[8px] sm:border-[#22231f] sm:bg-white sm:p-0 sm:shadow-xl">
+          <iframe ref={previewFrameRef} title="Prévia editável da página pública" src={`/loja/${form.slug}?studioPreview=1`} onLoad={sendPreviewUpdate} className="studio-page-preview-frame block h-[calc(100dvh-15rem)] min-h-[480px] w-full rounded-2xl bg-white sm:h-[min(78vh,850px)] sm:min-h-[620px] sm:w-[390px] sm:rounded-none" />
+        </div>
+        {editingMode && <p className="studio-page-editor-hint mt-3 text-center text-xs text-[#586341]">Toque no lápis que aparece sobre a parte que deseja editar.</p>}
         <details className="mt-5 rounded-xl border border-slate-200 bg-white p-4"><summary className="cursor-pointer text-sm font-semibold">Mais configurações</summary><div className="mt-3 flex flex-wrap gap-2"><Link to="/studio/catalog" className={secondaryButtonClass}>Catálogo completo <ArrowUpRight size={14} /></Link><Link to="/studio/whatsapp" className={secondaryButtonClass}>Configurar WhatsApp <ArrowUpRight size={14} /></Link></div></details>
       </div>
       {editTarget && <div className="fixed inset-0 z-[100] flex justify-end bg-slate-950/30" onMouseDown={(event) => { if (event.target === event.currentTarget) setEditTarget(null); }}><section className="flex h-full w-full max-w-xl flex-col bg-white shadow-2xl"><header className="flex items-center justify-between border-b p-5"><div><p className="text-xs font-semibold uppercase tracking-wide text-[#778253]">Editar na página</p><h2 className="text-lg font-bold">{editTarget.section === "profile" ? "Perfil do negócio" : editTarget.section === "media" ? "Fotos e vídeos" : editTarget.section === "hours" ? "Horários" : "Cardápio"}</h2></div><button type="button" onClick={() => setEditTarget(null)} aria-label="Fechar" className="grid size-10 place-items-center rounded-full hover:bg-slate-100"><X size={18} /></button></header><div className="flex-1 space-y-4 overflow-y-auto p-5">
         {editTarget.section === "profile" && <form id="page-profile" onSubmit={(event) => { void submit(event).then(() => setEditTarget(null)); }} className="space-y-4"><Field label="Nome do negócio"><input className={inputClass} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></Field><Field label="Descrição"><textarea className={inputClass} rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></Field><Field label="WhatsApp"><input className={inputClass} value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></Field><Field label="Endereço"><input className={inputClass} value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} /></Field><Field label="Cidade"><input className={inputClass} value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} /></Field><button className={primaryButtonClass}><Save size={15} /> Salvar perfil</button></form>}
-        {editTarget.section === "media" && <div className="space-y-4"><label className="block cursor-pointer rounded-xl border p-3 text-sm font-semibold">{banner ? "Trocar foto de capa" : "Adicionar foto de capa"}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectBanner} className="sr-only" /></label><label className="block cursor-pointer rounded-xl border p-3 text-sm font-semibold">{logo ? "Trocar foto de perfil" : "Adicionar foto de perfil"}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectLogo} className="sr-only" /></label><label className="block cursor-pointer rounded-xl border p-3 text-sm font-semibold">Adicionar fotos à página<input type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={selectGalleryFiles} className="sr-only" /></label><div className="grid grid-cols-3 gap-2">{(form.galleryUrls ?? []).map((url) => <img key={url} src={url} alt="Foto da página" className="aspect-square rounded-lg object-cover" />)}{galleryPreviewUrls.map((url) => <img key={url} src={url} alt="Nova foto" className="aspect-square rounded-lg object-cover" />)}</div><Field label="Link do vídeo"><input className={inputClass} value={videoUrl} onChange={(event) => setVideoUrl(event.target.value)} placeholder="Link público do vídeo" /></Field><button type="button" onClick={() => void addPageVideo()} className={secondaryButtonClass}><Film size={15} /> Adicionar vídeo</button><button type="button" onClick={() => void submit()} className={primaryButtonClass}><Save size={15} /> Salvar fotos e vídeos</button></div>}
+      {editTarget.section === "media" && <div className="space-y-4"><label className="block cursor-pointer rounded-xl border p-3 text-sm font-semibold">{banner ? "Trocar foto de capa" : "Adicionar foto de capa"}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectBanner} className="sr-only" /></label><label className="block cursor-pointer rounded-xl border p-3 text-sm font-semibold">{logo ? "Trocar foto de perfil" : "Adicionar foto de perfil"}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectLogo} className="sr-only" /></label><label className="block cursor-pointer rounded-xl border p-3 text-sm font-semibold">Adicionar fotos à página<input type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={selectGalleryFiles} className="sr-only" /></label><div className="grid grid-cols-3 gap-2">{(form.galleryUrls ?? []).map((url) => <img key={url} src={url} alt="Foto da página" className="aspect-square rounded-lg object-cover" />)}{galleryPreviewUrls.map((url) => <img key={url} src={url} alt="Nova foto" className="aspect-square rounded-lg object-cover" />)}</div><Field label={`Link do vídeo · ${ready ? `${pageVideos}${pageVideoLimit === null ? " sem limite" : `/${pageVideoLimit}`} no plano` : "verificando plano"}`}><input className={inputClass} disabled={!canAddPageVideo} value={videoUrl} onChange={(event) => setVideoUrl(event.target.value)} placeholder="Link público do vídeo" /></Field>{!canAddPageVideo && <p className="text-xs text-slate-600">{!ready ? "Verificando o plano da conta…" : !hasPlanFeature(planSubscription, "video_portfolio") ? <>Vídeos estão disponíveis no Pro. <Link to="/planos" className="font-semibold text-[#586341] underline">Ver planos</Link></> : "Você atingiu o limite de vídeos deste plano."}</p>}<button type="button" disabled={!canAddPageVideo} onClick={() => void addPageVideo()} className={`${secondaryButtonClass} disabled:cursor-not-allowed disabled:opacity-50`}><Film size={15} /> Adicionar vídeo</button><button type="button" onClick={() => void submit()} className={primaryButtonClass}><Save size={15} /> Salvar fotos e vídeos</button></div>}
         {editTarget.section === "hours" && <div className="space-y-3">{weekDays.map(([day,label]) => <div key={day} className="rounded-xl border p-3"><div className="mb-3 flex items-center justify-between"><b className="text-sm">{label}</b><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={openingHours[day]?.closed ?? true} onChange={(event) => setForm({ ...form, openingHours: { ...openingHours, [day]: { ...(openingHours[day] ?? defaultOpeningHours[day]), closed: event.target.checked } } })} /> Fechado</label></div>{!openingHours[day]?.closed && <div className="grid grid-cols-2 gap-3"><Field label="Abre"><input type="time" className={inputClass} value={openingHours[day]?.open ?? "09:00"} onChange={(event) => setForm({ ...form, openingHours: { ...openingHours, [day]: { ...(openingHours[day] ?? defaultOpeningHours[day]), open: event.target.value } } })} /></Field><Field label="Fecha"><input type="time" className={inputClass} value={openingHours[day]?.close ?? "18:00"} onChange={(event) => setForm({ ...form, openingHours: { ...openingHours, [day]: { ...(openingHours[day] ?? defaultOpeningHours[day]), close: event.target.value } } })} /></Field></div>}</div>)}<button type="button" onClick={() => void submit()} className={primaryButtonClass}><Save size={15} /> Salvar horários</button></div>}
         {(editTarget.section === "catalog" || editTarget.section === "service") && <div className="space-y-3"><button type="button" onClick={() => setServiceDraft({ name: "", description: "", duration: 30, price: 0, active: true, serviceModes: ["in_person"] })} className={secondaryButtonClass}><Plus size={15} /> Novo item</button>{serviceDraft && <div className="space-y-3 rounded-xl border bg-slate-50 p-4"><Field label="Nome"><input className={inputClass} value={serviceDraft.name} onChange={(event) => setServiceDraft({ ...serviceDraft, name: event.target.value })} /></Field><Field label="Descrição"><textarea className={inputClass} value={serviceDraft.description} onChange={(event) => setServiceDraft({ ...serviceDraft, description: event.target.value })} /></Field><Field label="Preço"><input type="number" min="0" step="0.01" className={inputClass} value={serviceDraft.price} onChange={(event) => setServiceDraft({ ...serviceDraft, price: Number(event.target.value) })} /></Field><button type="button" onClick={() => void savePageService()} className={primaryButtonClass}><Save size={15} /> Salvar item</button></div>}{services.map((service) => <div key={service.id} className="flex items-center justify-between rounded-xl border p-3 text-sm"><span>{service.name} · {Number(service.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span><span className="flex gap-2"><button type="button" onClick={() => setServiceDraft(service)} className="rounded border px-2 py-1">Editar</button><button type="button" onClick={() => void deletePageService(service)} aria-label={`Excluir ${service.name}`} className="text-red-600"><Trash2 size={15} /></button></span></div>)}</div>}
       </div></section></div>}

@@ -37,6 +37,19 @@ import {
 
 export const Route = createFileRoute("/studio/precificacao")({ component: PricingPage });
 
+type PricingProfile = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  itemLabel: string;
+  itemPlaceholder: string;
+  serviceNoun: string;
+  serviceNounPlural: string;
+  categories: readonly string[];
+  units: readonly { value: string; label: string }[];
+  defaultSupplies: readonly Omit<ProductSupply, "id">[];
+};
+
 const DEFAULT_BEAUTY_SUPPLIES: Omit<ProductSupply, "id">[] = [
   {
     name: "Gel Construtor Pink Hard (30g)",
@@ -99,16 +112,6 @@ const DEFAULT_BEAUTY_SUPPLIES: Omit<ProductSupply, "id">[] = [
     notes: "Uso fracionado por região depilada.",
   },
   {
-    name: "Lâminas de Barbearia (Caixa c/ 100 un)",
-    category: "Barbearia",
-    brand: "Wilkinson / Derby",
-    purchasePrice: 38.0,
-    packageQuantity: 100,
-    unitMeasure: "unidades",
-    costPerUnit: 0.38,
-    notes: "1 meia-lâmina descartável por barboterapia ou acabamento.",
-  },
-  {
     name: "Luvas de Nitrilo Rosa/Preta (Caixa c/ 100 un)",
     category: "Descartáveis & Biossegurança",
     brand: "Unigloves",
@@ -120,16 +123,230 @@ const DEFAULT_BEAUTY_SUPPLIES: Omit<ProductSupply, "id">[] = [
   },
 ];
 
-const SUPPLY_CATEGORIES = [
-  "Todas",
-  "Unhas & Manicure",
-  "Cabelo & Química",
-  "Estética Facial",
-  "Barbearia",
-  "Depilação",
-  "Descartáveis & Biossegurança",
-  "Geral / Outros",
+const DEFAULT_BARBER_SUPPLIES: Omit<ProductSupply, "id">[] = [
+  {
+    name: "Lâminas descartáveis (caixa com 100)",
+    category: "Barba & acabamento",
+    purchasePrice: 38,
+    packageQuantity: 100,
+    unitMeasure: "unidades",
+    costPerUnit: 0.38,
+    notes: "Exemplo de cálculo. Ajuste quantidade e valor conforme sua compra.",
+  },
+  {
+    name: "Gel de barbear (frasco de 500 ml)",
+    category: "Barba & acabamento",
+    purchasePrice: 35,
+    packageQuantity: 50,
+    unitMeasure: "atendimentos",
+    costPerUnit: 0.7,
+    notes: "Rendimento ilustrativo; meça o consumo real por atendimento.",
+  },
+  {
+    name: "Loção pós-barba (frasco de 500 ml)",
+    category: "Barba & acabamento",
+    purchasePrice: 42,
+    packageQuantity: 50,
+    unitMeasure: "atendimentos",
+    costPerUnit: 0.84,
+    notes: "Rendimento ilustrativo; substitua pelo valor pago pelo seu negócio.",
+  },
+  {
+    name: "Papel de pescoço descartável (rolo)",
+    category: "Descartáveis & higiene",
+    purchasePrice: 18,
+    packageQuantity: 100,
+    unitMeasure: "unidades",
+    costPerUnit: 0.18,
+    notes: "Exemplo para estimar o custo por cliente.",
+  },
+];
+
+const DEFAULT_PET_SUPPLIES: Omit<ProductSupply, "id">[] = [
+  {
+    name: "Shampoo de uso pet (frasco de 1 L)",
+    category: "Banho & higiene animal",
+    purchasePrice: 49.9,
+    packageQuantity: 20,
+    unitMeasure: "banhos",
+    costPerUnit: 2.5,
+    notes: "Rendimento apenas ilustrativo. Siga o rótulo e o protocolo do estabelecimento.",
+  },
+  {
+    name: "Condicionador de uso pet (frasco de 1 L)",
+    category: "Banho & higiene animal",
+    purchasePrice: 54.9,
+    packageQuantity: 20,
+    unitMeasure: "banhos",
+    costPerUnit: 2.75,
+    notes: "Rendimento apenas ilustrativo. Use somente quando apropriado à espécie e ao serviço.",
+  },
+  {
+    name: "Algodão para higiene externa (pacote)",
+    category: "Higiene & descartáveis pet",
+    purchasePrice: 12,
+    packageQuantity: 40,
+    unitMeasure: "atendimentos",
+    costPerUnit: 0.3,
+    notes: "Exemplo de consumo. Não representa orientação clínica.",
+  },
+];
+
+const STANDARD_UNITS = [
+  { value: "unidades", label: "unidades" },
+  { value: "serviços", label: "serviços" },
+  { value: "horas", label: "horas" },
 ] as const;
+
+const PRICING_PROFILES: Record<string, PricingProfile> = {
+  beleza: {
+    eyebrow: "Beleza & estética",
+    title: "Custos de produtos e insumos",
+    description: "Organize cosméticos, materiais de unhas, cabelo, estética facial e depilação por custo e rendimento.",
+    itemLabel: "Nome do produto ou insumo",
+    itemPlaceholder: "Ex.: esmalte, máscara capilar ou sérum facial",
+    serviceNoun: "procedimento",
+    serviceNounPlural: "procedimentos",
+    categories: ["Unhas & Manicure", "Cabelo & Química", "Estética Facial", "Depilação", "Descartáveis & Biossegurança", "Geral / Outros"],
+    units: [
+      { value: "aplicações", label: "aplicações" },
+      { value: "ml", label: "ml (mililitros)" },
+      { value: "g", label: "g (gramas)" },
+      { value: "unidades", label: "unidades" },
+      { value: "pares", label: "pares" },
+      { value: "doses", label: "doses" },
+    ],
+    defaultSupplies: DEFAULT_BEAUTY_SUPPLIES,
+  },
+  barbearia: {
+    eyebrow: "Barbearia",
+    title: "Custos de produtos e materiais",
+    description: "Controle lâminas, produtos de barba, acabamento e descartáveis usados nos serviços da barbearia.",
+    itemLabel: "Nome do produto ou material",
+    itemPlaceholder: "Ex.: lâmina, gel de barbear ou papel de pescoço",
+    serviceNoun: "serviço",
+    serviceNounPlural: "serviços",
+    categories: ["Corte & finalização", "Barba & acabamento", "Higiene & descartáveis", "Geral / Outros"],
+    units: [
+      { value: "atendimentos", label: "atendimentos" },
+      { value: "unidades", label: "unidades" },
+      { value: "ml", label: "ml (mililitros)" },
+      { value: "g", label: "g (gramas)" },
+      { value: "pares", label: "pares" },
+    ],
+    defaultSupplies: DEFAULT_BARBER_SUPPLIES,
+  },
+  pet: {
+    eyebrow: "Pet care",
+    title: "Custos de produtos e materiais pet",
+    description: "Registre itens de higiene animal, banho, pelagem e descartáveis. Use produtos adequados à espécie e ao serviço realizado.",
+    itemLabel: "Nome do produto ou material pet",
+    itemPlaceholder: "Ex.: shampoo de uso pet, toalha descartável ou laço",
+    serviceNoun: "atendimento",
+    serviceNounPlural: "atendimentos",
+    categories: ["Banho & higiene animal", "Pelagem & acabamento", "Higiene & descartáveis pet", "Geral / Outros"],
+    units: [
+      { value: "banhos", label: "banhos" },
+      { value: "atendimentos", label: "atendimentos" },
+      { value: "ml", label: "ml (mililitros)" },
+      { value: "g", label: "g (gramas)" },
+      { value: "unidades", label: "unidades" },
+      { value: "pares", label: "pares" },
+    ],
+    defaultSupplies: DEFAULT_PET_SUPPLIES,
+  },
+  saude: {
+    eyebrow: "Saúde & bem-estar",
+    title: "Custos de materiais e insumos",
+    description: "Registre materiais consumidos por consulta ou atendimento. Os exemplos e custos devem seguir a especialidade e as compras reais da clínica.",
+    itemLabel: "Nome do material ou insumo",
+    itemPlaceholder: "Ex.: material de uso profissional consumido no atendimento",
+    serviceNoun: "atendimento",
+    serviceNounPlural: "atendimentos",
+    categories: ["Materiais de atendimento", "EPI & descartáveis", "Equipamentos & manutenção", "Geral / Outros"],
+    units: [...STANDARD_UNITS, { value: "doses", label: "doses" }, { value: "ml", label: "ml (mililitros)" }, { value: "g", label: "g (gramas)" }],
+    defaultSupplies: [],
+  },
+  automotivo: {
+    eyebrow: "Automotivo",
+    title: "Custos de peças, fluidos e materiais",
+    description: "Separe peças, lubrificantes, produtos de limpeza e materiais por serviço ou veículo. Confirme compatibilidade e preço pela ordem de serviço e nota fiscal.",
+    itemLabel: "Nome da peça, fluido ou material",
+    itemPlaceholder: "Ex.: filtro, óleo ou produto de limpeza automotiva",
+    serviceNoun: "serviço",
+    serviceNounPlural: "serviços",
+    categories: ["Lubrificantes & fluidos", "Peças & filtros", "Limpeza automotiva", "EPI & descartáveis", "Ferramentas & manutenção", "Geral / Outros"],
+    units: [
+      { value: "serviços", label: "serviços" }, { value: "unidades", label: "unidades" },
+      { value: "ml", label: "ml (mililitros)" }, { value: "L", label: "L (litros)" },
+      { value: "g", label: "g (gramas)" }, { value: "kg", label: "kg (quilogramas)" },
+      { value: "horas", label: "horas" }, { value: "km", label: "km" },
+    ],
+    defaultSupplies: [],
+  },
+  casa: {
+    eyebrow: "Casa & manutenção",
+    title: "Custos de materiais e ferramentas",
+    description: "Organize materiais por especialidade, como elétrica, hidráulica, pintura e manutenção. Registre o consumo por serviço ou orçamento.",
+    itemLabel: "Nome do material ou ferramenta",
+    itemPlaceholder: "Ex.: cabo, conexão hidráulica, tinta ou abrasivo",
+    serviceNoun: "serviço",
+    serviceNounPlural: "serviços",
+    categories: ["Elétrica", "Hidráulica", "Pintura", "Materiais de manutenção", "Ferramentas & EPI", "Deslocamento", "Geral / Outros"],
+    units: [
+      { value: "serviços", label: "serviços" }, { value: "unidades", label: "unidades" },
+      { value: "m", label: "m (metros)" }, { value: "m²", label: "m² (metros quadrados)" },
+      { value: "L", label: "L (litros)" }, { value: "kg", label: "kg (quilogramas)" },
+      { value: "horas", label: "horas" }, { value: "km", label: "km" },
+    ],
+    defaultSupplies: [],
+  },
+  educacao: {
+    eyebrow: "Educação",
+    title: "Custos de materiais e recursos de aula",
+    description: "Acompanhe materiais pedagógicos, impressos, licenças e outros recursos usados por aula, turma ou aluno.",
+    itemLabel: "Nome do material ou recurso",
+    itemPlaceholder: "Ex.: material didático, impressão ou licença de plataforma",
+    serviceNoun: "aula",
+    serviceNounPlural: "aulas",
+    categories: ["Materiais pedagógicos", "Impressos & papelaria", "Plataformas & licenças", "Equipamentos", "Deslocamento", "Geral / Outros"],
+    units: [
+      { value: "aulas", label: "aulas" }, { value: "alunos", label: "alunos" },
+      { value: "unidades", label: "unidades" }, { value: "páginas", label: "páginas" },
+      { value: "meses", label: "meses" }, { value: "horas", label: "horas" },
+    ],
+    defaultSupplies: [],
+  },
+  "servicos-domesticos": {
+    eyebrow: "Serviços domésticos",
+    title: "Custos de produtos e materiais de limpeza",
+    description: "Calcule o consumo de produtos de limpeza, utensílios e equipamentos por diária ou serviço. Ajuste os valores às compras e ao método de trabalho usados.",
+    itemLabel: "Nome do produto ou material de limpeza",
+    itemPlaceholder: "Ex.: detergente, pano, luva ou saco para resíduos",
+    serviceNoun: "diária",
+    serviceNounPlural: "diárias",
+    categories: ["Produtos de limpeza", "Utensílios & panos", "EPI & descartáveis", "Equipamentos", "Deslocamento", "Geral / Outros"],
+    units: [
+      { value: "diárias", label: "diárias" }, { value: "serviços", label: "serviços" },
+      { value: "ml", label: "ml (mililitros)" }, { value: "L", label: "L (litros)" },
+      { value: "unidades", label: "unidades" }, { value: "pares", label: "pares" },
+      { value: "horas", label: "horas" }, { value: "km", label: "km" },
+    ],
+    defaultSupplies: [],
+  },
+  "outros-servicos": {
+    eyebrow: "Outros serviços",
+    title: "Custos de materiais e ferramentas",
+    description: "Cadastre apenas os materiais e recursos realmente usados nos serviços do seu negócio, sem itens sugeridos de outros nichos.",
+    itemLabel: "Nome do material, ferramenta ou recurso",
+    itemPlaceholder: "Ex.: material consumido em um serviço",
+    serviceNoun: "serviço",
+    serviceNounPlural: "serviços",
+    categories: ["Materiais do serviço", "Ferramentas & equipamentos", "EPI & segurança", "Deslocamento", "Geral / Outros"],
+    units: STANDARD_UNITS,
+    defaultSupplies: [],
+  },
+};
 
 function PricingPage() {
   const {
@@ -144,6 +361,7 @@ function PricingPage() {
   } = useLocalHub();
 
   const isFoodBusiness = business?.category === "alimentacao";
+  const profile = PRICING_PROFILES[business?.category ?? ""] ?? PRICING_PROFILES["outros-servicos"];
 
   if (!ready) {
     return <p className="text-sm text-slate-500">Carregando custos e preços…</p>;
@@ -161,7 +379,9 @@ function PricingPage() {
   }
 
   return (
-    <BeautySuppliesAndPricingManager
+    <SuppliesAndPricingManager
+      key={business?.category ?? "outros-servicos"}
+      profile={profile}
       business={business}
       services={services}
       saveService={saveService}
@@ -174,10 +394,11 @@ function PricingPage() {
 }
 
 // =========================================================================
-// MÓDULO EXCLUSIVO DE BELEZA, ESTÉTICA, BARBEARIA & SERVIÇOS
+// MÓDULO DE INSUMOS COM PERFIL EXCLUSIVO POR NICHO
 // =========================================================================
 
-function BeautySuppliesAndPricingManager({
+function SuppliesAndPricingManager({
+  profile,
   business,
   services,
   saveService,
@@ -186,6 +407,7 @@ function BeautySuppliesAndPricingManager({
   saveServiceSupplyFormula,
   contextError,
 }: {
+  profile: PricingProfile;
   business: any;
   services: Service[];
   saveService: (service: Omit<Service, "id"> & { id?: string }) => Promise<void>;
@@ -204,30 +426,41 @@ function BeautySuppliesAndPricingManager({
   const [showSupplyForm, setShowSupplyForm] = useState(false);
   const [editingSupply, setEditingSupply] = useState<ProductSupply | null>(null);
   const [busy, setBusy] = useState(false);
-  const [targetMargin, setTargetMargin] = useState(80);
+  // A margem depende da operação; não sugerimos uma porcentagem padrão.
+  const [targetMargin, setTargetMargin] = useState(0);
 
   // Lista atual de insumos
   const supplies: ProductSupply[] = business?.onboardingDetails?.supplies ?? [];
+  const profileCategorySet = useMemo(() => new Set(profile.categories), [profile.categories]);
+  const profileSupplies = useMemo(
+    () => supplies.filter((supply) => profileCategorySet.has(supply.category ?? "")),
+    [profileCategorySet, supplies],
+  );
+  const legacySupplies = useMemo(
+    () => supplies.filter((supply) => !profileCategorySet.has(supply.category ?? "")),
+    [profileCategorySet, supplies],
+  );
   const formulas: Record<string, ServiceSupplyUsage[]> =
     business?.onboardingDetails?.serviceSupplyFormulas ?? {};
 
   // Form State para Insumo
   const [formName, setFormName] = useState("");
-  const [formCategory, setFormCategory] = useState("Unhas & Manicure");
+  const [formCategory, setFormCategory] = useState(profile.categories[0]);
   const [formBrand, setFormBrand] = useState("");
   const [formPurchasePrice, setFormPurchasePrice] = useState("");
   const [formPackageQty, setFormPackageQty] = useState("");
-  const [formUnitMeasure, setFormUnitMeasure] = useState("aplicações");
+  const [formUnitMeasure, setFormUnitMeasure] = useState(profile.units[0]?.value ?? "unidades");
   const [formNotes, setFormNotes] = useState("");
 
   const openNewSupplyForm = () => {
     setEditingSupply(null);
+    setCategoryFilter("Todas");
     setFormName("");
-    setFormCategory("Unhas & Manicure");
+    setFormCategory(profile.categories[0]);
     setFormBrand("");
     setFormPurchasePrice("");
     setFormPackageQty("");
-    setFormUnitMeasure("aplicações");
+    setFormUnitMeasure(profile.units[0]?.value ?? "unidades");
     setFormNotes("");
     setShowSupplyForm(true);
   };
@@ -235,7 +468,7 @@ function BeautySuppliesAndPricingManager({
   const openEditSupplyForm = (item: ProductSupply) => {
     setEditingSupply(item);
     setFormName(item.name);
-    setFormCategory(item.category ?? "Unhas & Manicure");
+    setFormCategory(item.category ?? profile.categories[0]);
     setFormBrand(item.brand ?? "");
     setFormPurchasePrice(String(item.purchasePrice));
     setFormPackageQty(String(item.packageQuantity));
@@ -301,7 +534,7 @@ function BeautySuppliesAndPricingManager({
           notes: formNotes.trim() || undefined,
         };
         updatedSupplies = [...supplies, newSupply];
-        toast.success(`Insumo "${formName}" adicionado à sua bancada!`);
+        toast.success(`Item "${formName}" adicionado ao perfil de ${profile.eyebrow}.`);
       }
 
       await saveSupplies(updatedSupplies);
@@ -329,17 +562,18 @@ function BeautySuppliesAndPricingManager({
     }
   };
 
-  // Carregar exemplos prontos de beleza
+  // Carregar exemplos ilustrativos exclusivos deste nicho.
   const handleLoadDefaults = async () => {
+    if (profile.defaultSupplies.length === 0) return;
     setBusy(true);
     try {
-      const generated = DEFAULT_BEAUTY_SUPPLIES.map((item, idx) => ({
+      const generated = profile.defaultSupplies.map((item, idx) => ({
         ...item,
         id: `sup_def_${Date.now()}_${idx}`,
       }));
       const merged = [...supplies, ...generated];
       await saveSupplies(merged);
-      toast.success("8 insumos essenciais de beleza e estética carregados!");
+      toast.success(`Exemplos de ${profile.eyebrow} adicionados. Confira e ajuste os valores.`);
     } catch (err: any) {
       toast.error(err?.message ?? "Erro ao carregar exemplos.");
     } finally {
@@ -348,27 +582,34 @@ function BeautySuppliesAndPricingManager({
   };
 
   // Métricas Globais
-  const totalInvested = supplies.reduce((acc, s) => acc + (s.purchasePrice || 0), 0);
-  const averageProductPrice = supplies.length > 0 ? totalInvested / supplies.length : 0;
+  const totalInvested = profileSupplies.reduce((acc, s) => acc + (s.purchasePrice || 0), 0);
+  const averageProductPrice = profileSupplies.length > 0 ? totalInvested / profileSupplies.length : 0;
   const averageCostPerUnit =
-    supplies.length > 0
-      ? supplies.reduce((acc, s) => acc + (s.costPerUnit || 0), 0) / supplies.length
+    profileSupplies.length > 0
+      ? profileSupplies.reduce((acc, s) => acc + (s.costPerUnit || 0), 0) / profileSupplies.length
       : 0;
 
-  const servicesWithCosts = services.filter((s) => (s.costPrice ?? 0) > 0);
-  const averageServicesMargin =
-    servicesWithCosts.length > 0
-      ? servicesWithCosts.reduce((acc, s) => {
-          const cost = s.costPrice ?? 0;
-          return s.price > 0 ? acc + ((s.price - cost) / s.price) * 100 : acc;
-        }, 0) / servicesWithCosts.length
-      : 0;
+  const formulasWithOutOfProfileItems = services.filter((service) =>
+    (formulas[service.id] ?? []).some(
+      (usage) => !profileSupplies.some((supply) => supply.id === usage.supplyId),
+    ),
+  ).length;
 
   // Filtragem
+  const supplyFilters = [
+    "Todas",
+    ...profile.categories,
+    ...(legacySupplies.length > 0 ? ["Fora do perfil"] : []),
+  ];
   const filteredSupplies = useMemo(() => {
     return supplies.filter((s) => {
+      const isInProfile = profileCategorySet.has(s.category ?? "");
       const matchesCategory =
-        categoryFilter === "Todas" || s.category === categoryFilter;
+        categoryFilter === "Todas"
+          ? isInProfile
+          : categoryFilter === "Fora do perfil"
+            ? !isInProfile
+            : isInProfile && s.category === categoryFilter;
       const matchesSearch =
         searchQuery.trim() === "" ||
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -376,17 +617,17 @@ function BeautySuppliesAndPricingManager({
         (s.category && s.category.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesCategory && matchesSearch;
     });
-  }, [supplies, categoryFilter, searchQuery]);
+  }, [supplies, profileCategorySet, categoryFilter, searchQuery]);
 
   return (
     <div className="space-y-6">
       <PageTitle
-        eyebrow="Beleza, Barbearia & Estética"
-        title="Custos de Produtos & Insumos"
-        description="Cadastre os cosméticos da bancada, acompanhe o rendimento por quantidade e descubra o custo médio por aplicação e a margem de cada procedimento."
+        eyebrow={profile.eyebrow}
+        title={profile.title}
+        description={profile.description}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            {supplies.length === 0 && (
+            {profileSupplies.length === 0 && profile.defaultSupplies.length > 0 && (
               <button
                 type="button"
                 onClick={handleLoadDefaults}
@@ -394,7 +635,7 @@ function BeautySuppliesAndPricingManager({
                 className={secondaryButtonClass}
               >
                 <Sparkles size={15} className="text-[#687348]" />
-                Carregar Insumos Sugeridos
+                Carregar exemplos de {profile.eyebrow}
               </button>
             )}
             <button
@@ -403,7 +644,7 @@ function BeautySuppliesAndPricingManager({
               className={primaryButtonClass}
             >
               <Plus size={16} />
-              Novo Produto / Insumo
+              Novo item de {profile.eyebrow}
             </button>
           </div>
         }
@@ -418,56 +659,80 @@ function BeautySuppliesAndPricingManager({
         </div>
       )}
 
+      {legacySupplies.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            {legacySupplies.length} {legacySupplies.length === 1 ? "item está" : "itens estão"} em categorias de outro perfil. Os dados foram preservados e ficam fora dos totais e das fichas deste nicho.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("supplies");
+              setCategoryFilter("Fora do perfil");
+            }}
+            className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-semibold hover:bg-amber-100"
+          >
+            Revisar e reclassificar
+          </button>
+        </div>
+      )}
+
+      {profile.defaultSupplies.length > 0 && (
+        <p className="text-xs text-slate-500">
+          Os modelos sugeridos usam valores ilustrativos. Confira rendimento, compatibilidade e preço nas suas compras antes de usar os cálculos.
+        </p>
+      )}
+
       {/* CARDS DE RESUMO DE MÉDIAS E CUSTOS */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-[#e5e5dc] bg-white p-5 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
             <Package size={16} className="text-[#778253]" />
-            Total de Insumos
+            Total de itens
           </div>
           <div className="mt-3 text-2xl font-bold tracking-tight text-[#292b25]">
-            {supplies.length}{" "}
-            <span className="text-xs font-normal text-slate-400">produtos</span>
+            {profileSupplies.length}{" "}
+            <span className="text-xs font-normal text-slate-400">itens do nicho</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-500">
-            Itens e descartáveis cadastrados
+            Materiais cadastrados neste perfil
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#e5e5dc] bg-white p-5 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
             <Coins size={16} className="text-[#778253]" />
-            Investimento em Estoque
+            Compras registradas neste perfil
           </div>
           <div className="mt-3 text-2xl font-bold tracking-tight text-[#292b25]">
             {money(totalInvested)}
           </div>
           <p className="mt-1 text-[11px] text-slate-500">
-            Soma de aquisição das embalagens
+            Soma dos valores de compra cadastrados
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#e5e5dc] bg-white p-5 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
             <Calculator size={16} className="text-[#778253]" />
-            Custo Médio por Produto
+            Valor médio por item
           </div>
           <div className="mt-3 text-2xl font-bold tracking-tight text-[#292b25]">
             {money(averageProductPrice)}
           </div>
           <p className="mt-1 text-[11px] text-slate-500">
-            Média de preço por pote/embalagem
+            Média dos itens deste nicho
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#e5e5dc] bg-white p-5 shadow-xs bg-emerald-50/30 border-emerald-200">
           <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800">
             <TrendingUp size={16} className="text-emerald-600" />
-            Custo Médio por Aplicação
+            Custo médio por unidade de uso
           </div>
           <div className="mt-3 text-2xl font-bold tracking-tight text-emerald-900">
             {money(averageCostPerUnit)}
-            <span className="text-xs font-normal text-emerald-700"> / dose</span>
+            <span className="text-xs font-normal text-emerald-700"> / unidade</span>
           </div>
           <p className="mt-1 text-[11px] text-emerald-700">
             Média de custo unitário por uso
@@ -487,7 +752,7 @@ function BeautySuppliesAndPricingManager({
           }`}
         >
           <Package size={16} />
-          Produtos & Insumos de Bancada ({supplies.length})
+          Produtos & insumos ({profileSupplies.length})
         </button>
 
         <button
@@ -500,7 +765,7 @@ function BeautySuppliesAndPricingManager({
           }`}
         >
           <Scissors size={16} />
-          Ficha Técnica dos Procedimentos ({services.length})
+          Ficha técnica dos {profile.serviceNounPlural} ({services.length})
         </button>
 
         <button
@@ -526,7 +791,7 @@ function BeautySuppliesAndPricingManager({
                 <Package size={16} />
               </span>
               <h3 className="font-bold text-[#292b25]">
-                {editingSupply ? "Editar Produto / Insumo" : "Cadastrar Novo Produto de Bancada"}
+                {editingSupply ? "Editar item" : `Cadastrar item — ${profile.eyebrow}`}
               </h3>
             </div>
             <button
@@ -545,13 +810,13 @@ function BeautySuppliesAndPricingManager({
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-slate-700">
-                  Nome do Produto / Cosmético *
+                  {profile.itemLabel} *
                   <input
                     type="text"
                     required
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
-                    placeholder="Ex: Gel Construtor Pink Hard (30g), Máscara Capilar, etc."
+                    placeholder={profile.itemPlaceholder}
                     className={`${inputClass} mt-1`}
                   />
                 </label>
@@ -565,7 +830,12 @@ function BeautySuppliesAndPricingManager({
                     onChange={(e) => setFormCategory(e.target.value)}
                     className={`${inputClass} mt-1`}
                   >
-                    {SUPPLY_CATEGORIES.filter((c) => c !== "Todas").map((cat) => (
+                    {formCategory && !profile.categories.includes(formCategory) && (
+                      <option value={formCategory}>
+                        {formCategory} (fora do perfil atual)
+                      </option>
+                    )}
+                    {profile.categories.map((cat) => (
                       <option key={cat} value={cat}>
                         {cat}
                       </option>
@@ -578,12 +848,12 @@ function BeautySuppliesAndPricingManager({
             <div className="grid gap-4 sm:grid-cols-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700">
-                  Marca / Fabricante (opcional)
+                  Fornecedor, fabricante ou referência (opcional)
                   <input
                     type="text"
                     value={formBrand}
                     onChange={(e) => setFormBrand(e.target.value)}
-                    placeholder="Ex: Vòlia, Wella, Santa Clara"
+                  placeholder="Ex.: fornecedor, fabricante ou marca"
                     className={`${inputClass} mt-1`}
                   />
                 </label>
@@ -620,7 +890,7 @@ function BeautySuppliesAndPricingManager({
                     className={`${inputClass} mt-1`}
                   />
                 </label>
-                <span className="text-[10px] text-slate-400">Total que rende o pote/pacote</span>
+                <span className="text-[10px] text-slate-400">Quantidade total comprada ou rendimento informado</span>
               </div>
 
               <div>
@@ -631,12 +901,12 @@ function BeautySuppliesAndPricingManager({
                     onChange={(e) => setFormUnitMeasure(e.target.value)}
                     className={`${inputClass} mt-1`}
                   >
-                    <option value="aplicações">aplicações (procedimentos)</option>
-                    <option value="ml">ml (mililitros)</option>
-                    <option value="g">g (gramas)</option>
-                    <option value="unidades">unidades (kits/itens)</option>
-                    <option value="pares">pares (luvas/calçados)</option>
-                    <option value="doses">doses</option>
+                    {formUnitMeasure && !profile.units.some((unit) => unit.value === formUnitMeasure) && (
+                      <option value={formUnitMeasure}>{formUnitMeasure} (unidade já cadastrada)</option>
+                    )}
+                    {profile.units.map((unit) => (
+                      <option key={unit.value} value={unit.value}>{unit.label}</option>
+                    ))}
                   </select>
                 </label>
                 <span className="text-[10px] text-slate-400">Forma de consumo</span>
@@ -650,7 +920,7 @@ function BeautySuppliesAndPricingManager({
                   type="text"
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
-                  placeholder="Ex: Rende cerca de 15 manutenções ou alongamentos completos."
+                  placeholder="Ex.: informe o rendimento real observado ou indicado pelo fabricante."
                   className={`${inputClass} mt-1`}
                 />
               </label>
@@ -660,12 +930,12 @@ function BeautySuppliesAndPricingManager({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
               <div>
                 <div className="text-xs font-bold uppercase tracking-wider text-emerald-900">
-                  Custo Médio Calculado por Quantidade / Aplicação
+                  Custo calculado por unidade de uso
                 </div>
                 <div className="mt-1 text-xs text-emerald-800">
                   {currentPackageQty > 0 ? (
                     <>
-                      Cada <strong>1 {formUnitMeasure}</strong> deste produto custa para o seu negócio:
+                      Cada <strong>1 {formUnitMeasure}</strong> deste item custa para o seu negócio:
                     </>
                   ) : (
                     "Informe o preço e a quantidade para calcular a média."
@@ -695,7 +965,7 @@ function BeautySuppliesAndPricingManager({
               </button>
               <button type="submit" disabled={busy} className={primaryButtonClass}>
                 <Check size={16} />
-                {editingSupply ? "Atualizar Insumo" : "Salvar Insumo na Bancada"}
+                {editingSupply ? "Atualizar item" : "Salvar item"}
               </button>
             </div>
           </form>
@@ -710,7 +980,7 @@ function BeautySuppliesAndPricingManager({
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-slate-500">Filtrar por:</span>
               <div className="flex flex-wrap gap-1">
-                {SUPPLY_CATEGORIES.map((cat) => (
+                {supplyFilters.map((cat) => (
                   <button
                     key={cat}
                     type="button"
@@ -745,10 +1015,13 @@ function BeautySuppliesAndPricingManager({
           {filteredSupplies.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
               <Package size={32} className="mx-auto text-slate-400" />
-              <h3 className="mt-3 font-bold text-slate-700">Nenhum produto cadastrado</h3>
+              <h3 className="mt-3 font-bold text-slate-700">
+                {categoryFilter === "Fora do perfil" ? "Nenhum item fora do perfil" : "Nenhum item cadastrado neste nicho"}
+              </h3>
               <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto">
-                Cadastre seus cosméticos, esmaltes, pomadas ou descartáveis para calcular o
-                custo médio por aplicação e compor o preço de cada atendimento.
+                {categoryFilter === "Fora do perfil"
+                  ? "Todos os itens preservados já foram reclassificados ou removidos."
+                  : profile.description}
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-3">
                 <button
@@ -756,16 +1029,18 @@ function BeautySuppliesAndPricingManager({
                   onClick={openNewSupplyForm}
                   className={primaryButtonClass}
                 >
-                  <Plus size={16} /> Cadastrar Primeiro Produto
+                  <Plus size={16} /> Cadastrar primeiro item
                 </button>
-                <button
-                  type="button"
-                  onClick={handleLoadDefaults}
-                  disabled={busy}
-                  className={secondaryButtonClass}
-                >
-                  <Sparkles size={16} /> Carregar 8 Insumos de Exemplo
-                </button>
+                {profile.defaultSupplies.length > 0 && categoryFilter !== "Fora do perfil" && (
+                  <button
+                    type="button"
+                    onClick={handleLoadDefaults}
+                    disabled={busy}
+                    className={secondaryButtonClass}
+                  >
+                    <Sparkles size={16} /> Carregar exemplos de {profile.eyebrow}
+                  </button>
+                )}
               </div>
             </div>
           ) : (
@@ -800,7 +1075,7 @@ function BeautySuppliesAndPricingManager({
                     <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 text-xs">
                       <div>
                         <span className="text-[10px] font-medium text-slate-400 block">
-                          Preço da embalagem
+                          Valor de compra
                         </span>
                         <strong className="text-slate-700 font-semibold">
                           {money(item.purchasePrice)}
@@ -853,21 +1128,26 @@ function BeautySuppliesAndPricingManager({
         </div>
       )}
 
-      {/* CONTEÚDO DA ABA 2: FICHA TÉCNICA POR PROCEDIMENTO */}
+      {/* CONTEÚDO DA ABA 2: FICHA TÉCNICA POR NICHO */}
       {activeTab === "formulas" && (
         <div className="space-y-4">
+          {formulasWithOutOfProfileItems > 0 && (
+            <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            {formulasWithOutOfProfileItems} ficha(s) têm vínculos com itens indisponíveis neste perfil. Reclassifique ou remova esses vínculos antes de salvar novos custos.
+            </div>
+          )}
           <div className="rounded-2xl border border-[#e5e5dc] bg-white p-4 text-xs text-slate-600 flex items-start gap-3">
             <Info size={18} className="text-[#687348] shrink-0 mt-0.5" />
             <p>
-              Vincule os produtos e descartáveis utilizados em cada atendimento do seu catálogo.
-              O sistema soma automaticamente os custos dos insumos, calcula seu <strong>Lucro Bruto</strong> e sua <strong>Margem Real</strong>, e permite salvar o custo oficial no serviço com 1 clique.
+              Vincule apenas materiais deste perfil aos {profile.serviceNounPlural} do catálogo.
+              O sistema estima o custo variável desses materiais, o lucro bruto e a margem bruta. Não inclui automaticamente despesas fixas, impostos ou taxas.
             </p>
           </div>
 
           {services.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
               <Scissors size={32} className="mx-auto text-slate-400" />
-              <h3 className="mt-3 font-bold text-slate-700">Nenhum procedimento no catálogo</h3>
+              <h3 className="mt-3 font-bold text-slate-700">Nenhum {profile.serviceNoun} no catálogo</h3>
               <p className="mt-1 text-xs text-slate-500">
                 Cadastre seus serviços em "O que você oferece" para montar a ficha técnica de insumos.
               </p>
@@ -878,8 +1158,9 @@ function BeautySuppliesAndPricingManager({
                 <ServiceFormulaCard
                   key={service.id}
                   service={service}
-                  allSupplies={supplies}
+                  allSupplies={profileSupplies}
                   savedUsage={formulas[service.id] ?? []}
+                  serviceNoun={profile.serviceNoun}
                   onSaveFormula={async (usages, totalCost) => {
                     await saveServiceSupplyFormula(service.id, usages, totalCost);
                   }}
@@ -898,8 +1179,7 @@ function BeautySuppliesAndPricingManager({
         <SimulatorTab
           targetMargin={targetMargin}
           setTargetMargin={setTargetMargin}
-          services={services}
-          supplies={supplies}
+          profile={profile}
         />
       )}
     </div>
@@ -914,12 +1194,14 @@ function ServiceFormulaCard({
   service,
   allSupplies,
   savedUsage,
+  serviceNoun,
   onSaveFormula,
   onApplyPrice,
 }: {
   service: Service;
   allSupplies: ProductSupply[];
   savedUsage: ServiceSupplyUsage[];
+  serviceNoun: string;
   onSaveFormula: (usages: ServiceSupplyUsage[], totalCost: number) => Promise<void>;
   onApplyPrice: (newPrice: number) => Promise<void>;
 }) {
@@ -932,6 +1214,7 @@ function ServiceFormulaCard({
   const supplyMap = useMemo(() => {
     return new Map(allSupplies.map((s) => [s.id, s]));
   }, [allSupplies]);
+  const unresolvedUsages = usages.filter((usage) => !supplyMap.has(usage.supplyId));
 
   // Adicionar insumo à fórmula
   const handleAddSupply = () => {
@@ -972,15 +1255,20 @@ function ServiceFormulaCard({
   }, [usages, supplyMap]);
 
   const servicePrice = service.price ?? 0;
-  const grossProfit = servicePrice - totalSupplyCost;
-  const grossMargin = servicePrice > 0 ? (grossProfit / servicePrice) * 100 : 0;
+  const grossProfit = unresolvedUsages.length === 0 ? servicePrice - totalSupplyCost : 0;
+  const grossMargin =
+    unresolvedUsages.length === 0 && servicePrice > 0 ? (grossProfit / servicePrice) * 100 : 0;
   const markup = totalSupplyCost > 0 ? servicePrice / totalSupplyCost : 0;
 
   const handleSave = async () => {
+    if (unresolvedUsages.length > 0) {
+      toast.error("Corrija os itens fora do perfil antes de salvar este custo.");
+      return;
+    }
     setSaving(true);
     try {
       await onSaveFormula(usages, Math.round(totalSupplyCost * 100) / 100);
-      toast.success(`Custo do procedimento "${service.name}" atualizado para ${money(totalSupplyCost)}!`);
+      toast.success(`Custo do ${serviceNoun} "${service.name}" atualizado para ${money(totalSupplyCost)}!`);
     } catch (err: any) {
       toast.error(err?.message ?? "Falha ao salvar custo.");
     } finally {
@@ -1009,14 +1297,18 @@ function ServiceFormulaCard({
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={`rounded-full px-3 py-1 text-xs font-bold ${
-              grossMargin >= 70
-                ? "bg-emerald-100 text-emerald-800"
-                : grossMargin >= 50
+              unresolvedUsages.length > 0
                 ? "bg-amber-100 text-amber-800"
-                : "bg-red-100 text-red-800"
+                : grossMargin >= 70
+                  ? "bg-emerald-100 text-emerald-800"
+                  : grossMargin >= 50
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-red-100 text-red-800"
             }`}
           >
-            Margem Bruta: {grossMargin.toFixed(1).replace(".", ",")}%
+            {unresolvedUsages.length > 0
+              ? "Corrija itens fora do perfil"
+              : `Margem bruta estimada: ${grossMargin.toFixed(1).replace(".", ",")}%`}
           </span>
           {markup > 0 && (
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
@@ -1029,7 +1321,7 @@ function ServiceFormulaCard({
       {/* ADICIONAR INSUMOS NA FICHA */}
       <div className="mt-4">
         <span className="text-xs font-bold text-slate-700 block mb-2">
-          Insumos & Produtos consumidos neste atendimento:
+          Insumos e materiais consumidos neste {serviceNoun}:
         </span>
 
         {allSupplies.length > 0 ? (
@@ -1080,7 +1372,14 @@ function ServiceFormulaCard({
           <div className="space-y-1.5 rounded-xl border border-slate-100 bg-[#f9f9f6] p-3 text-xs">
             {usages.map((u) => {
               const sup = supplyMap.get(u.supplyId);
-              if (!sup) return null;
+              if (!sup) {
+                return (
+                  <div key={u.supplyId} className="flex items-center justify-between gap-2 border-b border-amber-200 pb-1.5 last:border-0 last:pb-0 text-amber-900">
+                    <span>Item vinculado fora deste nicho (quantidade: {u.quantity}). Reclassifique-o na aba de insumos ou remova este vínculo.</span>
+                    <button type="button" onClick={() => handleRemoveUsage(u.supplyId)} className="shrink-0 rounded px-2 py-1 font-semibold hover:bg-amber-100" title="Remover vínculo fora do perfil">Remover</button>
+                  </div>
+                );
+              }
               const subtotal = sup.costPerUnit * u.quantity;
               return (
                 <div
@@ -1125,7 +1424,7 @@ function ServiceFormulaCard({
             </strong>
           </div>
           <div>
-            <span className="text-slate-400 block">Lucro Bruto por Cliente:</span>
+            <span className="text-slate-400 block">Lucro bruto estimado por {serviceNoun}:</span>
             <strong
               className={`text-sm font-bold ${
                 grossProfit >= 0 ? "text-emerald-700" : "text-red-600"
@@ -1139,10 +1438,10 @@ function ServiceFormulaCard({
         <button
           type="button"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || unresolvedUsages.length > 0}
           className={primaryButtonClass}
         >
-          <Save size={15} /> Salvar Custo no Procedimento
+          <Save size={15} /> Salvar custo no {serviceNoun}
         </button>
       </div>
     </div>
@@ -1156,17 +1455,15 @@ function ServiceFormulaCard({
 function SimulatorTab({
   targetMargin,
   setTargetMargin,
-  services,
-  supplies,
+  profile,
 }: {
   targetMargin: number;
   setTargetMargin: (val: number) => void;
-  services: Service[];
-  supplies: ProductSupply[];
+  profile: PricingProfile;
 }) {
-  const [simulatedCost, setSimulatedCost] = useState("15");
-  const [simulatedHours, setSimulatedHours] = useState("1");
-  const [hourlyRate, setHourlyRate] = useState("40");
+  const [simulatedCost, setSimulatedCost] = useState("");
+  const [simulatedHours, setSimulatedHours] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
 
   const cost = Number(simulatedCost || 0);
   const hours = Number(simulatedHours || 0);
@@ -1190,7 +1487,7 @@ function SimulatorTab({
           Simulador Inteligente de Preço & Margem de Lucro
         </h3>
         <p className="mt-1 text-xs text-slate-500">
-          Descubra quanto você deve cobrar pelo procedimento considerando o custo dos insumos, o tempo de atendimento e a margem de lucro que deseja colocar no bolso.
+          Estime um preço para cada {profile.serviceNoun}, incluindo os custos e a margem bruta que você definir. Confira também despesas fixas, tributos e taxas, que não entram neste cálculo.
         </p>
       </div>
 
@@ -1204,25 +1501,25 @@ function SimulatorTab({
               value={simulatedCost}
               onChange={(e) => setSimulatedCost(e.target.value)}
               className={`${inputClass} mt-1`}
-              placeholder="Ex: 15.00"
+              placeholder="Informe o custo real"
             />
           </label>
-          <span className="text-[11px] text-slate-400">Cosméticos e descartáveis</span>
+          <span className="text-[11px] text-slate-400">Materiais e custos variáveis deste nicho</span>
         </div>
 
         <div>
           <label className="block text-xs font-semibold text-slate-700">
-            Tempo de Atendimento (horas)
+            Tempo de trabalho (horas)
             <input
               type="number"
               step="0.25"
               value={simulatedHours}
               onChange={(e) => setSimulatedHours(e.target.value)}
               className={`${inputClass} mt-1`}
-              placeholder="Ex: 1 ou 1.5"
+              placeholder="Informe o tempo previsto"
             />
           </label>
-          <span className="text-[11px] text-slate-400">Duração da cadeira/maca</span>
+          <span className="text-[11px] text-slate-400">Duração prevista para este serviço</span>
         </div>
 
         <div>
@@ -1234,7 +1531,7 @@ function SimulatorTab({
               value={hourlyRate}
               onChange={(e) => setHourlyRate(e.target.value)}
               className={`${inputClass} mt-1`}
-              placeholder="Ex: 40.00"
+              placeholder="Informe o valor real"
             />
           </label>
           <span className="text-[11px] text-slate-400">Sua remuneração desejada/hora</span>
@@ -1242,18 +1539,18 @@ function SimulatorTab({
 
         <div>
           <label className="block text-xs font-semibold text-slate-700">
-            Margem de Lucro Desejada (%)
+            Margem bruta desejada (%)
             <input
               type="number"
-              min="10"
-              max="95"
-              value={targetMargin}
+              min="1"
+              max="99"
+              value={targetMargin || ""}
               onChange={(e) => setTargetMargin(Number(e.target.value))}
               className={`${inputClass} mt-1`}
-              placeholder="80"
+              placeholder="Defina sua margem"
             />
           </label>
-          <span className="text-[11px] text-slate-400">Lucro livre do negócio</span>
+          <span className="text-[11px] text-slate-400">Sem percentual pré-definido</span>
         </div>
       </div>
 
@@ -1268,7 +1565,7 @@ function SimulatorTab({
               {money(totalCost)}
             </div>
             <span className="text-[11px] text-slate-500">
-              {money(cost)} insumos + {money(laborCost)} mão de obra
+              {money(cost)} materiais + {money(laborCost)} mão de obra
             </span>
           </div>
 
@@ -1280,19 +1577,19 @@ function SimulatorTab({
               {money(suggestedPrice)}
             </div>
             <span className="text-[11px] text-emerald-800">
-              Garante sua margem de {targetMargin}%
+              {validMargin ? `Margem bruta definida: ${targetMargin}%` : "Informe uma margem para calcular"}
             </span>
           </div>
 
           <div>
             <span className="text-xs font-semibold text-emerald-800 block">
-              Lucro Líquido por Procedimento
+              Lucro bruto estimado por {profile.serviceNoun}
             </span>
             <div className="text-xl font-bold text-emerald-900 mt-1">
               {money(grossProfit)}
             </div>
             <span className="text-[11px] text-emerald-700">
-              Valor que sobra no caixa do salão/clínica
+              Antes de despesas fixas, tributos e taxas
             </span>
           </div>
         </div>
@@ -1316,10 +1613,12 @@ function FoodPricingManager({
   saveServiceCost: (serviceId: string, costPrice: number) => Promise<void>;
   error: string | null;
 }) {
-  const [targetMargin, setTargetMargin] = useState(30);
+  const [targetMargin, setTargetMargin] = useState(0);
   const [pageError, setPageError] = useState("");
 
-  const pricedItems = services.filter((service) => service.active && service.price > 0);
+  const pricedItems = services.filter(
+    (service) => service.active && service.price > 0 && (service.costPrice ?? 0) > 0,
+  );
   const averageMargin = pricedItems.length
     ? (pricedItems.reduce(
         (sum, item) => sum + (item.price - (item.costPrice ?? 0)) / item.price,
@@ -1338,7 +1637,7 @@ function FoodPricingManager({
         action={
           <div className="flex items-center gap-2 rounded-xl border border-[#e5e5dc] bg-white px-3 py-2">
             <label htmlFor="target-margin" className="text-xs font-semibold text-slate-600">
-              Margem desejada
+              Margem bruta desejada
             </label>
             <input
               id="target-margin"
@@ -1347,7 +1646,7 @@ function FoodPricingManager({
               min="1"
               max="99"
               step="1"
-              value={targetMargin}
+              value={targetMargin || ""}
               onChange={(event) => setTargetMargin(Number(event.target.value))}
               className="w-16 rounded-lg border border-[#dedfd6] px-2 py-1.5 text-right text-sm font-semibold outline-none focus:border-[#8a9668]"
             />
@@ -1387,7 +1686,7 @@ function FoodPricingManager({
             <TrendingUp size={15} className="text-[#778253]" /> Margem bruta média
           </div>
           <div className="mt-3 text-2xl font-semibold tracking-tight text-[#292b25]">
-            {averageMargin.toFixed(1).replace(".", ",")}%
+            {pricedItems.length ? `${averageMargin.toFixed(1).replace(".", ",")}%` : "—"}
           </div>
         </div>
       </div>
@@ -1445,15 +1744,18 @@ function FoodPricingItem({
   onApplyPrice: (price: number) => Promise<void>;
   onError: (message: string) => void;
 }) {
-  const [costInput, setCostInput] = useState(String(service.costPrice ?? 0));
+  const [costInput, setCostInput] = useState(
+    service.costPrice == null ? "" : String(service.costPrice),
+  );
   const [busy, setBusy] = useState(false);
   const cost = Number(costInput);
   const validMargin = Number.isFinite(targetMargin) && targetMargin > 0 && targetMargin < 100;
   const validCost = costInput.trim() !== "" && Number.isFinite(cost) && cost >= 0;
   const suggestedPrice =
     validCost && validMargin ? Math.ceil((cost / (1 - targetMargin / 100)) * 100) / 100 : 0;
-  const unitMargin = service.price - (service.costPrice ?? 0);
-  const actualMargin = service.price > 0 ? (unitMargin / service.price) * 100 : 0;
+  const hasRecordedCost = (service.costPrice ?? 0) > 0;
+  const unitMargin = hasRecordedCost ? service.price - (service.costPrice ?? 0) : null;
+  const actualMargin = hasRecordedCost && service.price > 0 ? (unitMargin! / service.price) * 100 : null;
 
   async function run(action: () => Promise<void>) {
     setBusy(true);
@@ -1474,7 +1776,9 @@ function FoodPricingItem({
           <p className="mt-1 text-xs text-slate-500">Preço atual: {money(service.price)}</p>
         </div>
         <span className="rounded-full bg-[#edf0e5] px-3 py-1 text-xs font-semibold text-[#586341]">
-          Margem bruta estimada: {actualMargin.toFixed(1).replace(".", ",")}%
+          {!hasRecordedCost || service.price <= 0
+            ? "Informe o preço e o custo para calcular a margem"
+            : `Margem bruta estimada: ${actualMargin!.toFixed(1).replace(".", ",")}%`}
         </span>
       </div>
 
@@ -1501,14 +1805,14 @@ function FoodPricingItem({
         <div className="rounded-xl bg-[#f7f7f3] p-3">
           <div className="text-xs text-slate-500">Margem unitária atual</div>
           <div
-            className={`mt-2 font-semibold ${unitMargin >= 0 ? "text-[#586341]" : "text-red-600"}`}
+            className={`mt-2 font-semibold ${unitMargin != null && unitMargin >= 0 ? "text-[#586341]" : "text-red-600"}`}
           >
-            {money(unitMargin)}
+            {unitMargin == null ? "—" : money(unitMargin)}
           </div>
         </div>
         <div className="rounded-xl bg-[#edf0e5] p-3">
           <div className="text-xs text-[#667448]">
-            Preço sugerido · {targetMargin || 0}% de margem
+            {validMargin ? `Preço sugerido · ${targetMargin}% de margem` : "Preço sugerido"}
           </div>
           <div className="mt-2 font-semibold text-[#292b25]">
             {validMargin && validCost ? money(suggestedPrice) : "—"}

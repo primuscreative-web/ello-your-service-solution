@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { authenticateRequestUser, getSecurityAdminSupabase } from "@/lib/security.server";
 import { generateWhatsAppTemplateSuggestion } from "@/lib/whatsapp-templates";
+import { businessHasPlanFeature } from "@/lib/plan-access.server";
 
 const schema = z.object({
   kind: z.enum(["orderCustomer", "orderOwner", "appointment"]),
@@ -25,6 +26,13 @@ export const Route = createFileRoute("/api/whatsapp/generate-template")({
           .eq("owner_id", auth.user.id)
           .maybeSingle();
         if (!business) return Response.json({ error: "Negócio não encontrado." }, { status: 404 });
+        try {
+          if (!(await businessHasPlanFeature(supabase, business.id, "whatsapp_automation"))) {
+            return Response.json({ error: "A automação WhatsApp está disponível no plano Business." }, { status: 403 });
+          }
+        } catch {
+          return Response.json({ error: "Não foi possível verificar o plano." }, { status: 503 });
+        }
         const suggestion = generateWhatsAppTemplateSuggestion({
           ...parsed.data,
           businessName: business.name,

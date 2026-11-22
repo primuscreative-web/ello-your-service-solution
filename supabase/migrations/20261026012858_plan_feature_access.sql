@@ -68,7 +68,8 @@ begin
     'localhub_loyalty_ledger', 'localhub_abandoned_carts', 'localhub_campaign_links',
     'localhub_message_outbox'
   ] loop
-    execute format('drop policy if exists %L on public.%I', 'owners manage own ' || table_name, table_name);
+    execute format('drop policy if exists %I on public.%I', 'owners manage own ' || table_name, table_name);
+    execute format('drop policy if exists %I on public.%I', 'paid owners manage own ' || table_name, table_name);
     execute format(
       'create policy %I on public.%I for all to authenticated using (exists (select 1 from public.localhub_businesses business where business.id = business_id and business.owner_id = (select auth.uid()) and private.localhub_has_paid_plan(business_id, ''pro''))) with check (exists (select 1 from public.localhub_businesses business where business.id = business_id and business.owner_id = (select auth.uid()) and private.localhub_has_paid_plan(business_id, ''pro'')))',
       'paid owners manage own ' || table_name,

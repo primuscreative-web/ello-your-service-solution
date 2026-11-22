@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { money } from "@/components/localhub/ui";
 import { useLocalHub, type Service } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { PlanFeatureGate } from "@/components/localhub/plan-feature-gate";
 
 export const Route = createFileRoute("/studio/mesas")({
   component: StudioMesasPage,
@@ -40,31 +41,34 @@ type OrderItemDraft = {
 };
 
 function StudioMesasPage() {
-  const { business, services } = useLocalHub();
-
+  const { business } = useLocalHub();
   if (business && business.category !== "alimentacao") {
     return (
-      <div className="mx-auto max-w-xl text-center py-16 px-4">
-        <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-amber-100 text-amber-800 font-bold mb-4">
+      <div className="mx-auto max-w-xl py-16 px-4 text-center">
+        <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-amber-100 font-bold text-amber-800">
           <Utensils size={32} />
         </div>
         <h2 className="text-xl font-bold text-slate-900">Módulo exclusivo de Gastronomia</h2>
         <p className="mt-2 text-sm text-slate-600">
-          O controle de Mesas e Salão é exclusivo para restaurantes, bares e lanchonetes.
-          Para o segmento <b>{business.category}</b>, utilize a <b>Agenda de Atendimentos</b> ou a <b>Frente de Caixa / PDV</b>.
+          O controle de Mesas e Salão é exclusivo para restaurantes, bares e lanchonetes. Para o segmento <b>{business.category}</b>, utilize a <b>Agenda de Atendimentos</b> ou a <b>Frente de Caixa / PDV</b>.
         </p>
         <div className="mt-6 flex justify-center gap-3">
-          <Link to="/studio" className="rounded-xl bg-[#292b25] px-4 py-2 text-xs font-bold text-white hover:bg-[#3d3f37]">
-            Voltar para o Painel
-          </Link>
-          <Link to="/studio/agenda" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
-            Ir para a Agenda
-          </Link>
+          <Link to="/studio" className="rounded-xl bg-[#292b25] px-4 py-2 text-xs font-bold text-white hover:bg-[#3d3f37]">Voltar para o Painel</Link>
+          <Link to="/studio/agenda" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Ir para a Agenda</Link>
         </div>
       </div>
     );
   }
 
+  return (
+    <PlanFeatureGate minimumPlan="business" feature="Totem e gestão de mesas">
+      <StudioMesasContent />
+    </PlanFeatureGate>
+  );
+}
+
+function StudioMesasContent() {
+  const { business, services } = useLocalHub();
   const [tables, setTables] = useState<TableItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTable, setSelectedTable] = useState<TableItem | null>(null);

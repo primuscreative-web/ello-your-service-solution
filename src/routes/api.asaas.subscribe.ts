@@ -11,10 +11,15 @@ import {
   isAsaasConfigured,
 } from "@/lib/asaas.server";
 import { checkRateLimit, getClientIp, createRateLimitResponse } from "@/lib/security.server";
+import { BR_PLAN_PRICES } from "@/lib/market-pricing";
 
 const subscribeSchema = z.object({
   planId: z.enum(["pro", "business"]),
   billingCycle: z.enum(["monthly", "yearly"]).default("monthly"),
+  countryCode: z
+    .string()
+    .regex(/^[A-Z]{2}$/)
+    .default("BR"),
   customerName: z.string().min(2, "Nome é obrigatório"),
   customerEmail: z.string().email("E-mail inválido"),
   customerPhone: z.string().min(10, "Telefone inválido"),
@@ -22,11 +27,6 @@ const subscribeSchema = z.object({
   customerPostalCode: z.string().min(8, "CEP é obrigatório"),
   customerAddressNumber: z.string().min(1, "Número do endereço é obrigatório"),
 });
-
-const planPrices = {
-  pro: { monthly: 39.9, yearly: 478.8 },
-  business: { monthly: 79.9, yearly: 958.8 },
-} as const;
 
 const dateAfterDays = (days: number) => {
   const date = new Date();
@@ -73,6 +73,13 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
           const message =
             error instanceof z.ZodError ? error.errors[0]?.message : "Dados inválidos.";
           return privateNoStoreJson({ error: message }, { status: 400 });
+        }
+
+        if (input.countryCode !== "BR") {
+          return privateNoStoreJson(
+            { error: "A assinatura ainda não está disponível neste país." },
+            { status: 403 },
+          );
         }
 
         const cleanCpfCnpj = input.customerCpfCnpj.replace(/\D/g, "");
@@ -217,13 +224,67 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
           p_plan: input.planId,
           p_billing_cycle: input.billingCycle,
         });
-        if (reservation.error || !reservation.data?.[0]?.acquired) {
+        if (reservation.error) {
+          console.error("Falha ao validar a configuração de preço do mercado.");
+          return privateNoStoreJson(
+            { error: "Não foi possível confirmar o preço deste plano. Tente novamente." },
+            { status: 503 },
+          );
+        }
+        if (!reservation.data?.[0]?.acquired) {
           return privateNoStoreJson(
             { error: "Já existe uma troca de plano em andamento para este negócio." },
             { status: 409 },
           );
         }
         previousSubscriptionId = reservation.data[0].prior_subscription_id;
+        const [{ data: lockedSubscription }, { data: lockedPrice }] = await Promise.all([
+          supabase
+            .from("localhub_plan_subscriptions")
+            .select("pending_market_price_id")
+            .eq("business_id", business.id)
+            .maybeSingle(),
+          supabase
+            .from("localhub_market_prices")
+            .select("id, amount_minor, currency_code, country_code, compare_at_minor")
+            .eq("country_code", "BR")
+            .eq("plan", input.planId)
+            .eq("billing_cycle", input.billingCycle)
+            .eq("is_active", true)
+            .lte("valid_from", new Date().toISOString())
+            .is("valid_until", null)
+            .maybeSingle(),
+        ]);
+        if (
+          !lockedPrice ||
+          lockedPrice.currency_code !== "BRL" ||
+          lockedSubscription?.pending_market_price_id !== lockedPrice.id ||
+          lockedPrice.amount_minor !== BR_PLAN_PRICES[input.planId][input.billingCycle] ||
+          lockedPrice.compare_at_minor !==
+            BR_PLAN_PRICES[input.planId][
+              input.billingCycle === "monthly" ? "regularMonthly" : "regularYearly"
+            ]
+        ) {
+          await supabase
+            .from("localhub_plan_subscriptions")
+            .update({
+              status: currentPlan === "free" ? "free" : "active",
+              pending_plan: null,
+              pending_billing_cycle: null,
+              pending_market_country_code: null,
+              pending_currency_code: null,
+              pending_market_price_id: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("business_id", business.id)
+            .eq("status", "pending");
+          return privateNoStoreJson(
+            {
+              error: "O preço mudou ou não está configurado. Atualize a página e tente novamente.",
+            },
+            { status: 409 },
+          );
+        }
         let previousSubscriptionCanceled = false;
         try {
           const customerId =
@@ -255,12 +316,12 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
               );
             previousSubscriptionId = null;
           }
-          const regularAmount = planPrices[input.planId][input.billingCycle];
-          const amount = regularAmount;
+          const amountMinor = lockedPrice.amount_minor;
+          const amount = amountMinor / 100;
           const cycle = input.billingCycle === "yearly" ? "YEARLY" : "MONTHLY";
           const subscription = await createAsaasSubscription({
             customerId,
-            value: regularAmount,
+            value: amount,
             cycle,
             nextDueDate: dateAfterDays(1),
             description: `Assinatura ELLO ${input.planId === "pro" ? "Pro" : "Business"} - ${business.name}`,
@@ -310,7 +371,11 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
               business_id: business.id,
               requested_plan: input.planId,
               billing_cycle: input.billingCycle,
-              amount_cents: Math.round(amount * 100),
+              market_country_code: "BR",
+              currency_code: "BRL",
+              market_price_id: lockedPrice.id,
+              amount_minor: amountMinor,
+              amount_cents: amountMinor,
             });
           if (paymentInsertError) {
             await asaasFetch(`payments/${encodeURIComponent(payment.id)}`, {
@@ -333,6 +398,9 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
                 status: "pending",
                 pending_plan: input.planId,
                 pending_billing_cycle: input.billingCycle,
+                pending_market_country_code: "BR",
+                pending_currency_code: "BRL",
+                pending_market_price_id: lockedPrice.id,
                 pending_payment_id: payment.id,
                 pending_subscription_id: subscription.id,
                 updated_at: new Date().toISOString(),
@@ -376,6 +444,9 @@ export const Route = createFileRoute("/api/asaas/subscribe")({
                   : "active",
               pending_plan: null,
               pending_billing_cycle: null,
+              pending_market_country_code: null,
+              pending_currency_code: null,
+              pending_market_price_id: null,
               pending_payment_id: null,
               pending_subscription_id: null,
               updated_at: new Date().toISOString(),

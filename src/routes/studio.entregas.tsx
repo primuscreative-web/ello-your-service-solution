@@ -9,48 +9,26 @@ import {
   Navigation,
   Phone,
   Plus,
-  QrCode,
-  Search,
   Trash2,
   Zap,
 } from "lucide-react";
 import { Field, inputClass, money, PageTitle, primaryButtonClass } from "@/components/localhub/ui";
-import { useLocalHub, type DeliveryDriver, type FoodOrder } from "@/lib/localhub-context";
+import { useLocalHub } from "@/lib/localhub-context";
+import { PlanFeatureGate } from "@/components/localhub/plan-feature-gate";
 
 export const Route = createFileRoute("/studio/entregas")({ component: DeliveryPage });
 
-type ExtendedDriver = DeliveryDriver & {
-  plate?: string;
-  pixKey?: string;
-  feePerDelivery?: number;
-};
-
 export function DeliveryPage() {
+  return (
+    <PlanFeatureGate minimumPlan="business" feature="Gestão de entregadores e custos por entrega">
+      <DeliveryManagementPage />
+    </PlanFeatureGate>
+  );
+}
+
+function DeliveryManagementPage() {
   const { business, drivers, saveDriver, removeDriver, orders, setOrderStatus, saveBusiness } =
     useLocalHub();
-
-  if (business && business.category !== "alimentacao") {
-    return (
-      <div className="mx-auto max-w-xl text-center py-16 px-4">
-        <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-amber-100 text-amber-800 font-bold mb-4">
-          <Bike size={32} />
-        </div>
-        <h2 className="text-xl font-bold text-slate-900">Módulo de Entregas & Motoboys</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          A gestão de motoboys e entregas por bairro é voltada para negócios de alimentação e delivery.
-          Para o segmento <b>{business.category}</b>, utilize a <b>Agenda de Atendimentos</b> ou a <b>Frente de Caixa / PDV</b>.
-        </p>
-        <div className="mt-6 flex justify-center gap-3">
-          <Link to="/studio" className="rounded-xl bg-[#292b25] px-4 py-2 text-xs font-bold text-white hover:bg-[#3d3f37]">
-            Voltar para o Painel
-          </Link>
-          <Link to="/studio/agenda" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
-            Ir para a Agenda
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -62,7 +40,7 @@ export function DeliveryPage() {
   const [saving, setSaving] = useState(false);
 
   // Configuração de taxa por km
-  const [kmRate, setKmRate] = useState(() => String((business as any)?.deliveryFeePerKm ?? "2.50"));
+  const [kmRate, setKmRate] = useState(() => String(business?.deliveryFeePerKm ?? "2.50"));
   const [savingKmRate, setSavingKmRate] = useState(false);
   const [kmSimDistance, setKmSimDistance] = useState("4.2");
 
@@ -78,24 +56,47 @@ export function DeliveryPage() {
   );
 
   const completedTodayDeliveries = useMemo(() => {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
     return orders.filter(
       (order) =>
         order.fulfillment === "delivery" &&
         order.status === "completed" &&
-        order.createdAt.slice(0, 10) === todayStr,
+        order.completedAt
+          ? new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date(order.completedAt)) === todayStr
+          : false,
     );
   }, [orders]);
+
+  if (business && business.category !== "alimentacao") {
+    return (
+      <div className="mx-auto max-w-xl text-center py-16 px-4">
+        <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-amber-100 text-amber-800 font-bold mb-4"><Bike size={32} /></div>
+        <h2 className="text-xl font-bold text-slate-900">Módulo de Entregas & Motoboys</h2>
+        <p className="mt-2 text-sm text-slate-600">A gestão de motoboys e entregas por bairro é voltada para negócios de alimentação e delivery. Para o segmento <b>{business.category}</b>, utilize a <b>Agenda de Atendimentos</b> ou a <b>Frente de Caixa / PDV</b>.</p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Link to="/studio" className="rounded-xl bg-[#292b25] px-4 py-2 text-xs font-bold text-white hover:bg-[#3d3f37]">Voltar para o Painel</Link>
+          <Link to="/studio/agenda" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Ir para a Agenda</Link>
+        </div>
+      </div>
+    );
+  }
 
   async function submitDriver(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     setError("");
     try {
+      const deliveryFee = Number(feePerDelivery);
+      if (!Number.isFinite(deliveryFee) || deliveryFee < 0) {
+        throw new Error("Informe um custo por entrega válido e igual ou maior que zero.");
+      }
       await saveDriver({
         name: name.trim(),
         phone: phone.trim(),
         active: true,
+        plate: plate.trim().toUpperCase(),
+        pixKey: pixKey.trim(),
+        feePerDelivery: deliveryFee,
       });
       setName("");
       setPhone("");
@@ -112,13 +113,18 @@ export function DeliveryPage() {
   async function handleSaveKmRate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!business) return;
+    const rate = Number(kmRate);
+    if (!Number.isFinite(rate) || rate < 0) {
+      alert("Informe uma taxa por quilômetro válida e igual ou maior que zero.");
+      return;
+    }
     setSavingKmRate(true);
     try {
       await saveBusiness({
         ...business,
-        deliveryFee: Number(kmRate),
+        deliveryFeePerKm: rate,
       });
-      alert("Taxa por KM atualizada com sucesso!");
+      setKmRate(String(rate));
     } catch (caught) {
       alert(caught instanceof Error ? caught.message : "Erro ao salvar taxa por KM.");
     } finally {
@@ -137,8 +143,8 @@ export function DeliveryPage() {
     <div className="space-y-6">
       <PageTitle
         eyebrow="Logística & Entregas"
-        title="Motoboys & Rastreamento em Tempo Real"
-        description="Gerencie sua frota de entregadores próprios, acompanhe rotas no GPS, calcule taxa por KM e envie rastreamento ao vivo para os clientes."
+        title="Motoboys & Gestão de Entregas"
+        description="Gerencie entregadores, consulte a posição no Google Maps ou Waze e simule taxas por quilômetro. O link de rastreamento acompanha o status do pedido, sem GPS ao vivo."
       />
 
       {/* Indicadores rápidos */}
@@ -168,7 +174,7 @@ export function DeliveryPage() {
           </div>
           <div className="mt-2 text-2xl font-bold">{completedTodayDeliveries.length}</div>
           <span className="text-xs text-slate-500">
-            Total entregue: {money(completedTodayDeliveries.reduce((acc, o) => acc + o.total, 0))}
+              Custo estimado: {money(completedTodayDeliveries.reduce((acc, order) => acc + (order.driverFeePerDeliverySnapshot ?? 0), 0))}
           </span>
         </div>
       </div>
@@ -320,6 +326,7 @@ export function DeliveryPage() {
                         <Phone size={11} />
                         {driver.phone}
                       </a>
+                      <p className="mt-1 text-[11px] text-slate-500">{driver.plate || "Sem placa"} · {money(driver.feePerDelivery ?? 0)}/entrega</p>
                     </div>
                   </div>
 
@@ -409,6 +416,7 @@ export function DeliveryPage() {
                 <Field label="Taxa por entrega (R$)">
                   <input
                     type="number"
+                    min="0"
                     step="0.50"
                     value={feePerDelivery}
                     onChange={(event) => setFeePerDelivery(event.target.value)}
@@ -420,6 +428,7 @@ export function DeliveryPage() {
               <Field label="Chave PIX (para acerto do dia)">
                 <input
                   value={pixKey}
+                  maxLength={200}
                   onChange={(event) => setPixKey(event.target.value)}
                   className={inputClass}
                   placeholder="CPF, Telefone ou Chave aleatória"
@@ -446,7 +455,7 @@ export function DeliveryPage() {
               Taxa de Entrega por KM Rodado
             </h2>
             <p className="mt-1 text-xs leading-5 text-amber-900">
-              Defina o valor base por quilômetro para entregas em raios maiores.
+              Simule um valor por quilômetro. Ele não altera automaticamente a taxa cobrada no checkout.
             </p>
 
             <form onSubmit={(e) => void handleSaveKmRate(e)} className="mt-3 space-y-3">
@@ -454,6 +463,7 @@ export function DeliveryPage() {
                 <label className="text-xs font-semibold text-slate-700">Taxa (R$/km):</label>
                 <input
                   type="number"
+                  min="0"
                   step="0.25"
                   value={kmRate}
                   onChange={(e) => setKmRate(e.target.value)}

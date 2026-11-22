@@ -11,6 +11,8 @@ import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 import type { LuckyWheelSettings } from "@/components/localhub/lucky-wheel";
+import { getEffectivePlan, getPlanLimit } from "@/lib/plan-access";
+import { isStorefrontThemeAvailable, type StorefrontThemeId } from "@/lib/storefront-themes";
 
 export type ProductSupply = {
   id: string;
@@ -115,7 +117,10 @@ export type Business = {
   loyaltyMode?: "points" | "cashback";
   loyaltyRate?: number;
   deliveryFee?: number;
+  deliveryFeePerKm?: number;
+  deliveryBaseKm?: number;
   logoUrl?: string | null;
+  whiteLabel?: boolean;
   menuCategoriesOrder?: string[];
   whatsappTemplates?: {
     orderCustomer?: string;
@@ -124,6 +129,7 @@ export type Business = {
   };
   wheelSettings?: LuckyWheelSettings;
   portfolioItems?: PortfolioItem[];
+  publicTheme?: StorefrontThemeId;
 };
 
 export type Service = {
@@ -216,11 +222,13 @@ export type FoodOrder = {
     | "cancelled";
   driverId: string | null;
   createdAt: string;
+  completedAt?: string | null;
+  driverFeePerDeliverySnapshot?: number | null;
   publicTrackingToken?: string;
   paymentStatus?: string;
   items: FoodOrderItem[];
 };
-export type DeliveryDriver = { id: string; name: string; phone: string; active: boolean };
+export type DeliveryDriver = { id: string; name: string; phone: string; active: boolean; plate?: string; pixKey?: string; feePerDelivery?: number };
 export type DeliveryArea = { id: string; name: string; fee: number; active: boolean };
 type DeliveryAreaRow = { id: string; name: string; fee: number | string; is_active: boolean };
 
@@ -253,7 +261,7 @@ export type WaitlistEntry = {
   createdAt: string;
 };
 
-type BusinessRow = Omit<Business, "onboardingDetails" | "openingHours" | "blockedDates"> & {
+type BusinessRow = Omit<Business, "onboardingDetails" | "openingHours" | "blockedDates" | "publicTheme"> & {
   id: string;
   owner_id?: string;
   banner_url?: string | null;
@@ -271,8 +279,11 @@ type BusinessRow = Omit<Business, "onboardingDetails" | "openingHours" | "blocke
   loyalty_mode?: "points" | "cashback";
   loyalty_rate?: number;
   delivery_fee?: number;
+  delivery_fee_per_km?: number;
+  delivery_base_km?: number;
   logo_url?: string | null;
   menu_categories_order?: string[];
+  public_theme?: StorefrontThemeId;
   whatsapp_templates?: Business["whatsappTemplates"];
 };
 
@@ -325,11 +336,13 @@ type OrderRow = {
   status: FoodOrder["status"];
   driver_id: string | null;
   created_at: string;
+  completed_at?: string | null;
+  driver_fee_per_delivery_snapshot?: number | string | null;
   public_tracking_token?: string | null;
   payment_status?: string | null;
   localhub_order_items?: OrderItemRow[];
 };
-type DriverRow = { id: string; name: string; phone: string; is_active: boolean };
+type DriverRow = { id: string; name: string; phone: string; is_active: boolean; vehicle_plate?: string | null; pix_key?: string | null; fee_per_delivery?: number | string | null };
 type StaffRow = {
   id: string;
   name: string;
@@ -377,9 +390,10 @@ const emptyOnboardingDetails: BusinessOnboardingDetails = {
 };
 
 const businessFromRow = (row: BusinessRow): Business => {
-  const { onboarding_details, banner_url, opening_hours, blocked_dates, ...business } = row;
+  const { onboarding_details, banner_url, opening_hours, blocked_dates, public_theme, ...business } = row;
   return {
     ...business,
+    publicTheme: public_theme ?? "standard",
     bannerUrl: banner_url ?? null,
     galleryUrls: row.gallery_urls ?? [],
     bookingPolicy: row.booking_policy ?? "",
@@ -395,6 +409,8 @@ const businessFromRow = (row: BusinessRow): Business => {
     loyaltyMode: row.loyalty_mode ?? "points",
     loyaltyRate: Number(row.loyalty_rate ?? 0),
     deliveryFee: Number(row.delivery_fee ?? 0),
+    deliveryFeePerKm: Number(row.delivery_fee_per_km ?? 0),
+    deliveryBaseKm: Number(row.delivery_base_km ?? 0),
     logoUrl: row.logo_url ?? null,
     menuCategoriesOrder: Array.isArray(row.menu_categories_order) ? row.menu_categories_order : [],
     whatsappTemplates: row.whatsapp_templates ?? {},
@@ -421,8 +437,9 @@ type LocalHubContextValue = {
   user: User | null;
   ready: boolean;
   error: string | null;
+  planStatusError: string | null;
   refresh: () => Promise<void>;
-  getPublicStore: (slug: string) => Promise<{
+  getPublicStore: (slug: string, options?: { requireFeature?: "self_service_kiosk" }) => Promise<{
     business: Business;
     services: Service[];
     deliveryAreas: DeliveryArea[];
@@ -437,6 +454,7 @@ type LocalHubContextValue = {
   ) => Promise<string[]>;
   createBusiness: (business: Business) => Promise<void>;
   saveBusiness: (business: Business) => Promise<void>;
+  savePublicTheme: (theme: StorefrontThemeId) => Promise<void>;
   saveWhatsAppTemplates: (templates: Business["whatsappTemplates"]) => Promise<void>;
   saveService: (service: Omit<Service, "id"> & { id?: string }) => Promise<void>;
   saveServiceCost: (serviceId: string, costPrice: number) => Promise<void>;
@@ -546,12 +564,15 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [planStatusError, setPlanStatusError] = useState<string | null>(null);
   const authUserIdRef = useRef<string | null>(null);
   const refreshInFlightRef = useRef(false);
 
   const refresh = useCallback(async () => {
+    setPlanStatusError(null);
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
+      setPlanStatusError("O serviço de planos não está configurado.");
       setError("O banco de dados não está configurado.");
       setReady(true);
       return;
@@ -572,6 +593,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       setStaffMemberId(null);
       setDeliveryAreas([]);
       setError(null);
+      setPlanStatusError(null);
       setReady(true);
       return;
     }
@@ -584,7 +606,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       const legacyRes = await supabase
         .from("localhub_businesses")
         .select(
-          "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order,whatsapp_templates",
+          "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,delivery_fee_per_km,delivery_base_km,logo_url,menu_categories_order,public_theme,whatsapp_templates",
         )
         .eq("owner_id", auth.user.id)
         .maybeSingle();
@@ -623,7 +645,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
           const legacyStaff = await supabase
             .from("localhub_businesses")
             .select(
-              "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order,whatsapp_templates",
+          "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,onboarding_details,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,pix_key,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,delivery_fee_per_km,delivery_base_km,logo_url,menu_categories_order,public_theme,whatsapp_templates",
             )
             .eq("id", access.business_id)
             .maybeSingle();
@@ -645,6 +667,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     setStaffMemberId(currentStaffId && row ? currentStaffId : null);
     const nextBusiness = row as BusinessRow | null;
     setBusiness(nextBusiness ? businessFromRow(nextBusiness) : null);
+    let currentPlan: PlanSubscriptionState = { plan: "free", status: "free" };
     if (nextBusiness) {
       const { data: sessionData } = await supabase.auth.getSession();
       const sessionToken = sessionData.session?.access_token;
@@ -655,13 +678,22 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
             signal: AbortSignal.timeout(6_000),
           });
           const state = await response.json();
-          if (response.ok) setPlanSubscription(state as PlanSubscriptionState);
+          if (response.ok) {
+            currentPlan = state as PlanSubscriptionState;
+            setPlanSubscription(currentPlan);
+            setPlanStatusError(null);
+          } else {
+            setPlanStatusError("Não foi possível confirmar sua assinatura agora.");
+          }
         } catch {
-          setPlanSubscription({ plan: "free", status: "free" });
+          setPlanStatusError("A conexão com o serviço de planos falhou. Tente novamente.");
         }
+      } else {
+        setPlanStatusError("Sua sessão expirou. Entre novamente para confirmar o plano.");
       }
     } else {
       setPlanSubscription({ plan: "free", status: "free" });
+      setPlanStatusError(null);
     }
     if (!nextBusiness) {
       setServices([]);
@@ -705,11 +737,13 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         .select("*, localhub_order_items(*), localhub_drivers(id,name,phone)")
         .eq("business_id", nextBusiness.id)
         .order("created_at", { ascending: false }),
-      supabase
-        .from("localhub_drivers")
-        .select("id,name,phone,is_active")
-        .eq("business_id", nextBusiness.id)
-        .order("created_at"),
+      getEffectivePlan(currentPlan) === "business"
+        ? supabase
+            .from("localhub_drivers")
+            .select("id,name,phone,is_active,vehicle_plate,pix_key,fee_per_delivery")
+            .eq("business_id", nextBusiness.id)
+            .order("created_at")
+        : Promise.resolve({ data: [], error: null }),
       supabase
         .from("localhub_delivery_areas")
         .select("id,name,fee,is_active")
@@ -872,6 +906,8 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
           status: row.status,
           driverId: row.driver_id,
           createdAt: row.created_at,
+          completedAt: row.completed_at ?? null,
+          driverFeePerDeliverySnapshot: row.driver_fee_per_delivery_snapshot == null ? null : Number(row.driver_fee_per_delivery_snapshot),
           publicTrackingToken: row.public_tracking_token ?? "",
           paymentStatus: row.payment_status ?? "pending",
           items: (row.localhub_order_items ?? []).map((item: OrderItemRow) => ({
@@ -888,6 +924,9 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
           name: row.name,
           phone: row.phone,
           active: row.is_active,
+          plate: row.vehicle_plate ?? "",
+          pixKey: row.pix_key ?? "",
+          feePerDelivery: Number(row.fee_per_delivery ?? 7),
         })),
       );
       setStaff(
@@ -987,7 +1026,25 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     return () => window.clearInterval(interval);
   }, [business?.category, business?.id, refreshSafely]);
 
-  const getPublicStore = useCallback(async (slug: string) => {
+  const getPublicStore = useCallback(async (slug: string, options?: { requireFeature?: "self_service_kiosk" }) => {
+    if (options?.requireFeature) {
+      const response = await fetch(
+        `/api/store/${encodeURIComponent(slug)}?feature=${encodeURIComponent(options.requireFeature)}`,
+        { cache: "no-store" },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(data.error ?? "Não foi possível carregar este recurso.") as Error & { code?: string };
+        error.code = data.code;
+        throw error;
+      }
+      return data as {
+        business: Business;
+        services: Service[];
+        deliveryAreas: DeliveryArea[];
+        staff: StaffMember[];
+      };
+    }
     // Public pages read through Supabase's anonymous key and published-store
     // RLS. This avoids an unnecessary server round-trip and keeps the public
     // storefront independent from server-only credentials/network access.
@@ -996,7 +1053,7 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     const initialStoreRes = await supabase
       .from("localhub_businesses")
       .select(
-        "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee",
+        "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,public_theme",
       )
       .eq("slug", slug)
       .eq("is_published", true)
@@ -1126,8 +1183,21 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       });
       groupsByService.set(row.service_id, rows);
     }
+    let whiteLabel = false;
+    try {
+      const featureResponse = await fetch(
+        `/api/store/${encodeURIComponent(slug)}?feature=white_label`,
+        { cache: "no-store" },
+      );
+      if (featureResponse.ok) {
+        const featureData = await featureResponse.json();
+        whiteLabel = featureData.whiteLabel === true;
+      }
+    } catch {
+      // Storefront stays branded when plan-feature lookup is unavailable.
+    }
     return {
-      business: store,
+      business: { ...store, whiteLabel },
       services: (publicServiceRows ?? []).map((item) => ({
         ...serviceFromRow(item as ServiceRow),
         addons: addonsByService.get((item as ServiceRow).id) ?? [],
@@ -1192,6 +1262,19 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
   };
   const saveBusiness = async (item: Business) => {
     if (!business?.id) throw new Error("Não foi possível localizar seu negócio.");
+    if (!ready) throw new Error("Aguarde a confirmação do plano antes de salvar alterações.");
+    const currentPortfolio = business.portfolioItems ?? business.onboardingDetails?.portfolioItems ?? [];
+    const nextPortfolio = item.portfolioItems ?? item.onboardingDetails?.portfolioItems ?? currentPortfolio;
+    const currentVideoCount = currentPortfolio.filter((portfolioItem) => portfolioItem.mediaType === "video").length;
+    const nextVideoCount = nextPortfolio.filter((portfolioItem) => portfolioItem.mediaType === "video").length;
+    const videoLimit = getPlanLimit(planSubscription, "portfolioVideos");
+    if (ready && videoLimit !== null && nextVideoCount > videoLimit && nextVideoCount > currentVideoCount) {
+      throw new Error(
+        videoLimit === 0
+          ? "Vídeos no portfólio estão disponíveis a partir do plano Pro. Seus dados existentes foram preservados."
+          : `O plano ${getEffectivePlan(planSubscription)} permite até ${videoLimit} vídeos. Remova um vídeo ou conheça o Business.`,
+      );
+    }
     const { error: writeError } = await requireClient()
       .from("localhub_businesses")
       .update({
@@ -1225,6 +1308,8 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         loyalty_mode: item.loyaltyMode ?? business.loyaltyMode ?? "points",
         loyalty_rate: item.loyaltyRate ?? business.loyaltyRate ?? 0,
         delivery_fee: item.deliveryFee ?? business.deliveryFee ?? 0,
+        delivery_fee_per_km: item.deliveryFeePerKm ?? business.deliveryFeePerKm ?? 0,
+        delivery_base_km: item.deliveryBaseKm ?? business.deliveryBaseKm ?? 0,
         logo_url: item.logoUrl !== undefined ? item.logoUrl : (business.logoUrl ?? null),
         menu_categories_order: item.menuCategoriesOrder ?? business.menuCategoriesOrder ?? [],
         whatsapp_templates: item.whatsappTemplates ?? business.whatsappTemplates ?? {},
@@ -1269,6 +1354,8 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
             loyalty_mode: item.loyaltyMode ?? business.loyaltyMode ?? "points",
             loyalty_rate: item.loyaltyRate ?? business.loyaltyRate ?? 0,
             delivery_fee: item.deliveryFee ?? business.deliveryFee ?? 0,
+            delivery_fee_per_km: item.deliveryFeePerKm ?? business.deliveryFeePerKm ?? 0,
+            delivery_base_km: item.deliveryBaseKm ?? business.deliveryBaseKm ?? 0,
             whatsapp_templates: item.whatsappTemplates ?? business.whatsappTemplates ?? {},
           })
           .eq("id", business.id);
@@ -1279,10 +1366,31 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     }
     await refresh();
   };
+  const savePublicTheme: LocalHubContextValue["savePublicTheme"] = async (theme) => {
+    if (!business?.id) throw new Error("Não foi possível localizar seu negócio.");
+    if (!ready) throw new Error("Aguarde a confirmação do plano antes de alterar a página.");
+    if (!isStorefrontThemeAvailable(business.category, theme)) {
+      throw new Error("Esse tema ainda não está disponível para esta categoria.");
+    }
+    const { error: writeError } = await requireClient()
+      .from("localhub_businesses")
+      .update({ public_theme: theme })
+      .eq("id", business.id);
+    if (writeError) {
+      if (writeError.message?.includes("public_theme") || writeError.code === "42703") {
+        throw new Error("A atualização necessária ainda não foi aplicada ao banco de dados.");
+      }
+      throw writeError;
+    }
+    await refresh();
+  };
   const saveWhatsAppTemplates: LocalHubContextValue["saveWhatsAppTemplates"] = async (
     templates,
   ) => {
     if (!business?.id) throw new Error("Não foi possível localizar seu negócio.");
+    if (getEffectivePlan(planSubscription) !== "business") {
+      throw new Error("A automação WhatsApp está disponível no plano Business.");
+    }
     const { error: writeError } = await requireClient()
       .from("localhub_businesses")
       .update({ whatsapp_templates: templates ?? {} })
@@ -1292,6 +1400,13 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
   };
   const saveService = async (item: Omit<Service, "id"> & { id?: string }) => {
     if (!business?.id) throw new Error("Não foi possível localizar seu negócio.");
+    if (!ready) throw new Error("Aguarde a confirmação do plano antes de salvar o catálogo.");
+    const catalogLimit = getPlanLimit(planSubscription, "catalogItems");
+    if (ready && !item.id && catalogLimit !== null && services.length >= catalogLimit) {
+      throw new Error(
+        `O plano Grátis permite até ${catalogLimit} produtos ou serviços. Remova um item ou faça upgrade para continuar.`,
+      );
+    }
     const payload = {
       business_id: business.id,
       name: item.name.trim(),
@@ -1350,6 +1465,9 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       const fallbackRes = await fallbackReq;
       savedService = fallbackRes.data;
       writeError = fallbackRes.error;
+    }
+    if (writeError?.message?.includes("PLAN_LIMIT:catalog_items")) {
+      throw new Error("O plano Grátis permite até 10 produtos ou serviços. Remova um item ou faça upgrade para continuar.");
     }
     if (writeError) throw writeError;
     if (!savedService) throw new Error("Não foi possível identificar o item salvo.");
@@ -1602,6 +1720,11 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
     if (writeError?.code === "23P01") {
       throw new Error("Este horário acabou de ficar indisponível. Escolha outro horário.");
     }
+    if (writeError?.message?.includes("PLAN_LIMIT:new_customers_per_month")) {
+      throw new Error(
+        "Este negócio atingiu o limite mensal de novos clientes. Se você já é cliente, confirme se está usando o mesmo telefone do cadastro ou fale diretamente com o negócio.",
+      );
+    }
     if (writeError) throw writeError;
   };
   const addToWaitlist: LocalHubContextValue["addToWaitlist"] = async (entry) => {
@@ -1696,6 +1819,11 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         })),
       },
     );
+    if (orderError?.message?.includes("PLAN_LIMIT:new_customers_per_month")) {
+      throw new Error(
+        "Este negócio atingiu o limite mensal de novos clientes. Se você já é cliente, confirme se está usando o mesmo telefone do cadastro ou fale diretamente com o negócio.",
+      );
+    }
     if (orderError) throw orderError;
     const result = Array.isArray(data) ? data[0] : data;
     if (!result) throw new Error("Não foi possível confirmar o pedido.");
@@ -1754,6 +1882,9 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
       name: driver.name.trim(),
       phone: driver.phone.trim(),
       is_active: driver.active,
+      vehicle_plate: driver.plate?.trim().toUpperCase() || null,
+      pix_key: driver.pixKey?.trim() || null,
+      fee_per_delivery: driver.feePerDelivery ?? 7,
     };
     const query = driver.id
       ? requireClient().from("localhub_drivers").update(payload).eq("id", driver.id)
@@ -1882,11 +2013,13 @@ export function LocalHubProvider({ children }: { children: ReactNode }) {
         user,
         ready,
         error,
+        planStatusError,
         refresh,
         getPublicStore,
         getAvailableBookingSlots,
         createBusiness,
         saveBusiness,
+        savePublicTheme,
         saveWhatsAppTemplates,
         saveService,
         saveServiceCost,

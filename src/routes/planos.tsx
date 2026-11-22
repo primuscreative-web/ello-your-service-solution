@@ -32,6 +32,12 @@ import { toast } from "sonner";
 import { ElloLogo } from "@/components/ello/logo";
 import { useLocalHub } from "@/lib/localhub-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  BR_PLAN_PRICES,
+  formatMarketAmount,
+  MARKETS,
+  type MarketCountry,
+} from "@/lib/market-pricing";
 
 export const Route = createFileRoute("/planos")({
   head: () => ({
@@ -133,12 +139,98 @@ type AsaasPixResponseData = {
   };
 };
 
+function PlanPriceDisplay({
+  plan,
+  billingCycle,
+  market,
+  dark = false,
+}: {
+  plan: "pro" | "business";
+  billingCycle: "monthly" | "yearly";
+  market: (typeof MARKETS)[number];
+  dark?: boolean;
+}) {
+  const pricing = BR_PLAN_PRICES[plan];
+  const current = billingCycle === "yearly" ? pricing.yearly : pricing.monthly;
+  const regular = billingCycle === "yearly" ? pricing.regularYearly : pricing.regularMonthly;
+  const text = dark ? "text-white" : "text-[#20221f]";
+  const muted = dark ? "text-white/55" : "text-[#888b81]";
+  const accent = dark ? "text-[#d0f25a]" : "text-[#687348]";
+  const period = billingCycle === "yearly" ? "ano" : "mês";
+
+  return (
+    <div className={`mt-6 border-t ${dark ? "border-white/10" : "border-[#f0f0ea]"} pt-5`}>
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className={`text-[10px] font-bold uppercase tracking-wider ${accent}`}>
+            Oferta de lançamento
+          </p>
+          <p className={`mt-2 flex items-baseline gap-1 whitespace-nowrap text-[11px] font-medium ${muted}`}>
+            <span>De</span>
+            <span className="font-semibold line-through">{formatMarketAmount(regular, market.currency, market.locale)}</span>
+            <span>/{period}</span>
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className={`font-display text-[38px] font-black leading-none tracking-tight sm:text-[42px] ${text}`}>
+            {formatMarketAmount(current, market.currency, market.locale)}
+          </p>
+          <p className={`mt-1 text-xs font-medium ${muted}`}>/{period}</p>
+        </div>
+      </div>
+      <p className={`mt-3 text-[11px] leading-relaxed ${muted}`}>
+        {billingCycle === "yearly"
+          ? `Economize ${formatMarketAmount(regular - current, market.currency, market.locale)} no ciclo anual.`
+          : "Cancele quando quiser."}
+      </p>
+    </div>
+  );
+}
+
 export function PricingPlansPage() {
   const { business, user, planSubscription, refresh } = useLocalHub();
   const navigate = useNavigate();
 
   // Período de faturamento da landing: Mensal ou Anual com preço de lançamento
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const [marketCountry, setMarketCountry] = useState<MarketCountry>("BR");
+  const [marketInitialized, setMarketInitialized] = useState(false);
+  const marketTouchedRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMarketInitialized(true);
+    const savedCountry = window.localStorage.getItem("ello-market-country");
+    if (savedCountry && MARKETS.some((market) => market.country === savedCountry)) {
+      setMarketCountry(savedCountry as MarketCountry);
+      setMarketInitialized(true);
+      return;
+    }
+    void fetch("/api/market-suggestion", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((suggestion: { country?: string } | null) => {
+        if (cancelled || marketTouchedRef.current) return;
+        const suggested = MARKETS.find((market) => market.country === suggestion?.country);
+        if (suggested) setMarketCountry(suggested.country);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setMarketInitialized(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedMarket = MARKETS.find((market) => market.country === marketCountry) ?? MARKETS[0];
+  const isBrazilMarket = selectedMarket.country === "BR";
+  const changeMarket = (country: MarketCountry) => {
+    marketTouchedRef.current = true;
+    setMarketCountry(country);
+    window.localStorage.setItem("ello-market-country", country);
+    if (country !== "BR") setBillingCycle("monthly");
+    if (country !== "BR" && checkoutModalPlan) setCheckoutModalPlan(null);
+  };
 
   // Simulador de Economia vs Outras Plataformas
   const [monthlyRevenue, setMonthlyRevenue] = useState<number>(12000);
@@ -192,12 +284,16 @@ export function PricingPlansPage() {
 
   // Cálculo da economia
   const traditionalFee = monthlyRevenue * 0.15;
-  const elloProCost = 39.9;
+  const elloProCost = isBrazilMarket ? BR_PLAN_PRICES.pro.monthly / 100 : 39.9;
   const monthlySavings = Math.max(0, traditionalFee - elloProCost);
   const yearlySavings = monthlySavings * 12;
 
   // Abertura do Modal de Assinatura
   const handleOpenCheckout = (plan: "pro" | "business") => {
+    if (!isBrazilMarket || !selectedMarket.enabled) {
+      toast.info("A assinatura ainda não está disponível neste mercado.");
+      return;
+    }
     if (!user) {
       toast.info("Entre ou crie sua conta para assinar um plano.");
       void navigate({ to: "/auth" });
@@ -214,14 +310,10 @@ export function PricingPlansPage() {
 
   // Preços calculados do plano
   const planName = checkoutModalPlan === "pro" ? "Plano Pro" : "Plano Business";
-  const planPriceMonthly = checkoutModalPlan === "pro" ? 39.9 : 79.9;
-  const planPriceYearlyMonthly = checkoutModalPlan === "pro" ? 39.9 : 79.9;
-  const planPriceYearlyTotal = checkoutModalPlan === "pro" ? 478.8 : 958.8;
-  const planPriceRegularMonthly = checkoutModalPlan === "pro" ? 49.9 : 119.9;
-  const planPriceRegularYearly = planPriceRegularMonthly * 12;
-
+  const selectedPlanPricing = BR_PLAN_PRICES[checkoutModalPlan ?? "pro"];
+  const planPriceMonthly = selectedPlanPricing.monthly / 100;
+  const planPriceYearlyTotal = selectedPlanPricing.yearly / 100;
   const currentPrice = modalCycle === "yearly" ? planPriceYearlyTotal : planPriceMonthly;
-  const currentPriceStr = currentPrice.toFixed(2).replace(".", ",");
 
   // Iniciar geração da cobrança da assinatura
   const handleGenerateAsaasPix = async (e?: React.FormEvent) => {
@@ -270,6 +362,7 @@ export function PricingPlansPage() {
         body: JSON.stringify({
           planId: checkoutModalPlan,
           billingCycle: modalCycle,
+          countryCode: marketCountry,
           customerName: payerName.trim(),
           customerEmail: payerEmail.trim(),
           customerPhone: cleanPhone,
@@ -429,7 +522,7 @@ export function PricingPlansPage() {
     const cycleLabel =
       modalCycle === "yearly" ? "Anual — oferta de lançamento" : "Mensal — oferta de lançamento";
     const bizLabel = business?.name || payerName || "meu negócio";
-    const msg = `Olá equipe ELLO! 👋\n\nEstou assinando o *${planName}* (${cycleLabel} - R$ ${currentPriceStr}) para o estabelecimento *${bizLabel}*.\n\nCódigo da cobrança: ${paymentData?.paymentId || "gerando..."}.\n\nPoderiam me auxiliar a confirmar a ativação?`;
+    const msg = `Olá equipe ELLO! 👋\n\nEstou assinando o *${planName}* (${cycleLabel} - ${formatMarketAmount(Math.round(currentPrice * 100), "BRL", "pt-BR")}) para o estabelecimento *${bizLabel}*.\n\nCódigo da cobrança: ${paymentData?.paymentId || "gerando..."}.\n\nPoderiam me auxiliar a confirmar a ativação?`;
     return `https://wa.me/5511987654321?text=${encodeURIComponent(msg)}`;
   };
 
@@ -487,7 +580,11 @@ export function PricingPlansPage() {
           <div className="mx-auto max-w-[780px]">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#dce4ca] bg-[#f1f4e9] px-4 py-1.5 text-[12px] font-semibold tracking-wide text-[#66794a] shadow-xs">
               <Sparkles size={14} className="text-[#849a58]" />
-              <span>Condição especial de lançamento · 0% de comissão</span>
+              <span>
+                {isBrazilMarket
+                  ? "Condição especial de lançamento · 0% de comissão"
+                  : "Disponibilidade por país · 0% de comissão"}
+              </span>
             </div>
 
             <h1 className="mt-6 font-display text-[38px] font-medium leading-[1.05] tracking-[-.05em] sm:text-[56px] lg:text-[64px] text-[#20221f]">
@@ -495,13 +592,42 @@ export function PricingPlansPage() {
             </h1>
 
             <p className="mt-5 text-[16px] leading-[1.7] text-[#6a6c65] sm:text-[19px] max-w-[620px] mx-auto">
-              Aproveite os preços especiais de lançamento. A ELLO atende negócios de todos os
-              segmentos, com ferramentas para apresentar produtos e serviços, receber pedidos e
-              organizar agendamentos.
+              {isBrazilMarket
+                ? "Aproveite os preços especiais de lançamento. "
+                : "Confira a disponibilidade da ELLO no seu mercado. "}
+              A ELLO atende negócios de todos os segmentos, com ferramentas para apresentar produtos
+              e serviços, receber pedidos e organizar agendamentos.
             </p>
 
+            <div className="mx-auto mt-7 flex max-w-sm flex-col items-start gap-2 text-left">
+              <label htmlFor="ello-market-country" className="text-xs font-semibold text-[#6a6c65]">
+                País ou região
+              </label>
+              <select
+                id="ello-market-country"
+                value={marketCountry}
+                onChange={(event) => changeMarket(event.target.value as MarketCountry)}
+                className="w-full rounded-xl border border-[#e3e3dc] bg-white px-4 py-3 text-sm text-[#20221f] shadow-sm"
+              >
+                {MARKETS.map((market) => (
+                  <option key={market.country} value={market.country}>
+                    {market.name}
+                    {market.enabled ? "" : " — em preparação"}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs leading-relaxed text-[#77796f]">
+                {isBrazilMarket
+                  ? "Preços em reais e cobrança por Pix disponíveis no Brasil."
+                  : `Preços em ${selectedMarket.currency} serão definidos para ${selectedMarket.name}. Não fazemos conversão automática de preços.`}
+              </p>
+            </div>
+
             {/* TOGGLE MENSAL / ANUAL */}
-            <div className="mt-10 inline-flex items-center gap-2 rounded-full border border-[#e3e3dc] bg-white p-1.5 shadow-sm">
+            <fieldset
+              disabled={!isBrazilMarket || !marketInitialized}
+              className="mt-10 inline-flex items-center gap-2 rounded-full border border-[#e3e3dc] bg-white p-1.5 shadow-sm disabled:opacity-50"
+            >
               <button
                 type="button"
                 onClick={() => setBillingCycle("monthly")}
@@ -527,25 +653,26 @@ export function PricingPlansPage() {
                   LANÇAMENTO
                 </span>
               </button>
-            </div>
-            {(planSubscription.status === "active" || planSubscription.status === "pending") && (
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-sm">
-                <span className="font-semibold text-[#687348]">
-                  {planSubscription.status === "pending"
-                    ? `Plano atual: ${planSubscription.plan === "business" ? "Business" : planSubscription.plan === "pro" ? "Pro" : "Grátis"} · confirmação pendente`
-                    : `Plano ativo: ${planSubscription.plan === "business" ? "Business" : "Pro"} · ${planSubscription.billing_cycle === "yearly" ? "Anual" : "Mensal"}`}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => void handleCancelPlan()}
-                  disabled={cancelingPlan}
-                  className="rounded-full border border-red-200 px-4 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
-                >
-                  {cancelingPlan ? "Cancelando…" : "Cancelar plano e cobranças"}
-                </button>
-              </div>
-            )}
-            {planSubscription.status === "pending" && (
+            </fieldset>
+            {isBrazilMarket &&
+              (planSubscription.status === "active" || planSubscription.status === "pending") && (
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-sm">
+                  <span className="font-semibold text-[#687348]">
+                    {planSubscription.status === "pending"
+                      ? `Ativação pendente: ${planSubscription.pending_plan === "business" ? "Business" : "Pro"}`
+                      : `Plano ativo: ${planSubscription.plan === "business" ? "Business" : "Pro"} · ${planSubscription.billing_cycle === "yearly" ? "Anual" : "Mensal"}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void handleCancelPlan()}
+                    disabled={cancelingPlan}
+                    className="rounded-full border border-red-200 px-4 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+                  >
+                    {cancelingPlan ? "Cancelando…" : "Cancelar plano e cobranças"}
+                  </button>
+                </div>
+              )}
+            {isBrazilMarket && planSubscription.status === "pending" && (
               <p className="mt-4 text-sm font-medium text-amber-700">
                 Confirmação de pagamento pendente. O novo plano só será liberado após a confirmação.
               </p>
@@ -581,7 +708,7 @@ export function PricingPlansPage() {
 
                 <div className="mt-6 flex items-baseline gap-1.5 border-t border-[#f0f0ea] pt-6">
                   <span className="font-display text-[42px] font-black tracking-tight text-[#20221f]">
-                    R$ 0
+                    Grátis
                   </span>
                   <span className="text-[13px] font-medium text-[#888b81]">/ para sempre</span>
                 </div>
@@ -596,31 +723,23 @@ export function PricingPlansPage() {
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
-                    <span>Cardápio & Catálogo digital ilimitado</span>
+                    <span>Até 10 produtos ou serviços no catálogo</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
-                    <span>Pedidos e Agendamentos sem limite</span>
+                    <span>Agenda e consulta de horários grátis em todos os nichos</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
-                    <span>Link próprio exclusivo (ello.app.br/seunome)</span>
+                    <span>Até 50 novos clientes por mês; clientes existentes continuam atendidos</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
+                    <span>Link próprio exclusivo: ello.app.br/loja/seunome</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
                     <span>Compartilhamento rápido no WhatsApp</span>
-                  </div>
-                  <div className="flex items-start gap-2.5 text-slate-400">
-                    <span className="mt-0.5 size-4 shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-[10px]">
-                      ✕
-                    </span>
-                    <span className="line-through">Subcontas para profissionais da equipe</span>
-                  </div>
-                  <div className="flex items-start gap-2.5 text-slate-400">
-                    <span className="mt-0.5 size-4 shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-[10px]">
-                      ✕
-                    </span>
-                    <span className="line-through">Remoção do selo ELLO</span>
                   </div>
                 </div>
               </div>
@@ -651,7 +770,7 @@ export function PricingPlansPage() {
                     Equipes & Negócios
                   </span>
                   <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold text-white/90">
-                    0% de Taxa
+                    0% de comissão ELLO
                   </span>
                 </div>
 
@@ -664,33 +783,37 @@ export function PricingPlansPage() {
                   crescer sem pagar comissão sobre as vendas.
                 </p>
 
-                <div className="mt-6 flex flex-wrap items-baseline gap-1.5 border-t border-white/10 pt-6">
-                  <span className="text-base font-semibold text-white/45 line-through">
-                    R$ 49,90
-                  </span>
-                  <span className="font-display text-[46px] font-black tracking-tight text-white">
-                    R$ 39,90
-                  </span>
-                  <span className="text-[13px] font-medium text-white/60">/mês</span>
-                </div>
-                {billingCycle === "yearly" ? (
-                  <span className="text-[11px] text-[#d0f25a] font-semibold">
-                    <span className="line-through text-white/45">R$ 598,80/ano</span> · Lançamento:
-                    R$ 478,80/ano (economize R$ 120)
-                  </span>
+                {isBrazilMarket && marketInitialized ? (
+                  <PlanPriceDisplay
+                    plan="pro"
+                    billingCycle={billingCycle}
+                    market={selectedMarket}
+                    dark
+                  />
                 ) : (
-                  <span className="text-[11px] text-white/50 font-medium">
-                    <span className="line-through">De R$ 49,90</span> · Oferta de lançamento ·
-                    Cancele quando quiser
-                  </span>
+                  <div className="mt-6 rounded-xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/70">
+                    {isBrazilMarket ? "Carregando preços locais…" : `Preços locais em preparação para ${selectedMarket.name}.`}
+                  </div>
                 )}
 
                 {/* Vantagens do Pro */}
                 <div className="mt-6 space-y-3 border-t border-white/10 pt-6 text-[13px] text-white/90">
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#d0f25a]" />
+                    <span><strong>Tudo do Plano Grátis incluído</strong></span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check size={16} className="mt-0.5 shrink-0 text-[#d0f25a]" />
+                    <span>Produtos e serviços ilimitados no catálogo</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check size={16} className="mt-0.5 shrink-0 text-[#d0f25a]" />
+                    <span>Até 500 novos clientes por mês, com agenda e horários disponíveis</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check size={16} className="mt-0.5 shrink-0 text-[#d0f25a]" />
                     <span>
-                      <strong>Subcontas Ilimitadas para Equipe</strong>
+                      <strong>Gestão de equipe com subcontas</strong>
                     </span>
                   </div>
                   <div className="flex items-start gap-2.5">
@@ -707,7 +830,7 @@ export function PricingPlansPage() {
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#d0f25a]" />
                     <span>
-                      <strong>100% White-Label</strong> (Remoção total do selo da ELLO)
+                      Remoção do selo da ELLO na loja pública
                     </span>
                   </div>
                   <div className="flex items-start gap-2.5">
@@ -720,7 +843,7 @@ export function PricingPlansPage() {
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#d0f25a]" />
-                    <span>Receba cobranças por Pix instantâneo ou cartão</span>
+                    <span>Até 20 vídeos no portfólio</span>
                   </div>
                 </div>
               </div>
@@ -729,10 +852,11 @@ export function PricingPlansPage() {
                 <button
                   type="button"
                   onClick={() => handleOpenCheckout("pro")}
+                  disabled={!isBrazilMarket || !marketInitialized}
                   className="ello-cta ello-cta-lime w-full justify-center text-center font-bold text-[14px] shadow-lg hover:scale-[1.02] transition cursor-pointer"
                 >
-                  <span>Assinar Plano Pro</span>
-                  <ArrowRight size={16} />
+                  <span>{isBrazilMarket ? "Assinar Plano Pro" : "Disponível em breve"}</span>
+                  {isBrazilMarket && <ArrowRight size={16} />}
                 </button>
                 <p className="mt-2 text-center text-[11px] text-white/50">
                   Ativação após a confirmação do pagamento
@@ -748,7 +872,7 @@ export function PricingPlansPage() {
                     Escala & Franquias
                   </span>
                   <span className="rounded-full bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-700">
-                    Multiunidade
+                    Business
                   </span>
                 </div>
 
@@ -757,59 +881,63 @@ export function PricingPlansPage() {
                 </h3>
 
                 <p className="mt-2 text-[13px] leading-relaxed text-[#72756d]">
-                  Para marcas com múltiplas filiais, totens de atendimento e automações integradas
+                  Para operações que precisam de totens de atendimento e automações integradas
                   de WhatsApp.
                 </p>
 
-                <div className="mt-6 flex flex-wrap items-baseline gap-1.5 border-t border-[#f0f0ea] pt-6">
-                  <span className="text-base font-semibold text-[#888b81] line-through">
-                    R$ 119,90
-                  </span>
-                  <span className="font-display text-[46px] font-black tracking-tight text-[#20221f]">
-                    R$ 79,90
-                  </span>
-                  <span className="text-[13px] font-medium text-[#888b81]">/mês</span>
-                </div>
-                {billingCycle === "yearly" ? (
-                  <span className="text-[11px] text-[#687348] font-semibold">
-                    <span className="line-through">R$ 1.438,80/ano</span> · Lançamento: R$
-                    958,80/ano (economize R$ 480)
-                  </span>
+                {isBrazilMarket && marketInitialized ? (
+                  <PlanPriceDisplay
+                    plan="business"
+                    billingCycle={billingCycle}
+                    market={selectedMarket}
+                  />
                 ) : (
-                  <span className="text-[11px] text-[#888b81] font-medium">
-                    <span className="line-through">De R$ 119,90</span> · Oferta de lançamento
-                  </span>
+                  <div className="mt-6 rounded-xl border border-[#e7e8df] bg-[#f8f9f5] px-4 py-5 text-sm text-[#72756d]">
+                    {isBrazilMarket ? "Carregando preços locais…" : `Preços locais em preparação para ${selectedMarket.name}.`}
+                  </div>
                 )}
 
                 {/* Vantagens Business */}
                 <div className="mt-6 space-y-3 border-t border-[#f0f0ea] pt-6 text-[13px] text-[#4f514a]">
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
-                    <span>
-                      <strong>Tudo do Plano Pro incluído</strong>
-                    </span>
+                    <span>Clientes novos ilimitados, além da agenda e horários grátis</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
                     <span>
-                      <strong>Múltiplas Filiais / Unidades</strong> no mesmo painel
+                      <strong>Tudo do Plano Grátis e do Plano Pro incluído</strong>
                     </span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
-                    <span>Totem de Autoatendimento para balcão ou recepção</span>
+                    <span>Catálogo ilimitado de produtos e serviços para a operação</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
-                    <span>Automação de mensagens e lembretes por WhatsApp</span>
+                    <span>Vídeos ilimitados no portfólio</span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
-                    <span>Controle avançado de taxas de entrega e motoboys</span>
+                    <span>
+                      <strong>Gestão de múltiplas filiais</strong>
+                    </span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
-                    <span>Suporte VIP prioritário direto no WhatsApp</span>
+                    <span>Totem de autoatendimento para restaurantes e negócios de alimentação</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
+                    <span>Automação WhatsApp após provisionar uma instância exclusiva do negócio</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
+                    <span>Gestão de motoboys, custo por entrega e simulador de taxa por quilômetro (alimentação)</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Check size={16} className="mt-0.5 shrink-0 text-[#687348]" />
+                    <span>Canal de atendimento pelo WhatsApp da ELLO</span>
                   </div>
                 </div>
               </div>
@@ -818,9 +946,10 @@ export function PricingPlansPage() {
                 <button
                   type="button"
                   onClick={() => handleOpenCheckout("business")}
+                  disabled={!isBrazilMarket || !marketInitialized}
                   className="ello-cta ello-cta-dark w-full justify-center text-center font-semibold text-[14px] cursor-pointer"
                 >
-                  Contratar Business
+                  {isBrazilMarket ? "Contratar Business" : "Disponível em breve"}
                 </button>
                 <p className="mt-2 text-center text-[11px] text-[#9a9c92]">
                   Perfeito para operações em expansão
@@ -833,93 +962,123 @@ export function PricingPlansPage() {
         {/* ==============================================================
             4. SIMULADOR DE ECONOMIA ESTIMADA
            ============================================================== */}
-        <section className="border-y border-[#e6e5dd] bg-[#f5f5f0] px-5 py-16 sm:px-10 sm:py-24 lg:px-16">
-          <div className="mx-auto max-w-[1080px]">
-            <div className="text-center">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-[#687348]">
-                Simulador de economia estimada
-              </span>
-              <h2 className="mt-2 font-display text-[32px] font-medium tracking-tight text-[#20221f] sm:text-[44px]">
-                Compare seus custos com a ELLO
-              </h2>
-              <p className="mt-3 text-[15px] text-[#72756d] max-w-xl mx-auto">
-                Arraste a barra abaixo com a média do faturamento mensal do seu negócio e veja o
-                impacto no seu bolso.
-              </p>
+        {isBrazilMarket && marketInitialized && (
+          <section className="border-y border-[#e6e5dd] bg-[#f5f5f0] px-5 py-16 sm:px-10 sm:py-24 lg:px-16">
+            <div className="mx-auto max-w-[1080px]">
+              <div className="text-center">
+                <span className="text-[12px] font-bold uppercase tracking-wider text-[#687348]">
+                  Simulador de economia estimada
+                </span>
+                <h2 className="mt-2 font-display text-[32px] font-medium tracking-tight text-[#20221f] sm:text-[44px]">
+                  Compare seus custos com a ELLO
+                </h2>
+                <p className="mt-3 text-[15px] text-[#72756d] max-w-xl mx-auto">
+                  Arraste a barra abaixo com a média do faturamento mensal do seu negócio e veja o
+                  impacto no seu bolso.
+                </p>
+              </div>
+
+              <div className="mt-12 rounded-3xl border border-[#e5e5dc] bg-white p-6 sm:p-10 shadow-sm">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-[#50524b]">
+                      Faturamento mensal estimado:
+                    </span>
+                    <span className="font-display text-2xl font-black text-[#20221f]">
+                      {formatMarketAmount(
+                        monthlyRevenue * 100,
+                        selectedMarket.currency,
+                        selectedMarket.locale,
+                      )}
+                    </span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min="2000"
+                    max="60000"
+                    step="1000"
+                    value={monthlyRevenue}
+                    onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
+                    className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#20221f]"
+                  />
+                  <div className="flex justify-between text-[11px] text-[#999c92] font-medium">
+                    <span>
+                      {formatMarketAmount(200000, selectedMarket.currency, selectedMarket.locale)}
+                      /mês
+                    </span>
+                    <span>
+                      {formatMarketAmount(3000000, selectedMarket.currency, selectedMarket.locale)}
+                      /mês
+                    </span>
+                    <span>
+                      {formatMarketAmount(6000000, selectedMarket.currency, selectedMarket.locale)}
+                      /mês
+                    </span>
+                  </div>
+                </div>
+
+                {/* Grid Comparativo de Perda vs Ganho */}
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-red-100 bg-red-50/50 p-5">
+                    <div className="flex items-center gap-2 text-red-600 text-[12px] font-bold uppercase tracking-wider">
+                      <span>Exemplo de comissão de 15%</span>
+                    </div>
+                    <div className="mt-2 font-display text-[28px] sm:text-[34px] font-black text-red-700">
+                      -{" "}
+                      {formatMarketAmount(
+                        Math.round(traditionalFee * 100),
+                        selectedMarket.currency,
+                        selectedMarket.locale,
+                      )}
+                    </div>
+                    <p className="mt-1 text-[12px] text-red-600/80">
+                      Simulação ilustrativa sobre o faturamento informado; as taxas variam por
+                      plataforma e segmento.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-[#d6e5b8] bg-[#f2f7e8] p-5">
+                    <div className="flex items-center gap-2 text-[#5e703f] text-[12px] font-bold uppercase tracking-wider">
+                      <span>Economia com ELLO Pro</span>
+                    </div>
+                    <div className="mt-2 font-display text-[28px] sm:text-[34px] font-black text-[#20221f]">
+                      +{" "}
+                      {formatMarketAmount(
+                        Math.round(monthlySavings * 100),
+                        selectedMarket.currency,
+                        selectedMarket.locale,
+                      )}
+                    </div>
+                    <p className="mt-1 text-[12px] text-[#637248]">
+                      Diferença estimada entre a comissão ilustrativa e a assinatura Pro mensal. (
+                      <strong>
+                        {formatMarketAmount(
+                          Math.round(yearlySavings * 100),
+                          selectedMarket.currency,
+                          selectedMarket.locale,
+                        )}
+                        /ano
+                      </strong>
+                      )
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-8 text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenCheckout("pro")}
+                    className="ello-cta ello-cta-lime inline-flex cursor-pointer"
+                  >
+                    Garantir minha economia com Plano Pro
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              </div>
             </div>
-
-            <div className="mt-12 rounded-3xl border border-[#e5e5dc] bg-white p-6 sm:p-10 shadow-sm">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#50524b]">
-                    Faturamento mensal estimado:
-                  </span>
-                  <span className="font-display text-2xl font-black text-[#20221f]">
-                    R$ {monthlyRevenue.toLocaleString("pt-BR")}
-                  </span>
-                </div>
-
-                <input
-                  type="range"
-                  min="2000"
-                  max="60000"
-                  step="1000"
-                  value={monthlyRevenue}
-                  onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
-                  className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#20221f]"
-                />
-                <div className="flex justify-between text-[11px] text-[#999c92] font-medium">
-                  <span>R$ 2.000/mês</span>
-                  <span>R$ 30.000/mês</span>
-                  <span>R$ 60.000/mês</span>
-                </div>
-              </div>
-
-              {/* Grid Comparativo de Perda vs Ganho */}
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-red-100 bg-red-50/50 p-5">
-                  <div className="flex items-center gap-2 text-red-600 text-[12px] font-bold uppercase tracking-wider">
-                    <span>Exemplo de comissão de 15%</span>
-                  </div>
-                  <div className="mt-2 font-display text-[28px] sm:text-[34px] font-black text-red-700">
-                    - R$ {traditionalFee.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </div>
-                  <p className="mt-1 text-[12px] text-red-600/80">
-                    Simulação ilustrativa sobre o faturamento informado; as taxas variam por
-                    plataforma e segmento.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-[#d6e5b8] bg-[#f2f7e8] p-5">
-                  <div className="flex items-center gap-2 text-[#5e703f] text-[12px] font-bold uppercase tracking-wider">
-                    <span>Economia com ELLO Pro</span>
-                  </div>
-                  <div className="mt-2 font-display text-[28px] sm:text-[34px] font-black text-[#20221f]">
-                    + R$ {monthlySavings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </div>
-                  <p className="mt-1 text-[12px] text-[#637248]">
-                    Diferença estimada entre a comissão ilustrativa e a assinatura Pro mensal. (
-                    <strong>
-                      R$ {yearlySavings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/ano
-                    </strong>
-                    )
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-8 text-center">
-                <button
-                  type="button"
-                  onClick={() => handleOpenCheckout("pro")}
-                  className="ello-cta ello-cta-lime inline-flex cursor-pointer"
-                >
-                  Garantir minha economia com Plano Pro
-                  <ArrowRight size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* ==============================================================
             5. TABELA COMPARATIVA DETALHADA
@@ -952,7 +1111,19 @@ export function PricingPlansPage() {
               </thead>
               <tbody className="divide-y divide-[#efefe9] text-[#4f514a]">
                 <tr>
-                  <td className="p-4 sm:p-5 font-medium">Taxa sobre faturamento e pedidos</td>
+                  <td className="p-4 sm:p-5 font-medium">Novos clientes por mês</td>
+                  <td className="p-4 sm:p-5 text-center font-bold">Até 50</td>
+                  <td className="p-4 sm:p-5 text-center font-bold bg-[#fbfdf7]">Até 500</td>
+                  <td className="p-4 sm:p-5 text-center font-bold">Ilimitados</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium">Agenda e consulta de horários</td>
+                  <td className="p-4 sm:p-5 text-center font-bold">✓ Grátis</td>
+                  <td className="p-4 sm:p-5 text-center font-bold bg-[#fbfdf7]">✓ Grátis</td>
+                  <td className="p-4 sm:p-5 text-center font-bold">✓ Grátis</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium">Comissão da ELLO sobre vendas</td>
                   <td className="p-4 sm:p-5 text-center font-bold text-emerald-700">0%</td>
                   <td className="p-4 sm:p-5 text-center font-bold text-emerald-700 bg-[#fbfdf7]">
                     0%
@@ -963,9 +1134,9 @@ export function PricingPlansPage() {
                   <td className="p-4 sm:p-5 font-medium">Subcontas ilimitadas para equipe</td>
                   <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">
-                    ✓ Ilimitadas
+                    ✓ Incluídas
                   </td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Ilimitadas</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluídas</td>
                 </tr>
                 <tr>
                   <td className="p-4 sm:p-5 font-medium">
@@ -981,14 +1152,14 @@ export function PricingPlansPage() {
                   <td className="p-4 sm:p-5 font-medium">
                     Catálogo de produtos e serviços com fotos
                   </td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Ilimitado</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">Até 10 itens</td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">
                     ✓ Ilimitado
                   </td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Ilimitado</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Ilimitados</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-medium">Remoção de marca ELLO (100% sua marca)</td>
+                  <td className="p-4 sm:p-5 font-medium">Remoção do selo ELLO na loja pública</td>
                   <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">
                     ✓ Sim
@@ -996,7 +1167,19 @@ export function PricingPlansPage() {
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Sim</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-medium">Painel de operações em tempo real</td>
+                  <td className="p-4 sm:p-5 font-medium">Vídeos e Reels no portfólio</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">Até 20</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">Ilimitado</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium">CRM e histórico de clientes</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">✓ Incluso</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium">Painel operacional do negócio</td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">
                     ✓ Incluso
@@ -1004,7 +1187,7 @@ export function PricingPlansPage() {
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-medium">Impressão térmica automática 80 mm</td>
+                  <td className="p-4 sm:p-5 font-medium">Comandas de pedidos (alimentação) em formato compatível com impressora térmica 80 mm</td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold bg-[#fbfdf7]">
                     ✓ Incluso
@@ -1013,33 +1196,50 @@ export function PricingPlansPage() {
                 </tr>
                 <tr>
                   <td className="p-4 sm:p-5 font-medium">
-                    Múltiplas Filiais / Unidades no mesmo painel
+                    Gestão de múltiplas filiais
                   </td>
                   <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
                   <td className="p-4 sm:p-5 text-center text-slate-300 bg-[#fbfdf7]">—</td>
-                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Sim</td>
+                  <td className="p-4 sm:p-5 text-center text-amber-700 font-bold">Em preparação</td>
                 </tr>
                 <tr>
                   <td className="p-4 sm:p-5 font-medium">
-                    Totem de Autoatendimento para iPad/Tablet
+                    Totem para restaurantes e negócios de alimentação
                   </td>
                   <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
                   <td className="p-4 sm:p-5 text-center text-slate-300 bg-[#fbfdf7]">—</td>
                   <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-medium">Suporte ao cliente</td>
+                  <td className="p-4 sm:p-5 font-medium">Automação WhatsApp</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300 bg-[#fbfdf7]">—</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">Após provisionamento</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium">Gestão de motoboys e custo por entrega (alimentação)</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300">—</td>
+                  <td className="p-4 sm:p-5 text-center text-slate-300 bg-[#fbfdf7]">—</td>
+                  <td className="p-4 sm:p-5 text-center text-[#556934] font-bold">✓ Incluso</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium">Canal de atendimento</td>
                   <td className="p-4 sm:p-5 text-center text-slate-500">Padrão</td>
                   <td className="p-4 sm:p-5 text-center font-bold text-[#556934] bg-[#fbfdf7]">
-                    Prioritário
+                    WhatsApp da ELLO
                   </td>
                   <td className="p-4 sm:p-5 text-center font-bold text-amber-700">
-                    VIP no WhatsApp
+                    WhatsApp da ELLO
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <p className="mx-auto mt-4 max-w-5xl text-xs leading-relaxed text-[#72756d]">
+            A ELLO não cobra comissão sobre as vendas. Pagamentos online por Pix ou cartão nas lojas
+            estão desativados nesta fase; tarifas de provedores financeiros podem existir quando esse
+            recurso for liberado.
+          </p>
         </section>
 
         {/* ==============================================================
@@ -1060,7 +1260,7 @@ export function PricingPlansPage() {
               {[
                 {
                   q: "A ELLO realmente não cobra comissão sobre meus pedidos ou agendamentos?",
-                  a: "Exatamente! Cobramos ZERO porcentagem sobre o valor que você vende. Você paga apenas o valor fixo da sua assinatura e todo o dinheiro das suas vendas cai direto na sua conta bancária sem intermediários mordendo sua margem.",
+                  a: "A ELLO não cobra comissão sobre as vendas. Quando pagamentos online estiverem habilitados, o provedor financeiro poderá cobrar as tarifas dele; elas são informadas antes da ativação.",
                 },
                 {
                   q: "Como funciona a assinatura e o cancelamento?",
@@ -1076,7 +1276,7 @@ export function PricingPlansPage() {
                 },
                 {
                   q: "Posso começar no plano grátis e mudar para o Pro depois?",
-                  a: "Com certeza! Você pode começar no plano gratuito para conhecer a plataforma e, quando quiser adicionar colaboradores na equipe ou remover a marca da ELLO, basta fazer o upgrade com ativação imediata.",
+                a: "Com certeza! Você pode começar no plano gratuito para conhecer a plataforma e, quando quiser adicionar colaboradores, usar CRM ou remover a marca da ELLO, basta fazer o upgrade para o Pro.",
                 },
               ].map((faq, index) => {
                 const isOpen = openFaq === index;
@@ -1113,33 +1313,36 @@ export function PricingPlansPage() {
         {/* ==============================================================
             7. CTA FINAL DE ALTO IMPACTO
            ============================================================== */}
-        <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16">
-          <div className="rounded-3xl border border-[#e4e7db] bg-gradient-to-r from-[#20221f] to-[#2d3027] px-6 py-12 sm:px-12 sm:py-16 text-white text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-8">
-            <div className="max-w-xl">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#d0f25a]">
-                Comece agora mesmo
-              </span>
-              <h3 className="mt-2 font-display text-[28px] font-medium tracking-tight sm:text-[38px] leading-tight">
-                Pronto para transformar a gestão do seu negócio?
-              </h3>
-              <p className="mt-2 text-sm text-white/70">
-                Leva menos de 3 minutos para criar sua vitrine de produtos ou serviços, agenda e
-                perfil profissional.
-              </p>
-            </div>
+        {isBrazilMarket && (
+          <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-16">
+            <div className="rounded-3xl border border-[#e4e7db] bg-gradient-to-r from-[#20221f] to-[#2d3027] px-6 py-12 sm:px-12 sm:py-16 text-white text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-8">
+              <div className="max-w-xl">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#d0f25a]">
+                  Comece agora mesmo
+                </span>
+                <h3 className="mt-2 font-display text-[28px] font-medium tracking-tight sm:text-[38px] leading-tight">
+                  Pronto para transformar a gestão do seu negócio?
+                </h3>
+                <p className="mt-2 text-sm text-white/70">
+                  Leva menos de 3 minutos para criar sua vitrine de produtos ou serviços, agenda e
+                  perfil profissional.
+                </p>
+              </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => handleOpenCheckout("pro")}
-                className="ello-cta ello-cta-lime cursor-pointer"
-              >
-                Assinar Plano Pro
-                <ArrowRight size={16} />
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleOpenCheckout("pro")}
+                  disabled={!isBrazilMarket || !marketInitialized}
+                  className="ello-cta ello-cta-lime cursor-pointer"
+                >
+                  {isBrazilMarket ? "Assinar Plano Pro" : "Disponível em breve"}
+                  {isBrazilMarket && <ArrowRight size={16} />}
+                </button>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
       {/* ==============================================================
@@ -1162,22 +1365,26 @@ export function PricingPlansPage() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
+          aria-labelledby="subscription-checkout-title"
+          className="fixed inset-0 z-[80] flex items-center justify-center overflow-hidden overscroll-contain bg-black/80 p-2 backdrop-blur-md sm:p-4"
         >
-          <div className="relative w-full max-w-lg rounded-3xl bg-[#181a15] text-[#f7f6ef] border border-white/10 shadow-2xl p-6 sm:p-8 overflow-hidden my-8">
+          <div className="relative flex max-h-[calc(100vh-1rem)] supports-[height:100dvh]:max-h-[calc(100dvh-1rem)] min-h-0 w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#181a15] text-[#f7f6ef] shadow-2xl sm:max-h-[calc(100vh-2rem)] sm:supports-[height:100dvh]:max-h-[calc(100dvh-2rem)] sm:rounded-3xl">
             {/* Botão de Fechar */}
-            <button
-              type="button"
-              onClick={() => {
-                setCheckoutModalPlan(null);
-                if (pollingRef.current) clearInterval(pollingRef.current);
-              }}
-              className="absolute top-5 right-5 grid size-9 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition cursor-pointer"
-              aria-label="Fechar"
-            >
-              <X size={18} />
-            </button>
+            <div className="flex shrink-0 justify-end border-b border-white/10 bg-[#181a15] px-3 py-2 sm:px-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setCheckoutModalPlan(null);
+                  if (pollingRef.current) clearInterval(pollingRef.current);
+                }}
+                className="grid size-10 place-items-center rounded-full bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d0f25a] cursor-pointer"
+                aria-label="Fechar"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-6">
             {/* ETAPA 1: SUCESSO DE PAGAMENTO */}
             {modalStep === "success" && (
               <div className="py-6 text-center space-y-4">
@@ -1188,7 +1395,7 @@ export function PricingPlansPage() {
                   <span className="inline-block rounded-full bg-[#d0f25a]/20 text-[#d0f25a] px-3 py-1 text-xs font-bold uppercase tracking-wider mb-2">
                     Pagamento confirmado
                   </span>
-                  <h3 className="font-display text-2xl font-bold text-white">
+                  <h3 id="subscription-checkout-title" className="font-display text-2xl font-bold text-white">
                     Parabéns! O {planName} está 100% ativo!
                   </h3>
                   <p className="mt-2 text-sm text-white/70 max-w-sm mx-auto leading-relaxed">
@@ -1234,7 +1441,7 @@ export function PricingPlansPage() {
                       {modalCycle === "yearly" ? "Anual — lançamento" : "Mensal — lançamento"}
                     </span>
                   </div>
-                  <h3 className="mt-2 font-display text-2xl font-bold text-white">
+                  <h3 id="subscription-checkout-title" className="mt-2 font-display text-2xl font-bold text-white">
                     Pague com PIX para Ativar
                   </h3>
                   <p className="mt-1 text-xs text-white/60">
@@ -1247,7 +1454,7 @@ export function PricingPlansPage() {
                   <div className="flex items-center justify-between text-xs pb-1 border-b border-white/10">
                     <span className="text-white/60">Valor da Assinatura:</span>
                     <span className="font-display font-black text-base text-[#d0f25a]">
-                      R$ {paymentData.value.toFixed(2).replace(".", ",")}
+                      {formatMarketAmount(Math.round(paymentData.value * 100), "BRL", "pt-BR")}
                     </span>
                   </div>
 
@@ -1333,7 +1540,7 @@ export function PricingPlansPage() {
                     <Zap size={13} />
                     <span>{planName}</span>
                   </div>
-                  <h3 className="mt-2 font-display text-2xl font-bold text-white">
+                  <h3 id="subscription-checkout-title" className="mt-2 font-display text-2xl font-bold text-white">
                     Assinar {planName}
                   </h3>
                   <p className="mt-1 text-xs text-white/60">
@@ -1346,7 +1553,9 @@ export function PricingPlansPage() {
                   <div className="flex items-center justify-between text-xs font-semibold text-white/70 pb-2">
                     <span>Ciclo de Faturamento</span>
                     {modalCycle === "yearly" && (
-                      <span className="text-[#d0f25a] font-bold">Preço especial de lançamento</span>
+                      <span className="text-[#d0f25a] font-bold">
+                        Preço anual especial de lançamento
+                      </span>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -1361,7 +1570,7 @@ export function PricingPlansPage() {
                     >
                       <span>Mensal</span>
                       <span className="text-[11px] opacity-80 font-normal">
-                        R$ {planPriceMonthly.toFixed(2).replace(".", ",")}/mês
+                        {formatMarketAmount(selectedPlanPricing.monthly, "BRL", "pt-BR")}/mês
                       </span>
                     </button>
                     <button
@@ -1376,9 +1585,9 @@ export function PricingPlansPage() {
                       <span>Anual — lançamento</span>
                       <span className="text-[11px] opacity-80 font-normal">
                         <span className="line-through">
-                          R$ {planPriceRegularMonthly.toFixed(2).replace(".", ",")}
+                          {formatMarketAmount(selectedPlanPricing.regularYearly, "BRL", "pt-BR")}
                         </span>{" "}
-                        R$ {planPriceYearlyMonthly.toFixed(2).replace(".", ",")}/mês
+                        {formatMarketAmount(selectedPlanPricing.yearly, "BRL", "pt-BR")}/ano
                       </span>
                     </button>
                   </div>
@@ -1389,17 +1598,19 @@ export function PricingPlansPage() {
                   <span className="text-xs text-white/70">Total a pagar agora via PIX:</span>
                   <div className="text-right">
                     <div className="font-display font-black text-xl text-[#d0f25a]">
-                      R$ {currentPriceStr}
+                      {formatMarketAmount(Math.round(currentPrice * 100), "BRL", "pt-BR")}
                     </div>
                     {modalCycle === "yearly" && (
                       <div className="text-[10px] text-white/40">
                         <span className="line-through">
-                          De R$ {planPriceRegularYearly.toFixed(2).replace(".", ",")}
+                          De {formatMarketAmount(selectedPlanPricing.regularYearly, "BRL", "pt-BR")}
                         </span>
-                        {" · "}Economize R${" "}
-                        {(planPriceRegularYearly - planPriceYearlyTotal)
-                          .toFixed(2)
-                          .replace(".", ",")}
+                        {" · "}Economize{" "}
+                        {formatMarketAmount(
+                          selectedPlanPricing.regularYearly - selectedPlanPricing.yearly,
+                          "BRL",
+                          "pt-BR",
+                        )}
                       </div>
                     )}
                   </div>
@@ -1544,6 +1755,7 @@ export function PricingPlansPage() {
                 </div>
               </form>
             )}
+            </div>
           </div>
         </div>
       )}

@@ -1,12 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { getServerConfig } from "@/lib/config.server";
+import { getAsaasAdminSupabase } from "@/lib/asaas.server";
+import { businessHasPlanFeature } from "@/lib/plan-access.server";
 
 export const Route = createFileRoute("/api/store/$slug")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: async ({ params, request }) => {
         const slug = params.slug;
+        const requestedFeature = new URL(request.url).searchParams.get("feature");
+        if (requestedFeature && !["self_service_kiosk", "white_label"].includes(requestedFeature)) {
+          return Response.json({ error: "Recurso inválido." }, { status: 400 });
+        }
         if (!slug) {
           return Response.json({ error: "Slug não informado." }, { status: 400 });
         }
@@ -22,7 +28,7 @@ export const Route = createFileRoute("/api/store/$slug")({
           const { data: businessRow, error: businessError } = await supabase
             .from("localhub_businesses")
             .select(
-              "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order",
+              "id,name,slug,category,city,phone,description,address,banner_url,gallery_urls,booking_policy,opening_hours,blocked_dates,accepts_delivery,accepts_pickup,accepts_dine_in,online_payment_enabled,loyalty_enabled,loyalty_mode,loyalty_rate,delivery_fee,logo_url,menu_categories_order,public_theme",
             )
             .eq("slug", slug)
             .eq("is_published", true)
@@ -40,6 +46,50 @@ export const Route = createFileRoute("/api/store/$slug")({
 
           if (!businessRow) {
             return Response.json({ error: "Empresa não encontrada." }, { status: 404 });
+          }
+
+          if (requestedFeature === "self_service_kiosk" && businessRow.category !== "alimentacao") {
+            return Response.json({ error: "O autoatendimento está disponível para negócios de gastronomia." }, { status: 404 });
+          }
+
+          if (requestedFeature === "white_label") {
+            try {
+              const whiteLabel = await businessHasPlanFeature(
+                getAsaasAdminSupabase(),
+                businessRow.id,
+                "white_label",
+              );
+              return Response.json(
+                { whiteLabel },
+                { headers: { "Cache-Control": "public, max-age=30, s-maxage=30" } },
+              );
+            } catch {
+              return Response.json(
+                { error: "Não foi possível verificar a configuração visual da loja." },
+                { status: 503, headers: { "Cache-Control": "private, no-store, max-age=0" } },
+              );
+            }
+          }
+
+          if (requestedFeature === "self_service_kiosk") {
+            try {
+              const allowed = await businessHasPlanFeature(
+                getAsaasAdminSupabase(),
+                businessRow.id,
+                "self_service_kiosk",
+              );
+              if (!allowed) {
+                return Response.json(
+                  { error: "O Totem de Autoatendimento está disponível no plano Business.", code: "PLAN_UPGRADE_REQUIRED" },
+                  { status: 403, headers: { "Cache-Control": "private, no-store, max-age=0" } },
+                );
+              }
+            } catch {
+              return Response.json(
+                { error: "Não foi possível verificar o plano desta loja." },
+                { status: 503, headers: { "Cache-Control": "private, no-store, max-age=0" } },
+              );
+            }
           }
 
           const businessId = businessRow.id;
@@ -163,6 +213,8 @@ export const Route = createFileRoute("/api/store/$slug")({
             menuCategoriesOrder: Array.isArray(businessRow.menu_categories_order)
               ? businessRow.menu_categories_order
               : [],
+            publicTheme: businessRow.public_theme || "standard",
+            whiteLabel: requestedFeature === "self_service_kiosk",
             wheelSettings: null,
             portfolioItems: [],
           };
@@ -171,7 +223,9 @@ export const Route = createFileRoute("/api/store/$slug")({
             { business, services, staff, deliveryAreas },
             {
               headers: {
-                "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
+                "Cache-Control": requestedFeature
+                  ? "private, no-store, max-age=0"
+                  : "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
               },
             },
           );
